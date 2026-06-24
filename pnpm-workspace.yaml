@@ -1,0 +1,9 @@
+packages:
+  - altea/altea
+  - altea/altea-auth
+  - altea/quote-transformer
+  - altea/quote-transformer-test
+  - eastwind
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true

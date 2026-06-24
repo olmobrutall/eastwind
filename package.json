@@ -4,20 +4,13 @@
     "private": true,
     "description": "",
     "type": "module",
-    "packageManager": "yarn@1.22.22",
-    "workspaces": [
-        "altea/altea",
-        "altea/altea-auth",
-        "altea/quote-transformer",
-        "altea/quote-transformer-test",
-        "eastwind"
-    ],
+    "packageManager": "pnpm@11.9.0",
     "scripts": {
-        "build:transformer": "yarn workspace quote-transformer build",
+        "build:transformer": "pnpm --filter quote-transformer build",
         "build:types": "tspc -b",
         "watch:types": "tspc -b --watch",
-        "build": "yarn build:transformer && yarn build:types && yarn workspace eastwind build",
-        "dev": "yarn workspace eastwind dev"
+        "build": "pnpm run build:transformer && pnpm run build:types && pnpm --filter eastwind build",
+        "dev": "pnpm --filter eastwind dev"
     },
     "author": "Olmo del Corral",
     "license": "MIT",

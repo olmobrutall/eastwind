@@ -1,13 +1,13 @@
 {
 	"version": "2.0.0",
-	// All builds go through the root yarn-workspace scripts (see package.json).
-	// One `yarn install` at the root sets up every workspace — no per-folder installs.
+	// All builds go through the root pnpm-workspace scripts (see package.json).
+	// One `pnpm install` at the root sets up every workspace — no per-folder installs.
 	"tasks": [
 		{
 			"label": "build",
-			"detail": "Full build: transformer → types → eastwind (root: yarn build)",
+			"detail": "Full build: transformer → types → eastwind (root: pnpm build)",
 			"type": "shell",
-			"command": "yarn build",
+			"command": "pnpm build",
 			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": ["$tsc"],
 			"group": { "kind": "build", "isDefault": true }
@@ -16,7 +16,7 @@
 			"label": "build types (tspc -b)",
 			"detail": "Builds every composite project (entities/logic/react) via the root solution.",
 			"type": "shell",
-			"command": "yarn build:types",
+			"command": "pnpm build:types",
 			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": ["$tsc"],
 			"group": "build"
@@ -25,7 +25,7 @@
 			"label": "watch types",
 			"detail": "tspc -b --watch — keeps emitted JS fresh for vite dev.",
 			"type": "shell",
-			"command": "yarn watch:types",
+			"command": "pnpm watch:types",
 			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": ["$tsc"],
 			"isBackground": true,
@@ -33,9 +33,9 @@
 		},
 		{
 			"label": "dev (eastwind)",
-			"detail": "Runs eastwind types + server + client watchers (root: yarn dev).",
+			"detail": "Runs eastwind types + server + client watchers (root: pnpm dev).",
 			"type": "shell",
-			"command": "yarn dev",
+			"command": "pnpm dev",
 			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": [],
 			"isBackground": true,
@@ -45,7 +45,7 @@
 			"label": "build eastwind server bundle",
 			"detail": "Bundles transformer-emitted logic JS into one runnable file (used by the server debugger).",
 			"type": "shell",
-			"command": "yarn workspace eastwind build:server",
+			"command": "pnpm --filter eastwind build:server",
 			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": [],
 			"dependsOn": ["build types (tspc -b)"],

@@ -21,19 +21,19 @@
     "build:types": "tspc -b",
     "build:client": "vite build --config vite.client.config.ts",
     "build:server": "vite build --config vite.server.config.ts",
-    "build": "yarn build:types && yarn build:server && yarn build:client",
+    "build": "pnpm run build:types && pnpm run build:server && pnpm run build:client",
     "dev:types": "tspc -b --watch --preserveWatchOutput",
     "dev:client": "vite --config vite.client.config.ts",
     "dev:server": "vite build --watch --config vite.server.config.ts",
-    "dev": "concurrently -n types,server,client -c blue,green,magenta \"yarn dev:types\" \"yarn dev:server\" \"yarn dev:client\""
+    "dev": "concurrently -n types,server,client -c blue,green,magenta \"pnpm run dev:types\" \"pnpm run dev:server\" \"pnpm run dev:client\""
   },
   "keywords": [],
   "author": "Olmo del Corral",
   "license": "MIT",
   "dependencies": {
-    "@altea/altea": "0.0.1",
-    "@altea/altea-auth": "0.0.1",
-    "quote-transformer": "0.0.2",
+    "@altea/altea": "workspace:*",
+    "@altea/altea-auth": "workspace:*",
+    "quote-transformer": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
