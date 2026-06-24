@@ -1,0 +1,106 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{ /*Quote transformer*/
+			"label": "tsc: build - quote-transformer-test",
+			"type": "typescript",
+			"tsconfig": "quote-transformer-test/tsconfig.json",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build",
+			"dependsOn": [
+				"tsc: build (quote-transformer)" //"install (quote-transformer-test)"
+			]
+		},
+		{
+			"label": "install (quote-transformer-test)",
+			"type": "npm",
+			"script": "install",
+			"options": {
+				"cwd": "${workspaceFolder}/quote-transformer-test/"
+			},
+			"dependsOn": [
+				"tsc: build (quote-transformer)"
+			]
+		},
+		{
+			"label": "tsc: build (quote-transformer)",
+			"type": "typescript",
+			"tsconfig": "quote-transformer/tsconfig.json",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build",
+		},
+		{ /*My App*/
+			"label": "install my-app",
+			"type": "npm",
+			"options": {
+				"cwd": "${workspaceFolder}/my-app/"
+			},
+			"script": "install"
+		},
+		{
+			"label": "tsc: build - my-app",
+			"type": "typescript",
+			"tsconfig": "my-app/tsconfig.json",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build",
+			"dependsOn": [
+				"install my-app"
+			]
+		},
+		{
+			"label": "build (altea)",
+			"type": "npm",
+			"script": "build",
+			"options": {
+				"cwd": "${workspaceFolder}/altea/"
+			},
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build",
+			"dependsOn": [
+				"patch-ts (altea)"
+			]
+		},
+		{
+			"label": "patch-ts (altea)",
+			"type": "npm",
+			"script": "patch-ts",
+			"options": {
+				"cwd": "${workspaceFolder}/altea/"
+			}
+		},
+		{ /*Builds every composite project (entities/logic/react) via the root solution.*/
+			"label": "build types (tspc -b)",
+			"type": "shell",
+			"command": "npx tspc -b",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{ /*Bundles the transformer-emitted logic JS into one runnable file with sourcemaps.*/
+			"label": "build my-app server bundle",
+			"type": "shell",
+			"command": "yarn workspace my-app build:server",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [],
+			"dependsOn": [
+				"build types (tspc -b)"
+			],
+			"dependsOrder": "sequence",
+			"group": "build"
+		},
+	]
+}

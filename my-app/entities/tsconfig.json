@@ -1,0 +1,12 @@
+{
+  "extends": "../../altea/tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../dist/entities"
+  },
+  "include": ["**/*"],
+  "references": [
+    { "path": "../../altea/entities" },
+    { "path": "../../altea-auth/entities" }
+  ]
+}

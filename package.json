@@ -1,0 +1,31 @@
+{
+    "name": "query-of-t",
+    "version": "1.0.0",
+    "private": true,
+    "description": "",
+    "type": "module",
+    "packageManager": "yarn@1.22.22",
+    "workspaces": [
+        "quote-transformer",
+        "altea",
+        "altea-auth",
+        "my-app"
+    ],
+    "scripts": {
+        "build:transformer": "yarn workspace quote-transformer build",
+        "build:types": "tspc -b",
+        "watch:types": "tspc -b --watch",
+        "build": "yarn build:transformer && yarn build:types && yarn workspace my-app build",
+        "dev": "yarn workspace my-app dev"
+    },
+    "author": "Olmo del Corral",
+    "license": "MIT",
+    "dependencies": {
+        "pg": "^8.11.3"
+    },
+    "devDependencies": {
+        "@types/node": "^24.0.0",
+        "ts-patch": "^4.0.1",
+        "typescript": "^6.0.3"
+    }
+}

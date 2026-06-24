@@ -1,0 +1,56 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug Transformer Test",
+            "preLaunchTask": "tsc: build - quote-transformer-test",
+            "program": "${workspaceFolder}/quote-transformer-test/dist/initTransformer.js",
+            "cwd": "${workspaceFolder}/quote-transformer-test/",
+            "outFiles": [
+                "${workspaceFolder}/quote-transformer-test/dist/**/*.js"
+            ],
+            "sourceMaps": true
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug Jest - quote-transformer-test",
+            "preLaunchTask": "tsc: build - quote-transformer-test",
+            "program": "${workspaceFolder}/quote-transformer-test/node_modules/jest/bin/jest.js",
+            "args": [
+                "--runInBand"
+            ],
+            "cwd": "${workspaceFolder}/quote-transformer-test/",
+            "outFiles": [
+                "${workspaceFolder}/quote-transformer-test/dist/**/*.js"
+            ],
+            "sourceMaps": true,
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug my-app server (logic/main.ts)",
+            "preLaunchTask": "build my-app server bundle",
+            "program": "${workspaceFolder}/my-app/dist/server-bundle/main.js",
+            "cwd": "${workspaceFolder}/my-app/",
+            "outFiles": [
+                "${workspaceFolder}/my-app/dist/server-bundle/**/*.js"
+            ],
+            "sourceMaps": true,
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/**",
+                "!**/node_modules/**"
+            ],
+            "console": "integratedTerminal",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        }
+    ]
+}

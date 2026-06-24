@@ -1,0 +1,15 @@
+{
+  "extends": "../../altea/tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../dist/react",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": ["react", "react-dom"]
+  },
+  "include": ["**/*"],
+  "references": [
+    { "path": "../entities" },
+    { "path": "../../altea-auth/react" },
+    { "path": "../../altea/react" }
+  ]
+}
