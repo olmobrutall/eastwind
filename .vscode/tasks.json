@@ -1,106 +1,64 @@
 {
 	"version": "2.0.0",
+	// All builds go through the root yarn-workspace scripts (see package.json).
+	// One `yarn install` at the root sets up every workspace — no per-folder installs.
 	"tasks": [
-		{ /*Quote transformer*/
-			"label": "tsc: build - quote-transformer-test",
-			"type": "typescript",
-			"tsconfig": "quote-transformer-test/tsconfig.json",
-			"problemMatcher": [
-				"$tsc"
-			],
-			"group": "build",
-			"dependsOn": [
-				"tsc: build (quote-transformer)" //"install (quote-transformer-test)"
-			]
-		},
 		{
-			"label": "install (quote-transformer-test)",
-			"type": "npm",
-			"script": "install",
-			"options": {
-				"cwd": "${workspaceFolder}/quote-transformer-test/"
-			},
-			"dependsOn": [
-				"tsc: build (quote-transformer)"
-			]
-		},
-		{
-			"label": "tsc: build (quote-transformer)",
-			"type": "typescript",
-			"tsconfig": "quote-transformer/tsconfig.json",
-			"problemMatcher": [
-				"$tsc"
-			],
-			"group": "build",
-		},
-		{ /*My App*/
-			"label": "install my-app",
-			"type": "npm",
-			"options": {
-				"cwd": "${workspaceFolder}/my-app/"
-			},
-			"script": "install"
-		},
-		{
-			"label": "tsc: build - my-app",
-			"type": "typescript",
-			"tsconfig": "my-app/tsconfig.json",
-			"problemMatcher": [
-				"$tsc"
-			],
-			"group": "build",
-			"dependsOn": [
-				"install my-app"
-			]
-		},
-		{
-			"label": "build (altea)",
-			"type": "npm",
-			"script": "build",
-			"options": {
-				"cwd": "${workspaceFolder}/altea/"
-			},
-			"problemMatcher": [
-				"$tsc"
-			],
-			"group": "build",
-			"dependsOn": [
-				"patch-ts (altea)"
-			]
-		},
-		{
-			"label": "patch-ts (altea)",
-			"type": "npm",
-			"script": "patch-ts",
-			"options": {
-				"cwd": "${workspaceFolder}/altea/"
-			}
-		},
-		{ /*Builds every composite project (entities/logic/react) via the root solution.*/
-			"label": "build types (tspc -b)",
+			"label": "build",
+			"detail": "Full build: transformer → types → eastwind (root: yarn build)",
 			"type": "shell",
-			"command": "npx tspc -b",
-			"options": {
-				"cwd": "${workspaceFolder}"
-			},
-			"problemMatcher": [
-				"$tsc"
-			],
+			"command": "yarn build",
+			"options": { "cwd": "${workspaceFolder}" },
+			"problemMatcher": ["$tsc"],
+			"group": { "kind": "build", "isDefault": true }
+		},
+		{
+			"label": "build types (tspc -b)",
+			"detail": "Builds every composite project (entities/logic/react) via the root solution.",
+			"type": "shell",
+			"command": "yarn build:types",
+			"options": { "cwd": "${workspaceFolder}" },
+			"problemMatcher": ["$tsc"],
 			"group": "build"
 		},
-		{ /*Bundles the transformer-emitted logic JS into one runnable file with sourcemaps.*/
-			"label": "build my-app server bundle",
+		{
+			"label": "watch types",
+			"detail": "tspc -b --watch — keeps emitted JS fresh for vite dev.",
 			"type": "shell",
-			"command": "yarn workspace my-app build:server",
-			"options": {
-				"cwd": "${workspaceFolder}"
-			},
+			"command": "yarn watch:types",
+			"options": { "cwd": "${workspaceFolder}" },
+			"problemMatcher": ["$tsc"],
+			"isBackground": true,
+			"group": "build"
+		},
+		{
+			"label": "dev (eastwind)",
+			"detail": "Runs eastwind types + server + client watchers (root: yarn dev).",
+			"type": "shell",
+			"command": "yarn dev",
+			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": [],
-			"dependsOn": [
-				"build types (tspc -b)"
-			],
+			"isBackground": true,
+			"group": "build"
+		},
+		{
+			"label": "build eastwind server bundle",
+			"detail": "Bundles transformer-emitted logic JS into one runnable file (used by the server debugger).",
+			"type": "shell",
+			"command": "yarn workspace eastwind build:server",
+			"options": { "cwd": "${workspaceFolder}" },
+			"problemMatcher": [],
+			"dependsOn": ["build types (tspc -b)"],
 			"dependsOrder": "sequence",
 			"group": "build"
 		},
+		{
+			"label": "tsc: build - quote-transformer-test",
+			"detail": "preLaunchTask for the transformer-test debug configs.",
+			"type": "typescript",
+			"tsconfig": "altea/quote-transformer-test/tsconfig.json",
+			"problemMatcher": ["$tsc"],
+			"group": "build"
+		}
 	]
 }

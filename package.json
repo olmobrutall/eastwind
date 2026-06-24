@@ -6,17 +6,18 @@
     "type": "module",
     "packageManager": "yarn@1.22.22",
     "workspaces": [
-        "quote-transformer",
-        "altea",
-        "altea-auth",
-        "my-app"
+        "altea/altea",
+        "altea/altea-auth",
+        "altea/quote-transformer",
+        "altea/quote-transformer-test",
+        "eastwind"
     ],
     "scripts": {
         "build:transformer": "yarn workspace quote-transformer build",
         "build:types": "tspc -b",
         "watch:types": "tspc -b --watch",
-        "build": "yarn build:transformer && yarn build:types && yarn workspace my-app build",
-        "dev": "yarn workspace my-app dev"
+        "build": "yarn build:transformer && yarn build:types && yarn workspace eastwind build",
+        "dev": "yarn workspace eastwind dev"
     },
     "author": "Olmo del Corral",
     "license": "MIT",

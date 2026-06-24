@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import { Order } from "my-app/entities/orders";
+import { Order } from "eastwind/entities/orders";
 
 // Proves the client toolchain: a core entity (transformed by tspc, consumed
 // from dist) is importable in the SPA layer and bundled by Vite.
@@ -9,7 +9,7 @@ function App() {
     });
     return (
         <main>
-            <h1>my-app SPA</h1>
+            <h1>eastwind SPA</h1>
             <p>Sample Order amount: {sample.amount}</p>
         </main>
     );

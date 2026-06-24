@@ -1,14 +1,14 @@
 {
   "files": [],
   "references": [
-    { "path": "altea/entities" },
-    { "path": "altea/logic" },
-    { "path": "altea/react" },
-    { "path": "altea-auth/entities" },
-    { "path": "altea-auth/logic" },
-    { "path": "altea-auth/react" },
-    { "path": "my-app/entities" },
-    { "path": "my-app/logic" },
-    { "path": "my-app/react" }
+    { "path": "altea/altea/entities" },
+    { "path": "altea/altea/logic" },
+    { "path": "altea/altea/react" },
+    { "path": "altea/altea-auth/entities" },
+    { "path": "altea/altea-auth/logic" },
+    { "path": "altea/altea-auth/react" },
+    { "path": "eastwind/entities" },
+    { "path": "eastwind/logic" },
+    { "path": "eastwind/react" }
   ]
 }

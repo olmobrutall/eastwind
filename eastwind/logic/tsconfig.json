@@ -1,5 +1,5 @@
 {
-  "extends": "../../altea/tsconfig.base.json",
+  "extends": "../../altea/altea/tsconfig.base.json",
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "../dist/logic",
@@ -8,7 +8,7 @@
   "include": ["**/*"],
   "references": [
     { "path": "../entities" },
-    { "path": "../../altea-auth/logic" },
-    { "path": "../../altea/logic" }
+    { "path": "../../altea/altea-auth/logic" },
+    { "path": "../../altea/altea/logic" }
   ]
 }

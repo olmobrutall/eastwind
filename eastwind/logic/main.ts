@@ -2,7 +2,7 @@ import { table } from "@altea/altea/logic/table";
 import { Order } from "../entities/orders";
 import "./orders.logic"; // registers prototype navigation methods (lines())
 
-console.log("Hi from my-app server");
+console.log("Hi from eastwind server");
 
 var obj: { name: string } | undefined = undefined;
 

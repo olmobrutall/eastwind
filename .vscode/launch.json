@@ -35,12 +35,12 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Debug my-app server (logic/main.ts)",
-            "preLaunchTask": "build my-app server bundle",
-            "program": "${workspaceFolder}/my-app/dist/server-bundle/main.js",
-            "cwd": "${workspaceFolder}/my-app/",
+            "name": "Debug eastwind server (logic/main.ts)",
+            "preLaunchTask": "build eastwind server bundle",
+            "program": "${workspaceFolder}/eastwind/dist/server-bundle/main.js",
+            "cwd": "${workspaceFolder}/eastwind/",
             "outFiles": [
-                "${workspaceFolder}/my-app/dist/server-bundle/**/*.js"
+                "${workspaceFolder}/eastwind/dist/server-bundle/**/*.js"
             ],
             "sourceMaps": true,
             "resolveSourceMapLocations": [

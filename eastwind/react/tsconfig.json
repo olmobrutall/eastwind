@@ -1,5 +1,5 @@
 {
-  "extends": "../../altea/tsconfig.base.json",
+  "extends": "../../altea/altea/tsconfig.base.json",
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "../dist/react",
@@ -9,7 +9,7 @@
   "include": ["**/*"],
   "references": [
     { "path": "../entities" },
-    { "path": "../../altea-auth/react" },
-    { "path": "../../altea/react" }
+    { "path": "../../altea/altea-auth/react" },
+    { "path": "../../altea/altea/react" }
   ]
 }

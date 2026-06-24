@@ -38,7 +38,7 @@ export default defineConfig({
     },
     ssr: {
         // Bundle workspace packages into the artifact; keep native/runtime deps external.
-        noExternal: [/@altea\//, /^my-app\//],
+        noExternal: [/@altea\//, /^eastwind\//],
         external: ["pg"],
     },
 });
