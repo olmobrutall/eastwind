@@ -1,0 +1,6 @@
+[submodule "altea"]
+	path = altea
+	url = ../altea
+[submodule "old"]
+	path = old
+	url = https://github.com/signumsoftware/southwind
