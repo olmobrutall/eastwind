@@ -1,6 +1,7 @@
 packages:
   - altea/altea
   - altea/altea-auth
+  - altea/altea-test
   - altea/quote-transformer
   - altea/quote-transformer-test
   - eastwind

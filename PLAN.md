@@ -20,6 +20,8 @@ altea/
                              (replaces the old back/ layer; server-side)
     react/                   context.browser (replaces the old client/ layer)
   altea-auth/                @altea/altea-auth — UserEntity + AuthLogic (stub)
+  altea-test/                @altea/altea-test — Music domain (port of Signum.Test),
+                             MusicLogic/MusicStarter/MusicLoader (schema gen + live exec)
   quote-transformer/         compile-time @field injection + @quoted lambda capture
   quote-transformer-test/    transformer test suite
 ```
@@ -41,16 +43,18 @@ Per-module `all`/`back`/`client` split from the original design became the
 | **B** Schema/Table | `Table`, `Column`, `ObjectName`, `@column` | 🟡 | data structures only |
 | **B** Field hierarchy | `FieldValue/Reference/ImplementedBy/Embedded/MList…` | ❌ | |
 | **B** `SchemaBuilder`/`EntityBuilder` | fluent `include()`/`withQuery()`/… | ❌ | |
-| **B** Schema generator (DDL) | `Schema` → CREATE TABLE/FK/index | ❌ | |
-| **B** Schema synchronizer | introspect → diff → `SyncScript` | ❌ | |
+| **B** Schema generator (DDL) | `Schema` → CREATE SCHEMA/TABLE/FK | ✅ | `SqlPreCommand`, `SqlBuilder` (both dialects), `Schema.generating` event chain + `generationScript()`. Indexes pending (no index model yet); string columns emit no length default |
+| **B** Connectors | `Connector.current`/`default`, `SqlServerConnector` (mssql), `PostgresConnector` (pg) | ✅ | ambient via `context.node`; live execution (`executeScript`/`executeNonQuery`/`executeQuery`) |
+| **B** Schema synchronizer | introspect → diff → `SyncScript` | ❌ | next: introspection + diff |
 | **C** Snapshot/change detection | `takeSnapshot`, `diffSnapshot`, real `isDirty` | 🟡 | `_snapshot` field exists only |
 | **C** Save/ORM | `save`/`load`/`tryLoad`/`deleteEntity`, `GraphExplorer` | ❌ | |
-| **D** Query | `Query<T>` AST, `IQuery`, `flatMap`, `Connector`, `withQuoted` | 🟡 | translator stubbed; `withExpressionFrom` missing |
+| **D** Query | `Query<T>` AST, `IQuery`, `flatMap`, `Connector`, `withQuoted` | 🟡 | translator stubbed; `withExpressionFrom` missing. `Connector` now real (see **B** Connectors) |
 | **D** Bulk ops | `executeDelete/Update/Insert` | ❌ | |
 | **D** SQL translator | Expression AST + `ExpressionSimplifier` ✅; `DbExpression`, QueryBinder, QueryFormatter, ProjectionReader ❌ | 🟡 | AST + one optimiser visitor exist |
 | **E** JSON serializer | `EntitySerializer` | ❌ | |
 | **E** `QueryTokenString.nav()` | typed token strings | ❌ | |
 | **Aux** Context | `context.node` (AsyncLocalStorage) + `context.browser` | ✅ | not in original plan |
+| **Aux** Test env | `@altea/altea-test`: Music entities + MusicLogic/Starter/Loader | 🟡 | schema generation works both dialects; `Loader` builds in-memory graph (save pending). MList/hierarchy/vector features commented out |
 | **Aux** Auth | `@altea/altea-auth`: `UserEntity` ✅, `AuthLogic` empty | 🟡 | low priority |
 
 Legend: ✅ done · 🟡 partial · ❌ not started
@@ -75,9 +79,9 @@ Legend: ✅ done · 🟡 partial · ❌ not started
 | Decision | Choice |
 |---|---|
 | `Lite<T>` | `abstract class Lite<out T>`; concrete `LiteImp<T>` with `toStr`; no separate model class |
-| Entity init | `.init(values)` via polymorphic `this` (constructors can't inherit type-safely) |
+| Entity init | static factory `Entity.create(values)` (explicit `this: new()=>T` binds the subclass; `InitValues` drops method props) |
 | Base class | `BaseEntity` (the original "ModifiableEntity"); `Entity`/`EmbeddedEntity`/`ModelEntity` extend it |
-| `@field` on entity fields | transformer auto-injects for classes marked `@reflection` (`@entity` implies it); two-arg `(type, options)` form with `container` for `Lite<T>`/`Array<T>` |
+| `@field` on entity fields | transformer auto-injects for classes marked `@reflection` (`@entity` implies it); single options arg `@field({ typeName, name?, nullable?, lite?, array?, enum? })`. The type is a **name string** (never `() => Type`), so no imported type is referenced at runtime → never elided. Entity/embedded names resolve to constructors via a name→ctor registry (`registerType`/`resolveType`, populated by `@reflection`/`@entity`); value types resolve by name in `defaultDbType`; enums are flagged `enum: true` |
 | FK dual properties | `employee: Lite<T>` ⇒ implicit `employeeId` column; explicit `employeeId` property linked by convention or `@fkProperty` |
 | Arrays in entities | only `Entity[]` back-FK (virtual MList); single embedded allowed, arrays of embedded not |
 | Many-to-many | explicit junction entity |

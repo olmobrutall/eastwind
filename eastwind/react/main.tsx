@@ -4,7 +4,7 @@ import { Order } from "eastwind/entities/orders";
 // Proves the client toolchain: a core entity (transformed by tspc, consumed
 // from dist) is importable in the SPA layer and bundled by Vite.
 function App() {
-    const sample = new Order().init({
+    const sample = Order.create({
         amount: 42
     });
     return (
