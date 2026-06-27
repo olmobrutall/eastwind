@@ -35,7 +35,7 @@ Per-module `all`/`back`/`client` split from the original design became the
 
 | Area | Milestone | Status | Notes |
 |---|---|---|---|
-| **A** Entity model | `BaseEntity`(`.init`/`.mixin`) + `@reflection`, `Entity`, `Embedded/ModelEntity`, `Lite`/`LiteImp`, `PrimaryKey` | ✅ | `toLite()` throws, `isDirty()` stubbed — both wait on B/C |
+| **A** Entity model | `BaseEntity`(`.init`/`.mixin`) + `@reflect`, `Entity`, `Embedded/ModelEntity`, `Lite`/`LiteImp`, `PrimaryKey` | ✅ | `toLite()` throws, `isDirty()` stubbed — both wait on B/C |
 | **A** Transformer v2 | auto-`@field`, two-arg generics (`Lite<T>`/`Array<T>`), `@quoted` capture | ✅ | well tested |
 | **A** Decorators/validators | `@field`, string/url/tel/email/noRepeat validators, `@ignore`, `@fkProperty`, `@implementedBy(All)`, `@entity`, `EntityKind`, `EntityData` | ✅ | `@uniqueIndexValidator` **missing** |
 | **A** FK dual props | `@fkProperty` override + `FieldInfo.fkPropertyName` | 🟡 | `xId` naming-convention auto-pairing **not** done |
@@ -81,7 +81,8 @@ Legend: ✅ done · 🟡 partial · ❌ not started
 | `Lite<T>` | `abstract class Lite<out T>`; concrete `LiteImp<T>` with `toStr`; no separate model class |
 | Entity init | static factory `Entity.create(values)` (explicit `this: new()=>T` binds the subclass; `InitValues` drops method props) |
 | Base class | `BaseEntity` (the original "ModifiableEntity"); `Entity`/`EmbeddedEntity`/`ModelEntity` extend it |
-| `@field` on entity fields | transformer auto-injects for classes marked `@reflection` (`@entity` implies it); single options arg `@field({ typeName, name?, nullable?, lite?, array?, enum? })`. The type is a **name string** (never `() => Type`), so no imported type is referenced at runtime → never elided. Entity/embedded names resolve to constructors via a name→ctor registry (`registerType`/`resolveType`, populated by `@reflection`/`@entity`); value types resolve by name in `defaultDbType`; enums are flagged `enum: true` |
+| `@field` on entity fields | transformer auto-injects for classes marked `@reflect` (`@entity` implies it); single options arg `@field({ typeName, name?, nullable?, lite?, array?, enum? })`. The type is a **name string** (never `() => Type`), so no imported type is referenced at runtime → never elided. Entity/embedded names resolve to constructors via a name→ctor registry (`registerType`/`resolveType`, populated by `@reflect`/`@entity`); value types resolve by name in `defaultDbType`; enums are flagged `enum: true` |
+| Entity reference resolution | two paths: (1) `@include(() => OtherEntity)` — user-written thunk stored in `FieldInfo.include`; the arrow keeps the import alive (no elision, no `verbatimModuleSyntax`) and hands the builder the ctor **by reference** (rename-proof, no registry, no load-order). Preferred when present. (2) registry `resolveType(typeName)` fallback — used for dynamic/LowCode entities with no static import. `@implementedBy(() => [...])` already supplies ctors via its own lambda, so a bare `@include` there reuses them (no repetition). Chosen over `verbatimModuleSyntax`/resolver-patching for tsc≡tsgo portability |
 | FK dual properties | `employee: Lite<T>` ⇒ implicit `employeeId` column; explicit `employeeId` property linked by convention or `@fkProperty` |
 | Arrays in entities | only `Entity[]` back-FK (virtual MList); single embedded allowed, arrays of embedded not |
 | Many-to-many | explicit junction entity |
