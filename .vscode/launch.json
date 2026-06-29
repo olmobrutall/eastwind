@@ -10,6 +10,9 @@
             "name": "Debug altea-test (current file)",
             "preLaunchTask": "build altea-test (tspc -b)",
             "cwd": "${workspaceFolder}/altea/altea-test",
+            "env": {
+                "ALTEA_TEST_LOG_SQL": "1"
+            },
             "runtimeArgs": [
                 "--enable-source-maps",
                 "--import",
@@ -19,6 +22,59 @@
                 "--test-name-pattern=${input:testName}"
             ],
             "program": "${workspaceFolder}/altea/altea-test/dist/test/${fileBasenameNoExtension}.js",
+            "outFiles": [
+                "${workspaceFolder}/altea/altea-test/dist/**/*.js"
+            ],
+            "sourceMaps": true,
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/**",
+                "!**/node_modules/**"
+            ],
+            "console": "integratedTerminal",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug all altea-test",
+            "preLaunchTask": "build altea-test (tspc -b)",
+            "cwd": "${workspaceFolder}/altea/altea-test",
+            "runtimeArgs": [
+                "--enable-source-maps",
+                "--import",
+                "./register.mjs",
+                "--env-file=${input:envFile}",
+                "--test",
+                "dist/test/**/*.test.js"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/altea/altea-test/dist/**/*.js"
+            ],
+            "sourceMaps": true,
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/**",
+                "!**/node_modules/**"
+            ],
+            "console": "integratedTerminal",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Generate altea-test DB",
+            "preLaunchTask": "build altea-test (tspc -b)",
+            "cwd": "${workspaceFolder}/altea/altea-test",
+            "runtimeArgs": [
+                "--enable-source-maps",
+                "--import",
+                "./register.mjs",
+                "--env-file=${input:envFile}"
+            ],
+            "program": "${workspaceFolder}/altea/altea-test/dist/test/generateEnvironment.js",
             "outFiles": [
                 "${workspaceFolder}/altea/altea-test/dist/**/*.js"
             ],
