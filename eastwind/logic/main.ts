@@ -7,7 +7,7 @@ console.log("Hi from eastwind server");
 var obj: { name: string } | undefined = undefined;
 
 var richOrders = table(Order)
-    .filter(o => o.lines().some(a => a.unitPrice > 100))
+    .filter(o => o.lines().some(a => a.unitPrice > 100).$v)
     .toArray();
 
 var bigOrders = table(Order)
