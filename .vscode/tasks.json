@@ -59,6 +59,15 @@
 			"tsconfig": "altea/quote-transformer-test/tsconfig.json",
 			"problemMatcher": ["$tsc"],
 			"group": "build"
+		},
+		{
+			"label": "build altea-test (tspc -b)",
+			"detail": "Compiles altea-test (quote-transformer) to dist; preLaunchTask for the altea-test debug config. Skip the wait by running 'watch types' instead.",
+			"type": "shell",
+			"command": "pnpm exec tspc -b",
+			"options": { "cwd": "${workspaceFolder}/altea/altea-test" },
+			"problemMatcher": ["$tsc"],
+			"group": "build"
 		}
 	]
 }

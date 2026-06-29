@@ -7,6 +7,34 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Debug altea-test (current file)",
+            "preLaunchTask": "build altea-test (tspc -b)",
+            "cwd": "${workspaceFolder}/altea/altea-test",
+            "runtimeArgs": [
+                "--enable-source-maps",
+                "--import",
+                "./register.mjs",
+                "--env-file=${input:envFile}",
+                "--test",
+                "--test-name-pattern=${input:testName}"
+            ],
+            "program": "${workspaceFolder}/altea/altea-test/dist/test/${fileBasenameNoExtension}.js",
+            "outFiles": [
+                "${workspaceFolder}/altea/altea-test/dist/**/*.js"
+            ],
+            "sourceMaps": true,
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/**",
+                "!**/node_modules/**"
+            ],
+            "console": "integratedTerminal",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Debug Transformer Test",
             "preLaunchTask": "tsc: build - quote-transformer-test",
             "program": "${workspaceFolder}/quote-transformer-test/dist/initTransformer.js",
@@ -51,6 +79,24 @@
             "skipFiles": [
                 "<node_internals>/**"
             ]
+        }
+    ],
+    "inputs": [
+        {
+            "id": "testName",
+            "type": "promptString",
+            "description": "node --test-name-pattern regex (leave empty to run every test in the file)",
+            "default": ""
+        },
+        {
+            "id": "envFile",
+            "type": "pickString",
+            "description": "Database connection (env file loaded into ALTEA_TEST_DB)",
+            "options": [
+                ".env.sqlserver",
+                ".env.postgres"
+            ],
+            "default": ".env.sqlserver"
         }
     ]
 }
