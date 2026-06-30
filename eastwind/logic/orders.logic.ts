@@ -1,4 +1,5 @@
-import { withQuoted, Query } from "@altea/altea/logic/query";
+import { Query } from "@altea/altea/logic/query";
+import { withQuoted } from "@altea/altea/entities/decorators";
 import { table } from "@altea/altea/logic/table";
 import { Order, OrderLine, Product } from "../entities/orders";
 
