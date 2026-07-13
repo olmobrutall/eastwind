@@ -7,7 +7,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Debug altea-test (current file)",
+            "name": "altea-test (current file)",
             "preLaunchTask": "build altea-test (tspc -b)",
             "cwd": "${workspaceFolder}/altea/altea-test",
             "env": {
@@ -38,7 +38,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Debug all altea-test",
+            "name": "altea-test (all files)",
             "preLaunchTask": "build altea-test (tspc -b)",
             "cwd": "${workspaceFolder}/altea/altea-test",
             "runtimeArgs": [
@@ -65,7 +65,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Generate altea-test DB",
+            "name": "altea-test (generate DB)",
             "preLaunchTask": "build altea-test (tspc -b)",
             "cwd": "${workspaceFolder}/altea/altea-test",
             "runtimeArgs": [
@@ -91,7 +91,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Debug Transformer Test",
+            "name": "quote-transformer-test (Debug)",
             "preLaunchTask": "tsc: build - quote-transformer-test",
             "program": "${workspaceFolder}/quote-transformer-test/dist/initTransformer.js",
             "cwd": "${workspaceFolder}/quote-transformer-test/",
@@ -103,7 +103,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Debug Jest - quote-transformer-test",
+            "name": "quote-transformer-test (Debug Jest)",
             "preLaunchTask": "tsc: build - quote-transformer-test",
             "program": "${workspaceFolder}/quote-transformer-test/node_modules/jest/bin/jest.js",
             "args": [
@@ -119,7 +119,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Debug eastwind server (logic/main.ts)",
+            "name": "eastwind server (logic/main.ts)",
             "preLaunchTask": "build eastwind server bundle",
             "program": "${workspaceFolder}/eastwind/dist/server-bundle/main.js",
             "cwd": "${workspaceFolder}/eastwind/",
