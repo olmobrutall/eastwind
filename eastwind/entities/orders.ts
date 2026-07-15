@@ -2,7 +2,7 @@ import { reflect } from "@altea/altea/entities/reflection";
 import { include } from "@altea/altea/entities/decorators";
 import { Entity } from "@altea/altea/entities/entity";
 import { Lite } from "@altea/altea/entities/lite";
-import { IQuery } from "@altea/altea/entities/iquery";
+import type { IQuery } from "@altea/altea/entities/iquery";
 
 // @reflect auto-injects @field on every (non-ignored) property — no need to
 // annotate each one. Single-entity navigations are plain Lite<T> references and
