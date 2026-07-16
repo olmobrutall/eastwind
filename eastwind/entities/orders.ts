@@ -1,5 +1,4 @@
 import { reflect } from "@altea/altea/entities/reflection";
-import { include } from "@altea/altea/entities/decorators";
 import { Entity } from "@altea/altea/entities/entity";
 import { Lite } from "@altea/altea/entities/lite";
 import type { IQuery } from "@altea/altea/entities/iquery";
@@ -15,15 +14,14 @@ export class Order extends Entity {
     amount: number;
     creationDate: Date;
 }
+
 export interface Order {
     lines(): IQuery<OrderLine>;
 }
 
 @reflect
 export class OrderLine extends Entity {
-    @include(() => Order)
     order: Lite<Order>;
-    @include(() => Product)
     product: Lite<Product>;
     quantity: number;
     unitPrice: number;
