@@ -1,15 +1,24 @@
 import { table } from "@altea/altea/logic/table";
-import { Order, OrderState, Product } from "../entities/orders";
-import "./orders.logic"; // registers Product.lines() + the OrderGraph
+import { SchemaBuilder } from "@altea/altea/logic/schema";
+import { OrderEntity, OrderState, ProductEntity } from "../entities/orders";
+import { OrdersLogic } from "./ordersLogic"; // registers ProductEntity.lines() + the OrderGraph + queries
+import { CustomersLogic } from "./customersLogic"; // Person/Company + the manual union Customer query
 
 console.log("Hi from eastwind server");
 
-// A plain state filter (translatable) and a cross-entity nav via Product.lines().
-var newOrders = table(Order)
+// Build the schema and register each module's queries/expressions (Southwind's *Logic.Start pattern).
+// Customers first: it includes the concrete Person/Company tables that OrderEntity.customer targets.
+const sb = new SchemaBuilder();
+CustomersLogic.start(sb);
+OrdersLogic.start(sb);
+sb.complete();
+
+// A plain state filter (translatable) and a cross-entity nav via ProductEntity.lines().
+var newOrders = table(OrderEntity)
     .filter(o => o.state == OrderState.New)
     .toArray();
 
-var richProducts = table(Product)
+var richProducts = table(ProductEntity)
     .filter(p => p.lines().some(l => l.unitPrice > 100).$v)
     .toArray();
 
