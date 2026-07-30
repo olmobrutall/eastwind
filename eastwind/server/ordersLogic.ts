@@ -1,41 +1,22 @@
 import "@altea/altea/server"; // installs Entity.save()/delete() (used by the OrderGraph)
-import "@altea/altea/server/dynamicQuery/fluentIncludeQuery"; // FluentInclude.withQuery / withExpressionTo
-import { Query } from "@altea/altea/server/query";
-import { withQuoted } from "@altea/altea/entities/decorators";
-import { table } from "@altea/altea/server/table";
+import "@altea/altea/server/dynamicQuery/fluentIncludeQuery"; // FluentInclude.withQuery
 import { graph } from "@altea/altea/server/graphBuilder";
 import { SchemaBuilder } from "@altea/altea/server/schema";
 import { Lite } from "@altea/altea/entities/lite";
 import { Temporal, toInt } from "@altea/altea/entities/basics";
 import { retrieveFromListOfLite } from "@altea/altea/server/Database";
 import type { PrimaryKey } from "@altea/altea/entities/entity";
-import {
-    OrderEntity, OrderLineEntity, OrderState, OrderOperation,
-    EmployeeEntity, ProductEntity,
-} from "../entities/orders";
+import { OrderEntity, OrderLineEntity, OrderState, OrderOperation } from "../entities/orders";
+import { EmployeeEntity } from "../entities/employees";
+import { ProductEntity } from "../entities/products";
 import type { CustomerEntity } from "../entities/customers";
 
-// ---- Query navigation (declared in entities/orders.ts, implemented here) ----------
-ProductEntity.prototype.lines = withQuoted(function (this: ProductEntity): Query<OrderLineEntity> {
-    return table(OrderLineEntity).filter(ol => ol.product.id == this.id);
-});
-
-// ---- OrdersLogic.Start — port of Southwind's OrdersLogic.Start (schema includes + queries) --------
-// Registers each entity's default WithQuery projection and the Product→OrderLines expression, then
-// wires the OrderGraph. OrderLineEntity is an owned part entity, pulled in transitively via OrderEntity.details.
+// ---- OrdersLogic.Start — port of Southwind's OrdersLogic.Start --------
+// Registers OrderEntity's default WithQuery and wires the OrderGraph. OrderLineEntity is an owned
+// part entity, pulled in transitively via OrderEntity.details. Employee/Product/Shipper/Customer are
+// included by their own *Logic modules.
 export namespace OrdersLogic {
     export function start(sb: SchemaBuilder): void {
-        // altea's WithQuery is parameterless — the query is `table(T)`, columns are navigated as
-        // rootless tokens; default display columns are a client concern. Person/Company (the concrete
-        // CustomerEntity types) are included by CustomersLogic.
-        sb.include(EmployeeEntity).withQuery();
-
-        sb.include(ProductEntity)
-            // Southwind exposes ProductEntity's order lines; altea registers ProductEntity.lines() as a
-            // queryable expression token (`ProductEntity.lines` → the OrderLines whose product is this one).
-            .withExpressionTo(p => p.lines())
-            .withQuery();
-
         sb.include(OrderEntity).withQuery();
     }
 }

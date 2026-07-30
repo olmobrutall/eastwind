@@ -11,6 +11,7 @@
     { "path": "altea/altea-test/logic" },
     { "path": "eastwind/entities" },
     { "path": "eastwind/server" },
-    { "path": "eastwind/client" }
+    { "path": "eastwind/client" },
+    { "path": "eastwind/terminal" }
   ]
 }

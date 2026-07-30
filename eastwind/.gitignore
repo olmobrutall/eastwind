@@ -1,0 +1,4 @@
+# Local-only DB credentials — never commit
+.env
+.env.*
+!.env.example

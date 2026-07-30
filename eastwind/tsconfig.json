@@ -3,6 +3,7 @@
   "references": [
     { "path": "entities" },
     { "path": "server" },
-    { "path": "client" }
+    { "path": "client" },
+    { "path": "terminal" }
   ]
 }

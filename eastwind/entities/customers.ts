@@ -1,7 +1,7 @@
 import { reflect } from "@altea/altea/entities/reflection";
 import { Entity, EmbeddedEntity, ModelEntity } from "@altea/altea/entities/entity";
 import { Lite } from "@altea/altea/entities/lite";
-import { entity, column, quoted, implementedBy } from "@altea/altea/entities/decorators";
+import { entity, quoted, implementedBy } from "@altea/altea/entities/decorators";
 import { Temporal } from "@altea/altea/entities/basics";
 
 // Port of Southwind's Customers domain (Southwind/Customers/*.cs). CustomerEntity is an ABSTRACT base
@@ -13,10 +13,15 @@ export class AddressEmbedded extends EmbeddedEntity {
     address: string;
     city: string;
     region: string | null;
+    postalCode: string | null;
+    country: string;
 
     // Signum's AddressEmbedded.Clone() — a fresh copy (an order snapshots the customer's address).
     clone(): AddressEmbedded {
-        return AddressEmbedded.create({ address: this.address, city: this.city, region: this.region });
+        return AddressEmbedded.create({
+            address: this.address, city: this.city, region: this.region,
+            postalCode: this.postalCode, country: this.country,
+        });
     }
 }
 
@@ -26,7 +31,6 @@ export class AddressEmbedded extends EmbeddedEntity {
 export abstract class CustomerEntity extends Entity {
     address: AddressEmbedded;
     phone: string;
-    @column({ nullable: true })
     fax: string | null;
 }
 
@@ -34,9 +38,7 @@ export abstract class CustomerEntity extends Entity {
 export class PersonEntity extends CustomerEntity {
     firstName: string;
     lastName: string;
-    @column({ nullable: true })
     title: string | null;
-    @column({ nullable: true })
     dateOfBirth: Temporal.PlainDate | null;
 
     @quoted toString(): string { return `${this.firstName} ${this.lastName}`; }

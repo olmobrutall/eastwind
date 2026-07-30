@@ -25,7 +25,9 @@
     "dev:types": "tspc -b --watch --preserveWatchOutput",
     "dev:client": "vite --config vite.client.config.ts",
     "dev:server": "vite build --watch --config vite.server.config.ts",
-    "dev": "concurrently -n types,server,client -c blue,green,magenta \"pnpm run dev:types\" \"pnpm run dev:server\" \"pnpm run dev:client\""
+    "dev": "concurrently -n types,server,client -c blue,green,magenta \"pnpm run dev:types\" \"pnpm run dev:server\" \"pnpm run dev:client\"",
+    "terminal:postgres": "tspc -b && node --enable-source-maps --import ./register.mjs --env-file=.env.postgres dist/terminal/terminal.js",
+    "terminal:sqlserver": "tspc -b && node --enable-source-maps --import ./register.mjs --env-file=.env.sqlserver dist/terminal/terminal.js"
   },
   "keywords": [],
   "author": "Olmo del Corral",

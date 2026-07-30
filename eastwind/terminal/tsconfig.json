@@ -1,0 +1,14 @@
+{
+  "extends": "../../altea/altea/tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../dist/terminal",
+    "types": ["node"]
+  },
+  "include": ["**/*"],
+  "references": [
+    { "path": "../entities" },
+    { "path": "../server" },
+    { "path": "../../altea/altea/server" }
+  ]
+}
