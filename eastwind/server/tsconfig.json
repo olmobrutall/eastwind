@@ -2,13 +2,13 @@
   "extends": "../../altea/altea/tsconfig.base.json",
   "compilerOptions": {
     "rootDir": ".",
-    "outDir": "../dist/logic",
+    "outDir": "../dist/server",
     "types": ["node"]
   },
   "include": ["**/*"],
   "references": [
     { "path": "../entities" },
-    { "path": "../../altea/altea-auth/logic" },
-    { "path": "../../altea/altea/logic" }
+    { "path": "../../altea/altea-auth/server" },
+    { "path": "../../altea/altea/server" }
   ]
 }

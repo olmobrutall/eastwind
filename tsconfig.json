@@ -2,15 +2,15 @@
   "files": [],
   "references": [
     { "path": "altea/altea/entities" },
-    { "path": "altea/altea/logic" },
-    { "path": "altea/altea/react" },
+    { "path": "altea/altea/server" },
+    { "path": "altea/altea/client" },
     { "path": "altea/altea-auth/entities" },
-    { "path": "altea/altea-auth/logic" },
-    { "path": "altea/altea-auth/react" },
+    { "path": "altea/altea-auth/server" },
+    { "path": "altea/altea-auth/client" },
     { "path": "altea/altea-test/entities" },
     { "path": "altea/altea-test/logic" },
     { "path": "eastwind/entities" },
-    { "path": "eastwind/logic" },
-    { "path": "eastwind/react" }
+    { "path": "eastwind/server" },
+    { "path": "eastwind/client" }
   ]
 }

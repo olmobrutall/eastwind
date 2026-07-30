@@ -1,11 +1,11 @@
-import "@altea/altea/logic"; // installs Entity.save()/delete()
-import "@altea/altea/logic/dynamicQuery/fluentIncludeQuery"; // FluentInclude.withQuery
-import { SchemaBuilder } from "@altea/altea/logic/schema";
-import { table } from "@altea/altea/logic/table";
-import type { Query } from "@altea/altea/logic/query";
-import { QueryLogic } from "@altea/altea/logic/dynamicQuery/queryLogic";
-import { ManualDynamicQueryCore } from "@altea/altea/logic/dynamicQuery/dynamicQueryCore";
-import "@altea/altea/logic/dynamicQuery/dQueryable"; // augments Query with .toDQueryable()
+import "@altea/altea/server"; // installs Entity.save()/delete()
+import "@altea/altea/server/dynamicQuery/fluentIncludeQuery"; // FluentInclude.withQuery
+import { SchemaBuilder } from "@altea/altea/server/schema";
+import { table } from "@altea/altea/server/table";
+import type { Query } from "@altea/altea/server/query";
+import { QueryLogic } from "@altea/altea/server/dynamicQuery/queryLogic";
+import { ManualDynamicQueryCore } from "@altea/altea/server/dynamicQuery/dynamicQueryCore";
+import "@altea/altea/server/dynamicQuery/dQueryable"; // augments Query with .toDQueryable()
 import { PersonEntity, CompanyEntity, CustomerRowModel } from "../entities/customers";
 
 // Port of Southwind's CustomersLogic.Start (Southwind/Customers/CustomersLogic.cs). The highlight is

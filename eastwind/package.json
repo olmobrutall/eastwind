@@ -8,13 +8,13 @@
       "types": "./dist/entities/*.d.ts",
       "default": "./dist/entities/*.js"
     },
-    "./logic/*": {
-      "types": "./dist/logic/*.d.ts",
-      "default": "./dist/logic/*.js"
+    "./server/*": {
+      "types": "./dist/server/*.d.ts",
+      "default": "./dist/server/*.js"
     },
-    "./react/*": {
-      "types": "./dist/react/*.d.ts",
-      "default": "./dist/react/*.js"
+    "./client/*": {
+      "types": "./dist/client/*.d.ts",
+      "default": "./dist/client/*.js"
     }
   },
   "scripts": {

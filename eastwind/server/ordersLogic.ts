@@ -1,13 +1,13 @@
-import "@altea/altea/logic"; // installs Entity.save()/delete() (used by the OrderGraph)
-import "@altea/altea/logic/dynamicQuery/fluentIncludeQuery"; // FluentInclude.withQuery / withExpressionTo
-import { Query } from "@altea/altea/logic/query";
+import "@altea/altea/server"; // installs Entity.save()/delete() (used by the OrderGraph)
+import "@altea/altea/server/dynamicQuery/fluentIncludeQuery"; // FluentInclude.withQuery / withExpressionTo
+import { Query } from "@altea/altea/server/query";
 import { withQuoted } from "@altea/altea/entities/decorators";
-import { table } from "@altea/altea/logic/table";
-import { graph } from "@altea/altea/logic/graphBuilder";
-import { SchemaBuilder } from "@altea/altea/logic/schema";
+import { table } from "@altea/altea/server/table";
+import { graph } from "@altea/altea/server/graphBuilder";
+import { SchemaBuilder } from "@altea/altea/server/schema";
 import { Lite } from "@altea/altea/entities/lite";
 import { Temporal, toInt } from "@altea/altea/entities/basics";
-import { retrieveFromListOfLite } from "@altea/altea/logic/Database";
+import { retrieveFromListOfLite } from "@altea/altea/server/Database";
 import type { PrimaryKey } from "@altea/altea/entities/entity";
 import {
     OrderEntity, OrderLineEntity, OrderState, OrderOperation,

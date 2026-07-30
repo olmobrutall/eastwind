@@ -1,5 +1,5 @@
-import { table } from "@altea/altea/logic/table";
-import { SchemaBuilder } from "@altea/altea/logic/schema";
+import { table } from "@altea/altea/server/table";
+import { SchemaBuilder } from "@altea/altea/server/schema";
 import { OrderEntity, OrderState, ProductEntity } from "../entities/orders";
 import { OrdersLogic } from "./ordersLogic"; // registers ProductEntity.lines() + the OrderGraph + queries
 import { CustomersLogic } from "./customersLogic"; // Person/Company + the manual union Customer query
