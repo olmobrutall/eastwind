@@ -1,7 +1,7 @@
 import "@altea/altea/server/context.node"; // register server context storage first
 import { Connector } from "@altea/altea/server/connection/connector";
 import { SchemaBuilder } from "@altea/altea/server/schema";
-import { loadRegisteredTranslations } from "@altea/altea/server/translations";
+import { loadAppTranslations } from "@altea/altea/server/translations";
 import { EmployeesLogic } from "./employeesLogic";
 import { ProductsLogic } from "./productsLogic";
 import { ShippersLogic } from "./shippersLogic";
@@ -31,8 +31,9 @@ export namespace Starter {
 
         sb.complete();
 
-        // Merge every registered module's committed translations/ folder (framework → app order).
-        loadRegisteredTranslations();
+        // Load translations from the app's single translations directory (TRANSLATIONS_ROOT/env or
+        // <cwd>/translations). Every module's `<Module>.<culture>.xml` lives there (Signum's model).
+        loadAppTranslations();
 
         return { sb, connector };
     }
