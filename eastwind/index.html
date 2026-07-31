@@ -12,6 +12,8 @@
       window.__baseName = "";
       window.__serverName = "";
     </script>
-    <script type="module" src="/client/main.tsx"></script>
+    <!-- The transformer-emitted client (tspc -b [--watch]); Vite bundles the dist output, it does NOT
+         run the quote-transformer, so quoted lambdas (token(a=>…)) must come pre-transformed from dist. -->
+    <script type="module" src="/dist/client/main.js"></script>
   </body>
 </html>
