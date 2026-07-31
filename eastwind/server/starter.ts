@@ -1,6 +1,7 @@
 import "@altea/altea/server/context.node"; // register server context storage first
 import { Connector } from "@altea/altea/server/connection/connector";
 import { SchemaBuilder } from "@altea/altea/server/schema";
+import { loadRegisteredTranslations } from "@altea/altea/server/translations";
 import { EmployeesLogic } from "./employeesLogic";
 import { ProductsLogic } from "./productsLogic";
 import { ShippersLogic } from "./shippersLogic";
@@ -29,6 +30,9 @@ export namespace Starter {
         OrdersLogic.start(sb);
 
         sb.complete();
+
+        // Merge every registered module's committed translations/ folder (framework → app order).
+        loadRegisteredTranslations();
 
         return { sb, connector };
     }
