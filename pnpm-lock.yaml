@@ -152,6 +152,9 @@ importers:
       '@altea/altea-auth':
         specifier: workspace:*
         version: link:../altea/altea-auth
+      bootstrap:
+        specifier: ^5.3.8
+        version: 5.3.8(@popperjs/core@2.11.8)
       quote-transformer:
         specifier: workspace:*
         version: link:../altea/quote-transformer
@@ -161,6 +164,9 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.2.7(react@19.2.7)
+      react-router:
+        specifier: ^8.3.0
+        version: 8.3.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
     devDependencies:
       '@types/react':
         specifier: ^19.0.0

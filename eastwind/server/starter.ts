@@ -2,6 +2,7 @@ import "@altea/altea/server/context.node"; // register server context storage fi
 import { Connector } from "@altea/altea/server/connection/connector";
 import { SchemaBuilder } from "@altea/altea/server/schema";
 import { loadAppTranslations } from "@altea/altea/server/translations";
+import { EntityOverrides } from "eastwind/entities/entityOverrides";
 import { EmployeesLogic } from "./employeesLogic";
 import { ProductsLogic } from "./productsLogic";
 import { ShippersLogic } from "./shippersLogic";
@@ -14,6 +15,10 @@ import { OrdersLogic } from "./ordersLogic";
 // `isPostgres` branch: "postgres…" → PostgreSQL, otherwise SQL Server.
 export namespace Starter {
     export async function start(connectionString: string): Promise<{ sb: SchemaBuilder; connector: Connector }> {
+        // Shared entity-model declarations (mixins / lite models / implementedBy overrides), applied
+        // identically on client and server. Runs before schema build so overrides take effect.
+        EntityOverrides.start();
+
         var sb = new SchemaBuilder();
 
         var connector = connectionString.startsWith("postgres")

@@ -7,6 +7,11 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Globals Signum injects via Index.cshtml; the ajax layer (toAbsoluteUrl) needs __baseName. -->
+    <script>
+      window.__baseName = "";
+      window.__serverName = "";
+    </script>
     <script type="module" src="/client/main.tsx"></script>
   </body>
 </html>
