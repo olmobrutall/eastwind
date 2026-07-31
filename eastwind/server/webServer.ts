@@ -2,6 +2,7 @@ import "@altea/altea/server/context.node"; // register server context storage fi
 import { createWebServer } from "@altea/altea/server/webApi";
 import { SignumServer } from "@altea/altea/server/signumServer";
 import { Connector, ConsoleSqlLogger } from "@altea/altea/server/connection/connector";
+import { loadTranslationsFromDir } from "@altea/altea/server/translations";
 import { Starter } from "./starter";
 
 // eastwind web host (Southwind.Server/Program.cs). Builds the schema + binds the connector (Starter),
@@ -16,6 +17,14 @@ async function main(): Promise<void> {
     if (process.env["SQL_LOG"]) Connector.currentLogger = new ConsoleSqlLogger();
     const label = connector.isPostgres ? "PostgreSQL" : "SQL Server";
     console.log(`[eastwind] engine started (${label}: ${Connector.redactConnectionString(connStr)})`);
+
+    // Load Signum-format translation XMLs (`<name>.<culture>.xml`) so the reflection metadata endpoint
+    // can ship them per UI culture. Optional — set TRANSLATIONS_DIR to a folder of translation files.
+    const translationsDir = process.env["TRANSLATIONS_DIR"];
+    if (translationsDir != null && translationsDir !== "") {
+        loadTranslationsFromDir(translationsDir);
+        console.log(`[eastwind] translations loaded from ${translationsDir}`);
+    }
 
     const ws = createWebServer();
     SignumServer.start(ws);
