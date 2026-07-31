@@ -18,6 +18,10 @@ import type { CustomerEntity } from "../entities/customers";
 export namespace OrdersLogic {
     export function start(sb: SchemaBuilder): void {
         sb.include(OrderEntity).withQuery();
+        // Register the OrderGraph's operations (Save/Ship/Cancel/Delete/Create…) with OperationLogic
+        // (Signum's `new OrderGraph().Register()`). Without this the /api/operation/* endpoints and
+        // the entity pack's canExecute see no operations.
+        OrderGraph.register();
     }
 }
 
