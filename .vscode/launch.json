@@ -135,6 +135,58 @@
             "skipFiles": [
                 "<node_internals>/**"
             ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "eastwind API server — PostgreSQL",
+            "preLaunchTask": "build types (tspc -b)",
+            "cwd": "${workspaceFolder}/eastwind",
+            "runtimeArgs": [
+                "--enable-source-maps",
+                "--import",
+                "./register.mjs",
+                "--env-file=.env.postgres"
+            ],
+            "program": "${workspaceFolder}/eastwind/dist/server/webServer.js",
+            "outFiles": [
+                "${workspaceFolder}/eastwind/dist/**/*.js"
+            ],
+            "sourceMaps": true,
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/**",
+                "!**/node_modules/**"
+            ],
+            "console": "integratedTerminal",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "eastwind API server — SQL Server",
+            "preLaunchTask": "build types (tspc -b)",
+            "cwd": "${workspaceFolder}/eastwind",
+            "runtimeArgs": [
+                "--enable-source-maps",
+                "--import",
+                "./register.mjs",
+                "--env-file=.env.sqlserver"
+            ],
+            "program": "${workspaceFolder}/eastwind/dist/server/webServer.js",
+            "outFiles": [
+                "${workspaceFolder}/eastwind/dist/**/*.js"
+            ],
+            "sourceMaps": true,
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/**",
+                "!**/node_modules/**"
+            ],
+            "console": "integratedTerminal",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
         }
     ],
     "inputs": [

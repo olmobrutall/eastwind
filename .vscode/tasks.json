@@ -68,6 +68,26 @@
 			"options": { "cwd": "${workspaceFolder}/altea/altea-test" },
 			"problemMatcher": ["$tsc"],
 			"group": "build"
+		},
+		{
+			"label": "eastwind full stack — PostgreSQL",
+			"detail": "Build types, then run the API server (Postgres) + vite client + tspc watch together (pnpm stack:postgres). Open http://localhost:5173.",
+			"type": "shell",
+			"command": "pnpm --filter eastwind stack:postgres",
+			"options": { "cwd": "${workspaceFolder}" },
+			"problemMatcher": [],
+			"isBackground": true,
+			"group": "build"
+		},
+		{
+			"label": "eastwind full stack — SQL Server",
+			"detail": "Build types, then run the API server (SQL Server) + vite client + tspc watch together (pnpm stack:sqlserver). Open http://localhost:5173.",
+			"type": "shell",
+			"command": "pnpm --filter eastwind stack:sqlserver",
+			"options": { "cwd": "${workspaceFolder}" },
+			"problemMatcher": [],
+			"isBackground": true,
+			"group": "build"
 		}
 	]
 }
