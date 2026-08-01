@@ -1,16 +1,22 @@
 {
   "files.exclude": {
-    // "**/dist": true,
+    "**/dist": true,
     "**/node_modules": true
   },
   "search.exclude": {
-    // "**/dist": true,
+    "**/dist": true,
     "**/node_modules": true
   },
-  "workbench.iconTheme": "vscode-icons",
-  "vsicons.associations.folders": [
-    { "icon": "client", "extensions": ["client"], "format": "svg" },
-    { "icon": "server", "extensions": ["server"], "format": "svg" },
-    { "icon": "db", "extensions": ["entities"], "format": "svg" }
-  ]
+  "workbench.iconTheme": "symbols",
+  "symbols.folders.associations": {
+    "client": "folder-react",
+    "server": "folder-services",
+    "entities": "folder-green",
+    "terminal": "folder-app",
+    "dist": "folder"
+  },
+  "symbols.files.associations": {
+    ".env.postgres": "gear",
+    ".env.sqlserver": "gear"
+  }
 }
