@@ -11,7 +11,7 @@
   "symbols.folders.associations": {
     "terminal": "folder-app",
     "client": "folder-blue",
-    "entities": "folder-green",
+    "data": "folder-green",
     "server": "folder-orange"
   },
   "symbols.files.associations": {
