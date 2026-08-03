@@ -1,0 +1,19 @@
+{
+  // TERMINAL layer — the CLI host + Northwind data loaders. Unlike the domains (which co-locate by
+  // filename suffix), the terminal is a plain directory-based project: everything under terminal/ keeps
+  // its own name (terminal.ts, customerLoader.ts, …). node-only; references DATA and SERVER (the loaders
+  // use server APIs + the Starter). Kept separate so the web-host bundle never pulls loader code.
+  "extends": "../altea/altea/tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/.tsbuildinfo.terminal",
+    "types": ["node"]
+  },
+  "include": ["terminal/**/*.ts"],
+  "references": [
+    { "path": "./tsconfig.data.json" },
+    { "path": "./tsconfig.server.json" },
+    { "path": "../altea/altea/tsconfig.server.json" }
+  ]
+}

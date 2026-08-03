@@ -1,9 +1,13 @@
 {
+  // Solution file — builds all four suffix-driven layers (`tspc -b`). Layer membership is by filename
+  // suffix (*.data / *.server / *.client / *.terminal), not by directory, so a domain lives co-located
+  // in one folder (customers/Customer.{data,server,client,terminal}.ts). All four emit into a single
+  // `dist/` tree, which is what lets co-located siblings import each other with plain relative paths.
   "files": [],
   "references": [
-    { "path": "entities" },
-    { "path": "server" },
-    { "path": "client" },
-    { "path": "terminal" }
+    { "path": "./tsconfig.data.json" },
+    { "path": "./tsconfig.server.json" },
+    { "path": "./tsconfig.client.json" },
+    { "path": "./tsconfig.terminal.json" }
   ]
 }

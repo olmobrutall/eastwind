@@ -9,14 +9,16 @@
   },
   "workbench.iconTheme": "symbols",
   "symbols.folders.associations": {
-    "client": "folder-react",
-    "server": "folder-services",
-    "entities": "folder-green",
     "terminal": "folder-app",
-    "dist": "folder"
+    "client": "folder-blue",
+    "entities": "folder-green",
+    "server": "folder-orange"
   },
   "symbols.files.associations": {
+    "*.data.ts": "ts-types",
+    "*.server.ts": "ts-test",
     ".env.postgres": "gear",
-    ".env.sqlserver": "gear"
+    ".env.sqlserver": "gear",
+    "tsconfig.json": "brackets-yellow",
   }
 }

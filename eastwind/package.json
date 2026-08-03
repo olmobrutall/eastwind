@@ -3,20 +3,6 @@
   "version": "0.0.1",
   "description": "",
   "type": "module",
-  "exports": {
-    "./entities/*": {
-      "types": "./dist/entities/*.d.ts",
-      "default": "./dist/entities/*.js"
-    },
-    "./server/*": {
-      "types": "./dist/server/*.d.ts",
-      "default": "./dist/server/*.js"
-    },
-    "./client/*": {
-      "types": "./dist/client/*.d.ts",
-      "default": "./dist/client/*.js"
-    }
-  },
   "scripts": {
     "build:types": "tspc -b",
     "build:client": "vite build --config vite.client.config.ts",
@@ -28,8 +14,8 @@
     "dev": "concurrently -n types,server,client -c blue,green,magenta \"pnpm run dev:types\" \"pnpm run dev:server\" \"pnpm run dev:client\"",
     "terminal:postgres": "tspc -b && node --enable-source-maps --import ./register.mjs --env-file=.env.postgres dist/terminal/terminal.js",
     "terminal:sqlserver": "tspc -b && node --enable-source-maps --import ./register.mjs --env-file=.env.sqlserver dist/terminal/terminal.js",
-    "server:postgres": "node --enable-source-maps --import ./register.mjs --env-file=.env.postgres dist/server/webServer.js",
-    "server:sqlserver": "node --enable-source-maps --import ./register.mjs --env-file=.env.sqlserver dist/server/webServer.js",
+    "server:postgres": "node --enable-source-maps --import ./register.mjs --env-file=.env.postgres dist/webServer.server.js",
+    "server:sqlserver": "node --enable-source-maps --import ./register.mjs --env-file=.env.sqlserver dist/webServer.server.js",
     "stack:postgres": "pnpm run build:types && concurrently -k -n types,api,client -c blue,green,magenta \"pnpm run dev:types\" \"pnpm run server:postgres\" \"pnpm run dev:client\"",
     "stack:sqlserver": "pnpm run build:types && concurrently -k -n types,api,client -c blue,green,magenta \"pnpm run dev:types\" \"pnpm run server:sqlserver\" \"pnpm run dev:client\""
   },
@@ -39,11 +25,16 @@
   "dependencies": {
     "@altea/altea": "workspace:*",
     "@altea/altea-auth": "workspace:*",
+    "@fortawesome/fontawesome-svg-core": "^7.3.1",
+    "@fortawesome/free-regular-svg-icons": "^7.3.1",
+    "@fortawesome/free-solid-svg-icons": "^7.3.1",
+    "@fortawesome/react-fontawesome": "^3.5.0",
     "bootstrap": "^5.3.8",
     "quote-transformer": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-router": "^8.3.0"
+    "react-router": "^8.3.0",
+    "react-widgets-up": "^6.0.14"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

@@ -1,0 +1,20 @@
+{
+  // DATA layer — every *.data.ts(x) file (isomorphic model, shared by client + server).
+  // `types: []` means data code physically cannot touch node (`process`) or DOM (`document`) globals —
+  // the isomorphic contract, enforced by the compiler. All layers share one `dist/` outDir so co-located
+  // siblings (`./Customer.server` importing `./Customer.data`) resolve at runtime.
+  "extends": "../altea/altea/tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/.tsbuildinfo.data",
+    "types": []
+  },
+  // Both forms are accepted: a co-located suffix file (customers/Customer.data.ts) OR a data/ directory.
+  "include": ["data/**/*", "**/*.data.ts"],
+  "exclude": ["client/**", "server/**", "terminal/**"],
+  "references": [
+    { "path": "../altea/altea/tsconfig.data.json" },
+    { "path": "../altea/altea-auth/tsconfig.data.json" }
+  ]
+}

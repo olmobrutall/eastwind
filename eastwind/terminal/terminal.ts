@@ -3,18 +3,18 @@ import { Connector } from "@altea/altea/server/connection/connector";
 import type { SchemaBuilder } from "@altea/altea/server/schema";
 import { Replacements } from "@altea/altea/server/sync/synchronizer";
 import { table } from "@altea/altea/server/table";
-import { Starter } from "../server/starter";
+import { Starter } from "../starter.server";
 import { ConsoleSwitch, executeLoadProcess } from "./consoleSwitch";
 import { EmployeeLoader } from "./employeeLoader";
 import { ProductLoader } from "./productLoader";
 import { CustomerLoader } from "./customerLoader";
 import { OrderLoader } from "./orderLoader";
 import { Northwind } from "./northwindSchema";
-import { RegionEntity, TerritoryEntity, EmployeeEntity } from "../entities/employees";
-import { SupplierEntity, CategoryEntity, ProductEntity } from "../entities/products";
-import { ShipperEntity } from "../entities/shippers";
-import { OrderEntity, OrderLineEntity } from "../entities/orders";
-import { PersonEntity, CompanyEntity } from "../entities/customers";
+import { RegionEntity, TerritoryEntity, EmployeeEntity } from "../employees/Employee.data";
+import { SupplierEntity, CategoryEntity, ProductEntity } from "../products/Product.data";
+import { ShipperEntity } from "../shippers/Shipper.data";
+import { OrderEntity, OrderLineEntity } from "../orders/Order.data";
+import { PersonEntity, CompanyEntity } from "../customers/Customer.data";
 
 // Port of Southwind.Terminal (old/Southwind.Terminal/Program.cs): a console host that boots the engine
 // (Starter.start) then dispatches ONE command (Signum takes args.First() only) or, with no args, an

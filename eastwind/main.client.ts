@@ -1,0 +1,11 @@
+import "bootstrap/dist/css/bootstrap.min.css";
+// react-widgets-up widget styles (DatePicker/DropdownList/Combobox/Multiselect used across the Lines
+// and SearchControl, e.g. QueryTokenBuilder). Signum imports the SCSS in MainPublic; sass isn't wired
+// here, so we use the package's prebuilt CSS (CSS custom properties, --rw-*). After bootstrap so the
+// .rw-* rules aren't overridden. Without this the pickers render unstyled.
+import "react-widgets-up/styles.css";
+// Framework app-shell styles (Southwind's MainPublic: `import "@framework/Frames/Frames.css"`) — the
+// `.sf-page-container` tinted background so content cards + their shadows read, modal sizing, etc. Loaded
+// app-wide (not just on the entity-frame routes) so every page, including the search page, gets it.
+import "@altea/altea/client/Frames/Frames.css";
+import "./MainPublic.client"; // self-boots (Southwind's main.tsx -> MainPublic)

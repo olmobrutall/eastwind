@@ -27,7 +27,7 @@ function chainEmittedSourcemaps(): Plugin {
 export default defineConfig({
     plugins: [chainEmittedSourcemaps()],
     build: {
-        ssr: "dist/server/main.js",
+        ssr: "dist/webServer.server.js",
         outDir: "dist/server-bundle",
         emptyOutDir: true,
         target: "node22",

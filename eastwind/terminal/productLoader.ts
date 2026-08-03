@@ -2,9 +2,9 @@ import "@altea/altea/server";
 import { Connector } from "@altea/altea/server/connection/connector";
 import { view } from "@altea/altea/server/table";
 import { BulkInserter } from "@altea/altea/server/bulkInserter";
-import { toInt } from "@altea/altea/entities/basics";
-import { SupplierEntity, CategoryEntity, ProductEntity, ProductEntity_AdditionalInformation } from "../entities/products";
-import { AddressEmbedded } from "../entities/customers";
+import { toInt } from "@altea/altea/data/basics";
+import { SupplierEntity, CategoryEntity, ProductEntity, ProductEntity_AdditionalInformation } from "../products/Product.data";
+import { AddressEmbedded } from "../customers/Customer.data";
 import { Northwind, NwSupplier, NwCategory, NwProduct } from "./northwindSchema";
 
 // Port of Southwind.Terminal/ProductLoader.cs (SupplierFaxes.csv, Category.Picture and the EAN/diet

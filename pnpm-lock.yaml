@@ -152,6 +152,18 @@ importers:
       '@altea/altea-auth':
         specifier: workspace:*
         version: link:../altea/altea-auth
+      '@fortawesome/fontawesome-svg-core':
+        specifier: ^7.3.1
+        version: 7.3.1
+      '@fortawesome/free-regular-svg-icons':
+        specifier: ^7.3.1
+        version: 7.3.1
+      '@fortawesome/free-solid-svg-icons':
+        specifier: ^7.3.1
+        version: 7.3.1
+      '@fortawesome/react-fontawesome':
+        specifier: ^3.5.0
+        version: 3.5.0(@fortawesome/fontawesome-svg-core@7.3.1)(react@19.2.7)
       bootstrap:
         specifier: ^5.3.8
         version: 5.3.8(@popperjs/core@2.11.8)
@@ -167,6 +179,9 @@ importers:
       react-router:
         specifier: ^8.3.0
         version: 8.3.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react-widgets-up:
+        specifier: ^6.0.14
+        version: 6.0.14(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
     devDependencies:
       '@types/react':
         specifier: ^19.0.0

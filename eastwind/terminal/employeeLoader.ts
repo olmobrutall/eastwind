@@ -2,9 +2,9 @@ import "@altea/altea/server"; // installs save()/toLite()
 import { Connector } from "@altea/altea/server/connection/connector";
 import { view, table } from "@altea/altea/server/table";
 import { BulkInserter } from "@altea/altea/server/bulkInserter";
-import { toInt } from "@altea/altea/entities/basics";
-import { RegionEntity, TerritoryEntity, EmployeeEntity, EmployeeEntity_Territories } from "../entities/employees";
-import { AddressEmbedded } from "../entities/customers";
+import { toInt } from "@altea/altea/data/basics";
+import { RegionEntity, TerritoryEntity, EmployeeEntity, EmployeeEntity_Territories } from "../employees/Employee.data";
+import { AddressEmbedded } from "../customers/Customer.data";
 import { Northwind, NwRegion, NwTerritory, NwEmployee, NwEmployeeTerritory } from "./northwindSchema";
 
 // Port of Southwind.Terminal/EmployeeLoader.cs. Reads Northwind through IView classes under a second

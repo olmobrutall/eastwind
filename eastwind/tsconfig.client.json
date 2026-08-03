@@ -1,0 +1,23 @@
+{
+  // CLIENT layer — *.client.ts (client-side TS logic) plus ANY *.tsx (React components: a .tsx is always
+  // a client file). References DATA only — NOT server — so `import "./X.server"` from a client file is a
+  // build error (the boundary that keeps server code out of the Vite bundle). `styles.d.ts` supplies the
+  // ambient `declare module "*.css"` for the stylesheet side-effect imports in main.client.ts.
+  "extends": "../altea/altea/tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/.tsbuildinfo.client",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": ["react", "react-dom"]
+  },
+  // Both forms accepted: a co-located suffix file (customers/Customer.client.ts) OR a client/ directory.
+  // Plus any *.tsx (React components) anywhere outside the other layer dirs.
+  "include": ["client/**/*", "**/*.client.ts", "**/*.tsx", "styles.d.ts"],
+  "exclude": ["data/**", "server/**", "terminal/**"],
+  "references": [
+    { "path": "./tsconfig.data.json" },
+    { "path": "../altea/altea-auth/tsconfig.client.json" },
+    { "path": "../altea/altea/tsconfig.client.json" }
+  ]
+}

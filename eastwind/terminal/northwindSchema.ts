@@ -1,6 +1,6 @@
-import { reflect } from "@altea/altea/entities/reflection";
-import { tableName, viewPrimaryKey } from "@altea/altea/entities/decorators";
-import { Temporal, type int } from "@altea/altea/entities/basics";
+import { reflect } from "@altea/altea/data/reflection";
+import { tableName, viewPrimaryKey } from "@altea/altea/data/decorators";
+import { Temporal, type int } from "@altea/altea/data/basics";
 import { SchemaBuilder } from "@altea/altea/server/schema";
 import { Connector } from "@altea/altea/server/connection/connector";
 import { SqlServerConnector } from "@altea/altea/server/connection/sqlServerConnector";
