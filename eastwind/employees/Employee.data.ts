@@ -1,7 +1,7 @@
 import { reflect, init } from "@altea/altea/data/reflection";
 import { Entity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
-import { entity, quoted, backReference, valueField } from "@altea/altea/data/decorators";
+import { entity, quoted, backReference, valueField, fullTextIndex } from "@altea/altea/data/decorators";
 import { Temporal } from "@altea/altea/data/basics";
 import type { ExecuteSymbol } from "@altea/altea/data/operations";
 import { AddressEmbedded } from "../customers/Customer.data";
@@ -33,6 +33,9 @@ export namespace TerritoryOperation {
 }
 
 @entity("Main", "Master")
+// Full-text index over FirstName + LastName + Notes (Southwind's EmployeesLogic:
+// .WithFullTextIndex(a => new { a.FirstName, a.LastName, a.Notes })).
+@fullTextIndex<EmployeeEntity>(a => [a.firstName, a.lastName, a.notes])
 export class EmployeeEntity extends Entity {
     lastName: string;
     firstName: string;
