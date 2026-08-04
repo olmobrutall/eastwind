@@ -89,6 +89,7 @@ async function load(args: string[]): Promise<void> {
         .add("8", "Load Persons", () => CustomerLoader.loadPersons())
         .add("9", "Load Shippers", () => OrderLoader.loadShippers())
         .add("10", "Load Orders", () => OrderLoader.loadOrders())
+        .add("11", "Load Employee Passages (embeddings)", () => EmployeeLoader.loadEmployeePassages())
         .chooseMultipleWithDescription(args);
 
     if (selected == null || selected.length === 0) return;

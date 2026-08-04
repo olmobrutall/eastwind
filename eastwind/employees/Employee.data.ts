@@ -1,8 +1,9 @@
 import { reflect, init } from "@altea/altea/data/reflection";
 import { Entity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
-import { entity, quoted, backReference, valueField, fullTextIndex } from "@altea/altea/data/decorators";
-import { Temporal } from "@altea/altea/data/basics";
+import { entity, quoted, backReference, valueField, fullTextIndex, vectorIndex, column } from "@altea/altea/data/decorators";
+import { Temporal, type int, toInt } from "@altea/altea/data/basics";
+import { Vector } from "@altea/altea/data/vector";
 import type { ExecuteSymbol } from "@altea/altea/data/operations";
 import { AddressEmbedded } from "../customers/Customer.data";
 
@@ -64,4 +65,20 @@ export class EmployeeEntity_Territories extends Entity {
 
 export namespace EmployeeOperation {
     export const Save: ExecuteSymbol<EmployeeEntity> = init();
+}
+
+// One text chunk of an employee (a title sentence, or a note fragment) plus its embedding vector,
+// for semantic / nearest-neighbour search (Southwind's EmployeePassageEntity). Populated from
+// EmployeeEntity.notes by generatePassages in the loader; the 768-dim embedding is imported from
+// passagesWithEmbeddings.json (mirroring Southwind's EmployeeLoader).
+@entity("System", "Transactional")
+@vectorIndex<EmployeePassageEntity>(a => a.embedding)
+export class EmployeePassageEntity extends Entity {
+    employee: Lite<EmployeeEntity>;
+    isTitle: boolean;
+    chunk: string;
+    // pgvector / SQL Server VECTOR(768) column (Signum's [DbType(Size=768)] Vector? Embedding).
+    @column({ pgDbType: "vector", sqlDbType: "vector", size: 768, nullable: true })
+    embedding: Vector | null;
+    index: int = toInt(0);
 }

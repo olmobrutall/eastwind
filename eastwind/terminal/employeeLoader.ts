@@ -1,9 +1,12 @@
 import "@altea/altea/server"; // installs save()/toLite()
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { Connector } from "@altea/altea/server/connection/connector";
 import { view, table } from "@altea/altea/server/table";
 import { BulkInserter } from "@altea/altea/server/bulkInserter";
 import { toInt } from "@altea/altea/data/basics";
-import { RegionEntity, TerritoryEntity, EmployeeEntity, EmployeeEntity_Territories } from "../employees/Employee.data";
+import { Vector } from "@altea/altea/data/vector";
+import { RegionEntity, TerritoryEntity, EmployeeEntity, EmployeeEntity_Territories, EmployeePassageEntity } from "../employees/Employee.data";
 import { AddressEmbedded } from "../customers/Customer.data";
 import { Northwind, NwRegion, NwTerritory, NwEmployee, NwEmployeeTerritory } from "./northwindSchema";
 
@@ -76,5 +79,61 @@ export namespace EmployeeLoader {
         });
         // Signum's `.BulkInsert(disableIdentity:true)`: preserved ids + the territories MList cascade.
         await BulkInserter.bulkInsert(employees);
+    }
+
+    // Port of Southwind's EmployeeLoader passage step + EmployeesLogic.GeneratePassages: chunk each
+    // employee (a title sentence + their notes split on '\r' / '\n' / '.'), look each chunk's 768-dim
+    // embedding up in passagesWithEmbeddings.json (a { chunkText: float[] } dictionary), and bulk-insert
+    // the EmployeePassageEntity rows with their Vector embedding. Requires the employees to be loaded
+    // first (step 3). If the embeddings file is absent the passages are still inserted, without vectors.
+    export async function loadEmployeePassages(): Promise<void> {
+        const dic = readEmbeddings();
+        const employees = await table(EmployeeEntity).toArray();
+        const passages = employees.flatMap(emp => generatePassages(emp, dic));
+        if (dic != null) {
+            const withEmbedding = passages.filter(p => p.embedding != null).length;
+            console.log(`[passages] ${passages.length} passages, ${withEmbedding} matched an embedding in passagesWithEmbeddings.json.`);
+        }
+        await BulkInserter.bulkInsert(passages);
+    }
+
+    // The { chunkText: float[] } embeddings dictionary shipped alongside the loader (Southwind's
+    // passagesWithEmbeddings.json). The compiled loader lives in dist/terminal, so the source file is
+    // two levels up under terminal/. Returns undefined (embeddings skipped) if the file is missing.
+    function readEmbeddings(): Record<string, number[]> | undefined {
+        const file = path.resolve(import.meta.dirname, "..", "..", "terminal", "passagesWithEmbeddings.json");
+        if (!fs.existsSync(file)) {
+            console.log(`[passages] ${path.basename(file)} not found — inserting passages without embeddings.`);
+            return undefined;
+        }
+        return JSON.parse(fs.readFileSync(file, "utf8")) as Record<string, number[]>;
+    }
+
+    // Signum's GeneratePassages: a title chunk (index 0) plus one chunk per non-empty note fragment,
+    // each assigned its embedding from the dictionary (looked up by the exact chunk text).
+    function generatePassages(employee: EmployeeEntity, dic: Record<string, number[]> | undefined): EmployeePassageEntity[] {
+        const title = (employee.title ?? "Employee");
+        const titleChunk = (employee.titleOfCourtesy ?? "").trim().length > 0
+            ? `${employee.titleOfCourtesy} ${employee.firstName} ${employee.lastName} works as ${title}`
+            : `${employee.firstName} ${employee.lastName} works as ${title}`;
+
+        const passages: EmployeePassageEntity[] = [
+            EmployeePassageEntity.create({ employee: employee.toLite(), isTitle: true, chunk: titleChunk, index: toInt(0) }),
+        ];
+
+        if ((employee.notes ?? "").trim().length > 0) {
+            const chunks = employee.notes!.split(/[\r\n.]/).map(t => t.trim()).filter(t => t.length > 0);
+            chunks.forEach((chunk, i) =>
+                passages.push(EmployeePassageEntity.create({ employee: employee.toLite(), isTitle: false, chunk, index: toInt(i) })));
+        }
+
+        if (dic != null)
+            for (const p of passages) {
+                const emb = dic[p.chunk];
+                if (emb != null)
+                    p.embedding = new Vector(emb);
+            }
+
+        return passages;
     }
 }
