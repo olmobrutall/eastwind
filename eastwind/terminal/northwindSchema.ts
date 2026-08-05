@@ -1,36 +1,38 @@
 import { reflect } from "@altea/altea/data/reflection";
 import { tableName, viewPrimaryKey } from "@altea/altea/data/decorators";
+import { View } from "@altea/altea/data/entity";
 import { Temporal, type int } from "@altea/altea/data/basics";
 import { SchemaBuilder } from "@altea/altea/server/schema";
 import { Connector } from "@altea/altea/server/connection/connector";
 import { SqlServerConnector } from "@altea/altea/server/connection/sqlServerConnector";
 
 // Port of Southwind.Terminal/NorthwindSchema.cs: one IView per Northwind table. altea's view classes
-// are `@reflect` + `@tableName("dbo.X")` + `@viewPrimaryKey` fields, with column name = FIELD NAME
-// VERBATIM (viewBuilder.ts) — so these properties are PascalCase to match the real Northwind columns.
-// Binary columns (Photo, Picture) are skipped (extension-free, no Signum.Files).
+// `extends View` (Signum's `: IView`) and are `@reflect` + `@tableName("dbo.X")` + `@viewPrimaryKey`
+// fields, with column name = FIELD NAME VERBATIM (viewBuilder.ts) — so these properties are PascalCase
+// to match the real Northwind columns. Binary columns (Photo, Picture) are skipped (extension-free, no
+// Signum.Files).
 
 @reflect @tableName("dbo.Region")
-export class NwRegion {
+export class NwRegion extends View {
     @viewPrimaryKey RegionID!: int;
     RegionDescription!: string;
 }
 
 @reflect @tableName("dbo.Territories")
-export class NwTerritory {
+export class NwTerritory extends View {
     @viewPrimaryKey TerritoryID!: string;
     TerritoryDescription!: string;
     RegionID!: int;
 }
 
 @reflect @tableName("dbo.EmployeeTerritories")
-export class NwEmployeeTerritory {
+export class NwEmployeeTerritory extends View {
     @viewPrimaryKey EmployeeID!: int;
     @viewPrimaryKey TerritoryID!: string;
 }
 
 @reflect @tableName("dbo.Employees")
-export class NwEmployee {
+export class NwEmployee extends View {
     @viewPrimaryKey EmployeeID!: int;
     LastName!: string;
     FirstName!: string;
@@ -51,7 +53,7 @@ export class NwEmployee {
 }
 
 @reflect @tableName("dbo.Suppliers")
-export class NwSupplier {
+export class NwSupplier extends View {
     @viewPrimaryKey SupplierID!: int;
     CompanyName!: string;
     ContactName!: string | null;
@@ -67,14 +69,14 @@ export class NwSupplier {
 }
 
 @reflect @tableName("dbo.Categories")
-export class NwCategory {
+export class NwCategory extends View {
     @viewPrimaryKey CategoryID!: int;
     CategoryName!: string;
     Description!: string | null;
 }
 
 @reflect @tableName("dbo.Products")
-export class NwProduct {
+export class NwProduct extends View {
     @viewPrimaryKey ProductID!: int;
     ProductName!: string;
     SupplierID!: int | null;
@@ -87,7 +89,7 @@ export class NwProduct {
 }
 
 @reflect @tableName("dbo.Customers")
-export class NwCustomer {
+export class NwCustomer extends View {
     @viewPrimaryKey CustomerID!: string;
     CompanyName!: string;
     ContactName!: string | null;
@@ -102,14 +104,14 @@ export class NwCustomer {
 }
 
 @reflect @tableName("dbo.Shippers")
-export class NwShipper {
+export class NwShipper extends View {
     @viewPrimaryKey ShipperID!: int;
     CompanyName!: string;
     Phone!: string | null;
 }
 
 @reflect @tableName("dbo.Orders")
-export class NwOrder {
+export class NwOrder extends View {
     @viewPrimaryKey OrderID!: int;
     CustomerID!: string | null;
     EmployeeID!: int | null;
@@ -129,7 +131,7 @@ export class NwOrder {
 // "Order Details" has a space in the real name; @tableName keeps it verbatim (the SQL builder brackets
 // it). Composite PK (OrderID + ProductID) so the flat read doesn't collapse rows by a non-unique key.
 @reflect @tableName("dbo.Order Details")
-export class NwOrderDetail {
+export class NwOrderDetail extends View {
     @viewPrimaryKey OrderID!: int;
     @viewPrimaryKey ProductID!: int;
     UnitPrice!: number;

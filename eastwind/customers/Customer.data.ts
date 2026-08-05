@@ -1,7 +1,7 @@
 import { reflect } from "@altea/altea/data/reflection";
 import { Entity, EmbeddedEntity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
-import { entity, quoted, implementedBy } from "@altea/altea/data/decorators";
+import { entity, quoted, implementedBy, primaryKey, stringLengthValidator, telephoneValidator } from "@altea/altea/data/decorators";
 import { Temporal } from "@altea/altea/data/basics";
 
 // Port of Southwind's Customers domain (Southwind/Customers/*.cs). CustomerEntity is an ABSTRACT base
@@ -23,14 +23,24 @@ export class AddressEmbedded extends EmbeddedEntity {
             postalCode: this.postalCode, country: this.country,
         });
     }
+
+    @quoted toString(): string { return `${this.address}\n ${this.postalCode} ${this.city} (${this.country})`; }
 }
 
 // Signum's abstract CustomerEntity — the shared shape of Person + Company. Never `include`d directly
 // (only its concrete subclasses get tables); reached via @implementedBy from OrderEntity.customer.
+// Signum's `[PrimaryKey(typeof(Guid))]`: the whole customer hierarchy keys on a GUID (Person/Company
+// tables + the OrderEntity.customer FK columns become uuid). Set on the abstract base so both concrete
+// subclasses inherit it (their TypeInfo copies this `id` field once this decorator has run).
 @reflect
+@primaryKey("uuid")
 export abstract class CustomerEntity extends Entity {
     address: AddressEmbedded;
+
+    @stringLengthValidator({ min: 3, max: 24 }) @telephoneValidator()
     phone: string;
+
+    @stringLengthValidator({ min: 3, max: 24 }) @telephoneValidator()
     fax: string | null;
 }
 
