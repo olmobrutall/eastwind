@@ -14,10 +14,11 @@
     "dev": "concurrently -n types,server,client -c blue,green,magenta \"pnpm run dev:types\" \"pnpm run dev:server\" \"pnpm run dev:client\"",
     "terminal:postgres": "tspc -b && node --enable-source-maps --import ./register.mjs --env-file=.env.postgres dist/terminal/terminal.js",
     "terminal:sqlserver": "tspc -b && node --enable-source-maps --import ./register.mjs --env-file=.env.sqlserver dist/terminal/terminal.js",
+    "free:port": "node scripts/free-port.mjs",
     "server:postgres": "node --enable-source-maps --import ./register.mjs --env-file=.env.postgres dist/webServer.server.js",
     "server:sqlserver": "node --enable-source-maps --import ./register.mjs --env-file=.env.sqlserver dist/webServer.server.js",
-    "stack:postgres": "pnpm run build:types && concurrently -k -n types,api,client -c blue,green,magenta \"pnpm run dev:types\" \"pnpm run server:postgres\" \"pnpm run dev:client\"",
-    "stack:sqlserver": "pnpm run build:types && concurrently -k -n types,api,client -c blue,green,magenta \"pnpm run dev:types\" \"pnpm run server:sqlserver\" \"pnpm run dev:client\""
+    "stack:postgres": "pnpm run build:types && pnpm run free:port && concurrently -k -n types,api,client -c blue,green,magenta \"pnpm run dev:types\" \"pnpm run server:postgres\" \"pnpm run dev:client\"",
+    "stack:sqlserver": "pnpm run build:types && pnpm run free:port && concurrently -k -n types,api,client -c blue,green,magenta \"pnpm run dev:types\" \"pnpm run server:sqlserver\" \"pnpm run dev:client\""
   },
   "keywords": [],
   "author": "Olmo del Corral",
