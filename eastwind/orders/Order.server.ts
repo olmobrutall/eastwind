@@ -6,10 +6,11 @@ import { Lite } from "@altea/altea/data/lite";
 import { Temporal, toInt } from "@altea/altea/data/basics";
 import { retrieveFromListOfLite } from "@altea/altea/server/Database";
 import type { PrimaryKey } from "@altea/altea/data/entity";
-import { OrderEntity, OrderLineEntity, OrderState, OrderOperation } from "./Order.data";
+import { OrderEntity, OrderLineEntity, OrderState, OrderOperation, OrderMessage } from "./Order.data";
 import { EmployeeEntity } from "../employees/Employee.data";
 import { ProductEntity } from "../products/Product.data";
 import type { CustomerEntity } from "../customers/Customer.data";
+import { QueryLogic } from "@altea/altea/server/dynamicQuery/queryLogic";
 
 // ---- OrdersLogic.Start — port of Southwind's OrdersLogic.Start --------
 // Registers OrderEntity's default WithQuery and wires the OrderGraph. OrderLineEntity is an owned
@@ -18,6 +19,8 @@ import type { CustomerEntity } from "../customers/Customer.data";
 export namespace OrdersLogic {
     export function start(sb: SchemaBuilder): void {
         sb.include(OrderEntity).withQuery();
+
+        QueryLogic.expressions.register(OrderEntity, o => o.totalPrice(), { niceName: () => OrderMessage.totalPrice.niceToString() });
         // Register the OrderGraph's operations (Save/Ship/Cancel/Delete/Create…) with OperationLogic
         // (Signum's `new OrderGraph().Register()`). Without this the /api/operation/* endpoints and
         // the entity pack's canExecute see no operations.

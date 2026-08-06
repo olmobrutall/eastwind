@@ -1,6 +1,7 @@
 import "@altea/altea/server/context.node"; // register server context storage first
 import { Connector } from "@altea/altea/server/connection/connector";
 import { SchemaBuilder } from "@altea/altea/server/schema";
+import { ExceptionLogic } from "@altea/altea/server/exceptionLogic";
 import { loadAppTranslations } from "@altea/altea/server/translations";
 import { EntityOverrides } from "./entityOverrides.data";
 import { EmployeesLogic } from "./employees/Employee.server";
@@ -27,6 +28,9 @@ export namespace Starter {
 
         Connector.default = connector;
         sb.settings.isPostgres = connector.isPostgres;
+
+        // Framework logic (Signum's part of Starter.Start): the exception log table.
+        ExceptionLogic.start(sb);
 
         EmployeesLogic.start(sb);
         ProductsLogic.start(sb);

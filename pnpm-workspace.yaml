@@ -8,3 +8,16 @@ packages:
 allowBuilds:
   esbuild: true
   unrs-resolver: true
+# The root package.json was removed on the test-tiers refactor, so shared build tooling /
+# type packages are declared inside workspace packages instead:
+#   @types/node -> altea/altea (+ altea/quote-transformer-test)
+#   typescript, ts-patch (tspc) -> altea/quote-transformer
+# Public-hoist them to the workspace-root node_modules so every package can resolve
+# `types: ["node"]` and find the `tspc` binary on PATH — reproducing what the old root
+# package.json used to hoist. (pnpm 11 reads these settings here, not from .npmrc.)
+publicHoistPattern:
+  - '*eslint*'
+  - '*prettier*'
+  - '@types/node'
+  - 'typescript'
+  - 'ts-patch'

@@ -1,6 +1,6 @@
-import { Entity } from "@altea/altea/data/entity";
+import { Entity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
-import { entity, backReference, rowOrder, quoted, implementedBy } from "@altea/altea/data/decorators";
+import { entity, backReference, rowOrder, quoted, implementedBy, unit, format } from "@altea/altea/data/decorators";
 import { Temporal, type int } from "@altea/altea/data/basics";
 import { reflect, init } from "@altea/altea/data/reflection";
 import type { ConstructSymbol, From, FromMany, ExecuteSymbol, DeleteSymbol } from "@altea/altea/data/operations";
@@ -8,6 +8,7 @@ import { AddressEmbedded, CustomerEntity, PersonEntity, CompanyEntity } from "..
 import { EmployeeEntity } from "../employees/Employee.data";
 import { ProductEntity } from "../products/Product.data";
 import { ShipperEntity } from "../shippers/Shipper.data";
+import { msg } from "@altea/altea/data/utils/localization";
 
 // Port of Southwind's Orders domain (Southwind/Orders/OrderEntity.cs), keeping Signum's Entity /
 // Embedded name suffixes. OrderEntity.customer is @implementedBy(Person, Company) — the polymorphic
@@ -39,6 +40,7 @@ export class OrderEntity extends Entity {
 
     shipAddress: AddressEmbedded;
 
+    @unit("Kg")
     freight: number;
 
     // Signum's [PreserveOrder] MList<OrderDetailEmbedded> Details → owned part rows.
@@ -56,6 +58,10 @@ export class OrderEntity extends Entity {
     }
 }
 
+export const OrderMessage = {
+    totalPrice: msg()
+};
+
 // Owned child rows for OrderEntity.details (the per-row equivalent of Signum's
 // OrderDetailEmbedded, whose embedded fields are flattened in here).
 @entity("Part")
@@ -67,8 +73,13 @@ export class OrderLineEntity extends Entity {
     rowOrder: int;
 
     product: Lite<ProductEntity>;
+
+    @unit("€")
     unitPrice: number;
+
     quantity: int;
+
+    @format("p")
     discount: number;
 
     // Signum's [AutoExpressionField] SubTotalPrice => Quantity * UnitPrice * (1 - Discount).
@@ -76,6 +87,19 @@ export class OrderLineEntity extends Entity {
     subTotalPrice(): number {
         return this.quantity * this.unitPrice * (1 - this.discount);
     }
+}
+
+// Southwind's OrderFilterModel (OrderEntity.cs): the shape backing the Orders SIMPLE FILTER BUILDER — a
+// ModelEntity (reflected, never persisted) whose fields are the search form's inputs. Not a query row
+// model; it only lives client-side inside OrderFilter (TypeContext.root(model)). Mirrors CustomerRowModel.
+@reflect
+export class OrderFilterModel extends ModelEntity {
+    // Polymorphic like OrderEntity.customer — the filter picks a lite of a Person or a Company.
+    @implementedBy(() => [PersonEntity, CompanyEntity])
+    customer: Lite<CustomerEntity> | null = null;
+    employee: Lite<EmployeeEntity> | null = null;
+    minOrderDate: Temporal.PlainDate | null = null;
+    maxOrderDate: Temporal.PlainDate | null = null;
 }
 
 // Signum's `[AutoInit] static class OrderOperation`. CancelWithProcess is omitted (Processes).

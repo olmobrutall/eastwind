@@ -1,4 +1,5 @@
 import { ClientBuilder } from "@altea/altea/client/ClientBuilder";
+import { Finder } from "@altea/altea/client/Finder";
 import { ProductEntity, CategoryEntity, SupplierEntity } from "./Product.data";
 
 // Products domain client (also registers Supplier/Category types via the module import).
@@ -14,6 +15,15 @@ export namespace ProductsClient {
                     token(a => a.category),
                     token(a => a.unitPrice),
                 ],
+                // Southwind's ProductsClient defaultFilters: the pinned "Search" Or-group searching the
+                // product name and the (dereferenced) supplier/category names in one box. Finder.
+                // filterGroupSearch supplies the pinned label + `splitValue` (words applied across the
+                // group) + `active: "WhenHasValue"` (altea's stand-in for Signum's `disableOnNull`).
+                defaultFilters: [Finder.filterGroupSearch([
+                    { token: token(a => a.productName), operation: "Contains" },
+                    { token: token(a => a.supplier.entity.companyName), operation: "Contains" },
+                    { token: token(a => a.category.entity.categoryName), operation: "Contains" },
+                ])],
             }));
 
         cb.configure(CategoryEntity)

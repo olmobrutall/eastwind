@@ -4,6 +4,7 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 import { fas } from "@fortawesome/free-solid-svg-icons";
 import { far } from "@fortawesome/free-regular-svg-icons";
 import { loadReflectionMetadata } from "@altea/altea/client/ReflectionClient";
+import * as AppContext from "@altea/altea/client/AppContext";
 import ErrorModal from "@altea/altea/client/Modals/ErrorModal";
 import { EntityOverrides } from "./entityOverrides.data";
 import Layout from "./Layout";
@@ -42,6 +43,10 @@ async function boot(): Promise<void> {
             { path: "*", element: <NotFound /> },
         ],
     }]);
+
+    // Give AppContext the DataRouter so Navigator.navigate / pushOrOpenInTab do SPA navigation
+    // (the FrameModal expand link, entity links, etc.) instead of a full page reload.
+    AppContext.setRouter(router);
 
     const el = document.getElementById("root");
     if (el)
