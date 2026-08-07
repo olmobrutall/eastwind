@@ -1,8 +1,9 @@
-import { reflect } from "@altea/altea/data/reflection";
+import { reflect, init } from "@altea/altea/data/reflection";
 import { Entity, EmbeddedEntity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
 import { entity, quoted, implementedBy, primaryKey, stringLengthValidator, telephoneValidator } from "@altea/altea/data/decorators";
 import { Temporal } from "@altea/altea/data/basics";
+import type { ExecuteSymbol } from "@altea/altea/data/operations";
 
 // Port of Southwind's Customers domain (Southwind/Customers/*.cs). CustomerEntity is an ABSTRACT base
 // (like the music model's AwardEntity) with two concrete subclasses — Person and Company — reached
@@ -61,6 +62,14 @@ export class CompanyEntity extends CustomerEntity {
     contactTitle: string;
 
     @quoted toString(): string { return this.companyName; }
+}
+
+// Signum's `[AutoInit] static class CustomerOperation { static ExecuteSymbol<CustomerEntity> Save; }`
+// (Southwind/Customers/CustomerEntity.cs). ONE Save symbol typed on the abstract CustomerEntity —
+// registered once and shared by both concrete customers (Person + Company), matching Southwind's
+// `.WithSave(CustomerOperation.Save)` on each. Wired in Customer.server.ts.
+export namespace CustomerOperation {
+    export const Save: ExecuteSymbol<CustomerEntity> = init();
 }
 
 // The row shape of the manual union query (Signum's anonymous Select projection over Person+Company).

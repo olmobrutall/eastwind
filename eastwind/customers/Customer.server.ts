@@ -6,7 +6,8 @@ import type { Query } from "@altea/altea/server/query";
 import { QueryLogic } from "@altea/altea/server/dynamicQuery/queryLogic";
 import { ManualDynamicQueryCore } from "@altea/altea/server/dynamicQuery/dynamicQueryCore";
 import "@altea/altea/server/dynamicQuery/dQueryable"; // augments Query with .toDQueryable()
-import { PersonEntity, CompanyEntity, CustomerRowModel } from "./Customer.data";
+import "@altea/altea/server/operationFluentInclude"; // FluentInclude.withSave / withDelete
+import { PersonEntity, CompanyEntity, CustomerRowModel, CustomerOperation } from "./Customer.data";
 
 // Port of Southwind's CustomersLogic.Start (Southwind/Customers/CustomersLogic.cs). The highlight is
 // the MANUAL union query (Signum's DynamicQueryCore.Manual): a single "Customer" query whose rows are
@@ -14,7 +15,12 @@ import { PersonEntity, CompanyEntity, CustomerRowModel } from "./Customer.data";
 export namespace CustomersLogic {
     export function start(sb: SchemaBuilder): void {
         // The two concrete customer tables (each a plain WithQuery). CustomerEntity itself is abstract.
-        sb.include(PersonEntity).withQuery();
+        // Southwind calls `.WithSave(CustomerOperation.Save)` on BOTH Person and Company. altea's operation
+        // registry is keyed by the symbol alone, so the shared CustomerEntity Save is registered ONCE here
+        // (the contravariant ExecuteSymbol lets the CustomerEntity-typed symbol bind to the Person include).
+        // The client propagates it to both concrete customers (ReflectionClient subtype propagation) and
+        // getEntityPack evaluates it against either, so this single registration covers Company too.
+        sb.include(PersonEntity).withQuery().withSave(CustomerOperation.Save);
         sb.include(CompanyEntity).withQuery();
 
         // Signum: `QueryLogic.Queries.Register(CustomerQuery.Customer, () => DynamicQueryCore.Manual(...))`.
