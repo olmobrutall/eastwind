@@ -1,7 +1,7 @@
 import { reflect } from "@altea/altea/data/reflection";
 import { tableName, viewPrimaryKey } from "@altea/altea/data/decorators";
 import { View } from "@altea/altea/data/entity";
-import { Temporal, type int, type decimal } from "@altea/altea/data/basics";
+import { Temporal, type int, Decimal } from "@altea/altea/data/basics";
 import { SchemaBuilder } from "@altea/altea/server/schema";
 import { Connector } from "@altea/altea/server/connection/connector";
 import { SqlServerConnector } from "@altea/altea/server/connection/sqlServerConnector";
@@ -82,7 +82,7 @@ export class NwProduct extends View {
     SupplierID!: int | null;
     CategoryID!: int | null;
     QuantityPerUnit!: string | null;
-    UnitPrice!: decimal | null;
+    UnitPrice!: Decimal | null;
     UnitsInStock!: int | null;
     ReorderLevel!: int | null;
     Discontinued!: boolean;
@@ -119,7 +119,7 @@ export class NwOrder extends View {
     RequiredDate!: Temporal.PlainDateTime | null;
     ShippedDate!: Temporal.PlainDateTime | null;
     ShipVia!: int | null;
-    Freight!: decimal | null;
+    Freight!: Decimal | null;
     ShipName!: string | null;
     ShipAddress!: string | null;
     ShipCity!: string | null;
@@ -134,9 +134,9 @@ export class NwOrder extends View {
 export class NwOrderDetail extends View {
     @viewPrimaryKey OrderID!: int;
     @viewPrimaryKey ProductID!: int;
-    UnitPrice!: decimal;
+    UnitPrice!: Decimal;
     Quantity!: int;
-    Discount!: decimal;
+    Discount!: Decimal;
 }
 
 // A separate SqlServerConnector for the Northwind database (always SQL Server; NORTHWIND_DB). Reads

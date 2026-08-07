@@ -3,7 +3,7 @@ import "@altea/altea/server/dynamicQuery/fluentIncludeQuery"; // FluentInclude.w
 import { graph } from "@altea/altea/server/graphBuilder";
 import { SchemaBuilder } from "@altea/altea/server/schema";
 import { Lite } from "@altea/altea/data/lite";
-import { Temporal, toInt, toDecimal, type decimal } from "@altea/altea/data/basics";
+import { Temporal, toInt, Decimal } from "@altea/altea/data/basics";
 import { retrieveFromListOfLite } from "@altea/altea/server/Database";
 import type { PrimaryKey } from "@altea/altea/data/entity";
 import { OrderEntity, OrderLineEntity, OrderState, OrderOperation, OrderMessage } from "./Order.data";
@@ -48,7 +48,7 @@ function currentEmployee(): Lite<EmployeeEntity> {
     return _currentEmployee;
 }
 
-async function currentPrices(products: Lite<ProductEntity>[]): Promise<Map<PrimaryKey, decimal>> {
+async function currentPrices(products: Lite<ProductEntity>[]): Promise<Map<PrimaryKey, Decimal>> {
     const entities = await retrieveFromListOfLite(products);
     return new Map(entities.map(p => [p.id, p.unitPrice]));
 }
@@ -97,7 +97,7 @@ export const OrderGraph = graph(OrderEntity, OrderState, g => {
                 orderDate: today(),
                 details: o.details.map(d => OrderLineEntity.create({
                     product: d.product,
-                    discount: toDecimal(0),
+                    discount: new Decimal(0),
                     quantity: d.quantity,
                     unitPrice: prices.get(d.product.id)!,
                 })),
@@ -122,7 +122,7 @@ export const OrderGraph = graph(OrderEntity, OrderState, g => {
                     product: p,
                     unitPrice: prices.get(p.id)!,
                     quantity: toInt(1),
-                    discount: toDecimal(0),
+                    discount: new Decimal(0),
                 })),
             });
         },

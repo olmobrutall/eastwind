@@ -8,7 +8,7 @@ import { EnumLine } from '@altea/altea/client/Lines/EnumLine'
 import { FormGroup } from '@altea/altea/client/Lines/FormGroup'
 import { FormControlReadonly } from '@altea/altea/client/Lines/FormControlReadonly'
 import { type ChangeEvent } from '@altea/altea/client/Lines/LineBase'
-import { type int, toDecimal } from '@altea/altea/data/basics'
+import { type int, Decimal } from '@altea/altea/data/basics'
 import { TypeContext } from '@altea/altea/client/TypeContext'
 import { useForceUpdate } from '@altea/altea/client/Hooks'
 import { Navigator } from '@altea/altea/client/Navigator'
@@ -36,12 +36,12 @@ export default function Order(p: { ctx: TypeContext<OrderEntity> }): React.JSX.E
 
   function handleProductChange(detail: OrderLineEntity): void {
     detail.quantity = 1 as int;
-    detail.unitPrice = toDecimal(0);
+    detail.unitPrice = new Decimal(0);
     forceUpdate();
 
     if (detail.product)
       Navigator.API.fetch(detail.product)
-        .then(prod => detail.unitPrice = toDecimal(prod.unitPrice))
+        .then(prod => detail.unitPrice = prod.unitPrice)
         .then(() => forceUpdate());
   }
 
@@ -79,7 +79,7 @@ export default function Order(p: { ctx: TypeContext<OrderEntity> }): React.JSX.E
             <FormGroup ctx={dc}>
               {id => <div className={dc.inputGroupClass}>
                 <FormControlReadonly ctx={dc} id={id}>
-                  {formatNumber.format(dc.value.subTotalPrice())}
+                  {formatNumber.format(dc.value.subTotalPrice().toNumber())}
                 </FormControlReadonly>
                 <span className="input-group-text">€</span>
               </div>
@@ -98,7 +98,7 @@ export default function Order(p: { ctx: TypeContext<OrderEntity> }): React.JSX.E
           <FormGroup ctx={ctx4} label="Total Price">
             {id => <div className={ctx4.inputGroupClass}>
               <FormControlReadonly ctx={ctx4} id={id} className="total-price">
-                {formatNumber.format(ctx4.value.totalPrice())}
+                {formatNumber.format(ctx4.value.totalPrice().toNumber())}
               </FormControlReadonly>
               <span className="input-group-text">€</span>
             </div>

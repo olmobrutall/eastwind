@@ -2,7 +2,7 @@ import { reflect, init } from "@altea/altea/data/reflection";
 import { Entity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
 import { entity, quoted, backReference, rowOrder } from "@altea/altea/data/decorators";
-import { type int, type decimal } from "@altea/altea/data/basics";
+import { type int, Decimal } from "@altea/altea/data/basics";
 import type { IQuery } from "@altea/altea/data/iquery";
 import type { ExecuteSymbol } from "@altea/altea/data/operations";
 import { AddressEmbedded } from "../customers/Customer.data";
@@ -46,7 +46,7 @@ export class ProductEntity extends Entity {
     supplier: Lite<SupplierEntity>;
     category: Lite<CategoryEntity>;
     quantityPerUnit: string;
-    unitPrice: decimal;
+    unitPrice: Decimal;
     unitsInStock: int;
     reorderLevel: int;
     discontinued: boolean;
@@ -54,7 +54,7 @@ export class ProductEntity extends Entity {
     additionalInformation: ProductEntity_AdditionalInformation[];
 
     // Signum's [AutoExpressionField] ValueInStock => UnitPrice * UnitsInStock.
-    @quoted valueInStock(): number { return this.unitPrice * this.unitsInStock; }
+    @quoted valueInStock(): Decimal { return Decimal.mul(this.unitPrice, this.unitsInStock); }
 
     @quoted toString(): string { return this.productName; }
 }

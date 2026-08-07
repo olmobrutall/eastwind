@@ -1,7 +1,7 @@
 import { Entity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
 import { entity, backReference, rowOrder, quoted, implementedBy, unit, format } from "@altea/altea/data/decorators";
-import { Temporal, type int, type decimal } from "@altea/altea/data/basics";
+import { Temporal, type int, Decimal } from "@altea/altea/data/basics";
 import { reflect, init } from "@altea/altea/data/reflection";
 import type { ConstructSymbol, From, FromMany, ExecuteSymbol, DeleteSymbol } from "@altea/altea/data/operations";
 import { AddressEmbedded, CustomerEntity, PersonEntity, CompanyEntity } from "../customers/Customer.data";
@@ -42,7 +42,7 @@ export class OrderEntity extends Entity {
     shipAddress: AddressEmbedded;
 
     @unit("Kg")
-    freight: decimal;
+    freight: Decimal;
 
     // Signum's [PreserveOrder] MList<OrderDetailEmbedded> Details → owned part rows.
     details: OrderLineEntity[];
@@ -53,11 +53,11 @@ export class OrderEntity extends Entity {
 
     // Signum's [AutoExpressionField] TotalPrice => Details.Sum(od => od.SubTotalPrice).
     // @quoted so the SAME body both evaluates in-memory (Order.tsx's Total Price field, over the
-    // loaded detail rows) AND translates to a scalar subquery over the owned OrderLine rows — the
-    // latter is what makes the `totalPrice` extension token (registered in Order.server.ts) a real,
-    // sortable/filterable column on the Order query. `subTotalPrice` is itself @quoted, so it inlines.
+    // loaded detail rows — the Decimal-aware Array.sum returns a Decimal) AND translates to a scalar
+    // SUM subquery over the owned OrderLine rows — the latter is what makes the `totalPrice` extension
+    // token (registered in Order.server.ts) a real, sortable/filterable Decimal column on the Order query.
     @quoted
-    totalPrice(): number {
+    totalPrice(): Decimal {
         return this.details.sum(d => d.subTotalPrice());
     }
 }
@@ -79,17 +79,19 @@ export class OrderLineEntity extends Entity {
     product: Lite<ProductEntity>;
 
     @unit("€")
-    unitPrice: decimal;
+    unitPrice: Decimal;
 
     quantity: int;
 
     @format("p")
-    discount: decimal;
+    discount: Decimal;
 
     // Signum's [AutoExpressionField] SubTotalPrice => Quantity * UnitPrice * (1 - Discount).
+    // Decimal arithmetic via the Decimal.* static methods: exact in-memory AND SQL-translatable
+    // (the nominator lowers Decimal.mul/sub → the numeric operators — see server/decimalFunctions.ts).
     @quoted
-    subTotalPrice(): number {
-        return this.quantity * this.unitPrice * (1 - this.discount);
+    subTotalPrice(): Decimal {
+        return Decimal.mul(Decimal.mul(this.quantity, this.unitPrice), Decimal.sub(1, this.discount));
     }
 }
 
