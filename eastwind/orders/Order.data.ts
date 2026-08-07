@@ -1,7 +1,7 @@
 import { Entity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
 import { entity, backReference, rowOrder, quoted, implementedBy, unit, format } from "@altea/altea/data/decorators";
-import { Temporal, type int } from "@altea/altea/data/basics";
+import { Temporal, type int, type decimal } from "@altea/altea/data/basics";
 import { reflect, init } from "@altea/altea/data/reflection";
 import type { ConstructSymbol, From, FromMany, ExecuteSymbol, DeleteSymbol } from "@altea/altea/data/operations";
 import { AddressEmbedded, CustomerEntity, PersonEntity, CompanyEntity } from "../customers/Customer.data";
@@ -9,6 +9,7 @@ import { EmployeeEntity } from "../employees/Employee.data";
 import { ProductEntity } from "../products/Product.data";
 import { ShipperEntity } from "../shippers/Shipper.data";
 import { msg } from "@altea/altea/data/utils/localization";
+import "@altea/altea/data/globals"; // Array.prototype.sum (in-memory) + its SQL-mappable aggregate (totalPrice)
 
 // Port of Southwind's Orders domain (Southwind/Orders/OrderEntity.cs), keeping Signum's Entity /
 // Embedded name suffixes. OrderEntity.customer is @implementedBy(Person, Company) — the polymorphic
@@ -41,7 +42,7 @@ export class OrderEntity extends Entity {
     shipAddress: AddressEmbedded;
 
     @unit("Kg")
-    freight: number;
+    freight: decimal;
 
     // Signum's [PreserveOrder] MList<OrderDetailEmbedded> Details → owned part rows.
     details: OrderLineEntity[];
@@ -51,10 +52,13 @@ export class OrderEntity extends Entity {
     state: OrderState;
 
     // Signum's [AutoExpressionField] TotalPrice => Details.Sum(od => od.SubTotalPrice).
-    // Plain (not @quoted) here — a Sum over the owned collection isn't part of the query
-    // model yet — so it's an in-memory helper only.
+    // @quoted so the SAME body both evaluates in-memory (Order.tsx's Total Price field, over the
+    // loaded detail rows) AND translates to a scalar subquery over the owned OrderLine rows — the
+    // latter is what makes the `totalPrice` extension token (registered in Order.server.ts) a real,
+    // sortable/filterable column on the Order query. `subTotalPrice` is itself @quoted, so it inlines.
+    @quoted
     totalPrice(): number {
-        return this.details.reduce((sum, d) => sum + d.subTotalPrice(), 0);
+        return this.details.sum(d => d.subTotalPrice());
     }
 }
 
@@ -75,12 +79,12 @@ export class OrderLineEntity extends Entity {
     product: Lite<ProductEntity>;
 
     @unit("€")
-    unitPrice: number;
+    unitPrice: decimal;
 
     quantity: int;
 
     @format("p")
-    discount: number;
+    discount: decimal;
 
     // Signum's [AutoExpressionField] SubTotalPrice => Quantity * UnitPrice * (1 - Discount).
     @quoted

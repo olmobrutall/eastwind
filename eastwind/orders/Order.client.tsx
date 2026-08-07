@@ -17,6 +17,11 @@ export namespace OrdersClient {
                     token(a => a.employee),
                     token(a => a.orderDate),
                     token(a => a.state),
+                    // Southwind's OrdersClient shows TotalPrice as a column. `totalPrice` is a registered
+                    // expression (Order.server.ts) → a SERVER-only extension token. altea models expression
+                    // members as @quoted methods, so the lambda navigation `a.totalPrice()` resolves it (the
+                    // completer matches the "TotalPrice" key case-insensitively to the server token).
+                    token(a => a.totalPrice()),
                 ],
                 // Southwind's OrdersClient `simpleFilterBuilder`: render the OrderFilter form (customer /
                 // employee / order-date range) when the incoming filters are exactly representable by it —

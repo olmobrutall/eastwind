@@ -8,7 +8,7 @@ import { EnumLine } from '@altea/altea/client/Lines/EnumLine'
 import { FormGroup } from '@altea/altea/client/Lines/FormGroup'
 import { FormControlReadonly } from '@altea/altea/client/Lines/FormControlReadonly'
 import { type ChangeEvent } from '@altea/altea/client/Lines/LineBase'
-import { type int } from '@altea/altea/data/basics'
+import { type int, toDecimal } from '@altea/altea/data/basics'
 import { TypeContext } from '@altea/altea/client/TypeContext'
 import { useForceUpdate } from '@altea/altea/client/Hooks'
 import { Navigator } from '@altea/altea/client/Navigator'
@@ -36,12 +36,12 @@ export default function Order(p: { ctx: TypeContext<OrderEntity> }): React.JSX.E
 
   function handleProductChange(detail: OrderLineEntity): void {
     detail.quantity = 1 as int;
-    detail.unitPrice = 0;
+    detail.unitPrice = toDecimal(0);
     forceUpdate();
 
     if (detail.product)
       Navigator.API.fetch(detail.product)
-        .then(prod => detail.unitPrice = prod.unitPrice)
+        .then(prod => detail.unitPrice = toDecimal(prod.unitPrice))
         .then(() => forceUpdate());
   }
 

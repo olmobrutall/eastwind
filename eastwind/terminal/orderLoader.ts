@@ -2,7 +2,7 @@ import "@altea/altea/server";
 import { Connector } from "@altea/altea/server/connection/connector";
 import { view, table } from "@altea/altea/server/table";
 import { BulkInserter } from "@altea/altea/server/bulkInserter";
-import { Temporal } from "@altea/altea/data/basics";
+import { Temporal, toDecimal } from "@altea/altea/data/basics";
 import { OrderEntity, OrderLineEntity, OrderState } from "../orders/Order.data";
 import { AddressEmbedded, CompanyEntity, PersonEntity, type CustomerEntity } from "../customers/Customer.data";
 import { EmployeeEntity } from "../employees/Employee.data";
@@ -62,9 +62,9 @@ export namespace OrderLoader {
             // wired by bulkInsert's cascade.
             const details = (detailsByOrder.get(o.OrderID) ?? []).map(d => OrderLineEntity.create({
                 product: ProductEntity.newLite(d.ProductID),
-                unitPrice: d.UnitPrice,
+                unitPrice: toDecimal(d.UnitPrice),
                 quantity: d.Quantity,
-                discount: d.Discount,
+                discount: toDecimal(d.Discount),
             }));
             const ord = OrderEntity.create({
                 customer,
@@ -79,7 +79,7 @@ export namespace OrderLoader {
                     address: o.ShipAddress ?? "", city: o.ShipCity ?? "", region: o.ShipRegion,
                     postalCode: o.ShipPostalCode, country: o.ShipCountry ?? "",
                 }),
-                freight: o.Freight ?? 0,
+                freight: o.Freight ?? toDecimal(0),
                 details,
                 isLegacy: true,
                 state: o.ShippedDate != null ? OrderState.Shipped : OrderState.Ordered,
