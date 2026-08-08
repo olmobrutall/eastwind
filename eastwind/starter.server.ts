@@ -2,6 +2,7 @@ import "@altea/altea/server/context.node"; // register server context storage fi
 import { Connector } from "@altea/altea/server/connection/connector";
 import { SchemaBuilder } from "@altea/altea/server/schema";
 import { ExceptionLogic } from "@altea/altea/server/exceptionLogic";
+import { OperationLogic } from "@altea/altea/server/operationLogic";
 import { loadAppTranslations } from "@altea/altea/server/translations";
 import { EntityOverrides } from "./entityOverrides.data";
 import { EmployeesLogic } from "./employees/Employee.server";
@@ -37,6 +38,11 @@ export namespace Starter {
         ShippersLogic.start(sb);
         CustomersLogic.start(sb);
         OrdersLogic.start(sb);
+
+        // Framework operation infrastructure (Signum's OperationLogic.Start): the OperationSymbol table
+        // (seeded with the operations the modules above registered) + the OperationLogEntity table/query
+        // that backs the operation-log quick link. Must run AFTER the module graphs register.
+        OperationLogic.start(sb);
 
         sb.complete();
 

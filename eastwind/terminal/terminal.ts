@@ -1,4 +1,5 @@
 import "@altea/altea/server/context.node"; // register server context storage first
+import chalk from "chalk";
 import { Connector } from "@altea/altea/server/connection/connector";
 import type { SchemaBuilder } from "@altea/altea/server/schema";
 import { Replacements } from "@altea/altea/server/sync/synchronizer";
@@ -53,12 +54,23 @@ async function main(): Promise<void> {
 
 main()
     .then(() => { console.log("[OK] terminal done"); process.exit(0); })
-    .catch(err => { console.error(`[FAILED] ${err?.message ?? err}`); process.exit(1); });
+    .catch(err => { console.error(formatErrorRed(err)); process.exit(1); });
+
+// Errors that surface to main are printed in red with their type, message and stack trace so a failed
+// command stands out on the console. chalk handles the ANSI codes and auto-disables colour when the
+// output isn't a TTY (e.g. redirected to a file or a CI log), so redirected output stays clean.
+function formatErrorRed(err: unknown): string {
+    const e = err as Error | undefined;
+    const name = e?.name ?? "Error";
+    const message = e?.message ?? String(err);
+    const stack = e?.stack ?? "(no stack trace)";
+    return chalk.bold.redBright(`[FAILED] ${name}: ${message}`) + "\n" + chalk.red(stack);
+}
 
 // The interactive main menu (Southwind.Terminal's `new ConsoleSwitch<…>{…}.Choose()` loop). Runs until
 // the user enters nothing; an action's error is printed but keeps the menu alive.
 async function interactive(sb: SchemaBuilder, connector: Connector): Promise<void> {
-    for (;;) {
+    for (; ;) {
         const action = await new ConsoleSwitch<() => Promise<void>>("..:: Welcome to the Eastwind Loading Application ::..")
             .add("N", "New Database (clean + generate schema)", () => create(sb, connector))
             .add("S", "Synchronize (diff model vs DB)", () => synchronize(sb))
@@ -70,7 +82,7 @@ async function interactive(sb: SchemaBuilder, connector: Connector): Promise<voi
         try {
             await action();
         } catch (e) {
-            console.error(`${(e as Error)?.name ?? "Error"}: ${(e as Error)?.message ?? e}`);
+            console.error(formatErrorRed(e));
         }
     }
 }

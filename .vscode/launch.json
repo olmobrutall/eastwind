@@ -32,7 +32,8 @@
             ],
             "console": "integratedTerminal",
             "skipFiles": [
-                "<node_internals>/**"
+                "<node_internals>/**",
+                "**/node_modules/pg/lib/native/**"
             ]
         },
         {
@@ -59,7 +60,8 @@
             ],
             "console": "integratedTerminal",
             "skipFiles": [
-                "<node_internals>/**"
+                "<node_internals>/**",
+                "**/node_modules/pg/lib/native/**"
             ]
         },
         {
@@ -85,7 +87,8 @@
             ],
             "console": "integratedTerminal",
             "skipFiles": [
-                "<node_internals>/**"
+                "<node_internals>/**",
+                "**/node_modules/pg/lib/native/**"
             ]
         },
         {
@@ -133,14 +136,15 @@
             ],
             "console": "integratedTerminal",
             "skipFiles": [
-                "<node_internals>/**"
+                "<node_internals>/**",
+                "**/node_modules/pg/lib/native/**"
             ]
         },
         {
             "type": "node",
             "request": "launch",
             "name": "eastwind API server — PostgreSQL",
-            "preLaunchTask": "build types (tspc -b)",
+            "preLaunchTask": "build eastwind",
             "cwd": "${workspaceFolder}/eastwind",
             "runtimeArgs": [
                 "--enable-source-maps",
@@ -159,14 +163,15 @@
             ],
             "console": "integratedTerminal",
             "skipFiles": [
-                "<node_internals>/**"
+                "<node_internals>/**",
+                "**/node_modules/pg/lib/native/**"
             ]
         },
         {
             "type": "node",
             "request": "launch",
             "name": "eastwind API server — SQL Server",
-            "preLaunchTask": "build types (tspc -b)",
+            "preLaunchTask": "build eastwind",
             "cwd": "${workspaceFolder}/eastwind",
             "runtimeArgs": [
                 "--enable-source-maps",
@@ -185,7 +190,62 @@
             ],
             "console": "integratedTerminal",
             "skipFiles": [
+                "<node_internals>/**",
+                "**/node_modules/pg/lib/native/**"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "eastwind terminal — PostgreSQL",
+            "preLaunchTask": "build eastwind terminal",
+            "cwd": "${workspaceFolder}/eastwind",
+            "runtimeArgs": [
+                "--enable-source-maps",
+                "--import",
+                "./register.mjs",
+                "--env-file=.env.postgres"
+            ],
+            "program": "${workspaceFolder}/eastwind/dist/terminal/terminal.js",
+            "outFiles": [
+                "${workspaceFolder}/eastwind/dist/**/*.js"
+            ],
+            "sourceMaps": true,
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/**",
+                "!**/node_modules/**"
+            ],
+            "console": "integratedTerminal",
+            "skipFiles": [
                 "<node_internals>/**"
+                // "**/node_modules/pg/lib/native/**"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "eastwind terminal — SQL Server",
+            "preLaunchTask": "build eastwind terminal",
+            "cwd": "${workspaceFolder}/eastwind",
+            "runtimeArgs": [
+                "--enable-source-maps",
+                "--import",
+                "./register.mjs",
+                "--env-file=.env.sqlserver"
+            ],
+            "program": "${workspaceFolder}/eastwind/dist/terminal/terminal.js",
+            "outFiles": [
+                "${workspaceFolder}/eastwind/dist/**/*.js"
+            ],
+            "sourceMaps": true,
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/**",
+                "!**/node_modules/**"
+            ],
+            "console": "integratedTerminal",
+            "skipFiles": [
+                "<node_internals>/**",
+                "**/node_modules/pg/lib/native/**"
             ]
         }
     ],

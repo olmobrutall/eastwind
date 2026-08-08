@@ -13,11 +13,20 @@
 			"group": { "kind": "build", "isDefault": true }
 		},
 		{
-			"label": "build types (tspc -b)",
-			"detail": "Builds every composite project (entities/logic/react) via the root solution.",
+			"label": "build eastwind",
+			"detail": "Builds the eastwind app layers (data + server + client) and their altea deps. preLaunchTask for the API server debug configs.",
 			"type": "shell",
-			"command": "pnpm build:types",
-			"options": { "cwd": "${workspaceFolder}" },
+			"command": "pnpm exec tspc -b tsconfig.server.json tsconfig.client.json",
+			"options": { "cwd": "${workspaceFolder}/eastwind" },
+			"problemMatcher": ["$tsc"],
+			"group": "build"
+		},
+		{
+			"label": "build eastwind terminal",
+			"detail": "Builds the eastwind terminal layer (CLI host + loaders; references data + server). preLaunchTask for the terminal debug configs.",
+			"type": "shell",
+			"command": "pnpm exec tspc -b tsconfig.terminal.json",
+			"options": { "cwd": "${workspaceFolder}/eastwind" },
 			"problemMatcher": ["$tsc"],
 			"group": "build"
 		},
@@ -48,7 +57,7 @@
 			"command": "pnpm --filter eastwind build:server",
 			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": [],
-			"dependsOn": ["build types (tspc -b)"],
+			"dependsOn": ["build eastwind"],
 			"dependsOrder": "sequence",
 			"group": "build"
 		},
