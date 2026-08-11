@@ -1,8 +1,10 @@
 import "@altea/altea/server/context.node"; // register server context storage first
+import * as fs from "node:fs";
 import chalk from "chalk";
 import { Connector } from "@altea/altea/server/connection/connector";
 import type { SchemaBuilder } from "@altea/altea/server/schema";
 import { Replacements } from "@altea/altea/server/sync/synchronizer";
+import { AuthImportExport } from "@altea/altea-auth/server/AuthImportExport";
 import { table } from "@altea/altea/server/table";
 import { Starter } from "../starter.server";
 import { ConsoleSwitch, executeLoadProcess } from "./consoleSwitch";
@@ -16,6 +18,7 @@ import { SupplierEntity, CategoryEntity, ProductEntity } from "../products/Produ
 import { ShipperEntity } from "../shippers/Shipper.data";
 import { OrderEntity, OrderLineEntity } from "../orders/Order.data";
 import { PersonEntity, CompanyEntity } from "../customers/Customer.data";
+import { EastwindMigrations } from "./eastwindMigrations";
 
 // Port of Southwind.Terminal (old/Southwind.Terminal/Program.cs): a console host that boots the engine
 // (Starter.start) then dispatches ONE command (Signum takes args.First() only) or, with no args, an
@@ -43,7 +46,9 @@ async function main(): Promise<void> {
                 case "synchronize": await synchronize(sb); break;
                 case "load": await load(args.slice(1)); break;
                 case "check": await check(); break;
-                default: console.log(`Unknown command '${command}'. Valid: new, sync, load [1-10], check`);
+                case "export-auth": await exportAuth(args.slice(1)); break;
+                case "import-auth": await importAuth(args.slice(1)); break;
+                default: console.log(`Unknown command '${command}'. Valid: new, sync, load [1-15], check, export-auth, import-auth`);
             }
         }
     } finally {
@@ -74,7 +79,7 @@ async function interactive(sb: SchemaBuilder, connector: Connector): Promise<voi
         const action = await new ConsoleSwitch<() => Promise<void>>("..:: Welcome to the Eastwind Loading Application ::..")
             .add("N", "New Database (clean + generate schema)", () => create(sb, connector))
             .add("S", "Synchronize (diff model vs DB)", () => synchronize(sb))
-            .add("L", "Load Northwind data", () => load([]))
+            .add("L", "Load Northwind data (+ roles/users)", () => load([]))
             .add("C", "Check (row counts)", () => check())
             .choose();
 
@@ -90,18 +95,25 @@ async function interactive(sb: SchemaBuilder, connector: Connector): Promise<voi
 // Southwind's Load(): a ChooseMultipleWithDescription sub-menu of the Northwind loaders, run in order
 // via ExecuteLoadProcess (auto-logging). The menu order is the dependency order. `load 1-10` runs all.
 async function load(args: string[]): Promise<void> {
-    const selected = await new ConsoleSwitch<() => Promise<void>>("Northwind load processes (e.g. 1-10):")
-        .add("1", "Load Regions", () => EmployeeLoader.loadRegions())
-        .add("2", "Load Territories", () => EmployeeLoader.loadTerritories())
-        .add("3", "Load Employees", () => EmployeeLoader.loadEmployees())
-        .add("4", "Load Suppliers", () => ProductLoader.loadSuppliers())
-        .add("5", "Load Categories", () => ProductLoader.loadCategories())
-        .add("6", "Load Products", () => ProductLoader.loadProducts())
-        .add("7", "Load Companies", () => CustomerLoader.loadCompanies())
-        .add("8", "Load Persons", () => CustomerLoader.loadPersons())
-        .add("9", "Load Shippers", () => OrderLoader.loadShippers())
-        .add("10", "Load Orders", () => OrderLoader.loadOrders())
-        .add("11", "Load Employee Passages (embeddings)", () => EmployeeLoader.loadEmployeePassages())
+    // Order mirrors Southwind's SouthwindMigrations.CSharpMigrations: CreateRoles + CreateSystemUser
+    // first, then the Northwind data loaders, then EmployeeLoader.CreateUsers (needs employees + roles),
+    // and finally ImportAuthRules (Southwind's InitialAuthRulesImport). `load 1-15` runs the lot.
+    const selected = await new ConsoleSwitch<() => Promise<void>>("Load processes (e.g. 1-15):")
+        .add("1", "Create Roles", () => EastwindMigrations.createRoles())
+        .add("2", "Create System User", () => EastwindMigrations.createSystemUser())
+        .add("3", "Load Regions", () => EmployeeLoader.loadRegions())
+        .add("4", "Load Territories", () => EmployeeLoader.loadTerritories())
+        .add("5", "Load Employees", () => EmployeeLoader.loadEmployees())
+        .add("6", "Load Suppliers", () => ProductLoader.loadSuppliers())
+        .add("7", "Load Categories", () => ProductLoader.loadCategories())
+        .add("8", "Load Products", () => ProductLoader.loadProducts())
+        .add("9", "Load Companies", () => CustomerLoader.loadCompanies())
+        .add("10", "Load Persons", () => CustomerLoader.loadPersons())
+        .add("11", "Load Shippers", () => OrderLoader.loadShippers())
+        .add("12", "Load Orders", () => OrderLoader.loadOrders())
+        .add("13", "Create Users", () => EmployeeLoader.createUsers())
+        .add("14", "Load Employee Passages (embeddings)", () => EmployeeLoader.loadEmployeePassages())
+        .add("15", "Import Auth Rules", () => EastwindMigrations.importAuthRules())
         .chooseMultipleWithDescription(args);
 
     if (selected == null || selected.length === 0) return;
@@ -114,12 +126,23 @@ async function create(sb: SchemaBuilder, connector: Connector): Promise<void> {
     await connector.cleanDatabase();
     console.log("[new] generating schema");
     await sb.schema.generationScript()?.executeNonQuery();
+    // Read back the TypeEntity ids the DB just assigned, so a subsequent load in this same
+    // process (interactive menu) resolves discriminators against the persisted ids.
+    await sb.schema.initialize();
     console.log("[new] schema generation complete");
 }
 
 async function synchronize(sb: SchemaBuilder): Promise<void> {
     const replacements = new Replacements();
     replacements.interactive = Boolean(process.stdin.isTTY); // prompt for renames only on a real console
+    // Headless (no TTY): we can't prompt, so instead of ABORTING on an ambiguous column/table rename, treat
+    // every one as no-rename → drop + add (Signum's AutoReplacement pattern), logging each decision. This is
+    // the safe CI/dev default; a real rename with data to preserve should be run on an interactive console.
+    if (!replacements.interactive)
+        replacements.autoReplacement = ({ oldValue, replacementKey }) => {
+            console.log(`[sync] no-rename (drop+add): '${oldValue}' in ${replacementKey}`);
+            return { oldValue, newValue: null };
+        };
     const script = await sb.schema.synchronizationScript(replacements);
     if (script == null) {
         console.log("[sync] database already in sync");
@@ -127,7 +150,37 @@ async function synchronize(sb: SchemaBuilder): Promise<void> {
     }
     console.log("[sync] synchronization script:\n" + script.plainSql());
     await script.executeNonQuery();
+    // A sync may have inserted/renamed/removed types — refresh the caches from the DB.
+    await sb.schema.initialize();
     console.log("[sync] applied");
+}
+
+// Export all authorization rules to a Southwind-style AuthRules.xml (Signum's AuthLogic.ExportRules).
+async function exportAuth(args: string[]): Promise<void> {
+    const file = args[0] ?? "AuthRules.xml";
+    fs.writeFileSync(file, await AuthImportExport.exportAuthRules(), "utf8");
+    console.log(`[export-auth] wrote ${file}`);
+}
+
+// Import authorization rules from an AuthRules.xml (Signum's AutomaticImportAuthRules). Renames are asked
+// on a real console; headless (no TTY) treats every ambiguous rename as no-rename (drop), logged.
+async function importAuth(args: string[]): Promise<void> {
+    const file = args[0] ?? "AuthRules.xml";
+    const xml = fs.readFileSync(file, "utf8");
+    const replacements = new Replacements();
+    replacements.interactive = Boolean(process.stdin.isTTY);
+    if (!replacements.interactive)
+        replacements.autoReplacement = ({ oldValue }) => {
+            console.log(`[import-auth] no-rename (drop): '${oldValue}'`);
+            return { oldValue, newValue: null };
+        };
+    const result = await AuthImportExport.importAuthRules(xml, replacements);
+    console.log(`[import-auth] applied roles: ${result.appliedRoles.join(", ") || "(none)"}`);
+    if (result.renames.length > 0)
+        console.log(`[import-auth] renames: ${result.renames.map(r => `${r.key.replace("AuthRules:", "")} ${r.from}→${r.to}`).join(", ")}`);
+    if (result.skippedRoles.length > 0)
+        console.log(`[import-auth] SKIPPED (no DB role after rename): ${result.skippedRoles.join(", ")}`);
+    console.log(`[import-auth] done (${file})`);
 }
 
 // Read-back health check: row counts of every table via altea's LINQ.

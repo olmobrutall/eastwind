@@ -6,8 +6,11 @@ import { view, table } from "@altea/altea/server/table";
 import { BulkInserter } from "@altea/altea/server/bulkInserter";
 import { toInt } from "@altea/altea/data/basics";
 import { Vector } from "@altea/altea/data/vector";
+import { PasswordEncoding } from "@altea/altea/server/passwordEncoding";
 import { RegionEntity, TerritoryEntity, EmployeeEntity, EmployeeEntity_Territories, EmployeePassageEntity } from "../employees/Employee.data";
 import { AddressEmbedded } from "../customers/Customer.data";
+import { RoleEntity } from "@altea/altea-auth/data/Role";
+import { UserEntity, UserState } from "@altea/altea-auth/data/User";
 import { Northwind, NwRegion, NwTerritory, NwEmployee, NwEmployeeTerritory } from "./northwindSchema";
 
 // Port of Southwind.Terminal/EmployeeLoader.cs. Reads Northwind through IView classes under a second
@@ -135,5 +138,32 @@ export namespace EmployeeLoader {
             }
 
         return passages;
+    }
+
+    // Port of Southwind's EmployeeLoader.CreateUsers: one user per employee (UserName = FirstName,
+    // password = FirstName), role by index over employees ordered by Notes length descending —
+    // `i < 2 ? "Super user" : i < 5 ? "Advanced user" : "Standard user"`. Run AFTER loadEmployees and
+    // after the roles exist (EastwindMigrations.createRoles). altea divergence: no UserEmployeeMixin, so
+    // the user isn't linked back to its employee. Idempotent (skips an existing username).
+    export async function createUsers(): Promise<void> {
+        const roles = new Map((await table(RoleEntity).toArray() as RoleEntity[]).map(r => [r.name, r]));
+        const existing = new Set((await table(UserEntity).toArray() as UserEntity[]).map(u => u.userName));
+        const employees = (await table(EmployeeEntity).toArray() as EmployeeEntity[])
+            .sort((a, b) => (b.notes?.length ?? 0) - (a.notes?.length ?? 0));
+
+        for (let i = 0; i < employees.length; i++) {
+            const userName = employees[i].firstName;
+            if (existing.has(userName))
+                continue;
+            const role = roles.get(i < 2 ? "Super user" : i < 5 ? "Advanced user" : "Standard user");
+            if (role == null)
+                continue;
+            await UserEntity.create({
+                userName,
+                role: role.toLite(),
+                state: UserState.Active,
+                passwordHash: PasswordEncoding.hashPassword(userName, userName),
+            }).save();
+        }
     }
 }

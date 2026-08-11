@@ -6,6 +6,7 @@ import { ProductsClient } from "./products/Product.client";
 import { ShippersClient } from "./shippers/Shipper.client";
 import { CustomersClient } from "./customers/Customer.client";
 import { OrdersClient } from "./orders/Order.client";
+import { AuthAdminClient } from "@altea/altea-auth/client/admin/AuthAdminClient";
 
 // The full (admin) registration bundle — Southwind's MainAdmin.startFull: the framework client modules
 // (Operations/Navigator/Finder) first, then each entity domain's client. Mirrors the server's
@@ -22,4 +23,9 @@ export function startFull(routes: RouteObject[]): void {
     ShippersClient.start(cb);
     CustomersClient.start(cb);
     OrdersClient.start(cb);
+
+    // Authorization admin (altea-auth, part of the FULL bundle): the User/Role admin views + rule-pack
+    // admin. The PUBLIC auth routes (login / change password) are registered by AuthClient.startPublic
+    // in MainPublic — they must work without this admin bundle.
+    AuthAdminClient.start(cb, { types: true, permissions: true, operations: true, queries: true, properties: true });
 }

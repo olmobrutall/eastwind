@@ -2,9 +2,18 @@ packages:
   - altea/altea
   - altea/altea-auth
   - altea/altea-test
+  - altea/altea-auth-test
   - altea/quote-transformer
   - altea/quote-transformer-test
   - eastwind
+
+# yarn-classic-style flat node_modules: external deps are hoisted to the workspace-root node_modules so
+# every workspace package can resolve them without re-declaring. This lets shared runtime deps (react,
+# react-bootstrap, express, …) be declared ONCE in @altea/altea and be resolvable from altea-auth,
+# eastwind, and future modules — matching the single-node_modules model the Signum client used under
+# yarn+vite. (Trades away pnpm's phantom-dependency strictness, as yarn did.) Changing this recreates
+# node_modules on the next `pnpm install`.
+nodeLinker: hoisted
 allowBuilds:
   esbuild: true
   unrs-resolver: true

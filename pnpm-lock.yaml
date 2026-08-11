@@ -91,6 +91,24 @@ importers:
         specifier: workspace:*
         version: link:../quote-transformer
 
+  altea/altea-auth-test:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      mssql:
+        specifier: ^12.6.0
+        version: 12.6.0
+      pg:
+        specifier: ^8.22.0
+        version: 8.22.0
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
   altea/altea-test:
     dependencies:
       '@altea/altea':

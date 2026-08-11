@@ -11,11 +11,22 @@
 //
 // Empty today: eastwind registers no mixins, every lite model is the default, and implementedBy is
 // declared inline via @implementedBy on OrderEntity.customer. As those needs arise, register them here.
+import { overrideImplementedBy } from "@altea/altea/data/decorators";
+import { ExceptionEntity } from "@altea/altea/data/exception";
+import { OperationLogEntity } from "@altea/altea/data/operationLog";
+import { UserEntity } from "@altea/altea-auth/data/User";
+
 export namespace EntityOverrides {
     export function start(): void {
         // MixinDeclarations.register(EmployeeEntity, ColaboratorsMixin);
         // registerCustomLite(EmployeeEntity, EmployeeLite, e => EmployeeLite.create({ ... }), /*isDefault*/ true);
-        // (implementedBy overrides, when a field's implementations must change from another module)
+
+        // implementedBy overrides (Signum's OverrideAttributes): the framework's ExceptionEntity /
+        // OperationLogEntity declare `user` with NO implementations (so altea core needn't reference
+        // altea-auth); the app points them at its concrete UserEntity. Runs on both tiers before any
+        // (de)serialization or schema build.
+        overrideImplementedBy(ExceptionEntity, "user", () => [UserEntity]);
+        overrideImplementedBy(OperationLogEntity, "user", () => [UserEntity]);
 
         // Package / folder defaults (Signum's assembly [DefaultAssemblyCulture] + default schema). Written
         // as bare calls that the quote-transformer stamps with the file's __fileInfo, so they know the

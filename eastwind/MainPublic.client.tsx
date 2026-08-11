@@ -1,11 +1,14 @@
+import * as React from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider, type RouteObject } from "react-router";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { fas } from "@fortawesome/free-solid-svg-icons";
 import { far } from "@fortawesome/free-regular-svg-icons";
 import { loadReflectionMetadata } from "@altea/altea/client/ReflectionClient";
+import { SessionSharing } from "@altea/altea/client/Services";
 import * as AppContext from "@altea/altea/client/AppContext";
 import ErrorModal from "@altea/altea/client/Modals/ErrorModal";
+import { AuthClient } from "@altea/altea-auth/client/AuthClient";
 import { EntityOverrides } from "./entityOverrides.data";
 import Layout from "./Layout";
 import Home from "./Home";
@@ -29,10 +32,26 @@ ErrorModal.register();
 async function boot(): Promise<void> {
     EntityOverrides.start();
 
+    // Cross-tab session sharing (Signum's Services.SessionSharing): a NEW tab (empty sessionStorage) asks
+    // any other open tab for its sessionStorage — so the auth token carries over and the tab opens already
+    // logged in. Must run BEFORE startPublic (namespaces the cross-tab logout signal) and BEFORE autoLogin
+    // (which reads the token); awaited so the storage round-trip finishes before the token is read.
+    await SessionSharing.setAppNameAndRequestSessionStorage("eastwind");
+
+    // Host hooks for the auth module (Signum's MainPublic wires these): where to go after login / logout.
+    AuthClient.Options.onLogin = (back?: string) => AppContext.navigate(back || "/");
+    AuthClient.Options.onLogout = () => { AppContext.navigate("/auth/login"); return Promise.resolve(); };
+
     const routes: RouteObject[] = [];
+    // Public auth routes (login / change password) — registered here, NOT in the admin bundle, so they
+    // are available even when no user is logged in.
+    AuthClient.startPublic(routes);
     (await import("./MainAdmin.client")).startFull(routes);
 
     await loadReflectionMetadata();
+
+    // Resolve the current user from a stored token before the first render (Signum's autoLogin).
+    await AuthClient.autoLogin();
 
     const router = createBrowserRouter([{
         path: "/",
@@ -48,9 +67,20 @@ async function boot(): Promise<void> {
     // (the FrameModal expand link, entity links, etc.) instead of a full page reload.
     AppContext.setRouter(router);
 
+    // Remount the tree on resetUI (login / logout / metadata refetch) so components re-read the new
+    // role's data (e.g. Home's role-filtered query list). Signum's AppContext.resetUI re-renders the app.
+    function App(): React.JSX.Element {
+        const [key, setKey] = React.useState(0);
+        React.useEffect(() => {
+            AppContext.setResetUI(() => setKey(k => k + 1));
+            return () => AppContext.setResetUI(() => { });
+        }, []);
+        return <RouterProvider key={key} router={router} />;
+    }
+
     const el = document.getElementById("root");
     if (el)
-        createRoot(el).render(<RouterProvider router={router} />);
+        createRoot(el).render(<App />);
 }
 
 boot().catch(err => {
