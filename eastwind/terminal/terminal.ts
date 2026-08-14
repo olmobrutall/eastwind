@@ -2,7 +2,7 @@ import "@altea/altea/server/context.node"; // register server context storage fi
 import * as fs from "node:fs";
 import chalk from "chalk";
 import { Connector } from "@altea/altea/server/connection/connector";
-import type { SchemaBuilder } from "@altea/altea/server/schema";
+import { Schema } from "@altea/altea/server/schema";
 import { Replacements } from "@altea/altea/server/sync/synchronizer";
 import { AuthImportExport } from "@altea/altea-auth/server/AuthImportExport";
 import { table } from "@altea/altea/server/table";
@@ -32,18 +32,18 @@ async function main(): Promise<void> {
     const command = args[0]?.toLowerCase();
 
     const connStr = requireConnStr();
-    const { sb, connector } = await Starter.start(connStr);
+    await Starter.start(connStr); // binds Connector.default; reach the schema via Schema.current
     try {
-        await connectBanner(connector, connStr);
+        await connectBanner(connStr);
 
         if (command == null) {
-            await interactive(sb, connector);
+            await interactive();
         } else {
             switch (command) {
                 case "new":
-                case "create": await create(sb, connector); break;
+                case "create": await create(); break;
                 case "sync":
-                case "synchronize": await synchronize(sb); break;
+                case "synchronize": await synchronize(); break;
                 case "load": await load(args.slice(1)); break;
                 case "check": await check(); break;
                 case "export-auth": await exportAuth(args.slice(1)); break;
@@ -53,7 +53,7 @@ async function main(): Promise<void> {
         }
     } finally {
         await Northwind.close();
-        await connector.closeConnection();
+        await Connector.current().closeConnection();
     }
 }
 
@@ -74,11 +74,11 @@ function formatErrorRed(err: unknown): string {
 
 // The interactive main menu (Southwind.Terminal's `new ConsoleSwitch<…>{…}.Choose()` loop). Runs until
 // the user enters nothing; an action's error is printed but keeps the menu alive.
-async function interactive(sb: SchemaBuilder, connector: Connector): Promise<void> {
+async function interactive(): Promise<void> {
     for (; ;) {
         const action = await new ConsoleSwitch<() => Promise<void>>("..:: Welcome to the Eastwind Loading Application ::..")
-            .add("N", "New Database (clean + generate schema)", () => create(sb, connector))
-            .add("S", "Synchronize (diff model vs DB)", () => synchronize(sb))
+            .add("N", "New Database (clean + generate schema)", () => create())
+            .add("S", "Synchronize (diff model vs DB)", () => synchronize())
             .add("L", "Load Northwind data (+ roles/users)", () => load([]))
             .add("C", "Check (row counts)", () => check())
             .choose();
@@ -121,18 +121,18 @@ async function load(args: string[]): Promise<void> {
         await executeLoadProcess(step.description, step.value);
 }
 
-async function create(sb: SchemaBuilder, connector: Connector): Promise<void> {
+async function create(): Promise<void> {
     console.log("[new] cleaning database");
-    await connector.cleanDatabase();
+    await Connector.current().cleanDatabase();
     console.log("[new] generating schema");
-    await sb.schema.generationScript()?.executeNonQuery();
+    await Schema.current.generationScript()?.executeNonQuery();
     // Read back the TypeEntity ids the DB just assigned, so a subsequent load in this same
     // process (interactive menu) resolves discriminators against the persisted ids.
-    await sb.schema.initialize();
+    await Schema.current.initialize();
     console.log("[new] schema generation complete");
 }
 
-async function synchronize(sb: SchemaBuilder): Promise<void> {
+async function synchronize(): Promise<void> {
     const replacements = new Replacements();
     replacements.interactive = Boolean(process.stdin.isTTY); // prompt for renames only on a real console
     // Headless (no TTY): we can't prompt, so instead of ABORTING on an ambiguous column/table rename, treat
@@ -143,7 +143,7 @@ async function synchronize(sb: SchemaBuilder): Promise<void> {
             console.log(`[sync] no-rename (drop+add): '${oldValue}' in ${replacementKey}`);
             return { oldValue, newValue: null };
         };
-    const script = await sb.schema.synchronizationScript(replacements);
+    const script = await Schema.current.synchronizationScript(replacements);
     if (script == null) {
         console.log("[sync] database already in sync");
         return;
@@ -151,7 +151,7 @@ async function synchronize(sb: SchemaBuilder): Promise<void> {
     console.log("[sync] synchronization script:\n" + script.plainSql());
     await script.executeNonQuery();
     // A sync may have inserted/renamed/removed types — refresh the caches from the DB.
-    await sb.schema.initialize();
+    await Schema.current.initialize();
     console.log("[sync] applied");
 }
 
@@ -216,7 +216,8 @@ function requireConnStr(): string {
 
 // Touch the database so a bad host/credential fails here with a clear message and the server banner is
 // surfaced (mirrors MusicStarter's connect probe + Southwind.Terminal's coloured env banner).
-async function connectBanner(connector: Connector, connStr: string): Promise<void> {
+async function connectBanner(connStr: string): Promise<void> {
+    const connector = Connector.current();
     const label = connector.isPostgres ? "PostgreSQL" : "SQL Server";
     const target = Connector.redactConnectionString(connStr);
     console.log(`[${label}] connecting: ${target}`);

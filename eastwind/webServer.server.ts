@@ -14,9 +14,9 @@ async function main(): Promise<void> {
         throw new Error("Set EASTWIND_DB (or ALTEA_TEST_DB) to a connection string.");
 
     const ws = createWebServer();
-    const { connector } = await Starter.start(connStr, ws); // builds schema, binds connector, mounts all HTTP
+    await Starter.start(connStr, ws); // builds schema, binds Connector.default, mounts all HTTP
     if (process.env["SQL_LOG"]) Connector.currentLogger = new ConsoleSqlLogger();
-    const label = connector.isPostgres ? "PostgreSQL" : "SQL Server";
+    const label = Connector.current().isPostgres ? "PostgreSQL" : "SQL Server";
     console.log(`[eastwind] engine started (${label}: ${Connector.redactConnectionString(connStr)})`);
 
     // Default 3001 (not 3000): a local Southwind (Signum) dev host commonly occupies 3000, so eastwind

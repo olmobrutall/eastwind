@@ -126,6 +126,10 @@
             "preLaunchTask": "build eastwind server bundle",
             "program": "${workspaceFolder}/eastwind/dist/server-bundle/main.js",
             "cwd": "${workspaceFolder}/eastwind/",
+            "runtimeArgs": [
+                "--enable-source-maps",
+                "--env-file=.env.postgres"
+            ],
             "outFiles": [
                 "${workspaceFolder}/eastwind/dist/server-bundle/**/*.js"
             ],
@@ -152,7 +156,7 @@
                 "./register.mjs",
                 "--env-file=.env.postgres"
             ],
-            "program": "${workspaceFolder}/eastwind/dist/server/webServer.js",
+            "program": "${workspaceFolder}/eastwind/dist/webServer.server.js",
             "outFiles": [
                 "${workspaceFolder}/eastwind/dist/**/*.js"
             ],
@@ -179,7 +183,7 @@
                 "./register.mjs",
                 "--env-file=.env.sqlserver"
             ],
-            "program": "${workspaceFolder}/eastwind/dist/server/webServer.js",
+            "program": "${workspaceFolder}/eastwind/dist/webServer.server.js",
             "outFiles": [
                 "${workspaceFolder}/eastwind/dist/**/*.js"
             ],
@@ -217,8 +221,9 @@
             ],
             "console": "integratedTerminal",
             "skipFiles": [
-                "<node_internals>/**"
-                // "**/node_modules/pg/lib/native/**"
+                "<node_internals>/**",
+                "**/get-intrinsic/**",
+                "**/pg/lib/native/client.js"
             ]
         },
         {

@@ -5,7 +5,8 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 import { fas } from "@fortawesome/free-solid-svg-icons";
 import { far } from "@fortawesome/free-regular-svg-icons";
 import { loadReflectionMetadata } from "@altea/altea/client/ReflectionClient";
-import { SessionSharing } from "@altea/altea/client/Services";
+import { SessionSharing, NotifyPendingFilter } from "@altea/altea/client/Services";
+import Notify from "@altea/altea/client/Frames/Notify";
 import * as AppContext from "@altea/altea/client/AppContext";
 import ErrorModal from "@altea/altea/client/Modals/ErrorModal";
 import { AuthClient } from "@altea/altea-auth/client/AuthClient";
@@ -31,6 +32,11 @@ ErrorModal.register();
 // registered first), and mount the router. No auth gating in eastwind — always full.
 async function boot(): Promise<void> {
     EntityOverrides.start();
+
+    // Route the ajax pending-request count to the Notify host (Signum's MainPublic wiring) so a "loading"
+    // toast shows while requests are in flight. The <Notify/> host is mounted in Layout; operation success
+    // toasts (Operations.notifySuccess) go through the same singleton.
+    NotifyPendingFilter.notifyPendingRequests = pending => Notify.getSingleton()?.notifyPendingRequest(pending);
 
     // Cross-tab session sharing (Signum's Services.SessionSharing): a NEW tab (empty sessionStorage) asks
     // any other open tab for its sessionStorage — so the auth token carries over and the tab opens already

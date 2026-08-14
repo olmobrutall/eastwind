@@ -109,6 +109,18 @@ importers:
         specifier: workspace:*
         version: link:../quote-transformer
 
+  altea/altea-profiler:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
   altea/altea-test:
     dependencies:
       '@altea/altea':
@@ -160,6 +172,9 @@ importers:
       '@altea/altea-auth':
         specifier: workspace:*
         version: link:../altea/altea-auth
+      '@altea/altea-profiler':
+        specifier: workspace:*
+        version: link:../altea/altea-profiler
       '@fortawesome/fontawesome-svg-core':
         specifier: ^7.3.1
         version: 7.3.1

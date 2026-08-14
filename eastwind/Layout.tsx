@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Link, Outlet, useLocation, Navigate } from "react-router";
 import { GlobalModalContainer } from "@altea/altea/client/Modals";
+import Notify from "@altea/altea/client/Frames/Notify";
 import { ErrorBoundary } from "@altea/altea/client/Components";
 import * as AppContext from "@altea/altea/client/AppContext";
 import LoginDropdown from "@altea/altea-auth/client/public/LoginDropdown";
@@ -47,6 +48,9 @@ export default function Layout(): React.JSX.Element {
                 </ErrorBoundary>
             </div>
             <GlobalModalContainer />
+            {/* The notification host (Signum's <Notify/>): registers the Notify singleton so ajax "loading"
+                toasts and operation "success" toasts have somewhere to render. Must stay mounted app-wide. */}
+            <Notify />
         </div>
     );
 }

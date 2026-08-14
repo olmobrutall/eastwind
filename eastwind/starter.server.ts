@@ -1,6 +1,9 @@
 import "@altea/altea/server/context.node"; // register server context storage first
+import "@altea/altea/server/dynamicQuery/fluentIncludeQuery"; // sb.include(...).withQuery()
 import { Connector } from "@altea/altea/server/connection/connector";
 import { SchemaBuilder } from "@altea/altea/server/schema";
+import { TypeEntity } from "@altea/altea/data/typeEntity";
+import type { Entity, Type } from "@altea/altea/data/entity";
 import { SignumServer } from "@altea/altea/server/signumServer";
 import type { WebBuilder } from "@altea/altea/server/webApi";
 import { ExceptionLogic } from "@altea/altea/server/exceptionLogic";
@@ -18,6 +21,7 @@ import { PermissionAuthLogic } from "@altea/altea-auth/server/PermissionAuthLogi
 import { OperationAuthLogic } from "@altea/altea-auth/server/OperationAuthLogic";
 import { QueryAuthLogic } from "@altea/altea-auth/server/QueryAuthLogic";
 import { PropertyAuthLogic } from "@altea/altea-auth/server/PropertyAuthLogic";
+import { ProfilerLogic } from "@altea/altea-profiler/server/ProfilerLogic";
 
 // Port of Southwind's Starter.Start (Southwind/Starter.cs): the single global entry that builds the
 // schema, binds the connector, registers each module's logic and completes. Extensions are excluded
@@ -27,7 +31,7 @@ export namespace Starter {
     // `webBuilder` mirrors Signum's `sb.WebServerBuilder`: the web host passes the WebBuilder it created,
     // Starter sets it on the SchemaBuilder, and each module's `XxxLogic.start(sb)` mounts its own HTTP
     // surface via `if (sb.webBuilder) XxxServer.start(sb.webBuilder)`. A terminal / test omits it (no HTTP).
-    export async function start(connectionString: string, webBuilder?: WebBuilder): Promise<{ sb: SchemaBuilder; connector: Connector }> {
+    export async function start(connectionString: string, webBuilder?: WebBuilder): Promise<void> {
         // Shared entity-model declarations (mixins / lite models / implementedBy overrides), applied
         // identically on client and server. Runs before schema build so overrides take effect.
         EntityOverrides.start();
@@ -62,10 +66,20 @@ export namespace Starter {
         QueryAuthLogic.start(sb);
         PropertyAuthLogic.start(sb);
 
+        // Profiler module (altea-profiler): declares no tables (state is in-memory); mounts the
+        // /api/profilerHeavy/* + /api/profilerTimes/* routes and its permission symbols (seeded via the
+        // PermissionSymbol table above). After the auth logics so its permissions land in the same seed.
+        ProfilerLogic.start(sb, { timeTracker: true, heavyProfiler: true });
+
         // Framework operation infrastructure (Signum's OperationLogic.Start): the OperationSymbol table
         // (seeded with the operations the modules above registered) + the OperationLogEntity table/query
         // that backs the operation-log quick link. Must run AFTER the module graphs register.
         OperationLogic.start(sb);
+
+        // Expose a search query for the TypeEntity system table (Signum ships one). It's included by the
+        // schema core but never `.withQuery()`'d, so `/find/Type` reported "not allowed"; register it here.
+        // (Scoped to eastwind rather than the framework to avoid re-seeding altea-test's query table.)
+        sb.include(TypeEntity as unknown as Type<Entity>).withQuery();
 
         sb.complete();
 
@@ -84,7 +98,5 @@ export namespace Starter {
         // exception filter — Express error middleware, registered inside SignumServer.start — is truly last.
         if (sb.webBuilder)
             SignumServer.start(sb.webBuilder);
-
-        return { sb, connector };
     }
 }

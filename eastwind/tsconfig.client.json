@@ -18,6 +18,7 @@
   "references": [
     { "path": "./tsconfig.data.json" },
     { "path": "../altea/altea-auth/tsconfig.client.json" },
+    { "path": "../altea/altea-profiler/tsconfig.client.json" },
     { "path": "../altea/altea/tsconfig.client.json" }
   ]
 }
