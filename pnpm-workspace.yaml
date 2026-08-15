@@ -2,6 +2,8 @@ packages:
   - altea/altea
   - altea/altea-auth
   - altea/altea-profiler
+  - altea/altea-user-assets
+  - altea/altea-user-queries
   - altea/altea-test
   - altea/altea-auth-test
   - altea/quote-transformer

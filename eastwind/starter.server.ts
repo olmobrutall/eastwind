@@ -22,6 +22,7 @@ import { OperationAuthLogic } from "@altea/altea-auth/server/OperationAuthLogic"
 import { QueryAuthLogic } from "@altea/altea-auth/server/QueryAuthLogic";
 import { PropertyAuthLogic } from "@altea/altea-auth/server/PropertyAuthLogic";
 import { ProfilerLogic } from "@altea/altea-profiler/server/ProfilerLogic";
+import { UserQueriesLogic } from "@altea/altea-user-queries/server/UserQueriesLogic.server";
 
 // Port of Southwind's Starter.Start (Southwind/Starter.cs): the single global entry that builds the
 // schema, binds the connector, registers each module's logic and completes. Extensions are excluded
@@ -70,6 +71,11 @@ export namespace Starter {
         // /api/profilerHeavy/* + /api/profilerTimes/* routes and its permission symbols (seeded via the
         // PermissionSymbol table above). After the auth logics so its permissions land in the same seed.
         ProfilerLogic.start(sb, { timeTracker: true, heavyProfiler: true });
+
+        // User queries module (altea-user-queries): the UserQuery entity + its Save/Delete operations,
+        // caches, XML import/export, and lookup routes. Before OperationLogic.start so its operation symbols
+        // get seeded; after the auth logics so ViewUserQuery / UserAssetsToXML land in the same permission seed.
+        UserQueriesLogic.start(sb);
 
         // Framework operation infrastructure (Signum's OperationLogic.Start): the OperationSymbol table
         // (seeded with the operations the modules above registered) + the OperationLogEntity table/query
