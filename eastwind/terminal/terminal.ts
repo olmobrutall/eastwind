@@ -2,6 +2,7 @@ import "@altea/altea/server/context.node"; // register server context storage fi
 import * as fs from "node:fs";
 import chalk from "chalk";
 import { Connector } from "@altea/altea/server/connection/connector";
+import { Transaction } from "@altea/altea/server/connection/transaction";
 import { Schema } from "@altea/altea/server/schema";
 import { Replacements } from "@altea/altea/server/sync/synchronizer";
 import { AuthImportExport } from "@altea/altea-auth/server/AuthImportExport";
@@ -149,8 +150,14 @@ async function synchronize(): Promise<void> {
         return;
     }
     console.log("[sync] synchronization script:\n" + script.plainSql());
-    await script.executeNonQuery();
-    // A sync may have inserted/renamed/removed types — refresh the caches from the DB.
+    // Apply the whole script atomically: a mid-script failure (e.g. a PK-type migration that fails partway)
+    // rolls back so the database is never left half-migrated. Postgres runs DDL transactionally; on SQL
+    // Server most DDL is transactional too (a few statements auto-commit — acceptable for a dev sync).
+    await Transaction.create(async () => {
+        await script.executeNonQuery();
+    });
+    // A sync may have inserted/renamed/removed types — refresh the caches from the DB (outside the txn, so
+    // it reads the committed state).
     await Schema.current.initialize();
     console.log("[sync] applied");
 }
