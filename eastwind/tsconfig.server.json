@@ -1,17 +1,7 @@
 {
-  // SERVER layer — every *.server.ts(x) file (node-only: web host, logic, starter).
-  // References DATA, so server code may `import "./X.data"`. It does NOT reference CLIENT, so a server
-  // file can never pull browser code.
-  "extends": "../altea/altea/tsconfig.base.json",
-  "compilerOptions": {
-    "rootDir": ".",
-    "outDir": "dist",
-    "tsBuildInfoFile": "dist/.tsbuildinfo.server",
-    "types": ["node"]
-  },
-  // Both forms accepted: a co-located suffix file (customers/Customer.server.ts) OR a server/ directory.
-  "include": ["server/**/*", "**/*.server.ts"],
-  "exclude": ["data/**", "client/**", "terminal/**"],
+  // SERVER layer — node-only (web host, logic, starter). References DATA + every upstream server layer;
+  // never references CLIENT, so a server file can't pull browser code into the bundle.
+  "extends": "../altea/altea/presets/server.json",
   "references": [
     { "path": "./tsconfig.data.json" },
     { "path": "../altea/altea-auth/tsconfig.server.json" },
