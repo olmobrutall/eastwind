@@ -26,6 +26,7 @@
   "dependencies": {
     "@altea/altea": "workspace:*",
     "@altea/altea-auth": "workspace:*",
+    "@altea/altea-chart": "workspace:*",
     "@altea/altea-profiler": "workspace:*",
     "@altea/altea-user-assets": "workspace:*",
     "@altea/altea-user-queries": "workspace:*",

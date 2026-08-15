@@ -9,6 +9,7 @@ import { OrdersClient } from "./orders/Order.client";
 import { AuthAdminClient } from "@altea/altea-auth/client/admin/AuthAdminClient";
 import { ProfilerClient } from "@altea/altea-profiler/client/ProfilerClient";
 import { UserQueriesClient } from "@altea/altea-user-queries/client/UserQueriesClient";
+import { ChartClient } from "@altea/altea-chart/client/ChartClient";
 
 // The full (admin) registration bundle — Southwind's MainAdmin.startFull: the framework client modules
 // (Operations/Navigator/Finder) first, then each entity domain's client. Mirrors the server's
@@ -37,4 +38,7 @@ export function startFull(routes: RouteObject[]): void {
     // User queries (altea-user-queries): the UserQuery editor + /userQuery page + quick-links to run saved
     // queries (Signum's UserQueryClient).
     UserQueriesClient.start(cb);
+
+    // Charting (altea-chart): the /chart/:queryName page + the Columns D3 renderer (Signum's ChartClient).
+    ChartClient.start(cb);
 }

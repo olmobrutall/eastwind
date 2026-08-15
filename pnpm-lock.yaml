@@ -226,6 +226,9 @@ importers:
       '@altea/altea-auth':
         specifier: workspace:*
         version: link:../altea/altea-auth
+      '@altea/altea-chart':
+        specifier: workspace:*
+        version: link:../altea/altea-chart
       '@altea/altea-profiler':
         specifier: workspace:*
         version: link:../altea/altea-profiler
