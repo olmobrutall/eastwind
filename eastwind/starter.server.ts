@@ -81,7 +81,9 @@ export namespace Starter {
         // Charting module (altea-chart): seeds the ChartScriptSymbol table + registers the built-in chart
         // scripts (Bars/Columns), and mounts GET /api/chart/scripts. Before OperationLogic.start (no
         // operations yet) / after the auth logics so ViewCharting lands in the same permission seed.
-        ChartLogic.start(sb);
+        // svgMapUrls registers the opt-in SvgMap chart with the sample map served from public/ (dev: vite,
+        // prod: the API host's static files). Point a String LocationCode column at its region ids (US/DE/…).
+        ChartLogic.start(sb, ["/sample-maps/regions.svg"]);
 
         // Framework operation infrastructure (Signum's OperationLogic.Start): the OperationSymbol table
         // (seeded with the operations the modules above registered) + the OperationLogEntity table/query

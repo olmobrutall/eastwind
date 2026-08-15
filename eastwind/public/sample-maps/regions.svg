@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 300" width="600" height="300">
+  <!-- Sample schematic "regions" map for the SvgMap chart type. Each region is a `path[id]`; the SvgMap
+       chart matches a String LocationCode column against these ids (id="US", "DE", …) and colors them. -->
+  <g fill="#ddd" stroke="#fff" stroke-width="2">
+    <path id="US" d="M20,20 H190 V140 H20 Z" />
+    <path id="CA" d="M20,160 H190 V280 H20 Z" />
+    <path id="DE" d="M210,20 H390 V140 H210 Z" />
+    <path id="FR" d="M210,160 H390 V280 H210 Z" />
+    <path id="ES" d="M410,20 H580 V140 H410 Z" />
+    <path id="GB" d="M410,160 H580 V280 H410 Z" />
+  </g>
+  <g font-family="sans-serif" font-size="20" fill="#333" text-anchor="middle" pointer-events="none">
+    <text x="105" y="85">US</text>
+    <text x="105" y="225">CA</text>
+    <text x="300" y="85">DE</text>
+    <text x="300" y="225">FR</text>
+    <text x="495" y="85">ES</text>
+    <text x="495" y="225">GB</text>
+  </g>
+</svg>
