@@ -24,6 +24,7 @@ import { PropertyAuthLogic } from "@altea/altea-auth/server/PropertyAuthLogic";
 import { ProfilerLogic } from "@altea/altea-profiler/server/ProfilerLogic";
 import { UserQueriesLogic } from "@altea/altea-user-queries/server/UserQueriesLogic.server";
 import { ChartLogic } from "@altea/altea-chart/server/ChartLogic.server";
+import { UserChartLogic } from "@altea/altea-chart/server/UserChartLogic.server";
 
 // Port of Southwind's Starter.Start (Southwind/Starter.cs): the single global entry that builds the
 // schema, binds the connector, registers each module's logic and completes. Extensions are excluded
@@ -77,6 +78,11 @@ export namespace Starter {
         // caches, XML import/export, and lookup routes. Before OperationLogic.start so its operation symbols
         // get seeded; after the auth logics so ViewUserQuery / UserAssetsToXML land in the same permission seed.
         UserQueriesLogic.start(sb);
+
+        // User charts module (altea-chart/UserChart): the UserChart entity + its Save/Delete operations,
+        // caches, XML import/export, and lookup routes (Signum's UserChartLogic). Mirrors UserQueriesLogic;
+        // its ChartScriptSymbol FK auto-includes the chart-script table, which ChartLogic.start (below) seeds.
+        UserChartLogic.start(sb);
 
         // Charting module (altea-chart): seeds the ChartScriptSymbol table + registers the built-in chart
         // scripts (Bars/Columns), and mounts GET /api/chart/scripts. Before OperationLogic.start (no
