@@ -63,7 +63,8 @@ export class OrderEntity extends Entity {
 }
 
 export const OrderMessage = {
-    totalPrice: msg()
+    totalPrice: msg(),
+    subTotalPrice: msg()
 };
 
 // Owned child rows for OrderEntity.details (the per-row equivalent of Signum's

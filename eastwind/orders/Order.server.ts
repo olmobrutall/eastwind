@@ -18,9 +18,11 @@ import { QueryLogic } from "@altea/altea/server/dynamicQuery/queryLogic";
 // included by their own *Logic modules.
 export namespace OrdersLogic {
     export function start(sb: SchemaBuilder): void {
-        sb.include(OrderEntity).withQuery();
+        sb.include(OrderEntity)
+            .withQuery();
 
         QueryLogic.expressions.register(OrderEntity, o => o.totalPrice(), { niceName: () => OrderMessage.totalPrice.niceToString() });
+        QueryLogic.expressions.register(OrderLineEntity, o => o.subTotalPrice(), { niceName: () => OrderMessage.subTotalPrice.niceToString() });
         // Register the OrderGraph's operations (Save/Ship/Cancel/Delete/Create…) with OperationLogic
         // (Signum's `new OrderGraph().Register()`). Without this the /api/operation/* endpoints and
         // the entity pack's canExecute see no operations.
