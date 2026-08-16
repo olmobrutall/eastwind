@@ -24,6 +24,7 @@ import { PropertyAuthLogic } from "@altea/altea-auth/server/PropertyAuthLogic";
 import { ProfilerLogic } from "@altea/altea-profiler/server/ProfilerLogic";
 import { UserQueriesLogic } from "@altea/altea-user-queries/server/UserQueriesLogic.server";
 import { ChartLogic } from "@altea/altea-chart/server/ChartLogic.server";
+import { ColorPaletteLogic } from "@altea/altea-chart/server/ColorPaletteLogic.server";
 import { UserChartLogic } from "@altea/altea-chart/server/UserChartLogic.server";
 
 // Port of Southwind's Starter.Start (Southwind/Starter.cs): the single global entry that builds the
@@ -90,6 +91,11 @@ export namespace Starter {
         // svgMapUrls registers the opt-in SvgMap chart with the sample map served from public/ (dev: vite,
         // prod: the API host's static files). Point a String LocationCode column at its region ids (US/DE/…).
         ChartLogic.start(sb, ["/sample-maps/regions.svg"]);
+
+        // Per-type color palettes (altea-chart/ColorPalette): the ColorPalette entity + its Save/Delete
+        // operations, the palette cache, and GET /api/colorPalette/:typeName (Signum's ColorPaletteLogic).
+        // Before OperationLogic.start so its operation symbols get seeded.
+        ColorPaletteLogic.start(sb);
 
         // Framework operation infrastructure (Signum's OperationLogic.Start): the OperationSymbol table
         // (seeded with the operations the modules above registered) + the OperationLogEntity table/query

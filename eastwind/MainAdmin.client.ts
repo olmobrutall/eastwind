@@ -10,6 +10,7 @@ import { AuthAdminClient } from "@altea/altea-auth/client/admin/AuthAdminClient"
 import { ProfilerClient } from "@altea/altea-profiler/client/ProfilerClient";
 import { UserQueriesClient } from "@altea/altea-user-queries/client/UserQueriesClient";
 import { ChartClient } from "@altea/altea-chart/client/ChartClient";
+import { ColorPaletteClient } from "@altea/altea-chart/client/ColorPalette/ColorPaletteClient";
 import { UserChartClient } from "@altea/altea-chart/client/UserChart/UserChartClient";
 
 // The full (admin) registration bundle — Southwind's MainAdmin.startFull: the framework client modules
@@ -42,6 +43,11 @@ export function startFull(routes: RouteObject[]): void {
 
     // Charting (altea-chart): the /chart/:queryName page + the Columns D3 renderer (Signum's ChartClient).
     ChartClient.start(cb);
+
+    // Per-type color palettes (altea-chart/ColorPalette): the ColorPalette editor + client palette cache
+    // (Signum's ColorPaletteClient, which it starts from within ChartClient.start — altea wires it here from
+    // MainAdmin to match how every other client is registered). After ChartClient.
+    ColorPaletteClient.start(cb);
 
     // User charts (altea-chart/UserChart): the UserChart editor + /userChart page + quick-links to run saved
     // charts (Signum's UserChartClient). After ChartClient so the chart-script catalog fetch is registered.
