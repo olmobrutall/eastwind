@@ -48,6 +48,14 @@ async function boot(): Promise<void> {
     AuthClient.Options.onLogin = (back?: string) => AppContext.navigate(back || "/");
     AuthClient.Options.onLogout = () => { AppContext.navigate("/auth/login"); return Promise.resolve(); };
 
+    // DEV-ONLY password-less login (not in Signum): with VITE_PASSWORD_IS_USERNAME=true the login form
+    // drops its password field and sends the user name as the password, so any user of a locally seeded
+    // test database (System, Steven, Anne, …) is one field away. The dev seed hashes each user's name as
+    // their password (EastwindMigrations.ensureUser). `import.meta.env.DEV` is statically replaced by
+    // Vite, so this is dead code in a production build — and it is only a client convenience anyway: the
+    // request is the normal /api/auth/login, which the server validates as usual.
+    AuthClient.Options.passwordIsUsername = import.meta.env.DEV && import.meta.env.VITE_PASSWORD_IS_USERNAME == "true";
+
     const routes: RouteObject[] = [];
     // Public auth routes (login / change password) — registered here, NOT in the admin bundle, so they
     // are available even when no user is logged in.

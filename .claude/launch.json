@@ -8,6 +8,12 @@
       "port": 3001
     },
     {
+      "name": "eastwind-api-sqlserver",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "eastwind", "server:sqlserver"],
+      "port": 3001
+    },
+    {
       "name": "eastwind-client",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "eastwind", "dev:client"],
