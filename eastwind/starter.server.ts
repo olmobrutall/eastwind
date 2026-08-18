@@ -28,6 +28,7 @@ import { ColorPaletteLogic } from "@altea/altea-chart/server/ColorPaletteLogic.s
 import { UserChartLogic } from "@altea/altea-chart/server/UserChartLogic.server";
 import { DashboardLogic } from "@altea/altea-dashboard/server/DashboardLogic.server";
 import { FileLogic } from "@altea/altea-files/server/FileLogic.server";
+import { OmniboxLogic } from "@altea/altea-omnibox/server/OmniboxLogic";
 import { EastwindTypeCondition } from "./eastwindTypeConditions.data";
 
 // Port of Southwind's Starter.Start (Southwind/Starter.cs): the single global entry that builds the
@@ -122,6 +123,12 @@ export namespace Starter {
         DashboardLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
         DashboardLogic.registerRoleTypeCondition(EastwindTypeCondition.RoleEntities);
 
+        // Omnibox module (altea-omnibox): declares no tables (its ViewOmnibox permission symbol is seeded
+        // through the PermissionSymbol table above); registers the entity / dynamic-query / special result
+        // generators and mounts POST /api/omnibox. LAST of the module starts so its generators see every
+        // registered query — the query REGISTRY is read per request, but keeping it last matches Signum's
+        // OmniboxLogic.Start position and avoids any ordering surprise.
+        OmniboxLogic.start(sb);
 
         // Framework operation infrastructure (Signum's OperationLogic.Start): the OperationSymbol table
         // (seeded with the operations the modules above registered) + the OperationLogEntity table/query

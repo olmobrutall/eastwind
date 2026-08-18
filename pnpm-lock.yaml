@@ -172,6 +172,18 @@ importers:
         specifier: workspace:*
         version: link:../quote-transformer
 
+  altea/altea-omnibox:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
   altea/altea-profiler:
     dependencies:
       '@altea/altea':
@@ -274,6 +286,9 @@ importers:
       '@altea/altea-files':
         specifier: workspace:*
         version: link:../altea/altea-files
+      '@altea/altea-omnibox':
+        specifier: workspace:*
+        version: link:../altea/altea-omnibox
       '@altea/altea-profiler':
         specifier: workspace:*
         version: link:../altea/altea-profiler

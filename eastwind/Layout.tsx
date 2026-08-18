@@ -5,6 +5,7 @@ import Notify from "@altea/altea/client/Frames/Notify";
 import { ErrorBoundary } from "@altea/altea/client/Components";
 import * as AppContext from "@altea/altea/client/AppContext";
 import LoginDropdown from "@altea/altea-auth/client/public/LoginDropdown";
+import OmniboxAutocomplete from "@altea/altea-omnibox/client/OmniboxAutocomplete";
 
 // The app shell (Southwind's Layout): a top navbar (with the login/user dropdown) + the routed page via
 // <Outlet/>. Now auth-aware: a login guard redirects to /auth/login when no user is authenticated, and
@@ -38,6 +39,9 @@ export default function Layout(): React.JSX.Element {
         <div className="sf-page-container">
             <nav className="navbar navbar-expand navbar-dark bg-dark px-3">
                 <Link className="navbar-brand" to="/">eastwind</Link>
+                {/* The omnibox (Southwind puts it in the navbar too). Only for a logged-in user: the
+                    /api/omnibox route asserts OmniboxPermission.ViewOmnibox. */}
+                {AppContext.currentUser && <div className="sf-omnibox mx-3"><OmniboxAutocomplete inputAttrs={{ className: "form-control form-control-sm" }} /></div>}
                 <div className="navbar-nav ms-auto">
                     <LoginDropdown />
                 </div>

@@ -10,6 +10,7 @@
     { "path": "../altea/altea-files/tsconfig.client.json" },
     { "path": "../altea/altea-chart/tsconfig.client.json" },
     { "path": "../altea/altea-dashboard/tsconfig.client.json" },
+    { "path": "../altea/altea-omnibox/tsconfig.client.json" },
     { "path": "../altea/altea-profiler/tsconfig.client.json" },
     { "path": "../altea/altea-user-assets/tsconfig.client.json" },
     { "path": "../altea/altea-user-queries/tsconfig.client.json" },

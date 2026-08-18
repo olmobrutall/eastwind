@@ -25,12 +25,14 @@ export namespace EastwindMigrations {
     const DOMAIN_TYPES = ["Order", "Product", "Person", "Company", "Employee", "Shipper", "Supplier", "Category", "Region", "Territory"];
     // Row-scoped instead of plainly readable — see importAuthRules.
     const USER_ASSET_TYPES = ["Dashboard", "UserQuery", "UserChart"];
-    // The feature permissions the user-asset routes assert (Signum keys them "<Container>.<Member>").
-    const USER_ASSET_PERMISSIONS = [
+    // The feature permissions the extension routes assert (Signum keys them "<Container>.<Member>").
+    const FEATURE_PERMISSIONS = [
         "DashboardPermission.ViewDashboard",
         "UserQueryPermission.ViewUserQuery",
         "ChartPermission.ViewCharting",
         "UserAssetPermission.UserAssetsToXML",
+        // Without this the navbar omnibox 403s for a Standard user.
+        "OmniboxPermission.ViewOmnibox",
     ];
 
     export async function createRoles(): Promise<void> {
@@ -60,9 +62,9 @@ export namespace EastwindMigrations {
             await RuleTypeEntity.create({ role: roleLite, resource: type.toLite(), fallback: TypeAllowed.Read }).save();
         }
 
-        // The user-asset FEATURES themselves (Southwind's AuthRules.xml grants these to Standard user): without
+        // The extension FEATURES themselves (Southwind's AuthRules.xml grants these to Standard user): without
         // them the module routes 403 before any row scoping is even consulted.
-        for (const permission of USER_ASSET_PERMISSIONS)
+        for (const permission of FEATURE_PERMISSIONS)
             await ensurePermission(roleLite, permission);
 
         // The USER-ASSET types are row-scoped instead of plainly readable (Southwind's AuthRules.xml does the

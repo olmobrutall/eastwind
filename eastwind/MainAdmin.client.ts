@@ -14,6 +14,7 @@ import { ColorPaletteClient } from "@altea/altea-chart/client/ColorPalette/Color
 import { UserChartClient } from "@altea/altea-chart/client/UserChart/UserChartClient";
 import { DashboardClient } from "@altea/altea-dashboard/client/DashboardClient";
 import { FilesClient } from "@altea/altea-files/client/FilesClient";
+import { OmniboxClient } from "@altea/altea-omnibox/client/OmniboxClient";
 
 // The full (admin) registration bundle — Southwind's MainAdmin.startFull: the framework client modules
 // (Operations/Navigator/Finder) first, then each entity domain's client. Mirrors the server's
@@ -63,4 +64,8 @@ export function startFull(routes: RouteObject[]): void {
     // their part renderers into the dashboard registry from their own start(cb) (which runs above), and the
     // dashboard editor only reads that registry when a dashboard is actually opened.
     DashboardClient.start(cb);
+
+    // Omnibox (altea-omnibox): registers the three result-shape renderers the navbar's
+    // <OmniboxAutocomplete/> (see Layout.tsx) draws its suggestions with. Registers no routes.
+    OmniboxClient.start(cb);
 }
