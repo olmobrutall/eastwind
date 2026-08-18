@@ -28,6 +28,10 @@ import { ColorPaletteLogic } from "@altea/altea-chart/server/ColorPaletteLogic.s
 import { UserChartLogic } from "@altea/altea-chart/server/UserChartLogic.server";
 import { DashboardLogic } from "@altea/altea-dashboard/server/DashboardLogic.server";
 import { FileLogic } from "@altea/altea-files/server/FileLogic.server";
+import { SchedulerLogic } from "@altea/altea-scheduler/server/SchedulerLogic.server";
+import { SimpleTaskLogic } from "@altea/altea-scheduler/server/SimpleTaskLogic.server";
+import { ScheduleTaskRunner } from "@altea/altea-scheduler/server/ScheduleTaskRunner.server";
+import { EastwindTask } from "./eastwindTasks.server";
 import { OmniboxLogic } from "@altea/altea-omnibox/server/OmniboxLogic";
 import { ToolbarLogic } from "@altea/altea-toolbar/server/ToolbarLogic.server";
 import { EastwindTypeCondition } from "./eastwindTypeConditions.data";
@@ -82,6 +86,14 @@ export namespace Starter {
         // logged"). The field scan itself runs on `schema.initializing`, so it still covers every module's
         // file fields regardless of where this sits.
         FileLogic.start(sb);
+
+        // Scheduler module (altea-scheduler): the ScheduledTask / log tables, the SimpleTaskSymbol table and
+        // the in-process runner's routes. The simple tasks are REGISTERED FIRST because the symbol table is
+        // seeded from the registered keys (SimpleTaskLogic.start reads them). After the auth logics so
+        // ViewSchedulerPanel lands in the same permission seed, and after FileLogic for the same
+        // route-ordering reason.
+        EastwindTask.register();
+        SchedulerLogic.start(sb);
 
         // Profiler module (altea-profiler): declares no tables (state is in-memory); mounts the
         // /api/profilerHeavy/* + /api/profilerTimes/* routes and its permission symbols (seeded via the

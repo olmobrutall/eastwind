@@ -6,6 +6,7 @@
     { "path": "./tsconfig.data.json" },
     { "path": "../altea/altea-auth/tsconfig.server.json" },
     { "path": "../altea/altea-files/tsconfig.server.json" },
+    { "path": "../altea/altea-scheduler/tsconfig.server.json" },
     { "path": "../altea/altea-chart/tsconfig.server.json" },
     { "path": "../altea/altea-dashboard/tsconfig.server.json" },
     { "path": "../altea/altea-omnibox/tsconfig.server.json" },

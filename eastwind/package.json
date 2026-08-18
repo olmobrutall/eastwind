@@ -44,6 +44,7 @@
     "react-widgets-up": "^6.0.14",
     "@altea/altea-dashboard": "workspace:*",
     "@altea/altea-files": "workspace:*",
+    "@altea/altea-scheduler": "workspace:*",
     "@altea/altea-toolbar": "workspace:*"
   },
   "devDependencies": {

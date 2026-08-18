@@ -14,6 +14,7 @@ import { ColorPaletteClient } from "@altea/altea-chart/client/ColorPalette/Color
 import { UserChartClient } from "@altea/altea-chart/client/UserChart/UserChartClient";
 import { DashboardClient } from "@altea/altea-dashboard/client/DashboardClient";
 import { FilesClient } from "@altea/altea-files/client/FilesClient";
+import { SchedulerClient } from "@altea/altea-scheduler/client/SchedulerClient";
 import { OmniboxClient } from "@altea/altea-omnibox/client/OmniboxClient";
 import { ToolbarClient } from "@altea/altea-toolbar/client/ToolbarClient";
 
@@ -70,6 +71,10 @@ export function startFull(routes: RouteObject[]): void {
     // LAST of the asset modules: the UserQuery / UserChart / Dashboard clients register THEIR toolbar configs
     // from their own start(cb) above, and the element editor reads that registry when a toolbar is opened.
     ToolbarClient.start(cb);
+
+    // Scheduler (altea-scheduler): the /scheduler/view panel + the ScheduledTask / schedule-rule /
+    // HolidayCalendar editors (Signum's SchedulerClient).
+    SchedulerClient.start(cb);
 
     // Omnibox (altea-omnibox): registers the three result-shape renderers the navbar's
     // <OmniboxAutocomplete/> (see Layout.tsx) draws its suggestions with. Registers no routes.

@@ -4,6 +4,7 @@ packages:
   - altea/altea-profiler
   - altea/altea-user-assets
   - altea/altea-files
+  - altea/altea-scheduler
   - altea/altea-dashboard
   - altea/altea-omnibox
   - altea/altea-toolbar
