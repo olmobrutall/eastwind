@@ -5,11 +5,12 @@ import { entity, quoted, backReference, rowOrder } from "@altea/altea/data/decor
 import { type int, Decimal } from "@altea/altea/data/basics";
 import type { IQuery } from "@altea/altea/data/iquery";
 import type { ExecuteSymbol } from "@altea/altea/data/operations";
+import { FileEmbedded } from "@altea/altea-files/data/Files";
 import { AddressEmbedded } from "../customers/Customer.data";
 import type { OrderLineEntity } from "../orders/Order.data";
 
-// Port of Southwind's Products domain (Southwind/Products/*.cs). Extension-free: CategoryEntity's
-// Picture (Signum.Files) and the ML PredictorPublication are omitted. AdditionalInformation is an
+// Port of Southwind's Products domain (Southwind/Products/*.cs). CategoryEntity's Picture IS ported now that
+// @altea/altea-files exists; the ML PredictorPublication is still omitted. AdditionalInformation is an
 // [PreserveOrder] MList<AdditionalInformationEmbedded> → the owned part entity
 // ProductEntity_AdditionalInformation (embedded fields flattened + @rowOrder).
 
@@ -33,6 +34,9 @@ export namespace SupplierOperation {
 export class CategoryEntity extends Entity {
     categoryName: string;
     description: string;
+    // Southwind's `FileEmbedded? Picture` (Products/CategoryEntity.cs) — the bytes live in the row. Loaded
+    // from Northwind's Categories.Picture (an OLE-wrapped bitmap — see the loader).
+    picture: FileEmbedded | null = null;
     @quoted toString(): string { return this.categoryName; }
 }
 

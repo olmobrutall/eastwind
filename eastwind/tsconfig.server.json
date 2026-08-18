@@ -5,7 +5,9 @@
   "references": [
     { "path": "./tsconfig.data.json" },
     { "path": "../altea/altea-auth/tsconfig.server.json" },
+    { "path": "../altea/altea-files/tsconfig.server.json" },
     { "path": "../altea/altea-chart/tsconfig.server.json" },
+    { "path": "../altea/altea-dashboard/tsconfig.server.json" },
     { "path": "../altea/altea-profiler/tsconfig.server.json" },
     { "path": "../altea/altea-user-assets/tsconfig.server.json" },
     { "path": "../altea/altea-user-queries/tsconfig.server.json" },

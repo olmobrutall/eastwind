@@ -12,6 +12,8 @@ import { UserQueriesClient } from "@altea/altea-user-queries/client/UserQueriesC
 import { ChartClient } from "@altea/altea-chart/client/ChartClient";
 import { ColorPaletteClient } from "@altea/altea-chart/client/ColorPalette/ColorPaletteClient";
 import { UserChartClient } from "@altea/altea-chart/client/UserChart/UserChartClient";
+import { DashboardClient } from "@altea/altea-dashboard/client/DashboardClient";
+import { FilesClient } from "@altea/altea-files/client/FilesClient";
 
 // The full (admin) registration bundle — Southwind's MainAdmin.startFull: the framework client modules
 // (Operations/Navigator/Finder) first, then each entity domain's client. Mirrors the server's
@@ -22,6 +24,9 @@ import { UserChartClient } from "@altea/altea-chart/client/UserChart/UserChartCl
 export function startFull(routes: RouteObject[]): void {
     const cb = new ClientBuilder(routes);
     cb.startFramework();
+
+    // Files (altea-files): the file lines / downloader used by the domain views (Category.picture).
+    FilesClient.start(cb);
 
     EmployeesClient.start(cb);
     ProductsClient.start(cb);
@@ -52,4 +57,10 @@ export function startFull(routes: RouteObject[]): void {
     // User charts (altea-chart/UserChart): the UserChart editor + /userChart page + quick-links to run saved
     // charts (Signum's UserChartClient). After ChartClient so the chart-script catalog fetch is registered.
     UserChartClient.start(cb);
+
+    // Dashboards (altea-dashboard): the dashboard editor + /dashboard/:id page + the embedded-dashboard
+    // widgets and quick-links (Signum's DashboardClient). LAST: the UserQuery / UserChart clients register
+    // their part renderers into the dashboard registry from their own start(cb) (which runs above), and the
+    // dashboard editor only reads that registry when a dashboard is actually opened.
+    DashboardClient.start(cb);
 }

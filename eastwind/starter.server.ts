@@ -26,6 +26,9 @@ import { UserQueriesLogic } from "@altea/altea-user-queries/server/UserQueriesLo
 import { ChartLogic } from "@altea/altea-chart/server/ChartLogic.server";
 import { ColorPaletteLogic } from "@altea/altea-chart/server/ColorPaletteLogic.server";
 import { UserChartLogic } from "@altea/altea-chart/server/UserChartLogic.server";
+import { DashboardLogic } from "@altea/altea-dashboard/server/DashboardLogic.server";
+import { FileLogic } from "@altea/altea-files/server/FileLogic.server";
+import { EastwindTypeCondition } from "./eastwindTypeConditions.data";
 
 // Port of Southwind's Starter.Start (Southwind/Starter.cs): the single global entry that builds the
 // schema, binds the connector, registers each module's logic and completes. Extensions are excluded
@@ -70,6 +73,14 @@ export namespace Starter {
         QueryAuthLogic.start(sb);
         PropertyAuthLogic.start(sb);
 
+        // Files module (altea-files): the FileTypeSymbol table, the save / delete hooks for every entity that
+        // holds a FilePathEmbedded, and the download routes (Southwind's FilePathEmbeddedLogic.Start +
+        // FileLogic.Start). MUST come after AuthLogic.start: express runs handlers in REGISTRATION order, so
+        // routes mounted before the auth middleware never see an authenticated user (they 403 as "Not user
+        // logged"). The field scan itself runs on `schema.initializing`, so it still covers every module's
+        // file fields regardless of where this sits.
+        FileLogic.start(sb);
+
         // Profiler module (altea-profiler): declares no tables (state is in-memory); mounts the
         // /api/profilerHeavy/* + /api/profilerTimes/* routes and its permission symbols (seeded via the
         // PermissionSymbol table above). After the auth logics so its permissions land in the same seed.
@@ -79,11 +90,17 @@ export namespace Starter {
         // caches, XML import/export, and lookup routes. Before OperationLogic.start so its operation symbols
         // get seeded; after the auth logics so ViewUserQuery / UserAssetsToXML land in the same permission seed.
         UserQueriesLogic.start(sb);
+        // Row-level owner scoping (Southwind's UserQueryLogic.RegisterUser/RoleTypeCondition): a role whose
+        // Dashboard/UserQuery/UserChart rule uses these conditions sees only its own + shared assets.
+        UserQueriesLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
+        UserQueriesLogic.registerRoleTypeCondition(EastwindTypeCondition.RoleEntities);
 
         // User charts module (altea-chart/UserChart): the UserChart entity + its Save/Delete operations,
         // caches, XML import/export, and lookup routes (Signum's UserChartLogic). Mirrors UserQueriesLogic;
         // its ChartScriptSymbol FK auto-includes the chart-script table, which ChartLogic.start (below) seeds.
         UserChartLogic.start(sb);
+        UserChartLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
+        UserChartLogic.registerRoleTypeCondition(EastwindTypeCondition.RoleEntities);
 
         // Charting module (altea-chart): seeds the ChartScriptSymbol table + registers the built-in chart
         // scripts (Bars/Columns), and mounts GET /api/chart/scripts. Before OperationLogic.start (no
@@ -96,6 +113,15 @@ export namespace Starter {
         // operations, the palette cache, and GET /api/colorPalette/:typeName (Signum's ColorPaletteLogic).
         // Before OperationLogic.start so its operation symbols get seeded.
         ColorPaletteLogic.start(sb);
+
+        // Dashboards module (altea-dashboard): the Dashboard entity + its Save/Delete/Clone operations, the
+        // dashboard cache, XML import/export and the lookup routes (Signum's DashboardLogic.Start). AFTER
+        // UserQueriesLogic / UserChartLogic so their part types are registered in the dashboard part registry
+        // before a dashboard is imported, and before OperationLogic.start so its operation symbols get seeded.
+        DashboardLogic.start(sb);
+        DashboardLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
+        DashboardLogic.registerRoleTypeCondition(EastwindTypeCondition.RoleEntities);
+
 
         // Framework operation infrastructure (Signum's OperationLogic.Start): the OperationSymbol table
         // (seeded with the operations the modules above registered) + the OperationLogEntity table/query

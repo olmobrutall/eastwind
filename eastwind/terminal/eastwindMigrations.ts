@@ -2,9 +2,15 @@ import "@altea/altea/server"; // installs save()/toLite()
 import { table } from "@altea/altea/server/table";
 import { PasswordEncoding } from "@altea/altea/server/passwordEncoding";
 import { TypeEntity } from "@altea/altea/data/typeEntity";
+import type { Lite } from "@altea/altea/data/lite";
+import { toInt } from "@altea/altea/data/basics";
 import { RoleEntity, RoleEntity_InheritsFrom, MergeStrategy } from "@altea/altea-auth/data/Role";
 import { UserEntity, UserState } from "@altea/altea-auth/data/User";
-import { RuleTypeEntity, TypeAllowed } from "@altea/altea-auth/data/Rules";
+import {
+    RuleTypeEntity, RuleTypeConditionEntity, RuleTypeConditionEntity_Conditions, RulePermissionEntity,
+    TypeAllowed, TypeConditionSymbol, PermissionSymbol,
+} from "@altea/altea-auth/data/Rules";
+import { EastwindTypeCondition } from "../eastwindTypeConditions.data";
 
 // Port of Southwind.Terminal/SouthwindMigrations — the auth-setup migration steps:
 //   • createRoles       — Southwind's CreateRoles (AuthLogic.LoadRoles + the AuthRules.xml role graph):
@@ -17,6 +23,15 @@ import { RuleTypeEntity, TypeAllowed } from "@altea/altea-auth/data/Rules";
 // Passwords equal the username (Southwind's HashPassword(name, name)) — dev only. Idempotent.
 export namespace EastwindMigrations {
     const DOMAIN_TYPES = ["Order", "Product", "Person", "Company", "Employee", "Shipper", "Supplier", "Category", "Region", "Territory"];
+    // Row-scoped instead of plainly readable — see importAuthRules.
+    const USER_ASSET_TYPES = ["Dashboard", "UserQuery", "UserChart"];
+    // The feature permissions the user-asset routes assert (Signum keys them "<Container>.<Member>").
+    const USER_ASSET_PERMISSIONS = [
+        "DashboardPermission.ViewDashboard",
+        "UserQueryPermission.ViewUserQuery",
+        "ChartPermission.ViewCharting",
+        "UserAssetPermission.UserAssetsToXML",
+    ];
 
     export async function createRoles(): Promise<void> {
         await ensureRole("Anonymous", MergeStrategy.Union, []);
@@ -44,6 +59,65 @@ export namespace EastwindMigrations {
                 continue;
             await RuleTypeEntity.create({ role: roleLite, resource: type.toLite(), fallback: TypeAllowed.Read }).save();
         }
+
+        // The user-asset FEATURES themselves (Southwind's AuthRules.xml grants these to Standard user): without
+        // them the module routes 403 before any row scoping is even consulted.
+        for (const permission of USER_ASSET_PERMISSIONS)
+            await ensurePermission(roleLite, permission);
+
+        // The USER-ASSET types are row-scoped instead of plainly readable (Southwind's AuthRules.xml does the
+        // same with SouthwindTypeCondition): NO access by default, plus one condition rule per owner kind —
+        // Read when the asset is the current user's, Read when it is global / owned by one of their roles.
+        // (Last match wins, so the two rules are independent grants.) Parts — panel parts, filter rows,
+        // token equivalences — inherit these rules structurally, so they need no rules of their own.
+        const userEntities = await symbolLite(EastwindTypeCondition.UserEntities.key);
+        const roleEntities = await symbolLite(EastwindTypeCondition.RoleEntities.key);
+        if (userEntities == null || roleEntities == null)
+            return; // symbols not seeded yet (run `sync` first)
+
+        for (const clean of USER_ASSET_TYPES) {
+            const type = byClean.get(clean);
+            if (type == null || haveTypeIds.has(type.id))
+                continue;
+
+            await RuleTypeEntity.create({
+                role: roleLite,
+                resource: type.toLite(),
+                fallback: TypeAllowed.None,
+                conditionRules: [
+                    conditionRule(0, userEntities),
+                    conditionRule(1, roleEntities),
+                ],
+            }).save();
+        }
+    }
+
+    /** Grant a permission to a role, unless it already has an explicit rule for it. */
+    async function ensurePermission(roleLite: Lite<RoleEntity>, key: string): Promise<void> {
+        const symbol = await table(PermissionSymbol).filter(s => s.key == key).singleOrNull() as PermissionSymbol | null;
+        if (symbol == null)
+            return; // not seeded yet (run `sync` first)
+
+        const symbolLite = symbol.toLite() as Lite<PermissionSymbol>;
+        const existing = await table(RulePermissionEntity)
+            .filter(rp => rp.role == roleLite && rp.resource == symbolLite).singleOrNull();
+        if (existing != null)
+            return;
+
+        await RulePermissionEntity.create({ role: roleLite, resource: symbolLite, allowed: true }).save();
+    }
+
+    function conditionRule(order: number, symbol: Lite<TypeConditionSymbol>): RuleTypeConditionEntity {
+        return RuleTypeConditionEntity.create({
+            order: toInt(order),
+            allowed: TypeAllowed.Read,
+            conditions: [RuleTypeConditionEntity_Conditions.create({ symbol })],
+        });
+    }
+
+    async function symbolLite(key: string): Promise<Lite<TypeConditionSymbol> | null> {
+        const row = await table(TypeConditionSymbol).filter(s => s.key == key).singleOrNull() as TypeConditionSymbol | null;
+        return row == null ? null : row.toLite() as Lite<TypeConditionSymbol>;
     }
 
     async function ensureRole(name: string, strategy: MergeStrategy, inheritsFrom: RoleEntity[]): Promise<RoleEntity> {

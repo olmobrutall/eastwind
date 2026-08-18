@@ -3,6 +3,8 @@ packages:
   - altea/altea-auth
   - altea/altea-profiler
   - altea/altea-user-assets
+  - altea/altea-files
+  - altea/altea-dashboard
   - altea/altea-user-queries
   - altea/altea-chart
   - altea/altea-test

@@ -3,6 +3,7 @@ import { Connector } from "@altea/altea/server/connection/connector";
 import { view } from "@altea/altea/server/table";
 import { BulkInserter } from "@altea/altea/server/bulkInserter";
 import { toInt, Decimal } from "@altea/altea/data/basics";
+import { FileEmbedded } from "@altea/altea-files/data/Files";
 import { SupplierEntity, CategoryEntity, ProductEntity, ProductEntity_AdditionalInformation } from "../products/Product.data";
 import { AddressEmbedded } from "../customers/Customer.data";
 import { Northwind, NwSupplier, NwCategory, NwProduct } from "./northwindSchema";
@@ -37,10 +38,21 @@ export namespace ProductLoader {
             const e = CategoryEntity.create({
                 categoryName: c.CategoryName,
                 description: c.Description ?? "",
+                // Southwind's `Picture = new FileEmbedded { … RemoveOlePrefix(s.Picture) }`.
+                picture: c.Picture == null ? null : FileEmbedded.create({
+                    fileName: c.CategoryName + ".bmp",
+                    binaryFile: removeOlePrefix(c.Picture),
+                }),
             });
             e.id = c.CategoryID;
             return e;
         }));
+    }
+
+    // Port of Southwind's EmployeeLoader.RemoveOlePrefix: Access stored these images as OLE objects, so the
+    // real bitmap starts 78 bytes in.
+    function removeOlePrefix(bytes: Uint8Array): Uint8Array {
+        return bytes.length > 78 ? bytes.subarray(78) : bytes;
     }
 
     export async function loadProducts(): Promise<void> {

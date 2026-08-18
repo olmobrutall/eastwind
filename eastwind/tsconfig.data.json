@@ -3,6 +3,10 @@
   "extends": "../altea/altea/presets/data.json",
   "references": [
     { "path": "../altea/altea/tsconfig.data.json" },
-    { "path": "../altea/altea-auth/tsconfig.data.json" }
+    { "path": "../altea/altea-auth/tsconfig.data.json" },
+    { "path": "../altea/altea-files/tsconfig.data.json" },
+    { "path": "../altea/altea-dashboard/tsconfig.data.json" },
+    { "path": "../altea/altea-user-queries/tsconfig.data.json" },
+    { "path": "../altea/altea-chart/tsconfig.data.json" }
   ]
 }

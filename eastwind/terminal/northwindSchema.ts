@@ -73,6 +73,8 @@ export class NwCategory extends View {
     @viewPrimaryKey CategoryID!: int;
     CategoryName!: string;
     Description!: string | null;
+    // Northwind stores the picture as an OLE-wrapped bitmap (Southwind strips the 78-byte header).
+    Picture!: Uint8Array | null;
 }
 
 @reflect @tableName("dbo.Products")

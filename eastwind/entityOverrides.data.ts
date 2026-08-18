@@ -15,6 +15,14 @@ import { overrideImplementedBy } from "@altea/altea/data/decorators";
 import { ExceptionEntity } from "@altea/altea/data/exception";
 import { OperationLogEntity } from "@altea/altea/data/operationLog";
 import { UserEntity } from "@altea/altea-auth/data/User";
+import { PanelPartEmbedded } from "@altea/altea-dashboard/data/Dashboard";
+import {
+    TextPartEntity, ImagePartEntity, SeparatorPartEntity, HealthCheckPartEntity, CustomPartEntity,
+} from "@altea/altea-dashboard/data/Parts";
+import {
+    UserQueryPartEntity, ValueUserQueryListPartEntity, BigValuePartEntity,
+} from "@altea/altea-user-queries/data/DashboardParts";
+import { UserChartPartEntity, CombinedUserChartPartEntity } from "@altea/altea-chart/data/DashboardParts";
 
 export namespace EntityOverrides {
     export function start(): void {
@@ -27,6 +35,23 @@ export namespace EntityOverrides {
         // (de)serialization or schema build.
         overrideImplementedBy(ExceptionEntity, "user", () => [UserEntity]);
         overrideImplementedBy(OperationLogEntity, "user", () => [UserEntity]);
+
+        // The dashboard PART types this app offers (Southwind did exactly this in Starter.cs:
+        // `FieldAttributes((DashboardEntity a) => a.Parts.First().Content).Replace(new ImplementedByAttribute(
+        // …))`). The list decides both the pickable part types in the editor and which part TABLES the schema
+        // creates — @altea/altea-dashboard declares only its own five, so the modules' parts are added here.
+        overrideImplementedBy(PanelPartEmbedded, "content", () => [
+            TextPartEntity,
+            ImagePartEntity,
+            SeparatorPartEntity,
+            HealthCheckPartEntity,
+            CustomPartEntity,
+            UserQueryPartEntity,
+            ValueUserQueryListPartEntity,
+            BigValuePartEntity,
+            UserChartPartEntity,
+            CombinedUserChartPartEntity,
+        ]);
 
         // Package / folder defaults (Signum's assembly [DefaultAssemblyCulture] + default schema). Written
         // as bare calls that the quote-transformer stamps with the file's __fileInfo, so they know the
