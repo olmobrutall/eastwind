@@ -9,7 +9,7 @@ import { EmployeeEntity } from './Employee.data'
 
 // Ported from Southwind/Employees/Employee.tsx. Divergences: Southwind's Photo (Signum.Files FileLine +
 // fetched <img>) is dropped — eastwind keeps only a plain `photoPath` string; Territories is an owned
-// junction part-array (EmployeeEntity_Territories) rather than an MList<TerritoryEntity>.
+// junction part-array (EmployeeEntity_Territory) rather than an MList<TerritoryEntity>.
 export default function Employee(p: { ctx: TypeContext<EmployeeEntity> }): React.JSX.Element {
   const ctx = p.ctx;
   const ctxBasic = ctx.subCtx({ formGroupStyle: "SrOnly" });

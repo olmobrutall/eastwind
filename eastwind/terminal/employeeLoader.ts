@@ -7,7 +7,7 @@ import { BulkInserter } from "@altea/altea/server/bulkInserter";
 import { toInt } from "@altea/altea/data/basics";
 import { Vector } from "@altea/altea/data/vector";
 import { PasswordEncoding } from "@altea/altea/server/passwordEncoding";
-import { RegionEntity, TerritoryEntity, EmployeeEntity, EmployeeEntity_Territories, EmployeePassageEntity } from "../employees/Employee.data";
+import { RegionEntity, TerritoryEntity, EmployeeEntity, EmployeeEntity_Territory, EmployeePassageEntity } from "../employees/Employee.data";
 import { AddressEmbedded } from "../customers/Customer.data";
 import { RoleEntity } from "@altea/altea-auth/data/Role";
 import { UserEntity, UserState } from "@altea/altea-auth/data/User";
@@ -50,10 +50,10 @@ export namespace EmployeeLoader {
 
         // Territories junction rows grouped by employee (Signum's MList<TerritoryEntity>). The
         // employee back-reference is wired by bulkInsert's cascade — only the @valueField is set here.
-        const terrByEmp = new Map<number, EmployeeEntity_Territories[]>();
+        const terrByEmp = new Map<number, EmployeeEntity_Territory[]>();
         for (const et of nwEmpTerr) {
             const list = terrByEmp.get(et.EmployeeID) ?? [];
-            list.push(EmployeeEntity_Territories.create({ territory: TerritoryEntity.newLite(toInt(parseInt(et.TerritoryID.trim()))) }));
+            list.push(EmployeeEntity_Territory.create({ territory: TerritoryEntity.newLite(toInt(parseInt(et.TerritoryID.trim()))) }));
             terrByEmp.set(et.EmployeeID, list);
         }
 

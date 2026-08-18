@@ -7,7 +7,7 @@ import { toInt } from "@altea/altea/data/basics";
 import { RoleEntity, RoleEntity_InheritsFrom, MergeStrategy } from "@altea/altea-auth/data/Role";
 import { UserEntity, UserState } from "@altea/altea-auth/data/User";
 import {
-    RuleTypeEntity, RuleTypeConditionEntity, RuleTypeConditionEntity_Conditions, RulePermissionEntity,
+    RuleTypeEntity, RuleTypeConditionEntity, RuleTypeConditionEntity_Condition, RulePermissionEntity,
     TypeAllowed, TypeConditionSymbol, PermissionSymbol,
 } from "@altea/altea-auth/data/Rules";
 import { QueryEntity } from "@altea/altea/data/queryEntity";
@@ -222,7 +222,7 @@ export namespace EastwindMigrations {
         return RuleTypeConditionEntity.create({
             order: toInt(order),
             allowed: TypeAllowed.Read,
-            conditions: [RuleTypeConditionEntity_Conditions.create({ symbol })],
+            conditions: [RuleTypeConditionEntity_Condition.create({ symbol })],
         });
     }
 

@@ -11,7 +11,7 @@ import { AddressEmbedded } from "../customers/Customer.data";
 // Port of Southwind's Employees domain (Southwind/Employees/*.cs). Extension-free: EmployeeEntity's
 // Photo (Signum.Files), the EmployeeLiteModel and Employee.Current (auth) are omitted; PhotoPath is
 // kept as a plain string. Territories is an MList<TerritoryEntity> → the owned junction part entity
-// EmployeeEntity_Territories (altea models every MList as a part entity, like music's BandEntity_Members).
+// EmployeeEntity_Territory (altea models every MList as a part entity, like music's BandEntity_Member).
 
 @entity("String", "Master")
 export class RegionEntity extends Entity {
@@ -62,14 +62,14 @@ export class EmployeeEntity extends Entity {
     reportsTo: Lite<EmployeeEntity> | null;
     photoPath: string | null;
     // Signum's MList<TerritoryEntity> Territories → owned junction rows.
-    territories: EmployeeEntity_Territories[];
+    territories: EmployeeEntity_Territory[];
 
     @quoted toString(): string { return `${this.firstName} ${this.lastName}`; }
 }
 
 // Junction rows for EmployeeEntity.territories (Signum's MList<TerritoryEntity>).
 @entity("Part")
-export class EmployeeEntity_Territories extends Entity {
+export class EmployeeEntity_Territory extends Entity {
     @backReference employee: Lite<EmployeeEntity>;
     @valueField territory: Lite<TerritoryEntity>;
 }
