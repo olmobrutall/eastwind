@@ -16,7 +16,7 @@ import type { Type } from "@altea/altea/data/entity";
 import { ExceptionEntity } from "@altea/altea/data/exception";
 import { OperationLogEntity } from "@altea/altea/data/operationLog";
 import { UserEntity } from "@altea/altea-auth/data/User";
-import { DashboardEntity_Parts } from "@altea/altea-dashboard/data/Dashboard";
+import { DashboardEntity_Part } from "@altea/altea-dashboard/data/Dashboard";
 import {
     TextPartEntity, ImagePartEntity, SeparatorPartEntity, HealthCheckPartEntity, CustomPartEntity,
 } from "@altea/altea-dashboard/data/Parts";
@@ -30,7 +30,7 @@ import { DashboardEntity } from "@altea/altea-dashboard/data/Dashboard";
 import { QueryEntity } from "@altea/altea/data/queryEntity";
 import { PermissionSymbol } from "@altea/altea-auth/data/Rules";
 import {
-    ToolbarElementBase, ToolbarEntity, ToolbarMenuEntity, ToolbarSwitcherEntity,
+    ToolbarElementBaseEntity, ToolbarEntity, ToolbarMenuEntity, ToolbarSwitcherEntity,
 } from "@altea/altea-toolbar/data/Toolbar";
 
 export namespace EntityOverrides {
@@ -49,7 +49,7 @@ export namespace EntityOverrides {
         // `FieldAttributes((DashboardEntity a) => a.Parts.First().Content).Replace(new ImplementedByAttribute(
         // …))`). The list decides both the pickable part types in the editor and which part TABLES the schema
         // creates — @altea/altea-dashboard declares only its own five, so the modules' parts are added here.
-        overrideImplementedBy(DashboardEntity_Parts, "content", () => [
+        overrideImplementedBy(DashboardEntity_Part, "content", () => [
             TextPartEntity,
             ImagePartEntity,
             SeparatorPartEntity,
@@ -66,11 +66,11 @@ export namespace EntityOverrides {
         // module's `AssertImplementedBy` from its own Logic.Start). The list decides the pickable content
         // types in the editor, the FK columns of both element tables, AND — in altea — which types get the
         // "delete the elements pointing at me" cascade (see ToolbarLogic.start). Declared on the ABSTRACT
-        // base: both concrete element rows inherit that one field, so one call covers ToolbarEntity_Elements
-        // and ToolbarMenuEntity_Elements.
+        // base: both concrete element rows inherit that one field, so one call covers ToolbarEntity_Element
+        // and ToolbarMenuEntity_Element.
         // (`overrideImplementedBy` asks for a concrete Type<T>; the base is abstract, which matters only to
         // the type-checker — the FieldInfo it mutates is the very one both element rows inherit.)
-        overrideImplementedBy(ToolbarElementBase as unknown as Type<ToolbarElementBase>, "content", () => [
+        overrideImplementedBy(ToolbarElementBaseEntity as unknown as Type<ToolbarElementBaseEntity>, "content", () => [
             QueryEntity,
             PermissionSymbol,
             ToolbarEntity,
