@@ -12,10 +12,12 @@
 // Empty today: eastwind registers no mixins, every lite model is the default, and implementedBy is
 // declared inline via @implementedBy on OrderEntity.customer. As those needs arise, register them here.
 import { overrideImplementedBy } from "@altea/altea/data/decorators";
-import type { Type } from "@altea/altea/data/entity";
+import type { Entity, Type } from "@altea/altea/data/entity";
 import { ExceptionEntity } from "@altea/altea/data/exception";
 import { OperationLogEntity } from "@altea/altea/data/operationLog";
 import { UserEntity } from "@altea/altea-auth/data/User";
+import { SimpleTaskSymbol } from "@altea/altea-scheduler/data/Scheduler";
+import { ProcessSchedulerBridgeOverrides } from "@altea/altea-processes/data/ProcessSchedulerBridge";
 import { DashboardEntity_Part } from "@altea/altea-dashboard/data/Dashboard";
 import {
     TextPartEntity, ImagePartEntity, SeparatorPartEntity, HealthCheckPartEntity, CustomPartEntity,
@@ -42,6 +44,12 @@ export namespace EntityOverrides {
         // OperationLogEntity declare `user` with NO implementations (so altea core needn't reference
         // altea-auth); the app points them at its concrete UserEntity. Runs on both tiers before any
         // (de)serialization or schema build.
+        // A ScheduledTask may point at a SimpleTaskSymbol (the scheduler's own kind) OR at a
+        // ProcessAlgorithmSymbol (the scheduler → processes bridge: the entry creates and QUEUES a process
+        // instead of running inline). An override REPLACES the declared list, so SimpleTaskSymbol is passed
+        // back in explicitly. Both tiers run this, which is the point of it living here.
+        ProcessSchedulerBridgeOverrides.overrideTaskImplementations([SimpleTaskSymbol as unknown as Type<Entity>]);
+
         overrideImplementedBy(ExceptionEntity, "user", () => [UserEntity]);
         overrideImplementedBy(OperationLogEntity, "user", () => [UserEntity]);
 

@@ -32,6 +32,9 @@ import { SchedulerLogic } from "@altea/altea-scheduler/server/SchedulerLogic.ser
 import { SimpleTaskLogic } from "@altea/altea-scheduler/server/SimpleTaskLogic.server";
 import { ScheduleTaskRunner } from "@altea/altea-scheduler/server/ScheduleTaskRunner.server";
 import { EastwindTask } from "./eastwindTasks.server";
+import { ProcessLogic } from "@altea/altea-processes/server/ProcessLogic.server";
+import { ProcessSchedulerBridge } from "@altea/altea-processes/server/ProcessSchedulerBridge.server";
+import { EastwindProcess } from "./eastwindProcesses.server";
 import { OmniboxLogic } from "@altea/altea-omnibox/server/OmniboxLogic";
 import { ToolbarLogic } from "@altea/altea-toolbar/server/ToolbarLogic.server";
 import { EastwindTypeCondition } from "./eastwindTypeConditions.data";
@@ -94,6 +97,15 @@ export namespace Starter {
         // route-ordering reason.
         EastwindTask.register();
         SchedulerLogic.start(sb);
+
+        // Processes module (altea-processes): the Process / Package tables and the in-process runner's
+        // routes. Algorithms are REGISTERED FIRST (the ProcessAlgorithmSymbol table is seeded from their
+        // keys), and the SCHEDULER BRIDGE goes last: it makes a ProcessAlgorithmSymbol a valid
+        // ScheduledTask.task, so a scheduled entry creates + queues a process instead of running inline.
+        // (The matching implementedBy widening is declared in entityOverrides.data.ts — both tiers need it.)
+        EastwindProcess.register();
+        ProcessLogic.start(sb);
+        ProcessSchedulerBridge.start(sb);
 
         // Profiler module (altea-profiler): declares no tables (state is in-memory); mounts the
         // /api/profilerHeavy/* + /api/profilerTimes/* routes and its permission symbols (seeded via the

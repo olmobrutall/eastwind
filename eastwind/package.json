@@ -45,6 +45,7 @@
     "@altea/altea-dashboard": "workspace:*",
     "@altea/altea-files": "workspace:*",
     "@altea/altea-scheduler": "workspace:*",
+    "@altea/altea-processes": "workspace:*",
     "@altea/altea-toolbar": "workspace:*"
   },
   "devDependencies": {

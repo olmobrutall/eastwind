@@ -5,6 +5,7 @@ packages:
   - altea/altea-user-assets
   - altea/altea-files
   - altea/altea-scheduler
+  - altea/altea-processes
   - altea/altea-dashboard
   - altea/altea-omnibox
   - altea/altea-toolbar
