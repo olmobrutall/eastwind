@@ -43,7 +43,8 @@
     "react-router": "^8.3.0",
     "react-widgets-up": "^6.0.14",
     "@altea/altea-dashboard": "workspace:*",
-    "@altea/altea-files": "workspace:*"
+    "@altea/altea-files": "workspace:*",
+    "@altea/altea-toolbar": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

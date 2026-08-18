@@ -12,6 +12,7 @@
 // Empty today: eastwind registers no mixins, every lite model is the default, and implementedBy is
 // declared inline via @implementedBy on OrderEntity.customer. As those needs arise, register them here.
 import { overrideImplementedBy } from "@altea/altea/data/decorators";
+import type { Type } from "@altea/altea/data/entity";
 import { ExceptionEntity } from "@altea/altea/data/exception";
 import { OperationLogEntity } from "@altea/altea/data/operationLog";
 import { UserEntity } from "@altea/altea-auth/data/User";
@@ -23,6 +24,14 @@ import {
     UserQueryPartEntity, ValueUserQueryListPartEntity, BigValuePartEntity,
 } from "@altea/altea-user-queries/data/DashboardParts";
 import { UserChartPartEntity, CombinedUserChartPartEntity } from "@altea/altea-chart/data/DashboardParts";
+import { UserQueryEntity } from "@altea/altea-user-queries/data/UserQuery";
+import { UserChartEntity } from "@altea/altea-chart/data/UserChart";
+import { DashboardEntity } from "@altea/altea-dashboard/data/Dashboard";
+import { QueryEntity } from "@altea/altea/data/queryEntity";
+import { PermissionSymbol } from "@altea/altea-auth/data/Rules";
+import {
+    ToolbarElementBaseEmbedded, ToolbarEntity, ToolbarMenuEntity, ToolbarSwitcherEntity,
+} from "@altea/altea-toolbar/data/Toolbar";
 
 export namespace EntityOverrides {
     export function start(): void {
@@ -51,6 +60,25 @@ export namespace EntityOverrides {
             BigValuePartEntity,
             UserChartPartEntity,
             CombinedUserChartPartEntity,
+        ]);
+
+        // What a TOOLBAR ELEMENT may point at (Signum's `[ImplementedBy()]` empty list, widened by each
+        // module's `AssertImplementedBy` from its own Logic.Start). The list decides the pickable content
+        // types in the editor, the FK columns of both element tables, AND — in altea — which types get the
+        // "delete the elements pointing at me" cascade (see ToolbarLogic.start). Declared on the ABSTRACT
+        // base: both concrete element rows inherit that one field, so one call covers ToolbarElementEmbedded
+        // and ToolbarMenuElementEmbedded.
+        // (`overrideImplementedBy` asks for a concrete Type<T>; the base is abstract, which matters only to
+        // the type-checker — the FieldInfo it mutates is the very one both element rows inherit.)
+        overrideImplementedBy(ToolbarElementBaseEmbedded as unknown as Type<ToolbarElementBaseEmbedded>, "content", () => [
+            QueryEntity,
+            PermissionSymbol,
+            ToolbarEntity,
+            ToolbarMenuEntity,
+            ToolbarSwitcherEntity,
+            UserQueryEntity,
+            UserChartEntity,
+            DashboardEntity,
         ]);
 
         // Package / folder defaults (Signum's assembly [DefaultAssemblyCulture] + default schema). Written

@@ -10,12 +10,20 @@ import {
     RuleTypeEntity, RuleTypeConditionEntity, RuleTypeConditionEntity_Conditions, RulePermissionEntity,
     TypeAllowed, TypeConditionSymbol, PermissionSymbol,
 } from "@altea/altea-auth/data/Rules";
+import { QueryEntity } from "@altea/altea/data/queryEntity";
+import type { Entity } from "@altea/altea/data/entity";
+import {
+    ToolbarEntity, ToolbarMenuEntity, ToolbarElementEmbedded, ToolbarMenuElementEmbedded,
+    ToolbarElementTypeEnum, ToolbarLocationEnum, ShowCountEnum,
+} from "@altea/altea-toolbar/data/Toolbar";
 import { EastwindTypeCondition } from "../eastwindTypeConditions.data";
 
 // Port of Southwind.Terminal/SouthwindMigrations — the auth-setup migration steps:
 //   • createRoles       — Southwind's CreateRoles (AuthLogic.LoadRoles + the AuthRules.xml role graph):
 //                         Anonymous, Standard user, Super user (Intersection), Advanced user ⊃ Standard.
 //   • createSystemUser  — Southwind's CreateSystemUser: the "System" (Super user) + "Anonymous" users.
+//   • createDefaultToolbar — the app's starter SIDE toolbar (Southwind imports its toolbars from
+//                         UserAssets XML; eastwind seeds an equivalent here).
 //   • importAuthRules   — Southwind's InitialAuthRulesImport → AuthLogic.AutomaticImportAuthRules
 //                         (AuthRules.xml, not ported): stand-in granting Standard user Read on the
 //                         Northwind domain types so roles differ visibly.
@@ -24,7 +32,7 @@ import { EastwindTypeCondition } from "../eastwindTypeConditions.data";
 export namespace EastwindMigrations {
     const DOMAIN_TYPES = ["Order", "Product", "Person", "Company", "Employee", "Shipper", "Supplier", "Category", "Region", "Territory"];
     // Row-scoped instead of plainly readable — see importAuthRules.
-    const USER_ASSET_TYPES = ["Dashboard", "UserQuery", "UserChart"];
+    const USER_ASSET_TYPES = ["Dashboard", "UserQuery", "UserChart", "Toolbar", "ToolbarMenu", "ToolbarSwitcher"];
     // The feature permissions the extension routes assert (Signum keys them "<Container>.<Member>").
     const FEATURE_PERMISSIONS = [
         "DashboardPermission.ViewDashboard",
@@ -92,6 +100,107 @@ export namespace EastwindMigrations {
                 ],
             }).save();
         }
+    }
+
+    /**
+     * The app's default SIDE toolbar — the sidebar the Layout renders (Southwind ships its toolbars inside
+     * the UserAssets XML it imports; eastwind has no such file yet, so the equivalent starter content is
+     * seeded here). GLOBAL (`owner: null`), so the role-owner type condition makes it visible to every role.
+     *
+     * Elements are plain QUERY items grouped under headers, plus a ToolbarMenu holding the admin queries —
+     * enough to exercise headers, dividers, query items, a nested menu and the count badge.
+     */
+    export async function createDefaultToolbar(): Promise<void> {
+        const existing = await table(ToolbarEntity).filter(t => t.name == "Eastwind").singleOrNull() as ToolbarEntity | null;
+        if (existing != null)
+            return;
+
+        const byKey = new Map((await table(QueryEntity).toArray() as QueryEntity[]).map(q => [q.key, q]));
+        const query = (key: string): Lite<QueryEntity> | undefined => byKey.get(key)?.toLite() as Lite<QueryEntity> | undefined;
+
+        // A query row that no longer exists is skipped rather than failing the whole migration.
+        const item = (order: number, queryKey: string, iconName?: string, showCount?: ShowCountEnum): ToolbarElementEmbedded | null => {
+            const content = query(queryKey);
+            if (content == null)
+                return null;
+            return ToolbarElementEmbedded.create({
+                order: toInt(order),
+                type: ToolbarElementTypeEnum.Item,
+                content: content as Lite<Entity>,
+                iconName: iconName ?? null,
+                showCount: showCount ?? null,
+            });
+        };
+
+        const header = (order: number, label: string, iconName?: string): ToolbarElementEmbedded =>
+            ToolbarElementEmbedded.create({
+                order: toInt(order),
+                type: ToolbarElementTypeEnum.Header,
+                label,
+                iconName: iconName ?? null,
+            });
+
+        const divider = (order: number): ToolbarElementEmbedded =>
+            ToolbarElementEmbedded.create({ order: toInt(order), type: ToolbarElementTypeEnum.Divider });
+
+        // The admin queries live in a collapsible ToolbarMenu (a second entity the toolbar points at).
+        const menuElement = (order: number, queryKey: string, iconName?: string): ToolbarMenuElementEmbedded | null => {
+            const content = query(queryKey);
+            if (content == null)
+                return null;
+            return ToolbarMenuElementEmbedded.create({
+                order: toInt(order),
+                type: ToolbarElementTypeEnum.Item,
+                content: content as Lite<Entity>,
+                iconName: iconName ?? null,
+            });
+        };
+
+        const adminMenu = ToolbarMenuEntity.create({
+            name: "Administration",
+            elements: [
+                menuElement(0, "User", "user"),
+                menuElement(1, "Role", "users"),
+                menuElement(2, "Dashboard", "table-cells-large"),
+                menuElement(3, "UserQuery", "rectangle-list"),
+                menuElement(4, "UserChart", "chart-bar"),
+                menuElement(5, "Toolbar", "bars-staggered"),
+            ].filter(e => e != null) as ToolbarMenuElementEmbedded[],
+        });
+        await adminMenu.save();
+
+        const elements = [
+            header(0, "Sales", "cart-shopping"),
+            // One element carries a live result-count badge (Signum's ShowCount) so the feature is visible
+            // on a fresh database.
+            item(1, "Order", "file-invoice-dollar", ShowCountEnum.Always),
+            item(2, "Product", "box"),
+            item(3, "Category", "boxes-stacked"),
+            divider(4),
+            header(5, "Customers", "address-book"),
+            item(6, "Company", "building"),
+            item(7, "Person", "user-tie"),
+            divider(8),
+            header(9, "Operations", "gears"),
+            item(10, "Employee", "id-badge"),
+            item(11, "Shipper", "truck"),
+            item(12, "Supplier", "industry"),
+            divider(13),
+            ToolbarElementEmbedded.create({
+                order: toInt(14),
+                type: ToolbarElementTypeEnum.Item,
+                content: adminMenu.toLite() as Lite<Entity>,
+                iconName: "screwdriver-wrench",
+            }),
+        ].filter(e => e != null) as ToolbarElementEmbedded[];
+
+        await ToolbarEntity.create({
+            name: "Eastwind",
+            location: ToolbarLocationEnum.Side,
+            priority: toInt(1),
+            owner: null,
+            elements,
+        }).save();
     }
 
     /** Grant a permission to a role, unless it already has an explicit rule for it. */

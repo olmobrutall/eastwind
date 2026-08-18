@@ -94,12 +94,12 @@ async function interactive(): Promise<void> {
 }
 
 // Southwind's Load(): a ChooseMultipleWithDescription sub-menu of the Northwind loaders, run in order
-// via ExecuteLoadProcess (auto-logging). The menu order is the dependency order. `load 1-10` runs all.
+// via ExecuteLoadProcess (auto-logging). The menu order is the dependency order. `load 1-16` runs all.
 async function load(args: string[]): Promise<void> {
     // Order mirrors Southwind's SouthwindMigrations.CSharpMigrations: CreateRoles + CreateSystemUser
     // first, then the Northwind data loaders, then EmployeeLoader.CreateUsers (needs employees + roles),
-    // and finally ImportAuthRules (Southwind's InitialAuthRulesImport). `load 1-15` runs the lot.
-    const selected = await new ConsoleSwitch<() => Promise<void>>("Load processes (e.g. 1-15):")
+    // and finally ImportAuthRules (Southwind's InitialAuthRulesImport). `load 1-16` runs the lot.
+    const selected = await new ConsoleSwitch<() => Promise<void>>("Load processes (e.g. 1-16):")
         .add("1", "Create Roles", () => EastwindMigrations.createRoles())
         .add("2", "Create System User", () => EastwindMigrations.createSystemUser())
         .add("3", "Load Regions", () => EmployeeLoader.loadRegions())
@@ -114,7 +114,8 @@ async function load(args: string[]): Promise<void> {
         .add("12", "Load Orders", () => OrderLoader.loadOrders())
         .add("13", "Create Users", () => EmployeeLoader.createUsers())
         .add("14", "Load Employee Passages (embeddings)", () => EmployeeLoader.loadEmployeePassages())
-        .add("15", "Import Auth Rules", () => EastwindMigrations.importAuthRules())
+        .add("15", "Create Default Toolbar", () => EastwindMigrations.createDefaultToolbar())
+        .add("16", "Import Auth Rules", () => EastwindMigrations.importAuthRules())
         .chooseMultipleWithDescription(args);
 
     if (selected == null || selected.length === 0) return;

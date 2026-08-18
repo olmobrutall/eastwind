@@ -29,6 +29,7 @@ import { UserChartLogic } from "@altea/altea-chart/server/UserChartLogic.server"
 import { DashboardLogic } from "@altea/altea-dashboard/server/DashboardLogic.server";
 import { FileLogic } from "@altea/altea-files/server/FileLogic.server";
 import { OmniboxLogic } from "@altea/altea-omnibox/server/OmniboxLogic";
+import { ToolbarLogic } from "@altea/altea-toolbar/server/ToolbarLogic.server";
 import { EastwindTypeCondition } from "./eastwindTypeConditions.data";
 
 // Port of Southwind's Starter.Start (Southwind/Starter.cs): the single global entry that builds the
@@ -122,6 +123,18 @@ export namespace Starter {
         DashboardLogic.start(sb);
         DashboardLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
         DashboardLogic.registerRoleTypeCondition(EastwindTypeCondition.RoleEntities);
+
+        // Toolbar module (altea-toolbar): the Toolbar / ToolbarMenu / ToolbarSwitcher entities + their
+        // Save/Delete operations and queries, the toolbar caches, XML import/export and the
+        // /api/toolbar/* routes (Signum's ToolbarLogic.Start). AFTER UserQueriesLogic / UserChartLogic /
+        // DashboardLogic so their CONTENT CONFIGS are registered before a toolbar response is ever built,
+        // and before OperationLogic.start so its operation symbols get seeded.
+        ToolbarLogic.start(sb);
+        // Row-level owner scoping, exactly as for the other user assets (Southwind's
+        // ToolbarLogic.RegisterUser/RoleTypeCondition): a role whose Toolbar rule uses these conditions sees
+        // only its own + the shared/global toolbars.
+        ToolbarLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
+        ToolbarLogic.registerRoleTypeCondition(EastwindTypeCondition.RoleEntities);
 
         // Omnibox module (altea-omnibox): declares no tables (its ViewOmnibox permission symbol is seeded
         // through the PermissionSymbol table above); registers the entity / dynamic-query / special result

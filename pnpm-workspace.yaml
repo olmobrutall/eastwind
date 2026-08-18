@@ -6,6 +6,7 @@ packages:
   - altea/altea-files
   - altea/altea-dashboard
   - altea/altea-omnibox
+  - altea/altea-toolbar
   - altea/altea-user-queries
   - altea/altea-chart
   - altea/altea-test
