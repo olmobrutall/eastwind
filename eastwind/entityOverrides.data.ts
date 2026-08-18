@@ -16,7 +16,7 @@ import type { Type } from "@altea/altea/data/entity";
 import { ExceptionEntity } from "@altea/altea/data/exception";
 import { OperationLogEntity } from "@altea/altea/data/operationLog";
 import { UserEntity } from "@altea/altea-auth/data/User";
-import { PanelPartEmbedded } from "@altea/altea-dashboard/data/Dashboard";
+import { DashboardEntity_Parts } from "@altea/altea-dashboard/data/Dashboard";
 import {
     TextPartEntity, ImagePartEntity, SeparatorPartEntity, HealthCheckPartEntity, CustomPartEntity,
 } from "@altea/altea-dashboard/data/Parts";
@@ -49,7 +49,7 @@ export namespace EntityOverrides {
         // `FieldAttributes((DashboardEntity a) => a.Parts.First().Content).Replace(new ImplementedByAttribute(
         // …))`). The list decides both the pickable part types in the editor and which part TABLES the schema
         // creates — @altea/altea-dashboard declares only its own five, so the modules' parts are added here.
-        overrideImplementedBy(PanelPartEmbedded, "content", () => [
+        overrideImplementedBy(DashboardEntity_Parts, "content", () => [
             TextPartEntity,
             ImagePartEntity,
             SeparatorPartEntity,
