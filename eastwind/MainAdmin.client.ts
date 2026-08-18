@@ -15,6 +15,7 @@ import { UserChartClient } from "@altea/altea-chart/client/UserChart/UserChartCl
 import { DashboardClient } from "@altea/altea-dashboard/client/DashboardClient";
 import { FilesClient } from "@altea/altea-files/client/FilesClient";
 import { SchedulerClient } from "@altea/altea-scheduler/client/SchedulerClient";
+import { ProcessClient } from "@altea/altea-processes/client/ProcessClient";
 import { OmniboxClient } from "@altea/altea-omnibox/client/OmniboxClient";
 import { ToolbarClient } from "@altea/altea-toolbar/client/ToolbarClient";
 
@@ -75,6 +76,10 @@ export function startFull(routes: RouteObject[]): void {
     // Scheduler (altea-scheduler): the /scheduler/view panel + the ScheduledTask / schedule-rule /
     // HolidayCalendar editors (Signum's SchedulerClient).
     SchedulerClient.start(cb);
+
+    // Processes (altea-processes): the /processes/view panel + the Process editor (Signum's ProcessClient).
+    // After SchedulerClient: a ScheduledTask can point at a ProcessAlgorithmSymbol (the scheduler bridge).
+    ProcessClient.start(cb);
 
     // Omnibox (altea-omnibox): registers the three result-shape renderers the navbar's
     // <OmniboxAutocomplete/> (see Layout.tsx) draws its suggestions with. Registers no routes.

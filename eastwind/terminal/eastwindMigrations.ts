@@ -17,6 +17,8 @@ import {
     ToolbarElementTypeEnum, ToolbarLocationEnum, ShowCountEnum,
 } from "@altea/altea-toolbar/data/Toolbar";
 import { EastwindTypeCondition } from "../eastwindTypeConditions.data";
+import { ScheduledTaskMessage } from "@altea/altea-scheduler/data/Scheduler";
+import { ProcessMessage } from "@altea/altea-processes/data/Processes";
 
 // Port of Southwind.Terminal/SouthwindMigrations — the auth-setup migration steps:
 //   • createRoles       — Southwind's CreateRoles (AuthLogic.LoadRoles + the AuthRules.xml role graph):
@@ -112,8 +114,13 @@ export namespace EastwindMigrations {
      */
     export async function createDefaultToolbar(): Promise<void> {
         const existing = await table(ToolbarEntity).filter(t => t.name == "Eastwind").singleOrNull() as ToolbarEntity | null;
-        if (existing != null)
+        if (existing != null) {
+            // A dev database is rarely recreated, so instead of bailing out, TOP UP the admin menu with
+            // whatever a newer module added (the scheduler / processes panels). Idempotent, like the
+            // ensureRole / ensureUser helpers below.
+            await ensureAdminMenuElements();
             return;
+        }
 
         const byKey = new Map((await table(QueryEntity).toArray() as QueryEntity[]).map(q => [q.key, q]));
         const query = (key: string): Lite<QueryEntity> | undefined => byKey.get(key)?.toLite() as Lite<QueryEntity> | undefined;
@@ -156,6 +163,17 @@ export namespace EastwindMigrations {
             });
         };
 
+        // A panel is a ROUTE, not a query, so it is a `url` element (Signum's app-relative toolbar url)
+        // rather than a `content` one.
+        const menuLink = (order: number, label: string, url: string, iconName: string): ToolbarMenuEntity_Element =>
+            ToolbarMenuEntity_Element.create({
+                order: toInt(order),
+                type: ToolbarElementTypeEnum.Item,
+                label,
+                url,
+                iconName,
+            });
+
         const adminMenu = ToolbarMenuEntity.create({
             name: "Administration",
             elements: [
@@ -165,6 +183,10 @@ export namespace EastwindMigrations {
                 menuElement(3, "UserQuery", "rectangle-list"),
                 menuElement(4, "UserChart", "chart-bar"),
                 menuElement(5, "Toolbar", "bars-staggered"),
+                menuElement(6, "ScheduledTask", "clock"),
+                menuElement(7, "Process", "gears"),
+                menuLink(8, ScheduledTaskMessage.SchedulePanel.niceToString(), "/scheduler/view", "clock"),
+                menuLink(9, ProcessMessage.ProcessPanel.niceToString(), "/processes/view", "gears"),
             ].filter(e => e != null) as ToolbarMenuEntity_Element[],
         });
         await adminMenu.save();
@@ -204,6 +226,46 @@ export namespace EastwindMigrations {
     }
 
     /** Grant a permission to a role, unless it already has an explicit rule for it. */
+    /** Add to the existing Administration menu whatever a newer module contributed — matched on the query
+     *  key / url, so running it twice changes nothing. */
+    async function ensureAdminMenuElements(): Promise<void> {
+        const menu = await table(ToolbarMenuEntity).filter(m => m.name == "Administration").singleOrNull() as ToolbarMenuEntity | null;
+        if (menu == null)
+            return;
+
+        const byKey = new Map((await table(QueryEntity).toArray() as QueryEntity[]).map(q => [q.key, q]));
+        const has = (predicate: (e: ToolbarMenuEntity_Element) => boolean): boolean => menu.elements.some(predicate);
+        let order = menu.elements.reduce((max, e) => Math.max(max, Number(e.order)), -1);
+        let added = 0;
+
+        for (const [queryKey, iconName] of [["ScheduledTask", "clock"], ["Process", "gears"]] as const) {
+            const content = byKey.get(queryKey)?.toLite() as Lite<Entity> | undefined;
+            if (content == null || has(e => e.content?.key() === content.key()))
+                continue;
+            menu.elements.push(ToolbarMenuEntity_Element.create({
+                order: toInt(++order), type: ToolbarElementTypeEnum.Item, content, iconName,
+            }));
+            added++;
+        }
+
+        for (const [label, url, iconName] of [
+            [ScheduledTaskMessage.SchedulePanel.niceToString(), "/scheduler/view", "clock"],
+            [ProcessMessage.ProcessPanel.niceToString(), "/processes/view", "gears"],
+        ] as const) {
+            if (has(e => e.url === url))
+                continue;
+            menu.elements.push(ToolbarMenuEntity_Element.create({
+                order: toInt(++order), type: ToolbarElementTypeEnum.Item, label, url, iconName,
+            }));
+            added++;
+        }
+
+        if (added > 0) {
+            await menu.save();
+            console.log(`[toolbar] added ${added} element(s) to the Administration menu`);
+        }
+    }
+
     async function ensurePermission(roleLite: Lite<RoleEntity>, key: string): Promise<void> {
         const symbol = await table(PermissionSymbol).filter(s => s.key == key).singleOrNull() as PermissionSymbol | null;
         if (symbol == null)
