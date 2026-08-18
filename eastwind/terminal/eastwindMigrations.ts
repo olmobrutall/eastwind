@@ -13,7 +13,7 @@ import {
 import { QueryEntity } from "@altea/altea/data/queryEntity";
 import type { Entity } from "@altea/altea/data/entity";
 import {
-    ToolbarEntity, ToolbarMenuEntity, ToolbarElementEmbedded, ToolbarMenuElementEmbedded,
+    ToolbarEntity, ToolbarMenuEntity, ToolbarEntity_Elements, ToolbarMenuEntity_Elements,
     ToolbarElementTypeEnum, ToolbarLocationEnum, ShowCountEnum,
 } from "@altea/altea-toolbar/data/Toolbar";
 import { EastwindTypeCondition } from "../eastwindTypeConditions.data";
@@ -119,11 +119,11 @@ export namespace EastwindMigrations {
         const query = (key: string): Lite<QueryEntity> | undefined => byKey.get(key)?.toLite() as Lite<QueryEntity> | undefined;
 
         // A query row that no longer exists is skipped rather than failing the whole migration.
-        const item = (order: number, queryKey: string, iconName?: string, showCount?: ShowCountEnum): ToolbarElementEmbedded | null => {
+        const item = (order: number, queryKey: string, iconName?: string, showCount?: ShowCountEnum): ToolbarEntity_Elements | null => {
             const content = query(queryKey);
             if (content == null)
                 return null;
-            return ToolbarElementEmbedded.create({
+            return ToolbarEntity_Elements.create({
                 order: toInt(order),
                 type: ToolbarElementTypeEnum.Item,
                 content: content as Lite<Entity>,
@@ -132,23 +132,23 @@ export namespace EastwindMigrations {
             });
         };
 
-        const header = (order: number, label: string, iconName?: string): ToolbarElementEmbedded =>
-            ToolbarElementEmbedded.create({
+        const header = (order: number, label: string, iconName?: string): ToolbarEntity_Elements =>
+            ToolbarEntity_Elements.create({
                 order: toInt(order),
                 type: ToolbarElementTypeEnum.Header,
                 label,
                 iconName: iconName ?? null,
             });
 
-        const divider = (order: number): ToolbarElementEmbedded =>
-            ToolbarElementEmbedded.create({ order: toInt(order), type: ToolbarElementTypeEnum.Divider });
+        const divider = (order: number): ToolbarEntity_Elements =>
+            ToolbarEntity_Elements.create({ order: toInt(order), type: ToolbarElementTypeEnum.Divider });
 
         // The admin queries live in a collapsible ToolbarMenu (a second entity the toolbar points at).
-        const menuElement = (order: number, queryKey: string, iconName?: string): ToolbarMenuElementEmbedded | null => {
+        const menuElement = (order: number, queryKey: string, iconName?: string): ToolbarMenuEntity_Elements | null => {
             const content = query(queryKey);
             if (content == null)
                 return null;
-            return ToolbarMenuElementEmbedded.create({
+            return ToolbarMenuEntity_Elements.create({
                 order: toInt(order),
                 type: ToolbarElementTypeEnum.Item,
                 content: content as Lite<Entity>,
@@ -165,7 +165,7 @@ export namespace EastwindMigrations {
                 menuElement(3, "UserQuery", "rectangle-list"),
                 menuElement(4, "UserChart", "chart-bar"),
                 menuElement(5, "Toolbar", "bars-staggered"),
-            ].filter(e => e != null) as ToolbarMenuElementEmbedded[],
+            ].filter(e => e != null) as ToolbarMenuEntity_Elements[],
         });
         await adminMenu.save();
 
@@ -186,13 +186,13 @@ export namespace EastwindMigrations {
             item(11, "Shipper", "truck"),
             item(12, "Supplier", "industry"),
             divider(13),
-            ToolbarElementEmbedded.create({
+            ToolbarEntity_Elements.create({
                 order: toInt(14),
                 type: ToolbarElementTypeEnum.Item,
                 content: adminMenu.toLite() as Lite<Entity>,
                 iconName: "screwdriver-wrench",
             }),
-        ].filter(e => e != null) as ToolbarElementEmbedded[];
+        ].filter(e => e != null) as ToolbarEntity_Elements[];
 
         await ToolbarEntity.create({
             name: "Eastwind",
