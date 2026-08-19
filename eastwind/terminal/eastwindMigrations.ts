@@ -185,8 +185,12 @@ export namespace EastwindMigrations {
                 menuElement(5, "Toolbar", "bars-staggered"),
                 menuElement(6, "ScheduledTask", "clock"),
                 menuElement(7, "Process", "gears"),
-                menuLink(8, ScheduledTaskMessage.SchedulePanel.niceToString(), "/scheduler/view", "clock"),
-                menuLink(9, ProcessMessage.ProcessPanel.niceToString(), "/processes/view", "gears"),
+                menuElement(8, "EmailTemplate", "envelope-open-text"),
+                menuElement(9, "EmailMessage", "envelope"),
+                menuElement(10, "OfficeTemplate", "file-word"),
+                menuLink(11, ScheduledTaskMessage.SchedulePanel.niceToString(), "/scheduler/view", "clock"),
+                menuLink(12, ProcessMessage.ProcessPanel.niceToString(), "/processes/view", "gears"),
+                menuLink(13, "Async Email Sender", "/asyncEmailSender/view", "envelopes-bulk"),
             ].filter(e => e != null) as ToolbarMenuEntity_Element[],
         });
         await adminMenu.save();
@@ -238,7 +242,11 @@ export namespace EastwindMigrations {
         let order = menu.elements.reduce((max, e) => Math.max(max, Number(e.order)), -1);
         let added = 0;
 
-        for (const [queryKey, iconName] of [["ScheduledTask", "clock"], ["Process", "gears"]] as const) {
+        for (const [queryKey, iconName] of [
+            ["ScheduledTask", "clock"], ["Process", "gears"],
+            ["EmailTemplate", "envelope-open-text"], ["EmailMessage", "envelope"],
+            ["OfficeTemplate", "file-word"],
+        ] as const) {
             const content = byKey.get(queryKey)?.toLite() as Lite<Entity> | undefined;
             if (content == null || has(e => e.content?.key() === content.key()))
                 continue;
@@ -251,6 +259,7 @@ export namespace EastwindMigrations {
         for (const [label, url, iconName] of [
             [ScheduledTaskMessage.SchedulePanel.niceToString(), "/scheduler/view", "clock"],
             [ProcessMessage.ProcessPanel.niceToString(), "/processes/view", "gears"],
+            ["Async Email Sender", "/asyncEmailSender/view", "envelopes-bulk"],
         ] as const) {
             if (has(e => e.url === url))
                 continue;

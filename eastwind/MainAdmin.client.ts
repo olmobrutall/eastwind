@@ -18,6 +18,8 @@ import { SchedulerClient } from "@altea/altea-scheduler/client/SchedulerClient";
 import { ProcessClient } from "@altea/altea-processes/client/ProcessClient";
 import { OmniboxClient } from "@altea/altea-omnibox/client/OmniboxClient";
 import { ToolbarClient } from "@altea/altea-toolbar/client/ToolbarClient";
+import { MailingClient } from "@altea/altea-email/client/MailingClient";
+import { OfficeClient } from "@altea/altea-office-template/client/OfficeClient";
 
 // The full (admin) registration bundle — Southwind's MainAdmin.startFull: the framework client modules
 // (Operations/Navigator/Finder) first, then each entity domain's client. Mirrors the server's
@@ -80,6 +82,18 @@ export function startFull(routes: RouteObject[]): void {
     // Processes (altea-processes): the /processes/view panel + the Process editor (Signum's ProcessClient).
     // After SchedulerClient: a ScheduledTask can point at a ProcessAlgorithmSymbol (the scheduler bridge).
     ProcessClient.start(cb);
+
+    // Email + templating (altea-email, which starts altea-templating itself): the EmailMessage /
+    // EmailTemplate / EmailMasterTemplate / EmailSenderConfiguration editors, the /asyncEmailSender/view
+    // panel, the "send this template" contextual menu + query button, and the "emails of this entity"
+    // quick-link (Southwind's `MailingClient.start({ routes, contextual: true, queryButton: true })`).
+    // AFTER UserQueriesClient: the template editor's filter builder is altea-user-queries' shared
+    // FilterBuilderEmbedded.
+    MailingClient.start(cb, { contextual: true, queryButton: true });
+
+    // Office reports (altea-office-template): the template editor, the "create report" operation, the
+    // contextual menu on a search's selected rows, the query-toolbar button and the entity-frame button.
+    OfficeClient.start(cb, { contextual: true, queryButton: true, entityButton: true });
 
     // Omnibox (altea-omnibox): registers the three result-shape renderers the navbar's
     // <OmniboxAutocomplete/> (see Layout.tsx) draws its suggestions with. Registers no routes.

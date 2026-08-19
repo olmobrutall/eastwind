@@ -10,6 +10,9 @@
     { "path": "../altea/altea-dashboard/tsconfig.data.json" },
     { "path": "../altea/altea-user-queries/tsconfig.data.json" },
     { "path": "../altea/altea-chart/tsconfig.data.json" },
-    { "path": "../altea/altea-toolbar/tsconfig.data.json" }
+    { "path": "../altea/altea-toolbar/tsconfig.data.json" },
+    { "path": "../altea/altea-templating/tsconfig.data.json" },
+    { "path": "../altea/altea-email/tsconfig.data.json" },
+    { "path": "../altea/altea-office-template/tsconfig.data.json" }
   ]
 }

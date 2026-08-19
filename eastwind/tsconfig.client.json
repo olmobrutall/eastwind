@@ -17,6 +17,9 @@
     { "path": "../altea/altea-user-assets/tsconfig.client.json" },
     { "path": "../altea/altea-user-queries/tsconfig.client.json" },
     { "path": "../altea/altea/tsconfig.client.json" },
-    { "path": "../altea/altea-toolbar/tsconfig.client.json" }
+    { "path": "../altea/altea-toolbar/tsconfig.client.json" },
+    { "path": "../altea/altea-templating/tsconfig.client.json" },
+    { "path": "../altea/altea-email/tsconfig.client.json" },
+    { "path": "../altea/altea-office-template/tsconfig.client.json" }
   ]
 }

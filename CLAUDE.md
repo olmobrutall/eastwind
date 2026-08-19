@@ -21,6 +21,7 @@ altea/
     server/           # engine: connection/, linq/, schema/, sync/, dynamicQuery/  (+ logic/, server-only)
   altea-auth/         # auth module
   altea-test/         # the framework test suite (music model; runs against a real DB)
+  altea-office-template/ # docx/pptx/xlsx templating (Signum.Word); hand-built OOXML substrate
   quote-transformer/  # ts-patch transformer for @quoted lambda navigations (see below)
 eastwind/
   entities/           # the app's entity domains (orders, customers, products, employees, shippers, …)
@@ -38,6 +39,11 @@ Port faithfully: **mirror Signum's class / method names and member order**, copy
 Known structural divergences from Signum (this is what "fix" means — don't port these 1:1):
 
 - **MLists are gone.** No `MList<T>` / `MListElement` wrapper. A collection is a **plain array** of `@part` row entities (or scalars on a row's `@valueField`). `@id` / `@order` / `@backReference` are markers, **not columns**.
+- **Do NOT initialize entity fields to a type's default.** `strictPropertyInitialization` is **off** (`altea/tsconfig.base.json`), so a field needs no initializer to compile — and adding one just to silence an imagined warning is noise. Write `@rowOrder order: int;`, `token: QueryTokenEmbedded | null;`, `orderType: OrderTypeEnum;`, `parts: DashboardEntity_Part[];` — **not** `= toInt(0)` / `= null` / `= OrderTypeEnum.Ascending` / `= []`. Specifically:
+  - a reflected `T[]` collection is seeded with `[]` by the quote-transformer, so `= []` is always redundant;
+  - `@rowOrder` / `@backReference` are filled by the save cascade (and exempt from the implicit NotNull);
+  - `= null` on a nullable field says nothing `undefined` doesn't.
+  **Keep only the initializers Signum itself declares** — a real non-default business value (`port = 25`, `editableMessage = true`, `chunkSizeSendingEmails = 100`, `creationDate = Clock.now`). Mirroring Signum is the rule; restating a zero value is not.
 - **QueryDescription is gone.** Signum shipped a serialized query-metadata DTO (`QueryDescription` / `ColumnDescription` / `QueryTokenWithoutParent`) to the client; altea resolves query tokens from the **registered entity metadata** instead (`entities/dynamicQuery/tokens/*`), so token trees are built client-side (`Finder.getQueryRoot`). There is no DTO, no `fetchQueryDescription`, and no `/api/query/description` route — the only remaining references are comments documenting the divergence.
 - **`TypeReference` is the ONE shared value-type descriptor.** `FieldInfo extends TypeReference`; `QueryToken.type` / `PropertyRoute.type` return it. Signum's `RuntimeType` is **server-only** (lives in `server/logic`). Read type facets off it: `.typeName`, `.array`, `.lite`, `.kind`, `.getEnum()`, `.typeInfos()`.
 - **No compat accessors.** Use the real model: `entity.constructor` (not `.Type`), `lite.entityType` (a ctor, not a string), `entity.isDirty()` (snapshot-based, not `.modified`).

@@ -5,6 +5,7 @@ import { Connector } from "@altea/altea/server/connection/connector";
 import { Transaction } from "@altea/altea/server/connection/transaction";
 import { Schema } from "@altea/altea/server/schema";
 import { Replacements } from "@altea/altea/server/sync/synchronizer";
+import { StartParameters } from "@altea/altea/data/utils/startParameters";
 import { AuthImportExport } from "@altea/altea-auth/server/AuthImportExport";
 import { table } from "@altea/altea/server/table";
 import { Starter } from "../starter.server";
@@ -33,7 +34,22 @@ async function main(): Promise<void> {
     const command = args[0]?.toLowerCase();
 
     const connStr = requireConnStr();
-    await Starter.start(connStr); // binds Connector.default; reach the schema via Schema.current
+
+    // The terminal is the tool that BRINGS the schema up to date (`create` / `sync` / `load`), so it must be
+    // able to start against a database that trails the code — otherwise the mismatch that `sync` exists to
+    // fix would stop `sync` from running. Signum's StartParameters.IgnoredDatabaseMismatches does exactly
+    // this: the startup caches (TypeLogic / SymbolLogic / EmailModelLogic, all built with `joinRelaxed`)
+    // COLLECT their mismatches instead of throwing, and we report them once, here. The WEB HOST keeps the
+    // strict default, so a stale schema there fails loudly with "Consider Synchronize".
+    const { mismatches } = await StartParameters.withIgnoredDatabaseMismatches(
+        () => Starter.start(connStr)); // binds Connector.default; reach the schema via Schema.current
+
+    if (mismatches.length > 0) {
+        console.log(chalk.yellow(`[start] ${mismatches.length} database mismatch(es) — the schema trails the code, run 'sync':`));
+        for (const m of mismatches)
+            console.log(chalk.gray(indentLines(m.message)));
+    }
+
     try {
         await connectBanner(connStr);
 
@@ -211,6 +227,11 @@ async function check(): Promise<void> {
 }
 
 // ---- bootstrap helpers -----------------------------------------------------------------------
+
+/** Indent a multi-line mismatch message so the report reads as one block. */
+function indentLines(text: string): string {
+    return text.split(/\r?\n/).map(l => "    " + l).join("\n");
+}
 
 function requireConnStr(): string {
     const connStr = process.env["EASTWIND_DB"] ?? process.env["ALTEA_TEST_DB"];

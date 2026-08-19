@@ -46,7 +46,10 @@
     "@altea/altea-files": "workspace:*",
     "@altea/altea-scheduler": "workspace:*",
     "@altea/altea-processes": "workspace:*",
-    "@altea/altea-toolbar": "workspace:*"
+    "@altea/altea-toolbar": "workspace:*",
+    "@altea/altea-templating": "workspace:*",
+    "@altea/altea-email": "workspace:*",
+    "@altea/altea-office-template": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

@@ -36,6 +36,12 @@ import { ProcessLogic } from "@altea/altea-processes/server/ProcessLogic.server"
 import { ProcessSchedulerBridge } from "@altea/altea-processes/server/ProcessSchedulerBridge.server";
 import { EastwindProcess } from "./eastwindProcesses.server";
 import { OmniboxLogic } from "@altea/altea-omnibox/server/OmniboxLogic";
+import { EmailLogic } from "@altea/altea-email/server/EmailLogic.server";
+import { FileTypeLogic } from "@altea/altea-files/server/FileTypeLogic.server";
+import { FileTypeAlgorithm } from "@altea/altea-files/server/FileTypeAlgorithm.server";
+import { EmailFileType } from "@altea/altea-email/data/Email";
+import { EastwindEmail } from "./eastwindEmail.server";
+import { OfficeTemplateLogic } from "@altea/altea-office-template/server/OfficeTemplateLogic.server";
 import { ToolbarLogic } from "@altea/altea-toolbar/server/ToolbarLogic.server";
 import { EastwindTypeCondition } from "./eastwindTypeConditions.data";
 
@@ -159,6 +165,33 @@ export namespace Starter {
         // only its own + the shared/global toolbars.
         ToolbarLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
         ToolbarLogic.registerRoleTypeCondition(EastwindTypeCondition.RoleEntities);
+
+        // Email + templating modules (altea-email / altea-templating): the EmailMessage / EmailTemplate /
+        // EmailMasterTemplate / EmailSenderConfiguration tables, the template parser's symbol tables, the
+        // async sender's routes, and the "send this template" lookups (Signum's EmailLogic.Start). AFTER
+        // FileLogic (attachments are FilePathEmbeddeds in a real store) and after the auth logics so
+        // ViewAsyncEmailSenderPanel lands in the same permission seed; BEFORE OperationLogic.start so its
+        // operation symbols get seeded.
+        //
+        // The app supplies three things (see eastwindEmail.server.ts): the configuration, which sender
+        // configuration to use, and how to read an email owner's address. The default MASTER TEMPLATE and the
+        // email OWNERS are registered first, since EmailLogic.start's model seeding may already need them.
+        EastwindEmail.registerEmailOwners();
+        EastwindEmail.registerDefaultMasterTemplate();
+        FileTypeLogic.register(EmailFileType.Attachment, new FileTypeAlgorithm({
+            physicalPrefix: () => process.env["EASTWIND_MAIL_ATTACHMENTS"] ?? "./files/emailAttachments",
+        }));
+        EmailLogic.start(sb, {
+            getConfiguration: () => EastwindEmail.configuration(),
+            getSenderConfiguration: EastwindEmail.senderConfiguration,
+        });
+
+        // Office-template module (altea-office-template): the OfficeTemplate / OfficeModel tables, the
+        // OfficeTransformerSymbol / OfficeConverterSymbol symbol tables, the GenerateReport permission, and
+        // the three routes (createReport / constructorType / officeTemplates). AFTER altea-email, because
+        // an OfficeAttachment hangs off an EmailTemplate; BEFORE OperationLogic.start so its three
+        // operations are in the registry when the OperationSymbol table is seeded.
+        OfficeTemplateLogic.start(sb);
 
         // Omnibox module (altea-omnibox): declares no tables (its ViewOmnibox permission symbol is seeded
         // through the PermissionSymbol table above); registers the entity / dynamic-query / special result

@@ -166,6 +166,37 @@ importers:
         specifier: ^10.1.0
         version: 10.1.0(@types/react@19.2.17)(react@19.2.7)
 
+  altea/altea-email:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      '@altea/altea-files':
+        specifier: workspace:*
+        version: link:../altea-files
+      '@altea/altea-templating':
+        specifier: workspace:*
+        version: link:../altea-templating
+      '@altea/altea-user-assets':
+        specifier: workspace:*
+        version: link:../altea-user-assets
+      '@altea/altea-user-queries':
+        specifier: workspace:*
+        version: link:../altea-user-queries
+      nodemailer:
+        specifier: ^7.0.0
+        version: 7.0.13
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+    devDependencies:
+      '@types/nodemailer':
+        specifier: ^7.0.0
+        version: 7.0.12
+
   altea/altea-files:
     dependencies:
       '@altea/altea':
@@ -174,6 +205,39 @@ importers:
       '@altea/altea-auth':
         specifier: workspace:*
         version: link:../altea-auth
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
+  altea/altea-office-template:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      '@altea/altea-chart':
+        specifier: workspace:*
+        version: link:../altea-chart
+      '@altea/altea-email':
+        specifier: workspace:*
+        version: link:../altea-email
+      '@altea/altea-files':
+        specifier: workspace:*
+        version: link:../altea-files
+      '@altea/altea-templating':
+        specifier: workspace:*
+        version: link:../altea-templating
+      '@altea/altea-user-assets':
+        specifier: workspace:*
+        version: link:../altea-user-assets
+      '@altea/altea-user-queries':
+        specifier: workspace:*
+        version: link:../altea-user-queries
+      fflate:
+        specifier: ^0.8.2
+        version: 0.8.3
       quote-transformer:
         specifier: workspace:*
         version: link:../quote-transformer
@@ -218,6 +282,18 @@ importers:
         version: link:../quote-transformer
 
   altea/altea-scheduler:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
+  altea/altea-templating:
     dependencies:
       '@altea/altea':
         specifier: workspace:*
@@ -334,9 +410,15 @@ importers:
       '@altea/altea-dashboard':
         specifier: workspace:*
         version: link:../altea/altea-dashboard
+      '@altea/altea-email':
+        specifier: workspace:*
+        version: link:../altea/altea-email
       '@altea/altea-files':
         specifier: workspace:*
         version: link:../altea/altea-files
+      '@altea/altea-office-template':
+        specifier: workspace:*
+        version: link:../altea/altea-office-template
       '@altea/altea-omnibox':
         specifier: workspace:*
         version: link:../altea/altea-omnibox
@@ -349,6 +431,9 @@ importers:
       '@altea/altea-scheduler':
         specifier: workspace:*
         version: link:../altea/altea-scheduler
+      '@altea/altea-templating':
+        specifier: workspace:*
+        version: link:../altea/altea-templating
       '@altea/altea-toolbar':
         specifier: workspace:*
         version: link:../altea/altea-toolbar
@@ -1335,6 +1420,9 @@ packages:
   '@types/node@25.9.1':
     resolution: {integrity: sha512-xfrlY7UD5rMJk3ZVJP8BNzS28J36YJg+xp+LPXV1TdWxr8uMH5A860QNxYDGQe/ylDSgjxE52Q9VnO7p75tJxg==}
 
+  '@types/nodemailer@7.0.12':
+    resolution: {integrity: sha512-80vKwiIsVSyFA1rRovH59jNPLBOuc6dRZIHEu40gXTkBkZnQv8vog1xSGEb9j5q/tdMAs5ivvDR2pLTU0hGHXA==}
+
   '@types/pg-copy-streams@1.2.5':
     resolution: {integrity: sha512-7D6/GYW2uHIaVU6S/5omI+6RZnwlZBpLQDZAH83xX1rjxAOK0f6/deKyyUTewxqts145VIGn6XWYz1YGf50G5g==}
 
@@ -2101,6 +2189,9 @@ packages:
       picomatch:
         optional: true
 
+  fflate@0.8.3:
+    resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
+
   finalhandler@2.1.1:
     resolution: {integrity: sha512-S8KoZgRZN+a5rNwqTxlZZePjT/4cnm0ROV70LedRHZ0p8u9fRID0hJUZQpkKLzro8LfmC8sx23bY6tVNxv8pQA==}
     engines: {node: '>= 18.0.0'}
@@ -2725,6 +2816,10 @@ packages:
   node-releases@2.0.48:
     resolution: {integrity: sha512-1uz8041X6LoI6ZSdZacM9lVY28vuzDlSKitnpbSNK0RfKoIJkX29NBPVEFXhnuSuEOA9Ww0xnPJ+ILWbGAv8DA==}
     engines: {node: '>=18'}
+
+  nodemailer@7.0.13:
+    resolution: {integrity: sha512-PNDFSJdP+KFgdsG3ZzMXCgquO7I6McjY2vlqILjtJd0hy8wEvtugS9xKRF2NWlPNGxvLCXlTNIae4serI7dinw==}
+    engines: {node: '>=6.0.0'}
 
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
@@ -4497,6 +4592,10 @@ snapshots:
     dependencies:
       undici-types: 7.24.6
 
+  '@types/nodemailer@7.0.12':
+    dependencies:
+      '@types/node': 25.9.1
+
   '@types/pg-copy-streams@1.2.5':
     dependencies:
       '@types/node': 25.9.1
@@ -5266,6 +5365,8 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.4):
     optionalDependencies:
       picomatch: 4.0.4
+
+  fflate@0.8.3: {}
 
   finalhandler@2.1.1:
     dependencies:
@@ -6198,6 +6299,8 @@ snapshots:
   node-int64@0.4.0: {}
 
   node-releases@2.0.48: {}
+
+  nodemailer@7.0.13: {}
 
   normalize-path@3.0.0: {}
 
