@@ -1,19 +1,18 @@
 import "@altea/altea/server/context.node"; // register server context storage first
-import * as fs from "node:fs";
+import * as path from "node:path";
+import * as url from "node:url";
 import chalk from "chalk";
 import { Connector } from "@altea/altea/server/connection/connector";
 import { Transaction } from "@altea/altea/server/connection/transaction";
 import { Schema } from "@altea/altea/server/schema";
 import { Replacements } from "@altea/altea/server/sync/synchronizer";
 import { StartParameters } from "@altea/altea/data/utils/startParameters";
-import { AuthImportExport } from "@altea/altea-auth/server/AuthImportExport";
 import { table } from "@altea/altea/server/table";
+import { Decimal } from "@altea/altea/data/basics";
 import { Starter } from "../starter.server";
-import { ConsoleSwitch, executeLoadProcess } from "./consoleSwitch";
-import { EmployeeLoader } from "./employeeLoader";
-import { ProductLoader } from "./productLoader";
-import { CustomerLoader } from "./customerLoader";
-import { OrderLoader } from "./orderLoader";
+import { ConsoleSwitch } from "./consoleSwitch";
+import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic.server";
+import { SqlMigrationRunner } from "@altea/altea-migrations/server/SqlMigrationRunner.server";
 import { Northwind } from "./northwindSchema";
 import { RegionEntity, TerritoryEntity, EmployeeEntity } from "../employees/Employee.data";
 import { SupplierEntity, CategoryEntity, ProductEntity } from "../products/Product.data";
@@ -24,10 +23,13 @@ import { EastwindMigrations } from "./eastwindMigrations";
 
 // Port of Southwind.Terminal (old/Southwind.Terminal/Program.cs): a console host that boots the engine
 // (Starter.start) then dispatches ONE command (Signum takes args.First() only) or, with no args, an
-// interactive ConsoleSwitch menu. Commands: new|create, sync, load [1-10], check. "Load" opens a
-// ChooseMultipleWithDescription sub-menu of the Northwind loaders (Southwind's Load). altea has no
-// CREATE DATABASE, so "new" = clean + generate into an already-existing database. The connection string
-// comes from EASTWIND_DB (falling back to ALTEA_TEST_DB); "postgres…" → PostgreSQL, else SQL Server.
+// interactive ConsoleSwitch menu. The commands mirror Southwind's, and so does the split between them:
+//   • `csharp` — the ONCE-per-database code steps (roles, users, the Northwind data, the XML seeds),
+//                recorded in CSharpMigrationEntity → EastwindMigrations.cSharpMigrations.
+//   • `sql`    — the versioned .sql migrations in eastwind/Migrations → SqlMigrationRunner.
+//   • `load`   — a sub-menu of RE-RUNNABLE ad-hoc tools, each logged to LoadMethodLog.
+// altea has no CREATE DATABASE, so "new" = clean + generate into an already-existing database. The
+// connection string comes from EASTWIND_DB (falling back to ALTEA_TEST_DB); "postgres…" → PG, else SQL Server.
 
 async function main(): Promise<void> {
     const args = process.argv.slice(2);
@@ -62,10 +64,15 @@ async function main(): Promise<void> {
                 case "sync":
                 case "synchronize": await synchronize(); break;
                 case "load": await load(args.slice(1)); break;
+                case "csharp":
+                case "cs": await cSharpMigrations(args.slice(1)); break;
                 case "check": await check(); break;
                 case "export-auth": await exportAuth(args.slice(1)); break;
                 case "import-auth": await importAuth(args.slice(1)); break;
-                default: console.log(`Unknown command '${command}'. Valid: new, sync, load [1-15], check, export-auth, import-auth`);
+                case "import-assets": await importAssets(args.slice(1)); break;
+                case "migrations":
+                case "sql": await migrations(args.slice(1)); break;
+                default: console.log(`Unknown command '${command}'. Valid: new, sync, sql, csharp, load [EA,IA,IU,SO], check, export-auth, import-auth, import-assets`);
             }
         }
     } finally {
@@ -96,7 +103,9 @@ async function interactive(): Promise<void> {
         const action = await new ConsoleSwitch<() => Promise<void>>("..:: Welcome to the Eastwind Loading Application ::..")
             .add("N", "New Database (clean + generate schema)", () => create())
             .add("S", "Synchronize (diff model vs DB)", () => synchronize())
-            .add("L", "Load Northwind data (+ roles/users)", () => load([]))
+            .add("SQL", "SQL Migrations (apply / create versioned .sql)", () => migrations([]))
+            .add("CS", "C# Migrations (roles, users, Northwind data, XML seeds)", () => cSharpMigrations([]))
+            .add("L", "Load (ad-hoc tools)", () => load([]))
             .add("C", "Check (row counts)", () => check())
             .choose();
 
@@ -109,34 +118,79 @@ async function interactive(): Promise<void> {
     }
 }
 
-// Southwind's Load(): a ChooseMultipleWithDescription sub-menu of the Northwind loaders, run in order
-// via ExecuteLoadProcess (auto-logging). The menu order is the dependency order. `load 1-16` runs all.
+/**
+ * Southwind's `Program.Load(args)` — the AD-HOC TOOLS menu: a ChooseMultipleWithDescription of one-off
+ * utilities, each run through `MigrationLogic.ExecuteLoadProcess` (so it lands in LoadMethodLog with its
+ * timing and exception) and each RE-RUNNABLE — nothing here is recorded as a migration.
+ *
+ * The data loading is NOT here: that is the C# MIGRATIONS list (`csharp`, see EastwindMigrations.
+ * cSharpMigrations), exactly as in Southwind.
+ *
+ * Southwind's entries were AR (import/export auth rules), HL (help), TP (train predictor), SO (show order)
+ * and EE (export embeddings). Help / MachineLearning are not ported, and there is no embeddings EXPORT here
+ * (only the loader), so those three are out; AR is split into its two halves and the user-asset import — the
+ * sibling of AR, and the other file-based seed — is added.
+ */
 async function load(args: string[]): Promise<void> {
-    // Order mirrors Southwind's SouthwindMigrations.CSharpMigrations: CreateRoles + CreateSystemUser
-    // first, then the Northwind data loaders, then EmployeeLoader.CreateUsers (needs employees + roles),
-    // and finally ImportAuthRules (Southwind's InitialAuthRulesImport). `load 1-16` runs the lot.
-    const selected = await new ConsoleSwitch<() => Promise<void>>("Load processes (e.g. 1-16):")
-        .add("1", "Create Roles", () => EastwindMigrations.createRoles())
-        .add("2", "Create System User", () => EastwindMigrations.createSystemUser())
-        .add("3", "Load Regions", () => EmployeeLoader.loadRegions())
-        .add("4", "Load Territories", () => EmployeeLoader.loadTerritories())
-        .add("5", "Load Employees", () => EmployeeLoader.loadEmployees())
-        .add("6", "Load Suppliers", () => ProductLoader.loadSuppliers())
-        .add("7", "Load Categories", () => ProductLoader.loadCategories())
-        .add("8", "Load Products", () => ProductLoader.loadProducts())
-        .add("9", "Load Companies", () => CustomerLoader.loadCompanies())
-        .add("10", "Load Persons", () => CustomerLoader.loadPersons())
-        .add("11", "Load Shippers", () => OrderLoader.loadShippers())
-        .add("12", "Load Orders", () => OrderLoader.loadOrders())
-        .add("13", "Create Users", () => EmployeeLoader.createUsers())
-        .add("14", "Load Employee Passages (embeddings)", () => EmployeeLoader.loadEmployeePassages())
-        .add("15", "Create Default Toolbar", () => EastwindMigrations.createDefaultToolbar())
-        .add("16", "Import Auth Rules", () => EastwindMigrations.importAuthRules())
-        .chooseMultipleWithDescription(args);
+    for (; ;) {
+        const selected = await new ConsoleSwitch<() => Promise<void>>("Load processes (e.g. EA,IA):")
+            .add("EA", "Export Auth Rules (to ./AuthRules.xml)", () => EastwindMigrations.exportAuthRules())
+            .add("IA", "Import Auth Rules (terminal/AuthRules.xml)", () => EastwindMigrations.importAuthRules())
+            .add("IU", "Import User Assets (terminal/UserAssets.xml)", () => EastwindMigrations.importUserAssets())
+            .add("SO", "Show Order (the most expensive discounted order)", () => showOrder())
+            .chooseMultipleWithDescription(args);
 
-    if (selected == null || selected.length === 0) return;
-    for (const step of selected)
-        await executeLoadProcess(step.description, step.value);
+        if (selected == null || selected.length === 0)
+            return;
+
+        for (const step of selected)
+            await MigrationLogic.executeLoadProcess(step.value, step.description, "EastwindTerminal");
+
+        if (args.length > 0)
+            return; // non-interactive (`load EA,IA`): run the selection once and leave
+    }
+}
+
+/**
+ * Southwind's `Program.ShowOrder`: the most expensive order that has a discounted line. A tiny end-to-end
+ * exercise of the LINQ provider from the console (Signum's own debugging entry).
+ */
+async function showOrder(): Promise<void> {
+    const order = await table(OrderEntity)
+        // `discount != 0` on a Decimal: the comparison operators are not quoted (only the arithmetic is),
+        // so the translatable spelling of "is not zero" is Decimal.sign(x) — 0 exactly when the value is.
+        .filter(o => o.details.some(l => Decimal.sign(l.discount) != 0))
+        .orderByDescending(o => o.totalPrice())
+        .firstOrNull() as OrderEntity | null;
+
+    if (order == null) {
+        console.log("  (no discounted order found)");
+        return;
+    }
+    console.log(`  Order ${order.id} — ${order.customer.toString()} — total ${order.totalPrice().toString()}`);
+    for (const line of order.details)
+        console.log(`    ${line.product.toString()} x${line.quantity} @${line.unitPrice} -${line.discount}`);
+}
+
+/**
+ * Southwind's `csharp` command / `CS` menu entry → `SouthwindMigrations.CSharpMigrations(autoRun)`: the
+ * ordered, once-per-database code steps (roles, users, the Northwind loaders, the XML seeds).
+ */
+async function cSharpMigrations(args: string[]): Promise<void> {
+    await EastwindMigrations.cSharpMigrations(/* autoRun */ args.includes("--auto") || !process.stdin.isTTY);
+}
+
+// Southwind's `SqlMigrationRunner.SqlMigrations()` (its Program.cs "SQL" option): the versioned .sql files in
+// eastwind/Migrations are the schema's source of truth — apply what is pending, or write the next migration
+// from the synchronization script.
+async function migrations(args: string[]): Promise<void> {
+    SqlMigrationRunner.migrationsDirectory = migrationsDir();
+    await SqlMigrationRunner.sqlMigrations(/* autoRun */ args.includes("--auto") || !process.stdin.isTTY);
+}
+
+// eastwind/Migrations — resolved off this module so the cwd does not matter (dist/terminal → ../../Migrations).
+function migrationsDir(): string {
+    return path.resolve(url.fileURLToPath(new URL(".", import.meta.url)), "../../Migrations");
 }
 
 async function create(): Promise<void> {
@@ -179,32 +233,18 @@ async function synchronize(): Promise<void> {
     console.log("[sync] applied");
 }
 
-// Export all authorization rules to a Southwind-style AuthRules.xml (Signum's AuthLogic.ExportRules).
+// The three file-based seeds as DIRECT commands (a deploy script calls these). The bodies live in
+// EastwindMigrations — the Load menu and the C# migration list call exactly the same functions.
 async function exportAuth(args: string[]): Promise<void> {
-    const file = args[0] ?? "AuthRules.xml";
-    fs.writeFileSync(file, await AuthImportExport.exportAuthRules(), "utf8");
-    console.log(`[export-auth] wrote ${file}`);
+    await EastwindMigrations.exportAuthRules(args[0]);
 }
 
-// Import authorization rules from an AuthRules.xml (Signum's AutomaticImportAuthRules). Renames are asked
-// on a real console; headless (no TTY) treats every ambiguous rename as no-rename (drop), logged.
 async function importAuth(args: string[]): Promise<void> {
-    const file = args[0] ?? "AuthRules.xml";
-    const xml = fs.readFileSync(file, "utf8");
-    const replacements = new Replacements();
-    replacements.interactive = Boolean(process.stdin.isTTY);
-    if (!replacements.interactive)
-        replacements.autoReplacement = ({ oldValue }) => {
-            console.log(`[import-auth] no-rename (drop): '${oldValue}'`);
-            return { oldValue, newValue: null };
-        };
-    const result = await AuthImportExport.importAuthRules(xml, replacements);
-    console.log(`[import-auth] applied roles: ${result.appliedRoles.join(", ") || "(none)"}`);
-    if (result.renames.length > 0)
-        console.log(`[import-auth] renames: ${result.renames.map(r => `${r.key.replace("AuthRules:", "")} ${r.from}→${r.to}`).join(", ")}`);
-    if (result.skippedRoles.length > 0)
-        console.log(`[import-auth] SKIPPED (no DB role after rename): ${result.skippedRoles.join(", ")}`);
-    console.log(`[import-auth] done (${file})`);
+    await EastwindMigrations.importAuthRules(args[0]);
+}
+
+async function importAssets(args: string[]): Promise<void> {
+    await EastwindMigrations.importUserAssets(args.find(a => !a.startsWith("--")), args.includes("--keep-existing"));
 }
 
 // Read-back health check: row counts of every table via altea's LINQ.

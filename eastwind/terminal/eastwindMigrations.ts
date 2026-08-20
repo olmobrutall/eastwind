@@ -1,49 +1,71 @@
 import "@altea/altea/server"; // installs save()/toLite()
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as url from "node:url";
 import { table } from "@altea/altea/server/table";
 import { PasswordEncoding } from "@altea/altea/server/passwordEncoding";
-import { TypeEntity } from "@altea/altea/data/typeEntity";
-import type { Lite } from "@altea/altea/data/lite";
-import { toInt } from "@altea/altea/data/basics";
+import { Replacements } from "@altea/altea/server/sync/synchronizer";
+import { Enum } from "@altea/altea/data/enum";
 import { RoleEntity, RoleEntity_InheritsFrom, MergeStrategy } from "@altea/altea-auth/data/Role";
 import { UserEntity, UserState } from "@altea/altea-auth/data/User";
-import {
-    RuleTypeEntity, RuleTypeConditionEntity, RuleTypeConditionEntity_Condition, RulePermissionEntity,
-    TypeAllowed, TypeConditionSymbol, PermissionSymbol,
-} from "@altea/altea-auth/data/Rules";
-import { QueryEntity } from "@altea/altea/data/queryEntity";
-import type { Entity } from "@altea/altea/data/entity";
-import {
-    ToolbarEntity, ToolbarMenuEntity, ToolbarEntity_Element, ToolbarMenuEntity_Element,
-    ToolbarElementTypeEnum, ToolbarLocationEnum, ShowCountEnum,
-} from "@altea/altea-toolbar/data/Toolbar";
-import { EastwindTypeCondition } from "../eastwindTypeConditions.data";
-import { ScheduledTaskMessage } from "@altea/altea-scheduler/data/Scheduler";
-import { ProcessMessage } from "@altea/altea-processes/data/Processes";
+import { AuthImportExport } from "@altea/altea-auth/server/AuthImportExport";
+import { UserAssetsImporter, warmUserAssetCaches } from "@altea/altea-user-assets/server/UserAssetsImportExport.server";
+import { EntityAction } from "@altea/altea-user-assets/data/UserAssets";
+import { CSharpMigrationRunner } from "@altea/altea-migrations/server/CSharpMigrationRunner.server";
+import { EmployeeLoader } from "./employeeLoader";
+import { ProductLoader } from "./productLoader";
+import { CustomerLoader } from "./customerLoader";
+import { OrderLoader } from "./orderLoader";
 
-// Port of Southwind.Terminal/SouthwindMigrations — the auth-setup migration steps:
-//   • createRoles       — Southwind's CreateRoles (AuthLogic.LoadRoles + the AuthRules.xml role graph):
-//                         Anonymous, Standard user, Super user (Intersection), Advanced user ⊃ Standard.
-//   • createSystemUser  — Southwind's CreateSystemUser: the "System" (Super user) + "Anonymous" users.
-//   • createDefaultToolbar — the app's starter SIDE toolbar (Southwind imports its toolbars from
-//                         UserAssets XML; eastwind seeds an equivalent here).
-//   • importAuthRules   — Southwind's InitialAuthRulesImport → AuthLogic.AutomaticImportAuthRules
-//                         (AuthRules.xml, not ported): stand-in granting Standard user Read on the
-//                         Northwind domain types so roles differ visibly.
-// (Southwind's EmployeeLoader.CreateUsers lives in the employee loader — see employeeLoader.ts.)
-// Passwords equal the username (Southwind's HashPassword(name, name)) — dev only. Idempotent.
+// Port of Southwind.Terminal/SouthwindMigrations.cs — the app's C# MIGRATIONS: the ordered list of code
+// steps that bring a fresh database to a usable state, each recorded in CSharpMigrationEntity so it runs
+// ONCE per database (Southwind's `new CSharpMigrationRunner { … }.Run(autoRun)`).
+//
+// This is NOT the terminal's "Load" menu: that one (Southwind's `Program.Load`) is a bag of RE-RUNNABLE
+// ad-hoc tools, logged to LoadMethodLog but never recorded as migrations — see terminal.ts.
+//
+// The individual steps mirror Southwind's:
+//   • createRoles       — CreateRoles (AuthLogic.LoadRoles): Anonymous, Standard user, Super user
+//                         (Intersection), Advanced user ⊃ Standard.
+//   • createSystemUser  — CreateSystemUser: the "System" (Super user) + "Anonymous" users.
+//   • the Northwind loaders — EmployeeLoader / ProductLoader / CustomerLoader / OrderLoader, in dependency
+//                         order (Southwind lists them in exactly this order).
+//   • importUserAssets  — ImportToolbar (UserAssetsImporter.Preview + Import over terminal/UserAssets.xml).
+//   • importAuthRules   — InitialAuthRulesImport (AuthLogic.AutomaticImportAuthRules over
+//                         terminal/AuthRules.xml). LAST, as in Southwind: the rules reference the types,
+//                         users and assets everything above created.
+//
+// Not ported (Southwind steps whose module does not exist here): CreateCulturesAndConfiguration,
+// SimulateOrderSystemTime, ImportWordReportTemplateForOrder, ImportInstanceTranslations, ImportPredictor.
+// Passwords equal the username (Southwind's HashPassword(name, name)) — dev only. Every step is idempotent
+// on its own, so re-running one after deleting its CSharpMigration row is safe.
 export namespace EastwindMigrations {
-    const DOMAIN_TYPES = ["Order", "Product", "Person", "Company", "Employee", "Shipper", "Supplier", "Category", "Region", "Territory"];
-    // Row-scoped instead of plainly readable — see importAuthRules.
-    const USER_ASSET_TYPES = ["Dashboard", "UserQuery", "UserChart", "Toolbar", "ToolbarMenu", "ToolbarSwitcher"];
-    // The feature permissions the extension routes assert (Signum keys them "<Container>.<Member>").
-    const FEATURE_PERMISSIONS = [
-        "DashboardPermission.ViewDashboard",
-        "UserQueryPermission.ViewUserQuery",
-        "ChartPermission.ViewCharting",
-        "UserAssetPermission.UserAssetsToXML",
-        // Without this the navbar omnibox 403s for a Standard user.
-        "OmniboxPermission.ViewOmnibox",
-    ];
+
+    /** Southwind's `SouthwindMigrations.CSharpMigrations(autoRun)`. */
+    export async function cSharpMigrations(autoRun: boolean): Promise<void> {
+        const runner = new CSharpMigrationRunner();
+
+        // The unique names are the MIGRATION IDENTITY in the database (renaming one re-runs it), so they are
+        // the C# method names Southwind used rather than the console captions.
+        runner.add("CreateRoles", () => createRoles());
+        runner.add("CreateSystemUser", () => createSystemUser());
+        runner.add("LoadRegions", () => EmployeeLoader.loadRegions());
+        runner.add("LoadTerritories", () => EmployeeLoader.loadTerritories());
+        runner.add("LoadEmployees", () => EmployeeLoader.loadEmployees());
+        runner.add("LoadSuppliers", () => ProductLoader.loadSuppliers());
+        runner.add("LoadCategories", () => ProductLoader.loadCategories());
+        runner.add("LoadProducts", () => ProductLoader.loadProducts());
+        runner.add("LoadCompanies", () => CustomerLoader.loadCompanies());
+        runner.add("LoadPersons", () => CustomerLoader.loadPersons());
+        runner.add("LoadShippers", () => OrderLoader.loadShippers());
+        runner.add("LoadOrders", () => OrderLoader.loadOrders());
+        runner.add("CreateUsers", () => EmployeeLoader.createUsers());
+        runner.add("LoadEmployeePassages", () => EmployeeLoader.loadEmployeePassages());
+        runner.add("ImportUserAssets", () => importUserAssets());
+        runner.add("ImportAuthRules", () => importAuthRules());
+
+        await runner.run(autoRun);
+    }
 
     export async function createRoles(): Promise<void> {
         await ensureRole("Anonymous", MergeStrategy.Union, []);
@@ -57,249 +79,72 @@ export namespace EastwindMigrations {
         await ensureUser("Anonymous", "Anonymous");
     }
 
-    export async function importAuthRules(): Promise<void> {
-        const standard = await table(RoleEntity).filter(r => r.name == "Standard user").singleOrNull() as RoleEntity | null;
-        if (standard == null)
-            return;
-        const roleLite = standard.toLite();
-        const byClean = new Map((await table(TypeEntity).toArray() as TypeEntity[]).map(t => [t.cleanName, t]));
-        const existing = await table(RuleTypeEntity).filter(rt => rt.role == roleLite).toArray() as RuleTypeEntity[];
-        const haveTypeIds = new Set(existing.map(rt => rt.resource.id));
-        for (const clean of DOMAIN_TYPES) {
-            const type = byClean.get(clean);
-            if (type == null || haveTypeIds.has(type.id))
-                continue;
-            await RuleTypeEntity.create({ role: roleLite, resource: type.toLite(), fallback: TypeAllowed.Read }).save();
-        }
+    // ---- the XML seeds (Southwind's InitialAuthRulesImport / ImportToolbar) -----------------------------
 
-        // The extension FEATURES themselves (Southwind's AuthRules.xml grants these to Standard user): without
-        // them the module routes 403 before any row scoping is even consulted.
-        for (const permission of FEATURE_PERMISSIONS)
-            await ensurePermission(roleLite, permission);
+    /**
+     * Southwind's `InitialAuthRulesImport` → `AuthLogic.AutomaticImportAuthRules`: apply terminal/
+     * AuthRules.xml. Renames are asked on a real console; headless (no TTY) treats every ambiguous rename as
+     * no-rename (drop), logged.
+     */
+    export async function importAuthRules(file?: string): Promise<void> {
+        const fileName = file ?? seedFile("AuthRules.xml");
+        const xml = fs.readFileSync(fileName, "utf8");
 
-        // The USER-ASSET types are row-scoped instead of plainly readable (Southwind's AuthRules.xml does the
-        // same with SouthwindTypeCondition): NO access by default, plus one condition rule per owner kind —
-        // Read when the asset is the current user's, Read when it is global / owned by one of their roles.
-        // (Last match wins, so the two rules are independent grants.) Parts — panel parts, filter rows,
-        // token equivalences — inherit these rules structurally, so they need no rules of their own.
-        const userEntities = await symbolLite(EastwindTypeCondition.UserEntities.key);
-        const roleEntities = await symbolLite(EastwindTypeCondition.RoleEntities.key);
-        if (userEntities == null || roleEntities == null)
-            return; // symbols not seeded yet (run `sync` first)
+        const replacements = new Replacements();
+        replacements.interactive = Boolean(process.stdin.isTTY);
+        if (!replacements.interactive)
+            replacements.autoReplacement = ({ oldValue }) => {
+                console.log(`[import-auth] no-rename (drop): '${oldValue}'`);
+                return { oldValue, newValue: null };
+            };
 
-        for (const clean of USER_ASSET_TYPES) {
-            const type = byClean.get(clean);
-            if (type == null || haveTypeIds.has(type.id))
-                continue;
+        const result = await AuthImportExport.importAuthRules(xml, replacements);
+        console.log(`[import-auth] applied roles: ${result.appliedRoles.join(", ") || "(none)"}`);
+        if (result.renames.length > 0)
+            console.log(`[import-auth] renames: ${result.renames.map(r => `${r.key.replace("AuthRules:", "")} ${r.from}→${r.to}`).join(", ")}`);
+        if (result.skippedRoles.length > 0)
+            console.log(`[import-auth] SKIPPED (no DB role after rename): ${result.skippedRoles.join(", ")}`);
+        console.log(`[import-auth] done (${fileName})`);
+    }
 
-            await RuleTypeEntity.create({
-                role: roleLite,
-                resource: type.toLite(),
-                fallback: TypeAllowed.None,
-                conditionRules: [
-                    conditionRule(0, userEntities),
-                    conditionRule(1, roleEntities),
-                ],
-            }).save();
-        }
+    /** The export half of Southwind's `AuthLogic.ImportExportAuthRules` menu entry. */
+    export async function exportAuthRules(file?: string): Promise<void> {
+        const fileName = file ?? "AuthRules.xml";
+        fs.writeFileSync(fileName, await AuthImportExport.exportAuthRules(), "utf8");
+        console.log(`[export-auth] wrote ${fileName}`);
     }
 
     /**
-     * The app's default SIDE toolbar — the sidebar the Layout renders (Southwind ships its toolbars inside
-     * the UserAssets XML it imports; eastwind has no such file yet, so the equivalent starter content is
-     * seeded here). GLOBAL (`owner: null`), so the role-owner type condition makes it visible to every role.
-     *
-     * Elements are plain QUERY items grouped under headers, plus a ToolbarMenu holding the admin queries —
-     * enough to exercise headers, dividers, query items, a nested menu and the count badge.
+     * Southwind's `ImportToolbar`: UserAssetsImporter.Preview over terminal/UserAssets.xml, then Import with
+     * that preview. The preview defaults every EXISTING asset to override (matched by guid), which is what a
+     * re-run of the seed should do; `keepExisting` flips that so only new assets are created.
      */
-    export async function createDefaultToolbar(): Promise<void> {
-        const existing = await table(ToolbarEntity).filter(t => t.name == "Eastwind").singleOrNull() as ToolbarEntity | null;
-        if (existing != null) {
-            // A dev database is rarely recreated, so instead of bailing out, TOP UP the admin menu with
-            // whatever a newer module added (the scheduler / processes panels). Idempotent, like the
-            // ensureRole / ensureUser helpers below.
-            await ensureAdminMenuElements();
-            return;
-        }
+    export async function importUserAssets(file?: string, keepExisting = false): Promise<void> {
+        const fileName = file ?? seedFile("UserAssets.xml");
+        const xml = fs.readFileSync(fileName, "utf8");
 
-        const byKey = new Map((await table(QueryEntity).toArray() as QueryEntity[]).map(q => [q.key, q]));
-        const query = (key: string): Lite<QueryEntity> | undefined => byKey.get(key)?.toLite() as Lite<QueryEntity> | undefined;
+        await warmUserAssetCaches(); // the query / type lookups the (de)serializers resolve against
+        const model = await UserAssetsImporter.preview(xml);
+        if (keepExisting)
+            model.lines.forEach(l => l.overrideEntity = false);
 
-        // A query row that no longer exists is skipped rather than failing the whole migration.
-        const item = (order: number, queryKey: string, iconName?: string, showCount?: ShowCountEnum): ToolbarEntity_Element | null => {
-            const content = query(queryKey);
-            if (content == null)
-                return null;
-            return ToolbarEntity_Element.create({
-                order: toInt(order),
-                type: ToolbarElementTypeEnum.Item,
-                content: content as Lite<Entity>,
-                iconName: iconName ?? null,
-                showCount: showCount ?? null,
-            });
-        };
+        for (const l of model.lines)
+            console.log(`  ${Enum.toName(EntityAction, l.action).padEnd(9)} ${String(l.type).padEnd(12)} ${l.text}`
+                + (l.action !== EntityAction.New ? (l.overrideEntity ? " (override)" : " (kept)") : ""));
 
-        const header = (order: number, label: string, iconName?: string): ToolbarEntity_Element =>
-            ToolbarEntity_Element.create({
-                order: toInt(order),
-                type: ToolbarElementTypeEnum.Header,
-                label,
-                iconName: iconName ?? null,
-            });
-
-        const divider = (order: number): ToolbarEntity_Element =>
-            ToolbarEntity_Element.create({ order: toInt(order), type: ToolbarElementTypeEnum.Divider });
-
-        // The admin queries live in a collapsible ToolbarMenu (a second entity the toolbar points at).
-        const menuElement = (order: number, queryKey: string, iconName?: string): ToolbarMenuEntity_Element | null => {
-            const content = query(queryKey);
-            if (content == null)
-                return null;
-            return ToolbarMenuEntity_Element.create({
-                order: toInt(order),
-                type: ToolbarElementTypeEnum.Item,
-                content: content as Lite<Entity>,
-                iconName: iconName ?? null,
-            });
-        };
-
-        // A panel is a ROUTE, not a query, so it is a `url` element (Signum's app-relative toolbar url)
-        // rather than a `content` one.
-        const menuLink = (order: number, label: string, url: string, iconName: string): ToolbarMenuEntity_Element =>
-            ToolbarMenuEntity_Element.create({
-                order: toInt(order),
-                type: ToolbarElementTypeEnum.Item,
-                label,
-                url,
-                iconName,
-            });
-
-        const adminMenu = ToolbarMenuEntity.create({
-            name: "Administration",
-            elements: [
-                menuElement(0, "User", "user"),
-                menuElement(1, "Role", "users"),
-                menuElement(2, "Dashboard", "table-cells-large"),
-                menuElement(3, "UserQuery", "rectangle-list"),
-                menuElement(4, "UserChart", "chart-bar"),
-                menuElement(5, "Toolbar", "bars-staggered"),
-                menuElement(6, "ScheduledTask", "clock"),
-                menuElement(7, "Process", "gears"),
-                menuElement(8, "EmailTemplate", "envelope-open-text"),
-                menuElement(9, "EmailMessage", "envelope"),
-                menuElement(10, "OfficeTemplate", "file-word"),
-                menuLink(11, ScheduledTaskMessage.SchedulePanel.niceToString(), "/scheduler/view", "clock"),
-                menuLink(12, ProcessMessage.ProcessPanel.niceToString(), "/processes/view", "gears"),
-                menuLink(13, "Async Email Sender", "/asyncEmailSender/view", "envelopes-bulk"),
-            ].filter(e => e != null) as ToolbarMenuEntity_Element[],
-        });
-        await adminMenu.save();
-
-        const elements = [
-            header(0, "Sales", "cart-shopping"),
-            // One element carries a live result-count badge (Signum's ShowCount) so the feature is visible
-            // on a fresh database.
-            item(1, "Order", "file-invoice-dollar", ShowCountEnum.Always),
-            item(2, "Product", "box"),
-            item(3, "Category", "boxes-stacked"),
-            divider(4),
-            header(5, "Customers", "address-book"),
-            item(6, "Company", "building"),
-            item(7, "Person", "user-tie"),
-            divider(8),
-            header(9, "Operations", "gears"),
-            item(10, "Employee", "id-badge"),
-            item(11, "Shipper", "truck"),
-            item(12, "Supplier", "industry"),
-            divider(13),
-            ToolbarEntity_Element.create({
-                order: toInt(14),
-                type: ToolbarElementTypeEnum.Item,
-                content: adminMenu.toLite() as Lite<Entity>,
-                iconName: "screwdriver-wrench",
-            }),
-        ].filter(e => e != null) as ToolbarEntity_Element[];
-
-        await ToolbarEntity.create({
-            name: "Eastwind",
-            location: ToolbarLocationEnum.Side,
-            priority: toInt(1),
-            owner: null,
-            elements,
-        }).save();
+        await UserAssetsImporter.importAssets(xml, model);
+        console.log(`[import-assets] imported ${model.lines.length} asset(s) (${fileName})`);
     }
 
-    /** Grant a permission to a role, unless it already has an explicit rule for it. */
-    /** Add to the existing Administration menu whatever a newer module contributed — matched on the query
-     *  key / url, so running it twice changes nothing. */
-    async function ensureAdminMenuElements(): Promise<void> {
-        const menu = await table(ToolbarMenuEntity).filter(m => m.name == "Administration").singleOrNull() as ToolbarMenuEntity | null;
-        if (menu == null)
-            return;
+    // ---- helpers ---------------------------------------------------------------------------------------
 
-        const byKey = new Map((await table(QueryEntity).toArray() as QueryEntity[]).map(q => [q.key, q]));
-        const has = (predicate: (e: ToolbarMenuEntity_Element) => boolean): boolean => menu.elements.some(predicate);
-        let order = menu.elements.reduce((max, e) => Math.max(max, Number(e.order)), -1);
-        let added = 0;
-
-        for (const [queryKey, iconName] of [
-            ["ScheduledTask", "clock"], ["Process", "gears"],
-            ["EmailTemplate", "envelope-open-text"], ["EmailMessage", "envelope"],
-            ["OfficeTemplate", "file-word"],
-        ] as const) {
-            const content = byKey.get(queryKey)?.toLite() as Lite<Entity> | undefined;
-            if (content == null || has(e => e.content?.key() === content.key()))
-                continue;
-            menu.elements.push(ToolbarMenuEntity_Element.create({
-                order: toInt(++order), type: ToolbarElementTypeEnum.Item, content, iconName,
-            }));
-            added++;
-        }
-
-        for (const [label, url, iconName] of [
-            [ScheduledTaskMessage.SchedulePanel.niceToString(), "/scheduler/view", "clock"],
-            [ProcessMessage.ProcessPanel.niceToString(), "/processes/view", "gears"],
-            ["Async Email Sender", "/asyncEmailSender/view", "envelopes-bulk"],
-        ] as const) {
-            if (has(e => e.url === url))
-                continue;
-            menu.elements.push(ToolbarMenuEntity_Element.create({
-                order: toInt(++order), type: ToolbarElementTypeEnum.Item, label, url, iconName,
-            }));
-            added++;
-        }
-
-        if (added > 0) {
-            await menu.save();
-            console.log(`[toolbar] added ${added} element(s) to the Administration menu`);
-        }
-    }
-
-    async function ensurePermission(roleLite: Lite<RoleEntity>, key: string): Promise<void> {
-        const symbol = await table(PermissionSymbol).filter(s => s.key == key).singleOrNull() as PermissionSymbol | null;
-        if (symbol == null)
-            return; // not seeded yet (run `sync` first)
-
-        const symbolLite = symbol.toLite() as Lite<PermissionSymbol>;
-        const existing = await table(RulePermissionEntity)
-            .filter(rp => rp.role == roleLite && rp.resource == symbolLite).singleOrNull();
-        if (existing != null)
-            return;
-
-        await RulePermissionEntity.create({ role: roleLite, resource: symbolLite, allowed: true }).save();
-    }
-
-    function conditionRule(order: number, symbol: Lite<TypeConditionSymbol>): RuleTypeConditionEntity {
-        return RuleTypeConditionEntity.create({
-            order: toInt(order),
-            allowed: TypeAllowed.Read,
-            conditions: [RuleTypeConditionEntity_Condition.create({ symbol })],
-        });
-    }
-
-    async function symbolLite(key: string): Promise<Lite<TypeConditionSymbol> | null> {
-        const row = await table(TypeConditionSymbol).filter(s => s.key == key).singleOrNull() as TypeConditionSymbol | null;
-        return row == null ? null : row.toLite() as Lite<TypeConditionSymbol>;
+    /**
+     * The XML seed files that live next to this source (Southwind kept them next to Program.cs and reached
+     * them as "../../../AuthRules.xml" from the bin folder). Resolved off this module's own location so a
+     * command works whatever the cwd: dist/terminal/eastwindMigrations.js → ../../terminal/<name>.
+     */
+    export function seedFile(name: string): string {
+        return path.resolve(url.fileURLToPath(new URL(".", import.meta.url)), "../../terminal", name);
     }
 
     async function ensureRole(name: string, strategy: MergeStrategy, inheritsFrom: RoleEntity[]): Promise<RoleEntity> {

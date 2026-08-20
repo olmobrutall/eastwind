@@ -101,14 +101,8 @@ export class ConsoleSwitch<V> {
     }
 }
 
-// Signum's MigrationLogic.ExecuteLoadProcess: run an action, logging its description before and the
-// elapsed time after — so load steps self-describe instead of hand-written console.log pairs.
-export async function executeLoadProcess(description: string, action: () => Promise<void>): Promise<void> {
-    console.log(`— ${description}`);
-    const start = Date.now();
-    await action();
-    console.log(`  ✓ ${description} (${Date.now() - start} ms)`);
-}
+// (Signum's MigrationLogic.ExecuteLoadProcess used to be hand-rolled here; it now lives in
+// @altea/altea-migrations, which also writes the LoadMethodLog row for each step.)
 
 // Promise wrapper over readline.question that also resolves to "" on EOF ('close'), so a piped /
 // non-TTY stdin ends the menu instead of leaving the promise pending.
