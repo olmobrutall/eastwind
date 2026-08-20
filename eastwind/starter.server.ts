@@ -50,6 +50,9 @@ import { PlainExcelLogic } from "@altea/altea-office-template/server/excel/Plain
 import { ExcelImportLogic } from "@altea/altea-office-template/server/excel/ExcelImportLogic.server";
 import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic.server";
 import { EastwindTypeCondition } from "./eastwindTypeConditions.data";
+import { CacheLogic } from "@altea/altea-cache/server/CacheLogic";
+import { CacheServer } from "@altea/altea-cache/server/CacheServer";
+import { PostgresBroadcast } from "@altea/altea-cache/server/Broadcast/PostgresBroadcast";
 
 // Port of Southwind's Starter.Start (Southwind/Starter.cs): the single global entry that builds the
 // schema, binds the connector, registers each module's logic and completes. Extensions are excluded
@@ -73,6 +76,14 @@ export namespace Starter {
 
         Connector.default = connector;
         sb.settings.isPostgres = connector.isPostgres;
+
+        // Cache module (altea-cache) — FIRST of all the module starts, for two reasons: it swaps the
+        // global-lazy invalidation strategy (which must happen before ANY `sb.globalLazy` registration),
+        // and `.withCache()` on an include below needs it started. The broadcast is what tells SIBLING
+        // processes to invalidate; on Postgres that is LISTEN/NOTIFY, which needs no configuration
+        // (Signum's `PostgresBroadcast`). A single-process host works fine without one — every write goes
+        // through this process, so its own events cover it.
+        CacheLogic.start(sb, { serverBroadcast: connector.isPostgres ? new PostgresBroadcast() : undefined });
 
         // Framework logic (Signum's part of Starter.Start): the exception log table.
         ExceptionLogic.start(sb);
@@ -130,6 +141,13 @@ export namespace Starter {
         // /api/profilerHeavy/* + /api/profilerTimes/* routes and its permission symbols (seeded via the
         // PermissionSymbol table above). After the auth logics so its permissions land in the same seed.
         ProfilerLogic.start(sb, { timeTracker: true, heavyProfiler: true });
+
+        // Cache admin surface (altea-cache): /api/cache/view + enable/disable/clear + the two anonymous
+        // broadcast endpoints. Mounted HERE, not inside CacheLogic.start (which has to run before every
+        // other module — see above): express matches handlers in REGISTRATION order, so a route mounted
+        // ahead of the auth middleware would never see an authenticated user.
+        if (sb.webBuilder)
+            CacheServer.start(sb.webBuilder);
 
         // User queries module (altea-user-queries): the UserQuery entity + its Save/Delete operations,
         // caches, XML import/export, and lookup routes. Before OperationLogic.start so its operation symbols

@@ -8,6 +8,7 @@ import { CustomersClient } from "./customers/CustomerClient.client";
 import { OrdersClient } from "./orders/OrderClient.client";
 import { AuthAdminClient } from "@altea/altea-auth/client/admin/AuthAdminClient";
 import { ProfilerClient } from "@altea/altea-profiler/client/ProfilerClient";
+import { CacheClient } from "@altea/altea-cache/client/CacheClient";
 import { UserQueriesClient } from "@altea/altea-user-queries/client/UserQueriesClient";
 import { ChartClient } from "@altea/altea-chart/client/ChartClient";
 import { ColorPaletteClient } from "@altea/altea-chart/client/ColorPalette/ColorPaletteClient";
@@ -47,6 +48,10 @@ export function startFull(routes: RouteObject[]): void {
 
     // Profiler admin (altea-profiler): the /profiler/heavy + /profiler/times pages (Signum's ProfilerClient).
     ProfilerClient.start(cb);
+
+    // Cache admin (altea-cache): the /cache/statistics panel (Signum's CacheClient) — cached tables and
+    // global lazies with their hit / invalidation / load statistics, plus Enable / Disable / Clear.
+    CacheClient.start(cb);
 
     // User queries (altea-user-queries): the UserQuery editor + /userQuery page + quick-links to run saved
     // queries (Signum's UserQueryClient).

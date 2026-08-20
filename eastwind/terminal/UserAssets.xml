@@ -379,8 +379,7 @@
   </ToolbarMenu>
   <ToolbarMenu Guid="aa00a50a-ff58-4950-94de-e200769effdc" Name="System Panels">
     <Elements>
-      <!-- altea: Signum.Cache is not ported.
-      <ToolbarElement Type="Item" Label="Cache" IconName="fas fa-database" IconColor="#e74c3c" Content="CachePermission.ViewCache" Url="~/cache/statistics" /> -->
+      <ToolbarElement Type="Item" Label="Cache" IconName="fas fa-database" IconColor="#e74c3c" Content="CachePermission.ViewCache" Url="~/cache/statistics" />
       <ToolbarElement Type="Item" Label="Profiler (Heavy)" IconName="fas fa-bolt" IconColor="#e74c3c" Content="ProfilerPermission.ViewHeavyProfiler" Url="~/profiler/heavy" />
       <ToolbarElement Type="Item" Label="Profiler (Times)" IconName="fas fa-bolt" IconColor="#e74c3c" Content="ProfilerPermission.ViewTimeTracker" Url="~/profiler/times" />
       <ToolbarElement Type="Item" Label="Processes Panel" IconName="fas fa-cogs" IconColor="#9b6bcc" Content="ProcessPermission.ViewProcessPanel" Url="~/processes/view" />

@@ -14,6 +14,7 @@
     { "path": "../altea/altea-templating/tsconfig.data.json" },
     { "path": "../altea/altea-email/tsconfig.data.json" },
     { "path": "../altea/altea-office-template/tsconfig.data.json" },
-    { "path": "../altea/altea-migrations/tsconfig.data.json" }
+    { "path": "../altea/altea-migrations/tsconfig.data.json" },
+    { "path": "../altea/altea-cache/tsconfig.data.json" }
   ]
 }

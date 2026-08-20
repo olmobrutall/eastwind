@@ -20,6 +20,7 @@
     { "path": "../altea/altea-toolbar/tsconfig.client.json" },
     { "path": "../altea/altea-templating/tsconfig.client.json" },
     { "path": "../altea/altea-email/tsconfig.client.json" },
-    { "path": "../altea/altea-office-template/tsconfig.client.json" }
+    { "path": "../altea/altea-office-template/tsconfig.client.json" },
+    { "path": "../altea/altea-cache/tsconfig.client.json" }
   ]
 }

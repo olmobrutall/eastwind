@@ -19,8 +19,9 @@ altea/
                       #   propertyRoute, dynamicQuery tokens, decorators, globals, localization
     client/           # React UI kit (Navigator, Finder, SearchControl, Lines, Operations, Frames, …)
     server/           # engine: connection/, linq/, schema/, sync/, dynamicQuery/  (+ logic/, server-only)
+    test/             # the framework test suite (music model; runs against a real DB) — see "How to test"
   altea-auth/         # auth module
-  altea-test/         # the framework test suite (music model; runs against a real DB)
+  altea-cache/        # in-memory entity cache + cross-process invalidation (Signum.Caching)
   altea-office-template/ # docx/pptx/xlsx templating (Signum.Word); hand-built OOXML substrate
   quote-transformer/  # ts-patch transformer for @quoted lambda navigations (see below)
 eastwind/
@@ -101,6 +102,26 @@ Known structural divergences from Signum (this is what "fix" means — don't por
 - **`@quoted` lambda navigations**: `entity.customer.name`-style navs inside queries are rewritten by `quote-transformer` (a ts-patch transformer). A nav off a **nullable** reference must use `singleOrNull` / `firstOrNull` (OUTER APPLY), not `single` / `first`.
 - **Rule sets live in `client/FinderRules.tsx`** (like Signum), not inline in `Finder.tsx` — the editors import Lines, and Lines import Finder, so keeping them separate avoids a module-eval import cycle. Finder imports `FinderRules` for its four `init*Rules()` and installs them, so `import { Finder }` is enough.
 
+- **Caching (`altea-cache`) holds rows, not entities, and never SqlDependency.** `sb.include(X).withCache()`
+  keeps X's table in memory as raw column tuples plus a completer that fills a FRESH instance per read, so
+  what a caller gets can be mutated and saved. Divergences from Signum.Caching: there is no
+  `CachedTableMList` (altea's collections are `@part` child rows, i.e. always Signum's VirtualMList shape —
+  served from the child type's own cached table through a back-reference index), and a cached type's own
+  lite is "materialise the row, then `toLite()`" (altea has no lite-model entity). A **SEMI-cached lite** —
+  a `Lite<Transactional>` on a cached row, e.g. cached `Country` → `Lite<Person>` — is a TRIMMED side table:
+  only the columns the display expression reads, found by walking the custom lite's / `@quoted toString()`'s
+  expression tree (`LiteColumnsFinder`, altea's ToStringColumnsFinderVisitor + LiteModelExpressionVisitor),
+  for only the rows a cached table references (an INNER JOIN back to the owner). **Caching the whole row
+  there would be a trap**: it transitively drags in whatever that row references until most of the database
+  is in memory — so the registration walk STOPS at a semi type (Signum recurses; altea needs not to, because
+  a full-entity reference on a cached row is left a Retriever stub and completed from the database).
+  **SqlDependency is not portable** — Node's SQL Server driver has no query notifications — so cross-process
+  invalidation is a broadcast: `PostgresBroadcast` (LISTEN/NOTIFY) or `SimpleHttpBroadcast` (what a SQL
+  Server app uses). Two things are REFUSED at startup rather than silently mis-served: a
+  cached type with row-level TypeConditions (altea enforces those as a query filter, which a cached read
+  bypasses) and one with `additionalBindings`. And `sb.globalLazy(…, { invalidateWith: [X] })` does NOT
+  start caching X (Signum force-caches it); the lazy keeps its event wiring and is also reset by a broadcast.
+
 > `old/CLAUDE.md` and `old/**/AGENTS.md` describe **Signum's** conventions, not altea's — read them to understand the source, but altea's conventions above win.
 
 ## How to build
@@ -113,17 +134,29 @@ pnpm --filter eastwind run build:types    # tspc -b  (builds altea + eastwind)
 
 If you move/rename a test or source `.ts`, delete stale `dist/` output first — the recursive `dist/**/*.js` glob will otherwise run both the old and new file.
 
-## How to test (the framework suite)
+## How to test
 
-`altea/altea-test` runs the ported framework against a **real database** using the Node built-in test runner. It reads its connection string from **`ALTEA_TEST_DB`** (a value starting with `postgres` selects PostgreSQL; anything else is treated as SQL Server). Put it in `altea/altea-test/.env.postgres` (or `.env.sqlserver`) — copy `altea/altea-test/.env.example`.
+**A package's tests live INSIDE it, in `test/`** — its own fourth layer (`tsconfig.test.json`), built by the
+same `tspc -b` into `dist/test/**`, so a module's suites move with the module. `test/**` is excluded from the
+three shipping presets, so a fixture named `*.data.ts` or a `.tsx` test can never leak into what the package
+publishes; conversely the test project is the one place that gets BOTH node types and the DOM lib, since it
+drives server and client code alike. (The suites used to be sibling packages — `@altea/altea-test`,
+`@altea/altea-auth-test`; each is now `test/` inside the package it tests.)
 
-```bash
-pnpm --filter @altea/altea-test test:postgres     # or test:sqlserver
-```
+Each suite runs against a **real database** with the Node built-in test runner, reading its own connection
+string so the suites never share a schema — a value starting with `postgres` selects PostgreSQL, anything
+else is treated as SQL Server. Put it in the PACKAGE's `.env.postgres` (or `.env.sqlserver`); copy its
+`.env.example`. Without the variable the DB-backed cases are SKIPPED (everything still compiles, and the
+DB-free suites still run).
 
-- First run: seed the DB with `pnpm --filter @altea/altea-test gen:postgres`.
-- Runs `tspc -b` then `node --test --test-isolation=none "dist/test/**/*.test.js"`.
-- Without `ALTEA_TEST_DB` set, DB-backed suites are skipped (they still compile).
+| Suite | Env var | Command |
+| --- | --- | --- |
+| framework (music model) | `ALTEA_TEST_DB` | `pnpm --filter @altea/altea test:postgres` |
+| authorization (sample domain) | `ALTEA_AUTH_TEST_DB` | `pnpm --filter @altea/altea-auth test:postgres` |
+| cache (shop domain) | `ALTEA_CACHE_TEST_DB` | `pnpm --filter @altea/altea-cache test:postgres` |
+
+- First run: seed that suite's DB with the matching `gen:postgres` (it CLEANS and regenerates it).
+- Each runs `tspc -b` then `node --test --test-isolation=none "dist/test/**/*.test.js"`.
 
 ## How to start the web application (eastwind)
 

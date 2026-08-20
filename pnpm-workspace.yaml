@@ -14,9 +14,8 @@ packages:
   - altea/altea-email
   - altea/altea-office-template
   - altea/altea-migrations
+  - altea/altea-cache
   - altea/altea-chart
-  - altea/altea-test
-  - altea/altea-auth-test
   - altea/quote-transformer
   - altea/quote-transformer-test
   - eastwind

@@ -91,7 +91,7 @@ importers:
         specifier: workspace:*
         version: link:../quote-transformer
 
-  altea/altea-auth-test:
+  altea/altea-cache:
     dependencies:
       '@altea/altea':
         specifier: workspace:*
@@ -314,21 +314,6 @@ importers:
         specifier: workspace:*
         version: link:../quote-transformer
 
-  altea/altea-test:
-    dependencies:
-      '@altea/altea':
-        specifier: workspace:*
-        version: link:../altea
-      mssql:
-        specifier: ^12.6.0
-        version: 12.6.0
-      pg:
-        specifier: ^8.22.0
-        version: 8.22.0
-      quote-transformer:
-        specifier: workspace:*
-        version: link:../quote-transformer
-
   altea/altea-toolbar:
     dependencies:
       '@altea/altea':
@@ -413,6 +398,9 @@ importers:
       '@altea/altea-auth':
         specifier: workspace:*
         version: link:../altea/altea-auth
+      '@altea/altea-cache':
+        specifier: workspace:*
+        version: link:../altea/altea-cache
       '@altea/altea-chart':
         specifier: workspace:*
         version: link:../altea/altea-chart
