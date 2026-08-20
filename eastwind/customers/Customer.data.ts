@@ -67,7 +67,7 @@ export class CompanyEntity extends CustomerEntity {
 // Signum's `[AutoInit] static class CustomerOperation { static ExecuteSymbol<CustomerEntity> Save; }`
 // (Southwind/Customers/CustomerEntity.cs). ONE Save symbol typed on the abstract CustomerEntity —
 // registered once and shared by both concrete customers (Person + Company), matching Southwind's
-// `.WithSave(CustomerOperation.Save)` on each. Wired in Customer.server.ts.
+// `.WithSave(CustomerOperation.Save)` on each. Wired in CustomerLogic.server.ts.
 export namespace CustomerOperation {
     export const Save: ExecuteSymbol<CustomerEntity> = init();
 }

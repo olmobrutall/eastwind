@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<!--
+  A copy of Southwind's user-asset file (old/Southwind.Terminal/Toolbar.xml — Southwind's ImportToolbar
+  step: UserAssetsImporter.Preview + Import), imported here by `terminal import-assets`. Renamed
+  UserAssets.xml because it carries every user asset, not just the toolbars: 10 UserCharts, 2 UserQueries,
+  the example Dashboard, 7 ToolbarMenus and the side Toolbar.
+
+  Kept as close to the original as possible — same guids (the guid IS the asset's identity, so a re-import
+  overwrites the same rows), same order, same attributes. Every edit is marked with an `altea:` comment;
+  elements for features this port does not have are COMMENTED OUT rather than deleted, so re-syncing with
+  Signum stays a diff.
+
+  The systematic edits (documented divergences, see CLAUDE.md):
+   * TOKENS ARE CAMELCASE AND ROOTLESS. altea's query tokens are the entity's own member names and there is
+     no "Entity." prefix: Signum's "Entity.Details.Element.Product" is "details.Element.product", "Id" is
+     "id", "OrderDate" is "orderDate". Token resolution is case-SENSITIVE on the server.
+   * The DatePartStart tokens ("OrderDate.MonthStart") are not ported (QueryToken.dateTimeProperties), so
+     the six month-axis charts group by `orderDate.month` instead. The original token is kept in a comment.
+   * The SmartDateTime grammar ("-1/mm/dd 00:00:00", "yyyy/mm/01 00:00:00") is not ported
+     (FilterValueString), so those date filters are commented out — the charts then cover all years.
+   * There is no storable spelling for the ROOT (entity) token: its key is "" and QueryTokenEmbedded.
+     tokenString has StringLengthValidator(min 1). Where Signum wrote Token="Entity" this uses "ToString",
+     and the Dashboard's TokenEquivalenceGroup (which needs Product's root token) is commented out.
+   * `Owner` is preserved verbatim but currently IGNORED: UserAssetsImportExport.parseLiteKey is a stub, so
+     every imported asset lands GLOBAL (owner null) — visible to every role.
+   * Signum.Workflow / Signum.Map / Signum.Cache / Signum.Eval / Signum.Translation / Signum.Help are not
+     ported, and Signum.Word became @altea/altea-office-template (WordTemplate -> OfficeTemplate).
+-->
+<Entities>
+  <UserChart Guid="d681b3f5-a3a9-4228-93e9-e856f45d911a" DisplayName="Evolution By Employee" Query="Order" HideQuickLink="false" Owner="User;2;Anonymous" ChartScript="D3ChartScript.StackedLines">
+    <Filters>
+      <!-- altea: eastwind has no UserEmployeeMixin (a user is not linked to an employee), and the
+           SmartDateTime grammar is not ported.
+      <Filter Indentation="0" Token="Employee" Operation="EqualTo" Value="[CurrentUser].[UserEmployeeMixin].Employee" DashboardBehaviour="UseAsInitialSelection" />
+      <Filter Indentation="0" Token="OrderDate" Operation="GreaterThan" Value="-1/mm/dd 00:00:00" /> -->
+    </Filters>
+    <Columns>
+      <!-- altea: was Token="OrderDate.MonthStart" Format="Y" (MonthStart not ported). -->
+      <Column Token="orderDate.month" DisplayName="Month of Order date" />
+      <Column Token="employee" DisplayName="Employee" />
+      <Column Token="Count" DisplayName="Count" />
+      <Column />
+      <Column />
+      <Column />
+      <Column />
+    </Columns>
+    <Parameters>
+      <Parameter Name="CompleteValues" Value="Auto" />
+      <Parameter Name="HorizontalScale" Value="Bands" />
+      <Parameter Name="HorizontalMargin" Value="20" />
+      <Parameter Name="NumberOpacity" Value="0.8" />
+      <Parameter Name="NumberColor" Value="white" />
+      <Parameter Name="ColorCategory" Value="category10" />
+      <Parameter Name="Order" Value="none" />
+      <Parameter Name="Stack" Value="zero" />
+      <Parameter Name="Interpolate" Value="linear" />
+      <Parameter Name="ValueAsPercent" Value="No" />
+    </Parameters>
+  </UserChart>
+  <UserQuery Guid="9ab3968e-3098-4fca-9ca8-ca8ff6dd53cb" DisplayName="Next Orders" Query="Order" Owner="User;2;Anonymous" ColumnsMode="ReplaceAll">
+    <Filters>
+      <Filter Indentation="0" Token="state" Operation="EqualTo" Value="Ordered" />
+      <Filter Indentation="0" Token="details.Element.product" Operation="EqualTo" DashboardBehaviour="PromoteToDasboardPinnedFilter">
+        <Pinned Active="WhenHasValue" />
+      </Filter>
+    </Filters>
+    <Columns>
+      <Column Token="id" />
+      <Column Token="state" />
+      <Column Token="totalPrice" />
+      <Column Token="requiredDate" />
+      <Column Token="orderDate" />
+      <Column Token="customer" />
+      <Column Token="employee" />
+    </Columns>
+    <Orders>
+      <Orden Token="requiredDate" OrderType="Descending" />
+    </Orders>
+  </UserQuery>
+  <UserChart Guid="01a3003d-83f7-4d74-8f9f-8a3ca8a4ec30" DisplayName="Calendar Orders Total Price" Query="Order" HideQuickLink="false" Owner="User;2;Anonymous" ChartScript="D3ChartScript.CalendarStream">
+    <Columns>
+      <Column Token="orderDate" DisplayName="Date of Order date" Format="d" />
+      <Column Token="totalPrice.Sum" DisplayName="Sum of Total price" Format="N2" />
+    </Columns>
+    <Parameters>
+      <Parameter Name="StartDate" Value="Monday" />
+      <Parameter Name="ColorScale" Value="Sqrt" />
+      <Parameter Name="ColorInterpolate" Value="YlGn" />
+    </Parameters>
+  </UserChart>
+  <UserChart Guid="76ef1383-3603-4ab1-8f44-cfa4f554e0ff" DisplayName="Customers" Query="Order" HideQuickLink="false" Owner="User;2;Anonymous" ChartScript="D3ChartScript.BubblePack">
+    <Columns>
+      <Column Token="customer" DisplayName="Customer" />
+      <Column Token="Count" DisplayName="Count" />
+      <!-- altea: Order.customer is polymorphic (Company | Person) and a polymorphic reference exposes only
+           its as-type sub-tokens, so "Customer.Address.Country" would have to be written
+           "customer.(Company).address.country" (Persons then group under null). The order's own ship
+           country is the same data without the split. -->
+      <Column Token="shipAddress.country" DisplayName="Country" />
+      <Column />
+      <Column />
+    </Columns>
+    <Parameters>
+      <Parameter Name="Scale" Value="MinMax" />
+      <Parameter Name="StrokeColor" Value="" />
+      <Parameter Name="StrokeWidth" Value="2" />
+      <Parameter Name="NumberOpacity" Value="0.8" />
+      <Parameter Name="NumberSizeLimit" Value="18" />
+      <Parameter Name="NumberColor" Value="white" />
+      <Parameter Name="FillOpacity" Value="0.4" />
+      <Parameter Name="ColorScale" Value="ZeroMax" />
+      <Parameter Name="ColorInterpolate" Value="YlGn" />
+      <Parameter Name="ColorCategory" Value="category10" />
+    </Parameters>
+  </UserChart>
+  <UserChart Guid="b48718bb-f4ab-4a6a-950a-35a718d5fb23" DisplayName="Product Share" Query="Order" HideQuickLink="false" Owner="User;2;Anonymous" ChartScript="D3ChartScript.Bubbleplot">
+    <Columns>
+      <Column Token="details.Element.product" />
+      <Column Token="details.Element.quantity.Sum" DisplayName="Sum of Quantity" Format="D" />
+      <Column Token="details.Element.unitPrice.Average" DisplayName="Average of Unit price" Format="N2" />
+      <Column Token="details.Element.subTotalPrice.Sum" DisplayName="Sum of Sub total price" Format="N2" />
+      <Column />
+      <Column />
+    </Columns>
+    <Parameters>
+      <Parameter Name="HorizontalScale" Value="ZeroMax" />
+      <Parameter Name="VerticalScale" Value="ZeroMax" />
+      <Parameter Name="SizeScale" Value="ZeroMax" />
+      <Parameter Name="UnitMargin" Value="40" />
+      <Parameter Name="TopMargin" Value="0.15*" />
+      <Parameter Name="RightMargin" Value="0.15*" />
+      <Parameter Name="ShowLabel" Value="Yes" />
+      <Parameter Name="LabelColor" Value="" />
+      <Parameter Name="FillOpacity" Value="0.4" />
+      <Parameter Name="ColorScale" Value="ZeroMax" />
+      <Parameter Name="ColorInterpolate" Value="YlGn" />
+      <Parameter Name="ColorCategory" Value="category10" />
+    </Parameters>
+  </UserChart>
+  <UserChart Guid="9d266fac-e35b-4845-a7aa-970e1590ea1e" DisplayName="Average Price Per Month" Query="Order" HideQuickLink="false" Owner="User;1;System" ChartScript="D3ChartScript.Columns">
+    <Filters>
+      <!-- altea: SmartDateTime not ported.
+      <Filter Indentation="0" Token="OrderDate" Operation="LessThan" Value="yyyy/mm/01 00:00:00" /> -->
+    </Filters>
+    <Columns>
+      <!-- altea: was Token="OrderDate.MonthStart" Format="Y". -->
+      <Column Token="orderDate.month" DisplayName="Month of Order date" OrderByIndex="1" OrderByType="Ascending" />
+      <Column Token="totalPrice.Average" DisplayName="Average of Total price" Format="N2" />
+    </Columns>
+    <Parameters>
+      <Parameter Name="CompleteValues" Value="Auto" />
+      <Parameter Name="Scale" Value="ZeroMax" />
+      <Parameter Name="UnitMargin" Value="30" />
+      <Parameter Name="Labels" Value="None" />
+      <Parameter Name="LabelsMargin" Value="100" />
+      <Parameter Name="NumberOpacity" Value="0" />
+      <Parameter Name="NumberColor" Value="#fff" />
+      <Parameter Name="ColorCategory" Value="category10" />
+      <Parameter Name="ForceColor" Value="#1A5276" />
+    </Parameters>
+  </UserChart>
+  <UserChart Guid="6406d2f6-aa24-43e4-946e-8622f65eb010" DisplayName="Total Price Sum" Query="Order" HideQuickLink="false" Owner="User;1;System" ChartScript="D3ChartScript.Columns">
+    <Filters>
+      <!-- altea: SmartDateTime not ported.
+      <Filter Indentation="0" Token="OrderDate" Operation="LessThan" Value="yyyy/mm/01 00:00:00" /> -->
+    </Filters>
+    <Columns>
+      <!-- altea: was Token="OrderDate.MonthStart" Format="Y". -->
+      <Column Token="orderDate.month" DisplayName="Month of Order date" OrderByIndex="1" OrderByType="Ascending" />
+      <Column Token="totalPrice.Sum" DisplayName="Sum of Total price" Format="N2" />
+    </Columns>
+    <Parameters>
+      <Parameter Name="CompleteValues" Value="Auto" />
+      <Parameter Name="Scale" Value="ZeroMax" />
+      <Parameter Name="UnitMargin" Value="60" />
+      <Parameter Name="Labels" Value="None" />
+      <Parameter Name="LabelsMargin" Value="100" />
+      <Parameter Name="NumberOpacity" Value="0" />
+      <Parameter Name="NumberColor" Value="#fff" />
+      <Parameter Name="ColorCategory" Value="category10" />
+      <Parameter Name="ForceColor" Value="#633974" />
+    </Parameters>
+  </UserChart>
+  <UserChart Guid="a3c7b86d-641e-4c1e-8032-72a099a00395" DisplayName="Order number by month" Query="Order" HideQuickLink="false" Owner="User;1;System" ChartScript="D3ChartScript.Line">
+    <Filters>
+      <!-- altea: SmartDateTime not ported.
+      <Filter Indentation="0" Token="OrderDate" Operation="LessThan" Value="yyyy/mm/01 00:00:00" /> -->
+    </Filters>
+    <Columns>
+      <!-- altea: was Token="OrderDate.MonthStart" Format="Y". -->
+      <Column Token="orderDate.month" DisplayName="Month of Order date" OrderByIndex="1" OrderByType="Ascending" />
+      <Column Token="Count" DisplayName="Count" />
+    </Columns>
+    <Parameters>
+      <Parameter Name="CompleteValues" Value="Auto" />
+      <Parameter Name="HorizontalScale" Value="Bands" />
+      <Parameter Name="VerticalScale" Value="ZeroMax" />
+      <Parameter Name="UnitMargin" Value="20" />
+      <Parameter Name="NumberMinWidth" Value="20" />
+      <Parameter Name="NumberOpacity" Value="0.8" />
+      <Parameter Name="CircleAutoReduce" Value="Yes" />
+      <Parameter Name="CircleRadius" Value="5" />
+      <Parameter Name="CircleStroke" Value="2" />
+      <Parameter Name="CircleRadiusHover" Value="15" />
+      <Parameter Name="Color" Value="#B03A2E" />
+      <Parameter Name="Interpolate" Value="monotone" />
+    </Parameters>
+  </UserChart>
+  <UserChart Guid="c169f387-2ffa-4b97-8c77-644cb2baef4a" DisplayName="Evolution by Category" Query="Order" HideQuickLink="false" ChartScript="D3ChartScript.StackedLines">
+    <Columns>
+      <!-- altea: was Token="OrderDate.MonthStart" Format="Y". -->
+      <Column Token="orderDate.month" DisplayName="Month of Order date" OrderByIndex="1" OrderByType="Ascending" />
+      <Column Token="details.Element.product.category" />
+      <Column Token="details.Element.subTotalPrice.Sum" />
+      <Column />
+      <Column />
+      <Column />
+      <Column />
+    </Columns>
+    <Parameters>
+      <Parameter Name="CompleteValues" Value="Auto" />
+      <Parameter Name="HorizontalScale" Value="Bands" />
+      <Parameter Name="HorizontalMargin" Value="20" />
+      <Parameter Name="NumberOpacity" Value="0" />
+      <Parameter Name="NumberColor" Value="white" />
+      <Parameter Name="ColorCategory" Value="category10" />
+      <Parameter Name="Order" Value="none" />
+      <Parameter Name="Stack" Value="zero" />
+      <Parameter Name="Interpolate" Value="linear" />
+      <Parameter Name="ValueAsPercent" Value="No" />
+    </Parameters>
+  </UserChart>
+  <UserChart Guid="aa47dc2c-2697-402d-a227-6c447815f5ec" DisplayName="Evolution by Product (Select a Category First!)" Query="Order" HideQuickLink="false" Owner="User;1;System" ChartScript="D3ChartScript.StackedLines">
+    <Filters>
+      <Filter Indentation="0" Token="details.Element.product.category" Operation="EqualTo" DashboardBehaviour="UseWhenNoFilters" />
+    </Filters>
+    <Columns>
+      <!-- altea: was Token="OrderDate.MonthStart" Format="Y". -->
+      <Column Token="orderDate.month" DisplayName="Month of Order date" OrderByIndex="1" OrderByType="Ascending" />
+      <Column Token="details.Element.product" />
+      <Column Token="details.Element.subTotalPrice.Sum" />
+      <Column />
+      <Column />
+      <Column />
+      <Column />
+    </Columns>
+    <Parameters>
+      <Parameter Name="CompleteValues" Value="Auto" />
+      <Parameter Name="HorizontalScale" Value="Bands" />
+      <Parameter Name="HorizontalMargin" Value="20" />
+      <Parameter Name="NumberOpacity" Value="0.8" />
+      <Parameter Name="NumberColor" Value="white" />
+      <Parameter Name="ColorCategory" Value="category10" />
+      <Parameter Name="Order" Value="none" />
+      <Parameter Name="Stack" Value="zero" />
+      <Parameter Name="Interpolate" Value="linear" />
+      <Parameter Name="ValueAsPercent" Value="No" />
+    </Parameters>
+  </UserChart>
+  <UserChart Guid="02296c68-d4f5-4bd3-92d8-d417fe84e43c" DisplayName="Products in Stock" Query="Product" HideQuickLink="false" Owner="User;1;System" ChartScript="D3ChartScript.Treemap" MaxRows="1000">
+    <Columns>
+      <!-- altea: was Token="Entity" — the root token's key is "" and tokenString needs at least one
+           character, so the product's ToString stands in for it. -->
+      <Column Token="ToString" />
+      <Column Token="unitsInStock" />
+      <Column Token="supplier" />
+      <Column />
+      <Column />
+    </Columns>
+    <Parameters>
+      <Parameter Name="Scale" Value="MinMax" />
+      <Parameter Name="Padding" Value="10" />
+      <Parameter Name="Opacity" Value="0.5" />
+      <Parameter Name="NumberOpacity" Value="0.8" />
+      <Parameter Name="NumberColor" Value="#fff" />
+      <Parameter Name="ColorScale" Value="ZeroMax" />
+      <Parameter Name="ColorInterpolate" Value="YlGn" />
+      <Parameter Name="ColorCategory" Value="category10" />
+    </Parameters>
+  </UserChart>
+  <Dashboard Guid="7914fa80-dfd6-42a2-b29a-18e8cc5851f8" DisplayName="Example Dashboard" Owner="User;2;Anonymous" CombineSimilarRows="false">
+    <!-- altea: CachedQuery is not ported (the element is ignored on import).
+    <CacheQueryConfiguration TimeoutForQueries="300" MaxRows="1000000" AutoRegenerateWhenOlderThan="60" /> -->
+    <Parts>
+      <Part Row="0" StartColumn="0" Columns="7" InteractionGroup="Group1">
+        <UserChartPart UserChart="d681b3f5-a3a9-4228-93e9-e856f45d911a" IsQueryCached="true" />
+      </Part>
+      <Part Row="3" StartColumn="0" Columns="12" InteractionGroup="Group1">
+        <UserQueryPart UserQuery="9ab3968e-3098-4fca-9ca8-ca8ff6dd53cb" AllowSelection="false" IsQueryCached="true" />
+      </Part>
+      <Part Row="1" StartColumn="0" Columns="7" InteractionGroup="Group1">
+        <UserChartPart UserChart="01a3003d-83f7-4d74-8f9f-8a3ca8a4ec30" IsQueryCached="true" />
+      </Part>
+      <Part Row="0" StartColumn="7" Columns="5" InteractionGroup="Group1">
+        <UserChartPart UserChart="76ef1383-3603-4ab1-8f44-cfa4f554e0ff" IsQueryCached="true" />
+      </Part>
+      <Part Row="1" StartColumn="7" Columns="5" InteractionGroup="Group1">
+        <UserChartPart UserChart="b48718bb-f4ab-4a6a-950a-35a718d5fb23" IsQueryCached="true" />
+      </Part>
+      <Part Row="5" StartColumn="0" Columns="12" Title="Order number and average" IconName="fas fa-chart-bar" IconColor="violet" InteractionGroup="Group1">
+        <CombinedUserChartPart>
+          <UserChart Guid="9d266fac-e35b-4845-a7aa-970e1590ea1e" IsQueryCached="true" />
+          <UserChart Guid="6406d2f6-aa24-43e4-946e-8622f65eb010" IsQueryCached="true" />
+          <UserChart Guid="a3c7b86d-641e-4c1e-8032-72a099a00395" IsQueryCached="true" />
+        </CombinedUserChartPart>
+      </Part>
+      <Part Row="8" StartColumn="0" Columns="12" IconName="fas fa-chart-bar" IconColor="#6C3483" InteractionGroup="Group2">
+        <UserChartPart UserChart="c169f387-2ffa-4b97-8c77-644cb2baef4a" IsQueryCached="true" />
+      </Part>
+      <Part Row="9" StartColumn="0" Columns="12" IconName="fas fa-chart-bar" IconColor="#6C3483" InteractionGroup="Group2">
+        <UserChartPart UserChart="aa47dc2c-2697-402d-a227-6c447815f5ec" IsQueryCached="true" />
+      </Part>
+      <Part Row="2" StartColumn="0" Columns="12" IconName="fas fa-chart-bar" IconColor="#6C3483" InteractionGroup="Group1">
+        <UserChartPart UserChart="02296c68-d4f5-4bd3-92d8-d417fe84e43c" IsQueryCached="true" />
+      </Part>
+    </Parts>
+    <!-- altea: a token equivalence needs Product's ROOT token, which has no storable spelling (key "" vs
+         tokenString min length 1) — see the header. Same-token interaction still works within a group.
+    <TokenEquivalencesGroups>
+      <TokenEquivalenceGroup InteractionGroup="Group1">
+        <TokenEquivalence Query="Order" Token="details.Element.product" />
+        <TokenEquivalence Query="Product" Token="Entity" />
+      </TokenEquivalenceGroup>
+    </TokenEquivalencesGroups> -->
+  </Dashboard>
+  <ToolbarMenu Guid="fd577065-f887-4567-8da3-9d5bcc1cedfd" Name="Products">
+    <Elements>
+      <ToolbarElement Type="Item" Content="Product" />
+      <ToolbarElement Type="Item" Content="Category" />
+      <ToolbarElement Type="Item" Content="Supplier" />
+      <ToolbarElement Type="Item" Content="Shipper" />
+    </Elements>
+  </ToolbarMenu>
+  <UserQuery Guid="37ae5c35-8d2b-41f7-acbf-5ef93c91c8ca" DisplayName="Employees" Query="Employee" ColumnsMode="ReplaceAll">
+    <Columns>
+      <Column Token="id" />
+      <Column Token="firstName" />
+      <Column Token="lastName" />
+      <Column Token="birthDate" />
+      <Column Token="territories.SeparatedByNewLine" />
+      <!-- altea: eastwind's Employee has `photoPath` (Northwind's column), not Southwind's Photo file. -->
+      <Column Token="photoPath" />
+    </Columns>
+  </UserQuery>
+  <ToolbarMenu Guid="8b7e4ac5-cf45-41cb-8cff-4ce04506e12f" Name="Employee">
+    <Elements>
+      <ToolbarElement Type="Item" Content="37ae5c35-8d2b-41f7-acbf-5ef93c91c8ca" />
+      <ToolbarElement Type="Item" Content="Territory" />
+      <!-- altea: Southwind's EmployeesByTerritory manual query is not registered here.
+      <ToolbarElement Type="Item" Content="EmployeesByTerritory" /> -->
+    </Elements>
+  </ToolbarMenu>
+  <ToolbarMenu Guid="2deb71ea-f065-4fe3-9215-90460bc2d5ec" Name="Reports">
+    <Elements>
+      <!-- altea: WordTemplate -> OfficeTemplate (@altea/altea-office-template does docx/pptx/xlsx). -->
+      <ToolbarElement Type="Item" Content="OfficeTemplate" />
+      <ToolbarElement Type="Item" Content="EmailTemplate" />
+      <ToolbarElement Type="Item" Content="UserQuery" />
+      <ToolbarElement Type="Item" Content="UserChart" />
+      <ToolbarElement Type="Item" Content="Dashboard" />
+      <ToolbarElement Type="Item" Content="Toolbar" />
+    </Elements>
+  </ToolbarMenu>
+  <ToolbarMenu Guid="af61b3b1-dc30-4129-a37f-aaf72450a939" Name="Logs">
+    <Elements>
+      <ToolbarElement Type="Item" Content="OperationLog" />
+      <!-- altea: no ViewLog / SessionLog module.
+      <ToolbarElement Type="Item" Content="ViewLog" />
+      <ToolbarElement Type="Item" Content="SessionLog" /> -->
+      <!-- altea ADDITION: the ported exception log. -->
+      <ToolbarElement Type="Item" Content="Exception" />
+    </Elements>
+  </ToolbarMenu>
+  <ToolbarMenu Guid="3dbf3d73-02f6-4ad8-88f4-2fe03d34edeb" Name="Security">
+    <Elements>
+      <ToolbarElement Type="Item" Content="User" />
+      <ToolbarElement Type="Item" Content="Role" />
+    </Elements>
+  </ToolbarMenu>
+  <ToolbarMenu Guid="aa00a50a-ff58-4950-94de-e200769effdc" Name="System Panels">
+    <Elements>
+      <!-- altea: Signum.Cache is not ported.
+      <ToolbarElement Type="Item" Label="Cache" IconName="fas fa-database" IconColor="#e74c3c" Content="CachePermission.ViewCache" Url="~/cache/statistics" /> -->
+      <ToolbarElement Type="Item" Label="Profiler (Heavy)" IconName="fas fa-bolt" IconColor="#e74c3c" Content="ProfilerPermission.ViewHeavyProfiler" Url="~/profiler/heavy" />
+      <ToolbarElement Type="Item" Label="Profiler (Times)" IconName="fas fa-bolt" IconColor="#e74c3c" Content="ProfilerPermission.ViewTimeTracker" Url="~/profiler/times" />
+      <ToolbarElement Type="Item" Label="Processes Panel" IconName="fas fa-cogs" IconColor="#9b6bcc" Content="ProcessPermission.ViewProcessPanel" Url="~/processes/view" />
+      <!-- altea ADDITION: @altea/altea-scheduler's panel (Signum has one too; Southwind's file predates it). -->
+      <ToolbarElement Type="Item" Label="Scheduler Panel" IconName="fas fa-clock" IconColor="#9b6bcc" Content="SchedulerPermission.ViewSchedulerPanel" Url="~/scheduler/view" />
+      <!-- altea: Signum.Eval (dynamic panel) / Signum.Workflow are not ported.
+      <ToolbarElement Type="Item" Label="Dynamic Panel" IconName="fas fa-arrows-alt" IconColor="#9b6bcc" Content="EvalPanelPermission.ViewDynamicPanel" Url="~/dynamic/panel" />
+      <ToolbarElement Type="Item" Label="Workflow Script Runner" IconName="fas fa-random" IconColor="#9b6bcc" Content="WorkflowPermission.ViewWorkflowPanel" Url="~/workflow/panel" /> -->
+      <ToolbarElement Type="Item" Label="Async Email Sender" IconName="fas fa-send" IconColor="#3498db" Content="AsyncEmailSenderPermission.ViewAsyncEmailSenderPanel" Url="~/asyncEmailSender/view" />
+      <!-- altea: Signum.Translation is not ported.
+      <ToolbarElement Type="Item" Label="Code Translation" IconName="fas fa-language" IconColor="#1abc9c" Content="TranslationPermission.TranslateCode" Url="~/translation/status" /> -->
+    </Elements>
+  </ToolbarMenu>
+  <!-- altea: Signum.Workflow is not ported, so the whole Workflow menu is out.
+  <ToolbarMenu Guid="b9423939-ec3d-4495-9361-a335390d93a6" Name="Workflow">
+    <Elements>
+      <ToolbarElement Type="Item" Content="Workflow" />
+      <ToolbarElement Type="Item" Content="WorkflowActivity" />
+      <ToolbarElement Type="Divider" />
+      <ToolbarElement Type="Item" Content="Case" />
+      <ToolbarElement Type="Item" Content="CaseActivity" />
+      <ToolbarElement Type="Item" Content="CaseTagType" />
+    </Elements>
+  </ToolbarMenu> -->
+  <Toolbar Guid="eb64a1af-852c-468b-a94f-19e28357ac0e" Name="Side Toolbar" Location="Side">
+    <Elements>
+      <ToolbarElement Type="Item" IconName="fas fa-tachometer-alt" IconColor="blue" Content="7914fa80-dfd6-42a2-b29a-18e8cc5851f8" />
+      <!-- altea: Signum.Map is not ported, and eastwind has no public-catalog page.
+      <ToolbarElement Type="Item" Label="Map" IconName="fas fa-map" IconColor="mediumvioletred" Content="MapPermission.ViewMap" Url="~/Map" />
+      <ToolbarElement Type="Item" Label="Public catalog" IconName="fas fa-shopping-bag" IconColor="orangered" Url="~/PublicCatalog" /> -->
+      <ToolbarElement Type="Divider" />
+      <ToolbarElement Type="Header" Label="Entities" IconName="fas fa-redo" IconColor="red" />
+      <ToolbarElement Type="Item" IconName="fas fa-shopping-cart" IconColor="orange" Content="Order" />
+      <ToolbarElement Type="Item" IconName="fas fa-apple-alt" IconColor="gold" Content="fd577065-f887-4567-8da3-9d5bcc1cedfd" />
+      <ToolbarElement Type="Item" IconName="fas fa-user" IconColor="seagreen" Content="8b7e4ac5-cf45-41cb-8cff-4ce04506e12f" />
+      <ToolbarElement Type="Item" IconName="fas fa-file" IconColor="mediumaquamarine" Content="2deb71ea-f065-4fe3-9215-90460bc2d5ec" />
+      <ToolbarElement Type="Item" IconName="fas fa-calendar-alt" IconColor="skyblue" Content="af61b3b1-dc30-4129-a37f-aaf72450a939" />
+      <ToolbarElement Type="Item" IconName="fas fa-unlock-alt" IconColor="steelblue" Content="3dbf3d73-02f6-4ad8-88f4-2fe03d34edeb" />
+      <ToolbarElement Type="Divider" />
+      <ToolbarElement Type="Item" IconName="fas fa-cogs" IconColor="gray" Content="aa00a50a-ff58-4950-94de-e200769effdc" />
+      <!-- altea: Signum.Workflow is not ported.
+      <ToolbarElement Type="Item" IconName="fas fa-random" IconColor="saddlebrown" Content="b9423939-ec3d-4495-9361-a335390d93a6" />
+      <ToolbarElement Type="Item" Content="WorkflowPermission.WorkflowToolbarMenu" /> -->
+    </Elements>
+  </Toolbar>
+</Entities>

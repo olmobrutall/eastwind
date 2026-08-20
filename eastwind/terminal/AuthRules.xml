@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<!--
+  A copy of Southwind's AuthRules.xml (old/Southwind.Terminal/AuthRules.xml) — the initial authorization
+  rules imported by `terminal import-auth` (Southwind's InitialAuthRulesImport → AuthLogic.
+  AutomaticImportAuthRules). Kept as close to the original as possible: same sections, same role order,
+  same row order. Every edit is marked with an `altea:` comment; rows for features this port does not have
+  are COMMENTED OUT rather than deleted, so re-syncing with Signum stays a diff.
+
+  The three systematic edits (documented divergences, see CLAUDE.md):
+   * Property rows carry `OnType` + a camelCase `Resource` path — altea keys a property rule by
+     (rootType, propertyString) and has no PropertyRouteEntity, and altea entity members are camelCase.
+     Signum wrote one attribute: Resource="Category|CategoryName".
+   * A few types are named differently here: ChartScript -> ChartScriptSymbol, FileType -> FileTypeSymbol.
+   * SouthwindTypeCondition -> EastwindTypeCondition.
+-->
+<Auth>
+  <Roles>
+    <Role Name="Anonymous" Contains="" />
+    <Role Name="Standard user" Contains="" />
+    <Role Name="Super user" MergeStrategy="Intersection" Contains="" />
+    <Role Name="Advanced user" Contains="Standard user" />
+  </Roles>
+  <Operations>
+    <Role Name="Anonymous" />
+    <Role Name="Standard user" />
+    <Role Name="Super user" />
+    <Role Name="Advanced user" />
+  </Operations>
+  <Permissions>
+    <Role Name="Anonymous" />
+    <Role Name="Standard user">
+      <Permission Resource="BasicPermission.AutomaticUpgradeOfOperations" Allowed="True" />
+      <Permission Resource="BasicPermission.AutomaticUpgradeOfProperties" Allowed="True" />
+      <Permission Resource="BasicPermission.AutomaticUpgradeOfQueries" Allowed="True" />
+      <Permission Resource="ChartPermission.ViewCharting" Allowed="True" />
+      <Permission Resource="DashboardPermission.ViewDashboard" Allowed="True" />
+      <!-- altea: Signum.Help is not ported.
+      <Permission Resource="HelpPermissions.ViewHelp" Allowed="True" /> -->
+      <!-- altea: Signum.Word became @altea/altea-office-template (Word* renamed Office*). -->
+      <Permission Resource="OfficeTemplatePermission.GenerateReport" Allowed="True" />
+      <!-- altea ADDITION (not in Southwind's file): these module routes assert their permission on every
+           call, and a root Union role defaults to DENIED — without them a Standard user gets 403 from the
+           user-query / user-asset / omnibox endpoints. -->
+      <Permission Resource="UserQueryPermission.ViewUserQuery" Allowed="True" />
+      <Permission Resource="UserAssetPermission.UserAssetsToXML" Allowed="True" />
+      <Permission Resource="OmniboxPermission.ViewOmnibox" Allowed="True" />
+    </Role>
+    <Role Name="Super user" />
+    <Role Name="Advanced user" />
+  </Permissions>
+  <Properties>
+    <Role Name="Anonymous">
+      <Property OnType="Category" Resource="categoryName" Allowed="Read" />
+      <Property OnType="Category" Resource="description" Allowed="Read" />
+      <Property OnType="Category" Resource="id" Allowed="Read" />
+      <Property OnType="Category" Resource="picture" Allowed="Read" />
+      <Property OnType="Category" Resource="picture.binaryFile" Allowed="Read" />
+      <Property OnType="Category" Resource="picture.fileName" Allowed="Read" />
+      <!-- altea: CultureInfoEntity is not ported (no translated-instance module yet).
+      <Property Resource="CultureInfo|EnglishName" Allowed="Read" />
+      <Property Resource="CultureInfo|Id" Allowed="Read" />
+      <Property Resource="CultureInfo|Name" Allowed="Read" />
+      <Property Resource="CultureInfo|NativeName" Allowed="Read" /> -->
+      <!-- altea: there is no FileEntity — Category.picture is a FileEmbedded (bytes in the row), so its
+           routes are the `picture.*` ones above.
+      <Property Resource="File|AllowChange" Allowed="Read" />
+      <Property Resource="File|BinaryFile" Allowed="Read" />
+      <Property Resource="File|FileName" Allowed="Read" />
+      <Property Resource="File|Hash" Allowed="Read" />
+      <Property Resource="File|Id" Allowed="Read" /> -->
+      <Property OnType="Product" Resource="additionalInformation" Allowed="Read" />
+      <!-- altea: MLists are gone — Product.additionalInformation is a collection of @part ROW entities, so
+           `/Key` and `/Value` are routes of Product_AdditionalInformation, which inherits its owner's rules.
+      <Property Resource="Product|AdditionalInformation/Key" Allowed="Read" />
+      <Property Resource="Product|AdditionalInformation/Value" Allowed="Read" /> -->
+      <Property OnType="Product" Resource="category" Allowed="Read" />
+      <Property OnType="Product" Resource="discontinued" Allowed="Read" />
+      <Property OnType="Product" Resource="id" Allowed="Read" />
+      <Property OnType="Product" Resource="productName" Allowed="Read" />
+      <Property OnType="Product" Resource="quantityPerUnit" Allowed="Read" />
+      <Property OnType="Product" Resource="reorderLevel" Allowed="Read" />
+      <Property OnType="Product" Resource="supplier" Allowed="Read" />
+      <Property OnType="Product" Resource="unitPrice" Allowed="Read" />
+      <Property OnType="Product" Resource="unitsInStock" Allowed="Read" />
+      <!-- altea: ValueInStock is a @quoted METHOD (a computed column), not a stored field, so it has no
+           property route to authorize.
+      <Property Resource="Product|ValueInStock" Allowed="Read" /> -->
+    </Role>
+    <Role Name="Standard user" />
+    <Role Name="Super user" />
+    <Role Name="Advanced user" />
+  </Properties>
+  <Queries>
+    <Role Name="Anonymous" />
+    <Role Name="Standard user" />
+    <Role Name="Super user" />
+    <Role Name="Advanced user" />
+  </Queries>
+  <Types>
+    <Role Name="Anonymous">
+      <Type Resource="Category" Allowed="Read" />
+      <!-- altea: CultureInfoEntity / FileEntity not ported (see the Properties section).
+      <Type Resource="CultureInfo" Allowed="Read" />
+      <Type Resource="File" Allowed="Read" /> -->
+      <Type Resource="Product" Allowed="Read" />
+    </Role>
+    <Role Name="Standard user">
+      <!-- altea: Signum.Alerts is not ported.
+      <Type Resource="Alert" Allowed="Write" />
+      <Type Resource="AlertType" Allowed="Read" /> -->
+      <!-- altea: Signum.Workflow (Case*/Workflow*) is not ported.
+      <Type Resource="Case" Allowed="Write" />
+      <Type Resource="CaseActivity" Allowed="Write" />
+      <Type Resource="CaseActivityExecutedTimer" Allowed="Write" />
+      <Type Resource="CaseNotification" Allowed="Write" />
+      <Type Resource="CaseTag" Allowed="Read" />
+      <Type Resource="CaseTagType" Allowed="Read" /> -->
+      <Type Resource="Category" Allowed="Read" />
+      <!-- altea: the chart-type symbol table is ChartScriptSymbol (Signum: ChartScript). -->
+      <Type Resource="ChartScriptSymbol" Allowed="Read" />
+      <!-- altea: a dashboard PART inherits its owner's rules structurally (PartOwnership), so it carries no
+           rules of its own and never appears in the Type-Auth grid — the `Dashboard` row below covers it.
+           Signum had to mirror the dashboard's rules onto every part type by hand; these rows are what that
+           looked like, and they are inert here.
+      <Type Resource="CombinedUserChartPart" Allowed="Read" /> -->
+      <Type Resource="Company" Allowed="Write" />
+      <!-- <Type Resource="CultureInfo" Allowed="Read" /> -->
+      <Type Resource="Dashboard" Allowed="Read" />
+      <Type Resource="Employee" Allowed="Read" />
+      <!-- <Type Resource="File" Allowed="Read" /> -->
+      <!-- altea: the file-type symbol table is FileTypeSymbol (Signum: FileType). -->
+      <Type Resource="FileTypeSymbol" Allowed="Read" />
+      <!-- altea: Signum.Notes is not ported.
+      <Type Resource="Note" Allowed="Write" />
+      <Type Resource="NoteType" Allowed="Read" /> -->
+      <Type Resource="Order" Allowed="Write" />
+      <Type Resource="Person" Allowed="Write" />
+      <Type Resource="Product" Allowed="Read" />
+      <Type Resource="Query" Allowed="Read" />
+      <Type Resource="Region" Allowed="Read" />
+      <Type Resource="Shipper" Allowed="Read" />
+      <Type Resource="Supplier" Allowed="Read" />
+      <Type Resource="Territory" Allowed="Read" />
+      <Type Resource="Toolbar" Allowed="Read" />
+      <Type Resource="ToolbarMenu" Allowed="Read" />
+      <!-- altea: there is no ToolbarMenuPart dashboard part.
+      <Type Resource="ToolbarMenuPart" Allowed="Read" /> -->
+      <Type Resource="User" Allowed="None">
+        <Condition Name="EastwindTypeCondition.UserEntities" Allowed="Read" />
+      </Type>
+      <Type Resource="UserChart" Allowed="Read" />
+      <Type Resource="UserQuery" Allowed="Read" />
+      <!-- altea: dashboard parts inherit the Dashboard's rules — see the CombinedUserChartPart note above.
+      <Type Resource="UserChartPart" Allowed="Read" />
+      <Type Resource="UserQueryPart" Allowed="Read" />
+      <Type Resource="ValueUserQueryListPart" Allowed="Read" /> -->
+      <!-- altea OPTION (not Southwind): row-scope the user assets instead of the plain `Read` above, the way
+           UserQueryLogic.registerUser/RoleTypeCondition intends — a role then sees only its own assets, its
+           roles' assets and the global ones. Southwind's assets are owned by System / Anonymous, so turning
+           this on hides most of the imported dashboard from a Standard user. To use it, replace the three
+           plain rows above with these.
+      <Type Resource="Dashboard" Allowed="None">
+        <Condition Name="EastwindTypeCondition.UserEntities" Allowed="Read" />
+        <Condition Name="EastwindTypeCondition.RoleEntities" Allowed="Read" />
+      </Type>
+      <Type Resource="UserQuery" Allowed="None">
+        <Condition Name="EastwindTypeCondition.UserEntities" Allowed="Read" />
+        <Condition Name="EastwindTypeCondition.RoleEntities" Allowed="Read" />
+      </Type>
+      <Type Resource="UserChart" Allowed="None">
+        <Condition Name="EastwindTypeCondition.UserEntities" Allowed="Read" />
+        <Condition Name="EastwindTypeCondition.RoleEntities" Allowed="Read" />
+      </Type> -->
+      <!-- altea: Signum.Workflow is not ported.
+      <Type Resource="Workflow" Allowed="Read" />
+      <Type Resource="WorkflowAction" Allowed="Read" />
+      <Type Resource="WorkflowActivity" Allowed="Read" />
+      <Type Resource="WorkflowCondition" Allowed="Read" />
+      <Type Resource="WorkflowConnection" Allowed="Read" />
+      <Type Resource="WorkflowEvent" Allowed="Read" />
+      <Type Resource="WorkflowEventTask" Allowed="Read" />
+      <Type Resource="WorkflowEventTaskConditionResult" Allowed="Read" />
+      <Type Resource="WorkflowGateway" Allowed="Read" />
+      <Type Resource="WorkflowLane" Allowed="Read" />
+      <Type Resource="WorkflowPool" Allowed="Read" />
+      <Type Resource="WorkflowScript" Allowed="Read" />
+      <Type Resource="WorkflowScriptRetryStrategy" Allowed="Read" />
+      <Type Resource="WorkflowTimerCondition" Allowed="Read" /> -->
+    </Role>
+    <Role Name="Super user" />
+    <Role Name="Advanced user">
+      <!-- <Type Resource="AlertType" Allowed="Write" /> -->
+      <Type Resource="Category" Allowed="Write" />
+      <Type Resource="Dashboard" Allowed="Write" />
+      <Type Resource="Employee" Allowed="Write" />
+      <!-- <Type Resource="NoteType" Allowed="Write" /> -->
+      <Type Resource="Product" Allowed="Write" />
+      <Type Resource="Region" Allowed="Write" />
+      <Type Resource="Shipper" Allowed="Write" />
+      <Type Resource="Supplier" Allowed="Write" />
+      <Type Resource="Territory" Allowed="Write" />
+      <Type Resource="Toolbar" Allowed="Write" />
+      <Type Resource="ToolbarMenu" Allowed="Write" />
+      <!-- altea: dashboard parts inherit the Dashboard row above (PartOwnership) — inert here.
+      <Type Resource="ToolbarMenuPart" Allowed="Write" />
+      <Type Resource="UserChartPart" Allowed="Write" />
+      <Type Resource="UserQueryPart" Allowed="Write" />
+      <Type Resource="ValueUserQueryListPart" Allowed="Write" /> -->
+    </Role>
+  </Types>
+</Auth>

@@ -1,11 +1,11 @@
 import "@altea/altea/client/EntityTypeApi"; // installs Type.token / findOptions / … statics
 import { type RouteObject } from "react-router";
 import { ClientBuilder } from "@altea/altea/client/ClientBuilder";
-import { EmployeesClient } from "./employees/Employee.client";
-import { ProductsClient } from "./products/Product.client";
-import { ShippersClient } from "./shippers/Shipper.client";
-import { CustomersClient } from "./customers/Customer.client";
-import { OrdersClient } from "./orders/Order.client";
+import { EmployeesClient } from "./employees/EmployeeClient.client";
+import { ProductsClient } from "./products/ProductClient.client";
+import { ShippersClient } from "./shippers/ShipperClient.client";
+import { CustomersClient } from "./customers/CustomerClient.client";
+import { OrdersClient } from "./orders/OrderClient.client";
 import { AuthAdminClient } from "@altea/altea-auth/client/admin/AuthAdminClient";
 import { ProfilerClient } from "@altea/altea-profiler/client/ProfilerClient";
 import { UserQueriesClient } from "@altea/altea-user-queries/client/UserQueriesClient";

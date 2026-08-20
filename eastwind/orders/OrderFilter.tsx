@@ -10,7 +10,7 @@ import { OrderFilterModel } from './Order.data'
 // Faithful port of Southwind's Orders/OrderFilter.tsx — the Orders SIMPLE FILTER BUILDER. A simple filter
 // builder replaces the advanced filter grid with a compact form (customer / employee / order-date range)
 // whenever the incoming filters can be represented by it (see `extract` below); otherwise the search falls
-// back to the advanced builder. Registered via OrdersClient's `simpleFilterBuilder` (Order.client.ts).
+// back to the advanced builder. Registered via OrdersClient's `simpleFilterBuilder` (OrderClient.client.tsx).
 export default class OrderFilter extends React.Component<{ ctx: TypeContext<OrderFilterModel> }> implements ISimpleFilterBuilder {
 
   override render(): React.ReactElement {

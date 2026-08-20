@@ -55,7 +55,7 @@ export class OrderEntity extends Entity {
     // @quoted so the SAME body both evaluates in-memory (Order.tsx's Total Price field, over the
     // loaded detail rows — the Decimal-aware Array.sum returns a Decimal) AND translates to a scalar
     // SUM subquery over the owned OrderLine rows — the latter is what makes the `totalPrice` extension
-    // token (registered in Order.server.ts) a real, sortable/filterable Decimal column on the Order query.
+    // token (registered in OrderLogic.server.ts) a real, sortable/filterable Decimal column on the Order query.
     @quoted
     totalPrice(): Decimal {
         return this.details.sum(d => d.subTotalPrice());

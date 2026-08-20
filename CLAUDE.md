@@ -32,6 +32,51 @@ eastwind/
 old/                  # Signum + Southwind sources — PORT FROM HERE, do not modify
 ```
 
+## Naming & formatting conventions
+
+**Two layer organisations, both accepted.** The tsconfig presets (`altea/altea/presets/{data,client,server}.json`)
+glob each layer **both** ways: a `data/` / `client/` / `server/` **directory**, or co-located `*.data.ts` /
+`*.client.ts[x]` / `*.server.ts` **suffix** files (plus any `*.tsx` — a `.tsx` is always client). Use the
+**suffixes** for simple modules, where co-locating a domain (`eastwind/orders/`) matters more than separating it;
+use **directories** once a module carries substantial UI or server code, as every framework package does
+(`altea-auth/{data,client,server}/`). Either way the layer boundary holds: client never references server, and
+data references neither.
+
+**Registration file names.** An app domain folder names its two registration modules after their role:
+
+```
+eastwind/orders/
+  Order.data.ts          # the entity domain (entities, enums, operation symbols, messages)
+  OrderLogic.server.ts   # <Domain>Logic.server.ts — the sb.include(...) / query / operation registration
+  OrderClient.client.tsx # <Domain>Client.client.ts[x] — the cb.configure(...) client registration
+  Order.tsx              # the entity's view component
+  OrderFilter.tsx        # extra components
+```
+
+Do **not** shorten `OrderClient.client.tsx` back to `Order.client.tsx`: the base name alone should say what the
+module is, since that is all a tab strip, a stack trace or a fuzzy-finder hit shows. The prefix stays
+**singular**, matching `<Domain>.data.ts`, even where the exported namespace is plural (`OrdersLogic` /
+`OrdersClient` mirror Southwind's `OrdersLogic.cs` and are left as-is). Framework packages already use the same
+shape (`ProcessClient.tsx`, `SchedulerClient.tsx`, …).
+
+**One column per line in `defaultColumns`.** A `withQuerySettings` block always writes its columns one per line,
+with a trailing comma — never packed onto one line and never wrapped mid-array. Diffs then show exactly which
+column moved, and reordering is a line move:
+
+```ts
+cb.configure(ShipperEntity)
+    .withQuerySettings(token => ({
+        defaultColumns: [
+            token(a => a.id),
+            token(a => a.companyName),
+            token(a => a.phone),
+        ],
+    }));
+```
+
+This holds even for a two-column list — do **not** collapse it back to
+`.withQuerySettings(token => ({ defaultColumns: [token(s => s.id), token(s => s.key)] }));`.
+
 ## Philosophy: **copy-and-fix**, but with divergences
 
 Port faithfully: **mirror Signum's class / method names and member order**, copy the source file and fix it for TypeScript + altea's conventions. This keeps the two comparable so future Signum changes are easy to re-apply. **Record every intentional divergence** (in code comments and, for cross-cutting ones, here).
