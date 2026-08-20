@@ -209,6 +209,15 @@ importers:
         specifier: workspace:*
         version: link:../quote-transformer
 
+  altea/altea-migrations:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
   altea/altea-office-template:
     dependencies:
       '@altea/altea':
@@ -416,6 +425,9 @@ importers:
       '@altea/altea-files':
         specifier: workspace:*
         version: link:../altea/altea-files
+      '@altea/altea-migrations':
+        specifier: workspace:*
+        version: link:../altea/altea-migrations
       '@altea/altea-office-template':
         specifier: workspace:*
         version: link:../altea/altea-office-template

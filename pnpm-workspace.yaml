@@ -13,6 +13,7 @@ packages:
   - altea/altea-templating
   - altea/altea-email
   - altea/altea-office-template
+  - altea/altea-migrations
   - altea/altea-chart
   - altea/altea-test
   - altea/altea-auth-test

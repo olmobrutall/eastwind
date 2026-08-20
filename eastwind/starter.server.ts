@@ -13,7 +13,7 @@ import { EntityOverrides } from "./entityOverrides.data";
 import { EmployeesLogic } from "./employees/Employee.server";
 import { ProductsLogic } from "./products/Product.server";
 import { ShippersLogic } from "./shippers/Shipper.server";
-import { CustomersLogic } from "./customers/Customer.server";
+import { CustomersLogic } from "./customers/CustomerLogic.server";
 import { OrdersLogic } from "./orders/Order.server";
 import { AuthLogic } from "@altea/altea-auth/server/AuthLogic";
 import { TypeAuthLogic } from "@altea/altea-auth/server/TypeAuthLogic";
@@ -21,6 +21,9 @@ import { PermissionAuthLogic } from "@altea/altea-auth/server/PermissionAuthLogi
 import { OperationAuthLogic } from "@altea/altea-auth/server/OperationAuthLogic";
 import { QueryAuthLogic } from "@altea/altea-auth/server/QueryAuthLogic";
 import { PropertyAuthLogic } from "@altea/altea-auth/server/PropertyAuthLogic";
+import { TypeConditionLogic } from "@altea/altea-auth/server/TypeConditionLogic";
+import { UserEntity } from "@altea/altea-auth/data/User";
+import { UserHolder } from "@altea/altea/server/userHolder";
 import { ProfilerLogic } from "@altea/altea-profiler/server/ProfilerLogic";
 import { UserQueriesLogic } from "@altea/altea-user-queries/server/UserQueriesLogic.server";
 import { ChartLogic } from "@altea/altea-chart/server/ChartLogic.server";
@@ -43,6 +46,9 @@ import { EmailFileType } from "@altea/altea-email/data/Email";
 import { EastwindEmail } from "./eastwindEmail.server";
 import { OfficeTemplateLogic } from "@altea/altea-office-template/server/OfficeTemplateLogic.server";
 import { ToolbarLogic } from "@altea/altea-toolbar/server/ToolbarLogic.server";
+import { PlainExcelLogic } from "@altea/altea-office-template/server/excel/PlainExcelLogic.server";
+import { ExcelImportLogic } from "@altea/altea-office-template/server/excel/ExcelImportLogic.server";
+import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic.server";
 import { EastwindTypeCondition } from "./eastwindTypeConditions.data";
 
 // Port of Southwind's Starter.Start (Southwind/Starter.cs): the single global entry that builds the
@@ -87,6 +93,13 @@ export namespace Starter {
         OperationAuthLogic.start(sb);
         QueryAuthLogic.start(sb);
         PropertyAuthLogic.start(sb);
+        // Southwind's `TypeConditionLogic.RegisterCompile<UserEntity>(SouthwindTypeCondition.UserEntities,
+        // u => u.Is(UserEntity.Current))` (Starter.cs): "the row IS the current user", so a role can be given
+        // Read on User restricted to one's own row — which is exactly what terminal/AuthRules.xml does for
+        // Standard user. The same symbol also scopes the USER ASSETS by owner further down; a symbol is
+        // registered per type, so both registrations are needed.
+        TypeConditionLogic.registerCompile(UserEntity, EastwindTypeCondition.UserEntities,
+            u => u.is(UserHolder.currentUserLite()));
 
         // Files module (altea-files): the FileTypeSymbol table, the save / delete hooks for every entity that
         // holds a FilePathEmbedded, and the download routes (Southwind's FilePathEmbeddedLogic.Start +
@@ -192,6 +205,22 @@ export namespace Starter {
         // an OfficeAttachment hangs off an EmailTemplate; BEFORE OperationLogic.start so its three
         // operations are in the registry when the OperationSymbol table is seeded.
         OfficeTemplateLogic.start(sb);
+
+        // Excel export (altea-office-template's Signum.Excel half): declares no tables — its PlainExcel
+        // permission symbol rides along in the PermissionSymbol seed — and mounts POST /api/excel/plain/
+        // :queryKey, which turns any query request into an .xlsx download. Its own starter, separate from
+        // the importer's (below), so an app can offer export without import.
+        PlainExcelLogic.start(sb);
+
+        // Excel import (the other half of the Signum.Excel port, its own starter): mounts POST
+        // /api/excel/validateForImport/:queryKey + /api/excel/import/:queryKey, which read an .xlsx back
+        // into entities through a chosen operation. Its ImportFromExcel permission rides the same seed.
+        ExcelImportLogic.start(sb);
+
+        // Migrations module (altea-migrations): the SqlMigration / CSharpMigration history tables + the
+        // LoadMethodLog every terminal load step writes. Server-only (the runners live in the terminal), and
+        // the tables must be part of the schema for `sync` / the load menu to log into them.
+        MigrationLogic.start(sb);
 
         // Omnibox module (altea-omnibox): declares no tables (its ViewOmnibox permission symbol is seeded
         // through the PermissionSymbol table above); registers the entity / dynamic-query / special result

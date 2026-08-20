@@ -14,6 +14,7 @@
   "references": [
     { "path": "./tsconfig.data.json" },
     { "path": "./tsconfig.server.json" },
-    { "path": "../altea/altea/tsconfig.server.json" }
+    { "path": "../altea/altea/tsconfig.server.json" },
+    { "path": "../altea/altea-migrations/tsconfig.server.json" }
   ]
 }
