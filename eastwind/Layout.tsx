@@ -12,6 +12,8 @@ import CultureDropdown from "@altea/altea/client/CultureDropdown";
 import LoginDropdown from "@altea/altea-auth/client/public/LoginDropdown";
 import OmniboxAutocomplete from "@altea/altea-omnibox/client/OmniboxAutocomplete";
 
+const ChatbotButton = React.lazy(() => import("@altea/altea-agent/client/ChatbotButton"));
+
 // The app shell (Southwind's Layout): a top navbar (with the sidebar toggle, the omnibox and the login/user
 // dropdown) + a SIDEBAR rendering the current "Side" toolbar + the routed page via <Outlet/>. Auth-aware: a
 // login guard redirects to /auth/login when no user is authenticated. GlobalModalContainer stays mounted for
@@ -93,6 +95,12 @@ export default function Layout(): React.JSX.Element {
                 </div>
             </SidebarContainer>
             <GlobalModalContainer />
+            {/* The chatbot's floating button (Southwind's Layout lazy-imports it the same way). Only for a
+                logged-in user: every skill it can reach reads the database as that user. */}
+            {AppContext.currentUser &&
+                <React.Suspense fallback={null}>
+                    <ChatbotButton />
+                </React.Suspense>}
             {/* The notification host (Signum's <Notify/>): registers the Notify singleton so ajax "loading"
                 toasts and operation "success" toasts have somewhere to render. Must stay mounted app-wide. */}
             <Notify />

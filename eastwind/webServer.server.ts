@@ -23,6 +23,10 @@ async function main(): Promise<void> {
     // sits alongside it. Override with PORT; the vite client proxy default (VITE_API_TARGET) matches.
     const port = Number(process.env["PORT"] ?? 3001);
     const server = ws.app.listen(port, () => console.log(`[eastwind] API listening on http://localhost:${port}`));
+    // WebSocket hubs (altea's SignalR substitute — altea/server/webSocketHub.ts) can only be bound once
+    // there IS an http.Server to hear `upgrade` on, which is after listen. A module registered its hub
+    // during Starter.start (e.g. altea-concurrent-user); this is what makes them reachable.
+    ws.attachWebSockets(server);
     // Without this, a failed bind (e.g. EADDRINUSE from an orphaned prior run) never refs the event loop,
     // so the process just drains and exits code 0 — a phantom "clean" exit that reads as success. Surface it.
     server.on("error", err => { console.error(`[FAILED] ${err instanceof Error ? err.message : err}`); process.exit(1); });

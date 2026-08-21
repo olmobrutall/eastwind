@@ -16,12 +16,16 @@
     { "path": "../altea/altea-office-template/tsconfig.data.json" },
     { "path": "../altea/altea-migrations/tsconfig.data.json" },
     { "path": "../altea/altea-cache/tsconfig.data.json" },
+    { "path": "../altea/altea-agent/tsconfig.data.json" },
+    { "path": "../altea/altea-concurrent-user/tsconfig.data.json" },
     { "path": "../altea/altea-auth-reset-password/tsconfig.data.json" },
     { "path": "../altea/altea-auth-openid/tsconfig.data.json" },
     { "path": "../altea/altea-auth-azuread/tsconfig.data.json" },
     { "path": "../altea/altea-auth-windowsad/tsconfig.data.json" },
     { "path": "../altea/altea-mailing-exchange/tsconfig.data.json" },
     { "path": "../altea/altea-mailing-microsoft-graph/tsconfig.data.json" },
-    { "path": "../altea/altea-mailing-pop3/tsconfig.data.json" }
+    { "path": "../altea/altea-mailing-pop3/tsconfig.data.json" },
+    { "path": "../altea/altea-diff-log/tsconfig.data.json" },
+    { "path": "../altea/altea-html-editor/tsconfig.data.json" }
   ]
 }

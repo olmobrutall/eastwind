@@ -25,7 +25,12 @@ altea/
   altea-auth-openid/  # OpenID Connect login (Signum.Authorization.OpenID)
   altea-auth-azuread/ # Entra ID login + Graph directory queries + photos (Signum.Authorization.AzureAD)
   altea-auth-windowsad/ # Windows AD login over LDAP (Signum.Authorization.WindowsAD)
+  altea-agent/        # LLM chatbot + skills-as-tools + provider clients + an MCP endpoint (Signum.Agent)
   altea-cache/        # in-memory entity cache + cross-process invalidation (Signum.Caching)
+  altea-codemirror/   # code editors, CLIENT-ONLY (Signum.CodeMirror); CodeMirror 6, not 5
+  altea-concurrent-user/ # live presence + stale-entity detection on an open entity (Signum.ConcurrentUser)
+  altea-diff-log/     # before/after entity dumps on each operation log + the diff view (Signum.DiffLog)
+  altea-html-editor/  # WYSIWYG rich text over Lexical + viewer + html→text (Signum.HtmlEditor)
   altea-files-azure/  # Azure Blob Storage file store (Signum.Files.AzureBlobs)
   altea-files-s3/     # S3 / MinIO file store (Signum.Files.S3)
   altea-mailing-exchange/ # sending through Exchange Web Services (Signum.Mailing.ExchangeWS)
@@ -213,6 +218,94 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   cached type with row-level TypeConditions (altea enforces those as a query filter, which a cached read
   bypasses) and one with `additionalBindings`. And `sb.globalLazy(…, { invalidateWith: [X] })` does NOT
   start caching X (Signum force-caches it); the lazy keeps its event wiring and is also reset by a broadcast.
+
+- **The diff log is TWO core seams plus a mixin.** `altea-diff-log` stores the before/after dumps of an
+  operation on the operation log itself, which needs two things core did not have and now does:
+  `ObjectDumper` (`data/objectDumper`) and `OperationLogic.surroundOperation` — Signum's
+  `SurroundOperation`, an event returning an `IDisposable`, becomes a before-handler that returns an AFTER
+  callback (which still runs when the operation threw). The dumper keeps Signum's C#-flavoured output
+  verbatim (`new OrderEntity(10248) { … }`, `new LiteImp<CustomerEntity>(5, "Acme")`, 3-space indent), because
+  that shape is the contract `simplifyDump`'s regex reads and what makes a dump comparable across the two
+  frameworks. Divergences: `[AvoidDump]` / `[AvoidDumpEntity]` become `ObjectDumper.avoidDump` /
+  `avoidDumpEntity` Sets keyed `"TypeName.fieldName"`; `Schema.ForceCultureInfo` is unnecessary because the
+  dumper formats invariantly by construction (Temporal → ISO, Decimal → `toString`); mixins are not a
+  separate branch (altea inlines them). Two things do NOT port: `registerWhenAlreadyFilteringBy` (altea has
+  no "only while the query already filters by this property" condition kind, so
+  `OperationLogTypeCondition.FilteringByTarget` is declared but unregistered) and the auditor-token registry
+  its client half pairs with. And note the MIXIN's two consequences — the fields are FLATTENED onto
+  `operation_log` (`initial_state_text`, …), but a client PropertyRoute still needs the mixin STEP
+  (`subCtx(a => a.mixin(DiffLogMixin))`), because a route models the mixin even where the columns don't.
+
+- **Lexical is Signum's editor, and altea pins Signum's exact version.** `altea-html-editor` is a
+  near-verbatim port (same package, same 0.45), so the extension protocol, the controller and the toolbar are
+  Signum's. Divergences: `HtmlEditorMessage` lives in this package rather than in core (nothing else needs
+  it); the LINE takes a `TypeContext` where Signum's takes a raw `Binding`, so it gets a label slot and
+  validation styling; `getTimeMachineIcon` is dropped (no TimeMachine module) and so is Signum's
+  `member.required` check (altea has an implicit NotNull validator instead); `AutoLineModal` becomes a local
+  `EditLinkModal` whose three-way result is cancel / unlink / set. One Signum BUG is fixed rather than
+  mirrored: `controller.editorState` is declared and read (every toolbar active state, the mandatory-empty
+  check) but never ASSIGNED, so no button ever highlights — the OnChangeExtension now assigns it and calls a
+  threaded `forceUpdate`. The server half is `HtmlToPlainText` for the excel generator: HtmlAgilityPack has
+  no JS counterpart and the SERVER has no DOM (`DOMParser` is browser-only — the client half uses it), so it
+  walks a ~100-line tokenizer, matching `ProcessNode` case for case.
+  A TRAP worth knowing before choosing `HtmlSimple` for a template: the default extension set has no link
+  support, so Lexical parses an existing `<a href>` back as bare TEXT and the anchor is dropped — and adding
+  LinkExtension makes it worse, since `@lexical/link` normalizes any href it does not recognise as a url and
+  turns a `@[m:url]` token into `mailto:@[m:url]`. Links belong in `HtmlComplex`.
+
+- **CodeMirror 5 → CodeMirror 6.** `altea-codemirror` keeps every wrapper's PROPS identical (`script` /
+  `onChange` / `isReadOnly` / `errorLineNumber` / `innerRef`) and rewrites everything behind them: CM5 is
+  end-of-life, ships no ESM entry points and no bundled types. So the options BAG becomes explicit props plus
+  an `extensions` array (CM6 has no option dictionary — every feature is an Extension, and `readOnly` /
+  `extensions` live in **Compartments** so they reconfigure without tearing the editor down);
+  `addLineClass(…, "exceptionLine")` becomes a StateField holding one line Decoration (CM6 state, not a DOM
+  side effect, so it re-maps through edits); the handle's `.codeMirror` (an `EditorFromTextArea`) becomes
+  `.view`, and the `path` prop is gone with the textarea; F11 fullscreen is a class on the wrapper, not a CM5
+  addon; and the dark theme (`@codemirror/theme-one-dark`) is resolved ONCE from `data-bs-theme` for every
+  language instead of only in HtmlCodeMirror. C# is the one language with no first-party CM6 package, so it
+  runs CM5's own `clike` grammar through `StreamLanguage` (`@codemirror/legacy-modes`). It is a **client-only
+  package** (no data/, no server/). NEW here: `MarkdownCodeMirror`, standing in for Signum.Markdown's
+  unported `MarkdownLine`.
+
+- **SignalR → a WebSocket hub in altea CORE.** Node has no SignalR server and `@microsoft/signalr` speaks a
+  protocol only that server implements, so `altea/server/webSocketHub.ts` + `altea/client/useWebSocket.tsx`
+  re-create the hub abstraction over plain `ws`, narrowed to the three things Signum's hubs use: a stable
+  connection id, GROUPS, and client→server method calls. One JSON object per frame — `{ m, a }`, SignalR's
+  invocation message minus the envelope (there are no results to correlate: every hub method Signum declares
+  returns void). No negotiation, no transport fallback, no streaming, no MessagePack. Two consequences:
+  - a hub is registered on the `WebBuilder` but bound to the http.Server by `attachWebSockets(server)`, which
+    the HOST calls after `listen` — an upgrade handler needs the server, not the Express app;
+  - a browser WebSocket cannot send `Authorization`, so a connection AUTHENTICATES with its first frame
+    (`$authenticate`), validated through the same authenticator chain an HTTP request uses. The token comes
+    from `setAccessTokenFactory`, which altea-auth installs beside `setExtraHeaders`. Frames that arrive
+    before authentication resolves are QUEUED, not dropped.
+  `altea-concurrent-user` is its first consumer; it also trusts the socket's OWN user rather than the
+  `userKey` the client passes (Signum trusts the argument), so a tab cannot register presence as someone else.
+
+- **The agent's THREE missing .NET substrates.** `altea-agent` ports Signum.Agent, whose whole surface rests
+  on packages with no JavaScript counterpart:
+  - `Microsoft.Extensions.AI` (`IChatClient` / `ChatMessage` / `AITool` / `ChatOptions`) becomes
+    `server/ChatClient.ts` — the SLICE the agent loop uses: four roles, streaming generation, tool
+    declarations as JSON Schema, and a usage report. Seven Signum providers become THREE wire protocols:
+    OpenAI's `/chat/completions` (which OpenAI, DeepSeek, GitHub Models, Mistral and Ollama all speak behind
+    their five different SDKs), Anthropic's Messages API (with the system prompt lifted out and
+    `cache_control` kept — the prompt IS the skill tree, and it repeats every turn), and Gemini's
+    `generateContent` (whose schema dialect needs `toGeminiSchema`).
+  - **Tools and skill properties are DECLARED, not reflected.** Signum marks a C# method `[McpServerTool]`
+    and lets `AIFunctionFactory.Create(delegate)` reflect its signature into a JSON Schema; TypeScript erases
+    parameter types, so `SkillCode.registerTool` takes the schema and the handler explicitly. Same for
+    `[SkillProperty]` → `registerProperty` (which keeps `attributeName`, the key the client's property-editor
+    registry uses). A `[UITool]` is `isUITool: true` with no `invoke`. The tool NAMES and descriptions are
+    kept verbatim, because they are part of the prompt the model reads.
+  - the MCP endpoint DOES use an SDK — `@modelcontextprotocol/sdk` is the same protocol's official JS
+    implementation — but altea REFUSES an unauthenticated MCP request, where Signum leaves the policy to
+    ASP.NET and Southwind adds none. These tools construct, execute and delete entities.
+  Also: `AgentSymbol` is a plain `Symbol` (altea has no SemiSymbol, and every reachable agent is
+  code-declared); `QueryDescription` is gone, so the `queryDescription` tool becomes `QueryTokens` over the
+  token tree and `qd.NextAlternatives` becomes a walk to the longest valid token prefix; the query grammar the
+  instruction files teach is altea's (ROOTLESS, camelCase fields, PascalCase system tokens, case-sensitive);
+  and a tool result is serialized with `Serializer.stringify`, NOT `JSON.stringify` — a plain stringify drops
+  a Lite's entity type (its `entityType` is a constructor), leaving the model unable to build a filter value.
 
 > `old/CLAUDE.md` and `old/**/AGENTS.md` describe **Signum's** conventions, not altea's — read them to understand the source, but altea's conventions above win.
 

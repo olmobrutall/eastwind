@@ -43,6 +43,7 @@ import { PermissionSymbol } from "@altea/altea-auth/data/Rules";
 import {
     ToolbarElementBaseEntity, ToolbarEntity, ToolbarMenuEntity, ToolbarSwitcherEntity,
 } from "@altea/altea-toolbar/data/Toolbar";
+import { DiffLogMixin } from "@altea/altea-diff-log/data/DiffLog";
 
 export namespace EntityOverrides {
     export function start(): void {
@@ -51,6 +52,12 @@ export namespace EntityOverrides {
         // message carry its server uid, its raw MIME and its reception row. Declaring it adds those columns to
         // the EmailMessage table, so it belongs here — both tiers, before any (de)serialization.
         EmailReceptionMixin.declare();
+
+        // The diff mixin on OperationLogEntity (Signum's MixinDeclarations.Register<OperationLogEntity,
+        // DiffLogMixin>() in Southwind's Starter.cs, asserted by DiffLogLogic.start): the two dumps an
+        // operation brackets. Declaring it adds those columns to the OperationLog table, so it belongs
+        // here — both tiers, before any (de)serialization.
+        DiffLogMixin.declare();
 
         // MixinDeclarations.register(EmployeeEntity, ColaboratorsMixin);
         // registerCustomLite(EmployeeEntity, EmployeeLite, e => EmployeeLite.create({ ... }), /*isDefault*/ true);

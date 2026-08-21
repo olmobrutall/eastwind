@@ -19,7 +19,12 @@ packages:
   - altea/altea-mailing-exchange
   - altea/altea-office-template
   - altea/altea-migrations
+  - altea/altea-agent
   - altea/altea-cache
+  - altea/altea-codemirror
+  - altea/altea-concurrent-user
+  - altea/altea-diff-log
+  - altea/altea-html-editor
   - altea/altea-auth-reset-password
   - altea/altea-auth-openid
   - altea/altea-auth-azuread

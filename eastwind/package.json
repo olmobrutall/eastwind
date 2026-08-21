@@ -27,6 +27,9 @@
     "@altea/altea": "workspace:*",
     "@altea/altea-auth": "workspace:*",
     "@altea/altea-chart": "workspace:*",
+    "@altea/altea-codemirror": "workspace:*",
+    "@altea/altea-agent": "workspace:*",
+    "@altea/altea-concurrent-user": "workspace:*",
     "@altea/altea-migrations": "workspace:*",
     "@altea/altea-cache": "workspace:*",
     "@altea/altea-omnibox": "workspace:*",
@@ -60,7 +63,9 @@
     "@altea/altea-files-s3": "workspace:*",
     "@altea/altea-mailing-exchange": "workspace:*",
     "@altea/altea-mailing-microsoft-graph": "workspace:*",
-    "@altea/altea-mailing-pop3": "workspace:*"
+    "@altea/altea-mailing-pop3": "workspace:*",
+    "@altea/altea-diff-log": "workspace:*",
+    "@altea/altea-html-editor": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

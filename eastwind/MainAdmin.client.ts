@@ -14,6 +14,11 @@ import { ResetPasswordClient } from "@altea/altea-auth-reset-password/client/Res
 import { WindowsADClient } from "@altea/altea-auth-windowsad/client/WindowsADClient";
 import { ProfilerClient } from "@altea/altea-profiler/client/ProfilerClient";
 import { CacheClient } from "@altea/altea-cache/client/CacheClient";
+import { ConcurrentUserClient } from "@altea/altea-concurrent-user/client/ConcurrentUserClient";
+import { AgentClient } from "@altea/altea-agent/client/AgentClient";
+import { ChatbotClient } from "@altea/altea-agent/client/ChatbotClient";
+import { ConfirmUITool } from "@altea/altea-agent/client/Skills/ConfirmUITool";
+import { GetUIContextUITool } from "@altea/altea-agent/client/Skills/GetUIContextUITool";
 import { UserQueriesClient } from "@altea/altea-user-queries/client/UserQueriesClient";
 import { ChartClient } from "@altea/altea-chart/client/ChartClient";
 import { ColorPaletteClient } from "@altea/altea-chart/client/ColorPalette/ColorPaletteClient";
@@ -32,6 +37,8 @@ import { MailingMicrosoftGraphClient } from "@altea/altea-mailing-microsoft-grap
 import { RemoteEmailsClient } from "@altea/altea-mailing-microsoft-graph/client/RemoteEmails/RemoteEmailsClient";
 import { MailingPop3Client } from "@altea/altea-mailing-pop3/client/MailingPop3Client";
 import { OfficeClient } from "@altea/altea-office-template/client/OfficeClient";
+import { HtmlEditorClient } from "@altea/altea-html-editor/client/HtmlEditorClient";
+import { DiffLogClient } from "@altea/altea-diff-log/client/DiffLogClient";
 
 // The full (admin) registration bundle — Southwind's MainAdmin.startFull: the framework client modules
 // (Operations/Navigator/Finder) first, then each entity domain's client. Mirrors the server's
@@ -49,6 +56,12 @@ export function startFull(routes: RouteObject[]): void {
     CultureInfoClient.start(cb);
 
     FilesClient.start(cb);
+
+    // Html editor (altea-html-editor): registers the "Html" cell formatter, so a query column whose token
+    // carries format "Html" renders through the read-only viewer instead of showing raw markup. Registers no
+    // routes and no entity settings — the EDITOR is a line component the views below import directly.
+    // Before the modules whose searches have html columns (the email + office templates).
+    HtmlEditorClient.start();
 
     EmployeesClient.start(cb);
     ProductsClient.start(cb);
@@ -94,6 +107,20 @@ export function startFull(routes: RouteObject[]): void {
     // Cache admin (altea-cache): the /cache/statistics panel (Signum's CacheClient) — cached tables and
     // global lazies with their hit / invalidation / load statistics, plus Enable / Disable / Clear.
     CacheClient.start(cb);
+
+    // Agent (@altea/altea-agent): the SkillCode / SkillCustomization / Agent editors and the language-model
+    // editors (AgentClient starts LanguageModelClient itself), then the chat entity views. The two UI TOOLS
+    // are what makes the server-declared `Confirm` / `GetUIContext` tools answerable in the browser — without
+    // registering them the model can call them and nothing ever replies.
+    AgentClient.start(cb);
+    ChatbotClient.start(cb);
+    ChatbotClient.registerUITool(new ConfirmUITool());
+    ChatbotClient.registerUITool(new GetUIContextUITool());
+
+    // Concurrent users (altea-concurrent-user): the entity-frame widget showing who else has this entity
+    // open, whether they are typing, and whether the copy on screen is already stale. Registers itself on
+    // `onWidgets`, so it applies to every entity view without per-type configuration.
+    ConcurrentUserClient.start();
 
     // User queries (altea-user-queries): the UserQuery editor + /userQuery page + quick-links to run saved
     // queries (Signum's UserQueryClient).
@@ -161,4 +188,9 @@ export function startFull(routes: RouteObject[]): void {
     // Omnibox (altea-omnibox): registers the three result-shape renderers the navbar's
     // <OmniboxAutocomplete/> (see Layout.tsx) draws its suggestions with. Registers no routes.
     OmniboxClient.start(cb);
+
+    // DiffLog (altea-diff-log): the OperationLog view — the 7-tab strip that walks the log chain of one
+    // entity and diffs each pair of dumps — plus the log search's default columns. LAST, so its
+    // `cb.configure(OperationLogEntity)` is the app's final word on that type.
+    DiffLogClient.start(cb);
 }

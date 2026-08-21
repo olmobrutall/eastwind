@@ -40,6 +40,7 @@ import { ProcessLogic } from "@altea/altea-processes/server/ProcessLogic.server"
 import { ProcessSchedulerBridge } from "@altea/altea-processes/server/ProcessSchedulerBridge.server";
 import { EastwindProcess } from "./eastwindProcesses.server";
 import { OmniboxLogic } from "@altea/altea-omnibox/server/OmniboxLogic";
+import { DiffLogLogic } from "@altea/altea-diff-log/server/DiffLogLogic";
 import { EmailLogic } from "@altea/altea-email/server/EmailLogic.server";
 import { FileTypeLogic } from "@altea/altea-files/server/FileTypeLogic.server";
 import { FileTypeAlgorithm } from "@altea/altea-files/server/FileTypeAlgorithm.server";
@@ -58,6 +59,13 @@ import { ExcelImportLogic } from "@altea/altea-office-template/server/excel/Exce
 import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic.server";
 import { EastwindTypeCondition } from "./eastwindTypeConditions.data";
 import { CacheLogic } from "@altea/altea-cache/server/CacheLogic";
+import { ConcurrentUserLogic } from "@altea/altea-concurrent-user/server/ConcurrentUserLogic.server";
+import { ChatbotLogic } from "@altea/altea-agent/server/ChatbotLogic";
+import { AgentLogic } from "@altea/altea-agent/server/AgentLogic";
+import { AgentMcpServer } from "@altea/altea-agent/server/AgentMcpServer";
+import { ChatbotServer } from "@altea/altea-agent/server/ChatbotServer";
+import { EastwindAgent } from "./eastwindAgent.server";
+import { EastwindAgentUseCases } from "./eastwindAgents.data";
 import { AzureADLogic } from "@altea/altea-auth-azuread/server/AzureADLogic";
 import { CachedProfilePhotoLogic } from "@altea/altea-auth-azuread/server/CachedProfilePhotoLogic";
 import { OpenIDLogic } from "@altea/altea-auth-openid/server/OpenIDLogic";
@@ -191,6 +199,25 @@ export namespace Starter {
         ProcessLogic.start(sb);
         ProcessSchedulerBridge.start(sb);
 
+        // Agent module (@altea/altea-agent): the chat tables + language-model registry (ChatbotLogic) and the
+        // agent / skill registry (AgentLogic). Order matters three ways: the skill CLASSES are registered
+        // first (the SkillCode table is seeded from them and `registerAgent` asserts against it), the
+        // chatbot's own agent is handed to AgentLogic.start so DefaultAgent.Chatbot resolves, and the app's
+        // extra MCP agent is registered after — before OperationLogic.start, so its symbols get seeded.
+        // AFTER the chart module: the ChartSkill reads ChartScriptLogic's registered scripts.
+        EastwindAgent.setUrlLeft(EastwindEmail.configuration().urlLeft);
+        EastwindAgent.registerSkills();
+        ChatbotLogic.start(sb, EastwindAgent.configuration);
+        ChatbotLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
+        AgentLogic.start(sb, EastwindAgent.chatbotSkill);
+        AgentLogic.registerAgent(EastwindAgentUseCases.MCP, EastwindAgent.mcpSkill);
+
+        // Concurrent-user module (altea-concurrent-user): the presence table plus the WebSocket hub that
+        // pushes "someone else has this open / just saved it" to every tab. AFTER the auth logics (its hub
+        // authenticates with the same bearer token) and after CacheLogic.start (it registers two receivers
+        // on the cache's server broadcast, so a second host's saves reach this host's sockets).
+        ConcurrentUserLogic.start(sb);
+
         // Profiler module (altea-profiler): declares no tables (state is in-memory); mounts the
         // /api/profilerHeavy/* + /api/profilerTimes/* routes and its permission symbols (seeded via the
         // PermissionSymbol table above). After the auth logics so its permissions land in the same seed.
@@ -202,6 +229,17 @@ export namespace Starter {
         // ahead of the auth middleware would never see an authenticated user.
         if (sb.webBuilder)
             CacheServer.start(sb.webBuilder);
+
+        // Agent HTTP surface (@altea/altea-agent): the streaming /api/chatbot/ask turn, the transcript and
+        // feedback routes, the skill-introspection routes and the provider model catalogues. Mounted here for
+        // the same reason CacheServer is — after the auth middleware, so every call sees a user.
+        //
+        // The MCP endpoint is separate and mounted right after: it exposes the app's MCP agent's skill tree
+        // to an EXTERNAL host (Southwind does the same in Program.cs with `.WithSignumSkill(…MCP)`).
+        if (sb.webBuilder) {
+            ChatbotServer.start(sb.webBuilder);
+            AgentMcpServer.start(sb.webBuilder, EastwindAgentUseCases.MCP);
+        }
 
         // User queries module (altea-user-queries): the UserQuery entity + its Save/Delete operations,
         // caches, XML import/export, and lookup routes. Before OperationLogic.start so its operation symbols
@@ -335,6 +373,13 @@ export namespace Starter {
         // (seeded with the operations the modules above registered) + the OperationLogEntity table/query
         // that backs the operation-log quick link. Must run AFTER the module graphs register.
         OperationLogic.start(sb);
+
+        // DiffLog module (altea-diff-log): the surround-operation handler that dumps the entity before and
+        // after every operation onto the operation log's DiffLogMixin (declared in entityOverrides, which is
+        // what puts those columns in the schema), plus the two navigation routes the OperationLog view reads.
+        // AFTER OperationLogic.start, whose OperationLogEntity table it decorates. `registerAll` is
+        // Southwind's setting: dump EVERY entity type, not an opt-in list.
+        DiffLogLogic.start(sb, { registerAll: true });
 
         // Expose a search query for the TypeEntity system table (Signum ships one). It's included by the
         // schema core but never `.withQuery()`'d, so `/find/Type` reported "not allowed"; register it here.
