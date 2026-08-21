@@ -43,6 +43,12 @@ import { OmniboxLogic } from "@altea/altea-omnibox/server/OmniboxLogic";
 import { EmailLogic } from "@altea/altea-email/server/EmailLogic.server";
 import { FileTypeLogic } from "@altea/altea-files/server/FileTypeLogic.server";
 import { FileTypeAlgorithm } from "@altea/altea-files/server/FileTypeAlgorithm.server";
+import { EastwindFileStores } from "./eastwindFileStores.server";
+import { EmailReceptionLogic } from "@altea/altea-email/server/EmailReceptionLogic.server";
+import { MailingExchangeWSLogic } from "@altea/altea-mailing-exchange/server/MailingExchangeWSLogic";
+import { MailingMicrosoftGraphLogic } from "@altea/altea-mailing-microsoft-graph/server/MailingMicrosoftGraphLogic";
+import { RemoteEmailsLogic } from "@altea/altea-mailing-microsoft-graph/server/RemoteEmailsLogic";
+import { Pop3ConfigurationLogic } from "@altea/altea-mailing-pop3/server/Pop3ConfigurationLogic";
 import { EmailFileType } from "@altea/altea-email/data/Email";
 import { EastwindEmail } from "./eastwindEmail.server";
 import { OfficeTemplateLogic } from "@altea/altea-office-template/server/OfficeTemplateLogic.server";
@@ -152,9 +158,9 @@ export namespace Starter {
         // The photo store. `CachedProfilePhotoLogic.start` registers the file type itself (Signum's
         // `FileTypeLogic.Register(AuthADFileType.CachedProfilePhoto, algorithm)`), so the app only supplies
         // the algorithm — registering it here as well would be a duplicate registration.
-        CachedProfilePhotoLogic.start(sb, new FileTypeAlgorithm({
-            physicalPrefix: () => process.env["EASTWIND_AD_PHOTOS"] ?? "./files/profilePhotos",
-        }));
+        // Which BACKEND holds the bytes is one env var away (EASTWIND_FILE_STORE=folder|azure|s3) — see
+        // eastwindFileStores.server.ts. `onlyImages` is what makes an Azure / S3 store serve these INLINE.
+        CachedProfilePhotoLogic.start(sb, EastwindFileStores.store("profilePhotos", { onlyImages: true }));
 
         // OpenID contributes no tables, so it is started ALWAYS and only OWNS the login flow when it is the
         // selected provider. That keeps the client's boot probe (/api/auth/openIDConfig) a clean 200-null
@@ -257,9 +263,7 @@ export namespace Starter {
         // email OWNERS are registered first, since EmailLogic.start's model seeding may already need them.
         EastwindEmail.registerEmailOwners();
         EastwindEmail.registerDefaultMasterTemplate();
-        FileTypeLogic.register(EmailFileType.Attachment, new FileTypeAlgorithm({
-            physicalPrefix: () => process.env["EASTWIND_MAIL_ATTACHMENTS"] ?? "./files/emailAttachments",
-        }));
+        FileTypeLogic.register(EmailFileType.Attachment, EastwindFileStores.store("emailAttachments"));
         // Self-service password reset (@altea/altea-auth-reset-password): the ResetPasswordRequest table, the
         // two e-mail models and the three ANONYMOUS /api/auth/* routes (Southwind's
         // `ResetPasswordRequestLogic.Start(sb)`). BEFORE EmailLogic.start, because its e-mail models have to
@@ -270,6 +274,32 @@ export namespace Starter {
             getConfiguration: () => EastwindEmail.configuration(),
             getSenderConfiguration: EastwindEmail.senderConfiguration,
         });
+
+        // The two extra SENDER services (@altea/altea-mailing-exchange, -microsoft-graph). Each contributes
+        // one service TABLE and registers itself in EmailLogic's sender registry; which one a message actually
+        // goes through is decided per EmailSenderConfiguration row, so starting both costs nothing until one
+        // is configured. Both re-check that entityOverrides widened EmailSenderConfiguration.service, and fail
+        // loudly here rather than at the first send.
+        MailingExchangeWSLogic.start(sb);
+        MailingMicrosoftGraphLogic.start(sb);
+
+        // The INBOUND half (altea-email's reception module + @altea/altea-mailing-pop3): the
+        // EmailReceptionConfiguration / EmailReception tables, the ReceiveEmails operation, and the two ways a
+        // poll is triggered (a ScheduledTask on one configuration, or the sweep SimpleTask over every active
+        // one). AFTER EmailLogic.start (it needs the EmailMessage table and the attachment store) and BEFORE
+        // OperationLogic.start so its operation symbols get seeded.
+        //
+        // Its sweep SimpleTask is registered here, AFTER SchedulerLogic.start — which is fine: SymbolLogic
+        // reads the declared-symbol list through a THUNK, evaluated when the table is generated /
+        // synchronized / loaded, all of which happen after every module's start() has run.
+        Pop3ConfigurationLogic.start(sb);
+        EmailReceptionLogic.start(sb);
+
+        // Browsing a user's real Outlook mailbox (@altea/altea-mailing-microsoft-graph's RemoteEmails half).
+        // OPT-IN: it registers a search page whose every row is a live Microsoft Graph call, so without an
+        // Entra tenant configured it would only ever show an error. EASTWIND_REMOTE_EMAILS=true enables it.
+        if (process.env["EASTWIND_REMOTE_EMAILS"] === "true")
+            RemoteEmailsLogic.start(sb);
 
         // Office-template module (altea-office-template): the OfficeTemplate / OfficeModel tables, the
         // OfficeTransformerSymbol / OfficeConverterSymbol symbol tables, the GenerateReport permission, and

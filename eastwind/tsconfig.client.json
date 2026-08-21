@@ -25,6 +25,9 @@
     { "path": "../altea/altea-auth-reset-password/tsconfig.client.json" },
     { "path": "../altea/altea-auth-openid/tsconfig.client.json" },
     { "path": "../altea/altea-auth-azuread/tsconfig.client.json" },
-    { "path": "../altea/altea-auth-windowsad/tsconfig.client.json" }
+    { "path": "../altea/altea-auth-windowsad/tsconfig.client.json" },
+    { "path": "../altea/altea-mailing-exchange/tsconfig.client.json" },
+    { "path": "../altea/altea-mailing-microsoft-graph/tsconfig.client.json" },
+    { "path": "../altea/altea-mailing-pop3/tsconfig.client.json" }
   ]
 }

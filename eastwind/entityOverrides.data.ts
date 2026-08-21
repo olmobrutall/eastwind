@@ -17,6 +17,15 @@ import { ExceptionEntity } from "@altea/altea/data/exception";
 import { OperationLogEntity } from "@altea/altea/data/operationLog";
 import { UserEntity } from "@altea/altea-auth/data/User";
 import { SimpleTaskSymbol } from "@altea/altea-scheduler/data/Scheduler";
+import {
+    EmailSenderConfigurationEntity, SmtpEmailServiceEntity,
+} from "@altea/altea-email/data/EmailSenderConfiguration";
+import {
+    EmailReceptionConfigurationEntity, EmailReceptionMixin,
+} from "@altea/altea-email/data/EmailReception";
+import { ExchangeWebServiceEmailServiceEntity } from "@altea/altea-mailing-exchange/data/MailingExchangeWS";
+import { MicrosoftGraphEmailServiceEntity } from "@altea/altea-mailing-microsoft-graph/data/MailingMicrosoftGraph";
+import { Pop3EmailReceptionServiceEntity } from "@altea/altea-mailing-pop3/data/MailingPop3";
 import { ProcessSchedulerBridgeOverrides } from "@altea/altea-processes/data/ProcessSchedulerBridge";
 import { DashboardEntity_Part } from "@altea/altea-dashboard/data/Dashboard";
 import {
@@ -37,6 +46,12 @@ import {
 
 export namespace EntityOverrides {
     export function start(): void {
+        // The reception mixin on EmailMessageEntity (Signum's `MixinDeclarations.Register<EmailMessageEntity,
+        // EmailReceptionMixin>()` in Starter.cs, asserted by EmailReceptionLogic.start): what makes a RECEIVED
+        // message carry its server uid, its raw MIME and its reception row. Declaring it adds those columns to
+        // the EmailMessage table, so it belongs here — both tiers, before any (de)serialization.
+        EmailReceptionMixin.declare();
+
         // MixinDeclarations.register(EmployeeEntity, ColaboratorsMixin);
         // registerCustomLite(EmployeeEntity, EmployeeLite, e => EmployeeLite.create({ ... }), /*isDefault*/ true);
 
@@ -48,7 +63,28 @@ export namespace EntityOverrides {
         // ProcessAlgorithmSymbol (the scheduler → processes bridge: the entry creates and QUEUES a process
         // instead of running inline). An override REPLACES the declared list, so SimpleTaskSymbol is passed
         // back in explicitly. Both tiers run this, which is the point of it living here.
-        ProcessSchedulerBridgeOverrides.overrideTaskImplementations([SimpleTaskSymbol as unknown as Type<Entity>]);
+        // A ScheduledTask may also point at an EMAIL RECEPTION CONFIGURATION (altea-email makes it an
+        // ITaskEntity, as Signum does): scheduling "poll THIS mailbox" needs no task symbol of its own.
+        ProcessSchedulerBridgeOverrides.overrideTaskImplementations([
+            SimpleTaskSymbol as unknown as Type<Entity>,
+            EmailReceptionConfigurationEntity as unknown as Type<Entity>,
+        ]);
+
+        // How this app SENDS mail. altea-email declares only its own SMTP service, so the two extra sender
+        // packages are added here (Signum's per-module `AssertImplementedBy`, which each module's
+        // `Logic.start` re-checks and fails on if this list is missing it). The list decides both the pickable
+        // service types in the editor and which service TABLES the schema creates.
+        overrideImplementedBy(EmailSenderConfigurationEntity, "service", () => [
+            SmtpEmailServiceEntity,
+            ExchangeWebServiceEmailServiceEntity,
+            MicrosoftGraphEmailServiceEntity,
+        ]);
+
+        // …and how it RECEIVES: POP3 is the one protocol ported (altea-email's reception half declares an
+        // EMPTY implementedBy on purpose — it ships no protocol of its own).
+        overrideImplementedBy(EmailReceptionConfigurationEntity, "service", () => [
+            Pop3EmailReceptionServiceEntity,
+        ]);
 
         overrideImplementedBy(ExceptionEntity, "user", () => [UserEntity]);
         overrideImplementedBy(OperationLogEntity, "user", () => [UserEntity]);

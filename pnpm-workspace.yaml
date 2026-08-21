@@ -4,6 +4,8 @@ packages:
   - altea/altea-profiler
   - altea/altea-user-assets
   - altea/altea-files
+  - altea/altea-files-azure
+  - altea/altea-files-s3
   - altea/altea-scheduler
   - altea/altea-processes
   - altea/altea-dashboard
@@ -12,6 +14,9 @@ packages:
   - altea/altea-user-queries
   - altea/altea-templating
   - altea/altea-email
+  - altea/altea-mailing-pop3
+  - altea/altea-mailing-microsoft-graph
+  - altea/altea-mailing-exchange
   - altea/altea-office-template
   - altea/altea-migrations
   - altea/altea-cache

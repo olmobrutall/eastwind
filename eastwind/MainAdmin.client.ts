@@ -26,6 +26,11 @@ import { ProcessClient } from "@altea/altea-processes/client/ProcessClient";
 import { OmniboxClient } from "@altea/altea-omnibox/client/OmniboxClient";
 import { ToolbarClient } from "@altea/altea-toolbar/client/ToolbarClient";
 import { MailingClient } from "@altea/altea-email/client/MailingClient";
+import { MailingReceptionClient } from "@altea/altea-email/client/MailingReceptionClient";
+import { MailingExchangeWSClient } from "@altea/altea-mailing-exchange/client/MailingExchangeWSClient";
+import { MailingMicrosoftGraphClient } from "@altea/altea-mailing-microsoft-graph/client/MailingMicrosoftGraphClient";
+import { RemoteEmailsClient } from "@altea/altea-mailing-microsoft-graph/client/RemoteEmails/RemoteEmailsClient";
+import { MailingPop3Client } from "@altea/altea-mailing-pop3/client/MailingPop3Client";
 import { OfficeClient } from "@altea/altea-office-template/client/OfficeClient";
 
 // The full (admin) registration bundle — Southwind's MainAdmin.startFull: the framework client modules
@@ -132,6 +137,22 @@ export function startFull(routes: RouteObject[]): void {
     // AFTER UserQueriesClient: the template editor's filter builder is altea-user-queries' shared
     // FilterBuilderEmbedded.
     MailingClient.start(cb, { contextual: true, queryButton: true });
+
+    // The two extra SENDER service editors (@altea/altea-mailing-exchange, -microsoft-graph) and the POP3
+    // reception service editor — each is one `cb.configure(T).withView(…)`, which is also what registers the
+    // type on the client so the polymorphic `service` picker can offer it.
+    MailingExchangeWSClient.start(cb);
+    MailingMicrosoftGraphClient.start(cb);
+    MailingPop3Client.start(cb);
+
+    // The inbound half's own editors + the extra tab a RECEIVED EmailMessage grows. AFTER MailingClient: the
+    // tab is an `overrideView` on EmailMessage's EntitySettings, which MailingClient registers.
+    MailingReceptionClient.start(cb);
+
+    // Browsing a user's real Outlook mailbox (the RemoteEmails half). Registered unconditionally on the
+    // client — the search page simply has no rows unless the server side is enabled
+    // (EASTWIND_REMOTE_EMAILS) and an Entra tenant is configured.
+    RemoteEmailsClient.start(cb);
 
     // Office reports (altea-office-template): the template editor, the "create report" operation, the
     // contextual menu on a search's selected rows, the query-toolbar button and the entity-frame button.

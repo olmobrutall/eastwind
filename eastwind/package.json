@@ -55,7 +55,12 @@
     "@altea/altea-auth-reset-password": "workspace:*",
     "@altea/altea-auth-openid": "workspace:*",
     "@altea/altea-auth-azuread": "workspace:*",
-    "@altea/altea-auth-windowsad": "workspace:*"
+    "@altea/altea-auth-windowsad": "workspace:*",
+    "@altea/altea-files-azure": "workspace:*",
+    "@altea/altea-files-s3": "workspace:*",
+    "@altea/altea-mailing-exchange": "workspace:*",
+    "@altea/altea-mailing-microsoft-graph": "workspace:*",
+    "@altea/altea-mailing-pop3": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

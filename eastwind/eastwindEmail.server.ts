@@ -34,7 +34,10 @@ export namespace EastwindEmail {
             defaultCulture: process.env["EASTWIND_MAIL_CULTURE"] ?? "en-US",
             urlLeft: (process.env["EASTWIND_MAIL_URL_LEFT"] ?? "http://localhost:5173").replace(/\/$/, ""),
             sendEmails: process.env["EASTWIND_MAIL_SEND"] === "true",
-            reciveEmails: false,
+            // The inbound half (@altea/altea-mailing-pop3 through altea-email's reception module). Off by
+            // default for the same reason as `sendEmails`: a dev database should not touch a real mailbox —
+            // and with it false a poll FAILS LOUDLY rather than silently doing nothing.
+            reciveEmails: process.env["EASTWIND_MAIL_RECEIVE"] === "true",
             overrideEmailAddress: process.env["EASTWIND_MAIL_OVERRIDE"] ?? null,
             avoidSendingEmailsOlderThan: null,
         });

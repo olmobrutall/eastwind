@@ -26,6 +26,12 @@ altea/
   altea-auth-azuread/ # Entra ID login + Graph directory queries + photos (Signum.Authorization.AzureAD)
   altea-auth-windowsad/ # Windows AD login over LDAP (Signum.Authorization.WindowsAD)
   altea-cache/        # in-memory entity cache + cross-process invalidation (Signum.Caching)
+  altea-files-azure/  # Azure Blob Storage file store (Signum.Files.AzureBlobs)
+  altea-files-s3/     # S3 / MinIO file store (Signum.Files.S3)
+  altea-mailing-exchange/ # sending through Exchange Web Services (Signum.Mailing.ExchangeWS)
+  altea-mailing-microsoft-graph/ # sending through Graph + browsing a remote Outlook mailbox
+                      #   (Signum.Mailing.MicrosoftGraph, incl. its RemoteEmails half)
+  altea-mailing-pop3/ # receiving over POP3 (Signum.Mailing.Pop3)
   altea-office-template/ # docx/pptx/xlsx templating (Signum.Word); hand-built OOXML substrate
   quote-transformer/  # ts-patch transformer for @quoted lambda navigations (see below)
 eastwind/
@@ -148,6 +154,45 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     (`ActiveDirectoryUserModel` / `…GroupModel`), not by an enum member, and their column captions are the
     fields' own `@niceName` — altea has no QueryDescription to hang `ColumnDisplayName` on. They also
     re-apply the request's filters/orders IN MEMORY, because Graph silently loosens what it cannot express.
+
+- **A REMOTE file store cannot rename, and cannot be read synchronously.** `altea-files` splits a save into
+  a SYNC `prepareSuffix` (assign the suffix, so the owning row can be INSERTed with it) and an ASYNC
+  `writePrepared` (write the bytes just before commit). `altea-files-azure` / `altea-files-s3` therefore
+  **REFUSE a `renameAlgorithm`** — the collision probe is a network round-trip, and a rename decided in the
+  async half could not be written back to the row that already carries the old suffix. Signum defaults it to
+  null in both backends and says why ("ExistBlob is too slow, consider using CalculateSuffix with a GUID!"),
+  which is what the default suffix generator does. Likewise `readAllBytesSync` THROWS in both, so a
+  `BigString` column must not live in a remote store. Signum's chunked-upload API (StartUpload /
+  UploadChunk / …) is not ported at all, because altea-files has no chunk protocol: a file reaches the server
+  inside the entity graph. S3's PRESIGNED url is `presignedUrl()` rather than `fullWebPath()`, because SigV4
+  presigning is async in the AWS v3 SDK (Azure's SAS signing is sync, so it stays in `fullWebPath`).
+
+- **The mail SERVICES are a registry, and each protocol package fills one slot.** `EmailServiceEntity`
+  (sending) and `EmailReceptionServiceEntity` (receiving) are abstract with an EMPTY / minimal
+  `@implementedBy`; the APP widens it in its shared entity-overrides module (both tiers), and each package's
+  `Logic.start` re-CHECKS that and fails loudly rather than silently never being reachable — Signum's
+  `AssertImplementedBy`. Two things about credentials: Signum hides a stored password and encrypts the
+  typed-in one through a per-type JSON PROPERTY CONVERTER, while altea does it in the SAVE OPERATION through
+  `registerEmailServiceSave` / `registerEmailReceptionServiceSave`, so a package in another workspace package
+  supplies the one line that knows which of ITS fields holds the password; and the Microsoft Graph sender's
+  client secret is stored ENCRYPTED here where Signum keeps it in the clear (it is a tenant-wide credential
+  that would otherwise round-trip to the browser on every read). Protocol substrates: EWS becomes hand-built
+  SOAP (`altea-mailing-exchange/server/ExchangeWebServices`) because the EWS Managed API has no JS
+  counterpart, `Microsoft.Graph` becomes the REST helper altea-auth-azuread already owns, MailKit's POP3
+  becomes ~200 lines over `node:tls` and MailKit's MIME becomes **mailparser**. Three things do NOT port:
+  Windows INTEGRATED authentication for EWS (no SSPI on Node — an injected `negotiateProvider` seam, as in
+  altea-auth-windowsad), Autodiscover's SCP / DNS-SRV paths (only the two well-known POX URLs), and TNEF
+  (`winmail.dat`) unpacking on reception.
+
+- **The remote-mailbox search page is addressed by USER, not by mailbox id.** Signum's RemoteEmails routes
+  take the directory object id (`{oid}`) and the client reads it off `UserLiteModel.ExternalId`; altea has no
+  lite model, so the routes take the USER's primary key and resolve the mailbox server-side — which also
+  means a caller cannot read an arbitrary mailbox by naming its oid. Its attachment download stays
+  AUTHENTICATED (Signum has to make it anonymous, because it renders inline images as a bare `<img src>`);
+  the client fetches the bytes through the app's own ajax and rewrites `cid:` images to blob URLs, the shape
+  altea-files' FileImage already uses. And Signum's one `RemoteEmailMessageModel` becomes TWO types — a
+  `RemoteEmailMessageRowModel` for the query (a query row model cannot have a member called `id`) and the
+  message model for the view.
 
 - **Caching (`altea-cache`) holds rows, not entities, and never SqlDependency.** `sb.include(X).withCache()`
   keeps X's table in memory as raw column tuples plus a completer that fills a FRESH instance per read, so
