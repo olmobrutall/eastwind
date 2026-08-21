@@ -7,6 +7,7 @@ import type { Entity, Type } from "@altea/altea/data/entity";
 import { SignumServer } from "@altea/altea/server/signumServer";
 import type { WebBuilder } from "@altea/altea/server/webApi";
 import { ExceptionLogic } from "@altea/altea/server/exceptionLogic";
+import { CultureInfoLogic } from "@altea/altea/server/cultureInfoLogic";
 import { OperationLogic } from "@altea/altea/server/operationLogic";
 import { loadAppTranslations } from "@altea/altea/server/translations";
 import { EntityOverrides } from "./entityOverrides.data";
@@ -51,6 +52,12 @@ import { ExcelImportLogic } from "@altea/altea-office-template/server/excel/Exce
 import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic.server";
 import { EastwindTypeCondition } from "./eastwindTypeConditions.data";
 import { CacheLogic } from "@altea/altea-cache/server/CacheLogic";
+import { AzureADLogic } from "@altea/altea-auth-azuread/server/AzureADLogic";
+import { CachedProfilePhotoLogic } from "@altea/altea-auth-azuread/server/CachedProfilePhotoLogic";
+import { OpenIDLogic } from "@altea/altea-auth-openid/server/OpenIDLogic";
+import { WindowsADLogic } from "@altea/altea-auth-windowsad/server/WindowsADLogic";
+import { ResetPasswordRequestLogic } from "@altea/altea-auth-reset-password/server/ResetPasswordRequestLogic";
+import { EastwindAuthAD } from "./eastwindAuthAD.server";
 import { CacheServer } from "@altea/altea-cache/server/CacheServer";
 import { PostgresBroadcast } from "@altea/altea-cache/server/Broadcast/PostgresBroadcast";
 
@@ -88,6 +95,11 @@ export namespace Starter {
         // Framework logic (Signum's part of Starter.Start): the exception log table.
         ExceptionLogic.start(sb);
 
+        // The cultures the application supports (Signum's CultureInfoLogic.Start). Early, because an email
+        // or Office template REFERENCES a culture row, so the table has to exist before those modules
+        // include theirs.
+        CultureInfoLogic.start(sb);
+
         EmployeesLogic.start(sb);
         ProductsLogic.start(sb);
         ShippersLogic.start(sb);
@@ -119,6 +131,42 @@ export namespace Starter {
         // logged"). The field scan itself runs on `schema.initializing`, so it still covers every module's
         // file fields regardless of where this sits.
         FileLogic.start(sb);
+
+        // Directory login modules (@altea/altea-auth-azuread / -openid / -windowsad). HERE because:
+        //  - AFTER AuthLogic.start, so their routes are mounted behind the auth middleware (express matches
+        //    in registration order — see FileLogic's note above);
+        //  - AFTER FileLogic.start, so the FileTypeSymbol table exists for the cached-profile-photo store;
+        //  - BEFORE SchedulerLogic.start, because a module's SimpleTask must be REGISTERED before the
+        //    SimpleTaskSymbol table is seeded from the registered keys.
+        //
+        // AzureAD is started unconditionally (Southwind's `AzureADLogic.Start(sb, adGroupsAndQueries: true,
+        // deactivateUsersTask: true)`), so its ADGroup / CachedProfilePhoto tables and its directory search
+        // pages are part of the schema whether or not a tenant is configured. OpenID / WindowsAD contribute
+        // no tables, so they are opt-in and simply REPLACE the installed authorizer (only one can own the
+        // login flow — see eastwindAuthAD.server.ts).
+        AzureADLogic.start(sb, {
+            getConfig: () => EastwindAuthAD.azureADConfiguration(),
+            adGroupsAndQueries: true,
+            deactivateUsersTask: true,
+        });
+        // The photo store. `CachedProfilePhotoLogic.start` registers the file type itself (Signum's
+        // `FileTypeLogic.Register(AuthADFileType.CachedProfilePhoto, algorithm)`), so the app only supplies
+        // the algorithm — registering it here as well would be a duplicate registration.
+        CachedProfilePhotoLogic.start(sb, new FileTypeAlgorithm({
+            physicalPrefix: () => process.env["EASTWIND_AD_PHOTOS"] ?? "./files/profilePhotos",
+        }));
+
+        // OpenID contributes no tables, so it is started ALWAYS and only OWNS the login flow when it is the
+        // selected provider. That keeps the client's boot probe (/api/auth/openIDConfig) a clean 200-null
+        // instead of a 404 — the route exists and simply reports "not configured".
+        OpenIDLogic.start(sb, () => EastwindAuthAD.openIDConfiguration(),
+            { installAuthorizer: EastwindAuthAD.provider() === "openid" });
+
+        if (EastwindAuthAD.provider() === "windowsad")
+            WindowsADLogic.start(sb, {
+                getConfig: () => EastwindAuthAD.windowsADConfiguration(),
+                deactivateUsersTask: true,
+            });
 
         // Scheduler module (altea-scheduler): the ScheduledTask / log tables, the SimpleTaskSymbol table and
         // the in-process runner's routes. The simple tasks are REGISTERED FIRST because the symbol table is
@@ -212,6 +260,12 @@ export namespace Starter {
         FileTypeLogic.register(EmailFileType.Attachment, new FileTypeAlgorithm({
             physicalPrefix: () => process.env["EASTWIND_MAIL_ATTACHMENTS"] ?? "./files/emailAttachments",
         }));
+        // Self-service password reset (@altea/altea-auth-reset-password): the ResetPasswordRequest table, the
+        // two e-mail models and the three ANONYMOUS /api/auth/* routes (Southwind's
+        // `ResetPasswordRequestLogic.Start(sb)`). BEFORE EmailLogic.start, because its e-mail models have to
+        // be in the registry when the EmailModel table is seeded / synchronized.
+        ResetPasswordRequestLogic.start(sb);
+
         EmailLogic.start(sb, {
             getConfiguration: () => EastwindEmail.configuration(),
             getSenderConfiguration: EastwindEmail.senderConfiguration,
@@ -268,6 +322,15 @@ export namespace Starter {
         // Load translations from the app's single translations directory (TRANSLATIONS_ROOT/env or
         // <cwd>/translations). Every module's `<Module>.<culture>.xml` lives there (Signum's model).
         loadAppTranslations();
+
+        // Warm the culture cache into its sync snapshot: the reflection endpoint answers the culture
+        // catalogue on every client boot and cannot await a query there. Tolerant of a not-yet-generated
+        // database, like schema.initialize above.
+        try { await CultureInfoLogic.warmUp(); } catch { /* table not created yet — the seeder fills it */ }
+
+        // Resolve EASTWIND_AD_DEFAULT_ROLE (a role NAME) into the directory modules' `defaultRole`. After
+        // schema.initialize because it reads the Role table, and the configuration getters are synchronous.
+        await EastwindAuthAD.resolveDefaultRoleFromEnv();
 
         // Mount the framework HTTP API last (Signum's SignumServer.Start): after the modules' own routes
         // (registered by their Logic.start above) so the auth middleware/gate run first, and so the JSON

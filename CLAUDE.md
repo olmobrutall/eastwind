@@ -20,7 +20,11 @@ altea/
     client/           # React UI kit (Navigator, Finder, SearchControl, Lines, Operations, Frames, …)
     server/           # engine: connection/, linq/, schema/, sync/, dynamicQuery/  (+ logic/, server-only)
     test/             # the framework test suite (music model; runs against a real DB) — see "How to test"
-  altea-auth/         # auth module
+  altea-auth/         # auth module (incl. the shared BaseAD half: directory config, ADAuthorizer, OIDC)
+  altea-auth-reset-password/ # self-service password reset by e-mail (Signum.Authorization.ResetPassword)
+  altea-auth-openid/  # OpenID Connect login (Signum.Authorization.OpenID)
+  altea-auth-azuread/ # Entra ID login + Graph directory queries + photos (Signum.Authorization.AzureAD)
+  altea-auth-windowsad/ # Windows AD login over LDAP (Signum.Authorization.WindowsAD)
   altea-cache/        # in-memory entity cache + cross-process invalidation (Signum.Caching)
   altea-office-template/ # docx/pptx/xlsx templating (Signum.Word); hand-built OOXML substrate
   quote-transformer/  # ts-patch transformer for @quoted lambda navigations (see below)
@@ -96,11 +100,54 @@ Known structural divergences from Signum (this is what "fix" means — don't por
 - **`Type<T>` is always a constructor** (Signum's `GenericType` is gone; `EnumEntity.typeFor` → a bound ctor).
 - **UI Lines read their type from `ctx.memberType`**, not an explicit `type={…}` prop. `AutoLine` dispatches to the right editor (text/number/date/enum/entity picker) from it — so many of Signum's parallel rules collapse into one.
 - **Dates: luxon → `Temporal`** (`PlainDate` / `PlainDateTime` / `PlainTime` / `Duration`).
+- **Culture: a `CultureInfoEntity` table like Signum's, but the user's pick is a request HEADER, not a cookie.** `CultureInfoEntity` (`data/cultureInfoEntity` + `server/cultureInfoLogic`) is the application's supported-culture table, and it is what an email / Office template's `culture` REFERENCES (`Lite<CultureInfoEntity>`, as in Signum) rather than a free-text tag. `nativeName`/`englishName` come from `Intl.DisplayNames` where Signum uses .NET `CultureInfo`; a lookup falls back from a specific culture to its language ("en-US" → "en"). Where altea diverges:
+  - the user's CHOICE lives in the BROWSER (`CultureClient`, localStorage) — Signum stores it server-side per user — and rides on every call as a bare `Accept-Language` tag, which `webApi` turns into a per-request `CultureInfo.withCultures` scope (Signum's ASP.NET request localization). Without that scope every SERVER-resolved label — a registered expression's niceName, validation and exception messages — answers in the process default no matter who asked, and a per-culture CACHE keyed on `currentCulture()` serves whichever language warmed it first to everyone.
+  - switching culture RELOADS the page. Signum re-fetches its types and soft-resets, because all its labels are client-resolved; altea has server-resolved labels baked into already-fetched responses, which a soft `resetUI()` leaves stale.
+  - Translation files all live in ONE directory (`eastwind/translations`), alpha order sets precedence, so the app's file is named to sort after the framework's `Altea.*`. A Signum module renamed in altea (Word* → Office*) needs its ported XML's Type/Member NAMES remapped, or none of it lands.
 - **Enums**: a numeric `XEnum` object + a string-union `type X = keyof typeof XEnum`; the **runtime/wire value is the STRING member name**, so compare with bare literals (`"Shipped"`), not `X.Shipped`.
 - **`@field` typeNames are capitalized**: `String` / `Number` / `Decimal` / `Boolean` / `PlainDate` / `Guid` / `Duration`, etc.
-- **Reflection metadata is ONE global blob** (translations + auth + queries + operations) shipped eagerly at boot.
+- **Reflection metadata is ONE global blob** (nice names + auth + queries + operations) shipped eagerly at boot.
+- **`XxxInfo` vs `XxxMetadata` — the two halves of reflection.** `TypeInfo` / `FieldInfo` (`data/reflection`) are the **compile-time** descriptor the quote-transformer stamps onto each constructor: types, units, formats, validators, implementations — identical for every user and every culture. `TypeMetadata` / `FieldMetadata` / `OperationMetadata` (`data/metadata`) are the **runtime** half: per-CULTURE (nice names, plural, gender) and per-ROLE (`min/maxTypeAllowed`, `propertyAllowed`), assembled per request by `ReflectionServer.buildMetadata` and shipped as ONE `MetadataBlob`. Structurally this follows Signum — one entry per type carrying everything about it — but Signum's single `TypeInfo` family is split, so nothing per-role ever lands on the compile-time descriptor. Consequences: `TypeInfo` has NO `operations` / `hasConstructorOperation` / `gender`; read them via `Metadata.tryType(name)` or the client's `getOperationInfos` / `ti.getGender()`.
+  - **`TypeMetadata.fields` is keyed by `PropertyRoute.propertyString()`**, so an EMBEDDED type's members appear dotted under every owning entity (`"shipAddress.city"`) — the same key `RulePropertyEntity.path` uses, which makes property authorization a direct lookup. An embedded/model type also gets its own entry; that one is where its translations live. NOTE the UI re-roots its PropertyRoute at each embedded it renders (`RenderEntity`, as Signum does), so a client-side rule lookup must climb the TypeContext chain to the owning entity (`AuthAdminClient.ownerRootedRoute`).
+  - **An extension widens the model with `declare module`**, never a side-channel map — altea-auth adds the allowance fields in `altea-auth/data/Rules.ts` (the DATA layer, because a `declare module` only applies to programs that compile the declaring file, and the client tsconfig does not compile `server/`).
+- **The display-name API is fluent and typed, never a free function over a ctor.** `OrderEntity.niceName()` / `.nicePluralName()` / `.gender()` / `.newNiceName()`, `OrderEntity.nicePropertyName(a => a.orderNumber)` (and `AddressEmbedded.nicePropertyName(a => a.city)`), `Enum.niceName(ColorEnum, "Red")`, `someSymbol.niceToString()`, `fieldInfo.niceToString()`. The resolver engine behind them lives in `Localization.Internal` (`data/utils/localization`) and has exactly four legitimate callers — `data/entity`, `data/enum`, `data/symbol`, `data/reflection` — plus framework internals that only hold a bare name (the LINQ provider lowering `Type.niceName()` into SQL). A `Localization.Internal.` in application or extension code is a bug. Two gotchas on `nicePropertyName`: the lambda overload needs an INLINE lambda (the transformer emits `__quoted` only at a `Quoted<…>` parameter, and there is no toString fallback), and the transformer does NOT rewrite lambdas in JSX ATTRIBUTES — inside JSX pass the route as a string.
+- **An operation knows its owning type — from context, not from its key.** Every operation carries an `entityType` (Signum's `OverridenType`), because a generic parameter is erased at runtime and the alternative is guessing the owner by splitting the symbol key (`"OrderOperation.Ship"` → `OrderEntity`) — which silently lost every operation whose container is not named after its type. But it is almost never WRITTEN: register operations inside `graph(SomeEntity, …)` (Execute / Delete / Construct take the graph's type) or via `withSave` / `withDelete` (which take the include's). Write it only where the owner genuinely differs from that context:
+  - **`ConstructFrom` / `ConstructFromMany`**, whose owner is the **SOURCE** type F — that is where the button appears, and F is erased too, so the enclosing graph cannot know it. This is real information, not boilerplate: the old key heuristic got it wrong for 4 of the 5 cross-type constructors in the repo.
+  - an operation shared by an ABSTRACT base's implementations. Subclasses inherit it (`OperationLogic.operationsForType` walks the prototype chain), so ONE registration owned by the base covers them all — `withSave` cannot express that, since it owns the operation with the type the include was opened for (see eastwind's `CustomerOperation.Save`).
+  - an owner that is a TS INTERFACE and so has no constructor: each implementor adds itself via `OperationLogic.registerForType` (order-independent by design — the implementor may be wired before the operation is registered).
 - **`@quoted` lambda navigations**: `entity.customer.name`-style navs inside queries are rewritten by `quote-transformer` (a ts-patch transformer). A nav off a **nullable** reference must use `singleOrNull` / `firstOrNull` (OUTER APPLY), not `single` / `first`.
 - **Rule sets live in `client/FinderRules.tsx`** (like Signum), not inline in `Finder.tsx` — the editors import Lines, and Lines import Finder, so keeping them separate avoids a module-eval import cycle. Finder imports `FinderRules` for its four `init*Rules()` and installs them, so `import { Finder }` is enough.
+
+- **Directory login: ONE authorizer, ONE shared base, and no server-rendered config blob.** Signum copies
+  ~120 lines of "match / create / update the local user + resolve the role" into each of
+  `AzureADAuthorizer`, `OpenIDAuthorizer` and `WindowsADAuthorizer`; altea factors them into
+  `altea-auth/server/ADAuthorizer` (`ADAuthorizer<TConfig>`), leaving each module only the claim NAMES it
+  reads and ONE overridable hook, `getDirectoryGroups` — the only thing that genuinely differs. The shared
+  BaseAD half (the configuration embedded, `IAutoCreateUserContext`, `ExternalUser`, `IDirectoryInviter`,
+  the find/create-AD-user routes, the invite-a-user UI, `ProfilePhoto.urlProviders`) likewise lives in
+  altea-auth, exactly as it does in `Signum.Authorization`. Also:
+  - `AuthLogic.authorizer` is a single slot, so at most ONE directory owns the login flow; the app picks
+    (eastwind: `EASTWIND_AD_PROVIDER`).
+  - Signum injects the browser-visible configuration into `Index.cshtml`
+    (`window.__azureADConfig` / `__openIDConfig`). altea has no server-rendered page, so each module serves
+    it from an ANONYMOUS endpoint the client fetches once at boot — which makes
+    `registerAzureADAuthenticator` / `registerOpenIDAuthenticator` async, and makes them SELF-GATING
+    (a module that is not configured answers null and stands down).
+  - `Microsoft.Graph` + `Azure.Identity` become plain REST + the client-credentials token POST
+    (`altea-auth-azuread/server/MicrosoftGraph`); `ConfigurationManager` + `JwtSecurityTokenHandler` become
+    `altea-auth/server/OpenIdConnect` (discovery cache + `jose` over a locally fetched JWKS, so OpenID's
+    `avoidSSLVerify` applies to the JWKS request too).
+  - `System.DirectoryServices` becomes LDAP (`ldapts`, in `altea-auth-windowsad/server/WindowsDirectory`):
+    `ValidateCredentials` → a simple bind, `UserPrincipal.GetGroups` → `LDAP_MATCHING_RULE_IN_CHAIN` (a
+    plain `memberOf` read would silently miss nested groups), `Enabled` → `userAccountControl` bit 2. The
+    `objectSid` byte layout is formatted to the exact `S-1-5-…` string `externalId` stores.
+  - Windows INTEGRATED authentication (SPNEGO/Kerberos) does NOT port: Node has no SSPI. It is an injected
+    seam (`WindowsADServer.negotiateProvider`, null by default → a clear error); everything else in that
+    module works without it.
+  - The two Microsoft Graph search pages are `ManualDynamicQueryCore`s named by their ROW MODEL
+    (`ActiveDirectoryUserModel` / `…GroupModel`), not by an enum member, and their column captions are the
+    fields' own `@niceName` — altea has no QueryDescription to hang `ColumnDisplayName` on. They also
+    re-apply the request's filters/orders IN MEMORY, because Graph silently loosens what it cannot express.
 
 - **Caching (`altea-cache`) holds rows, not entities, and never SqlDependency.** `sb.include(X).withCache()`
   keeps X's table in memory as raw column tuples plus a completer that fills a FRESH instance per read, so

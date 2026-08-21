@@ -20,6 +20,10 @@
     { "path": "../altea/altea-email/tsconfig.server.json" },
     { "path": "../altea/altea-office-template/tsconfig.server.json" },
     { "path": "../altea/altea-migrations/tsconfig.server.json" },
-    { "path": "../altea/altea-cache/tsconfig.server.json" }
+    { "path": "../altea/altea-cache/tsconfig.server.json" },
+    { "path": "../altea/altea-auth-reset-password/tsconfig.server.json" },
+    { "path": "../altea/altea-auth-openid/tsconfig.server.json" },
+    { "path": "../altea/altea-auth-azuread/tsconfig.server.json" },
+    { "path": "../altea/altea-auth-windowsad/tsconfig.server.json" }
   ]
 }

@@ -4,6 +4,7 @@ import { EmailLogic } from "@altea/altea-email/server/EmailLogic.server";
 import { EmailSenderConfigurationEntity } from "@altea/altea-email/data/EmailSenderConfiguration";
 import { EmailMasterTemplateEntity, EmailMasterTemplateEntity_Message } from "@altea/altea-email/data/EmailTemplate";
 import { EmailMasterTemplateLogic } from "@altea/altea-email/server/EmailMasterTemplateLogic.server";
+import { CultureInfoLogic } from "@altea/altea/server/cultureInfoLogic";
 import { UserEntity } from "@altea/altea-auth/data/User";
 import type { EmailTemplateEntity } from "@altea/altea-email/data/EmailTemplate";
 import type { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
@@ -73,7 +74,7 @@ export namespace EastwindEmail {
             name: "Default",
             isDefault: true,
             messages: [EmailMasterTemplateEntity_Message.create({
-                culture: configuration().defaultCulture,
+                culture: CultureInfoLogic.getCulture(configuration().defaultCulture).toLite(),
                 text: defaultMasterTemplateHtml,
             })],
         });

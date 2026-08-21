@@ -87,6 +87,84 @@ importers:
       '@altea/altea':
         specifier: workspace:*
         version: link:../altea
+      jose:
+        specifier: ^6.1.0
+        version: 6.2.9
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
+  altea/altea-auth-azuread:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      '@altea/altea-files':
+        specifier: workspace:*
+        version: link:../altea-files
+      '@altea/altea-scheduler':
+        specifier: workspace:*
+        version: link:../altea-scheduler
+      '@azure/msal-browser':
+        specifier: ^4.0.0
+        version: 4.30.0
+      jose:
+        specifier: ^6.1.0
+        version: 6.2.9
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
+  altea/altea-auth-openid:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      jose:
+        specifier: ^6.1.0
+        version: 6.2.9
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
+  altea/altea-auth-reset-password:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      '@altea/altea-email':
+        specifier: workspace:*
+        version: link:../altea-email
+      '@altea/altea-templating':
+        specifier: workspace:*
+        version: link:../altea-templating
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
+  altea/altea-auth-windowsad:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      '@altea/altea-scheduler':
+        specifier: workspace:*
+        version: link:../altea-scheduler
+      ldapts:
+        specifier: ^7.4.0
+        version: 7.4.0
       quote-transformer:
         specifier: workspace:*
         version: link:../quote-transformer
@@ -398,6 +476,18 @@ importers:
       '@altea/altea-auth':
         specifier: workspace:*
         version: link:../altea/altea-auth
+      '@altea/altea-auth-azuread':
+        specifier: workspace:*
+        version: link:../altea/altea-auth-azuread
+      '@altea/altea-auth-openid':
+        specifier: workspace:*
+        version: link:../altea/altea-auth-openid
+      '@altea/altea-auth-reset-password':
+        specifier: workspace:*
+        version: link:../altea/altea-auth-reset-password
+      '@altea/altea-auth-windowsad':
+        specifier: workspace:*
+        version: link:../altea/altea-auth-windowsad
       '@altea/altea-cache':
         specifier: workspace:*
         version: link:../altea/altea-cache
@@ -547,8 +637,16 @@ packages:
     resolution: {integrity: sha512-fCqPIfOcLE+CGqGPd66c8bZpwAji98tZ4JI9i/mlTNTlsIWslCfpg48s/ypyLxZTump5sypjrKn2/kY7q8oAbA==}
     engines: {node: '>=20.0.0'}
 
+  '@azure/msal-browser@4.30.0':
+    resolution: {integrity: sha512-HBBKfbZkMVzzF5bofvS1cXuNHFVc+gt4/HOnCmG/0hsHuZRJvJvDg/+7nTwIpoqvJc8BQp5o23rBUfisOLxR+w==}
+    engines: {node: '>=0.8.0'}
+
   '@azure/msal-browser@5.15.0':
     resolution: {integrity: sha512-2NYT6v+eeQn8kmNddr9LnbXSvXbVELpmFMmfFvtRxD7I/5+5GlkMlncApeuRFj+mY6C9syOwQip1a0Y+TIbyiA==}
+    engines: {node: '>=0.8.0'}
+
+  '@azure/msal-common@15.17.0':
+    resolution: {integrity: sha512-VQ5/gTLFADkwue+FohVuCqlzFPUq4xSrX8jeZe+iwZuY6moliNC8xt86qPVNYdtbQfELDf2Nu6LI+demFPHGgw==}
     engines: {node: '>=0.8.0'}
 
   '@azure/msal-common@16.10.0':
@@ -1257,6 +1355,9 @@ packages:
   '@tybys/wasm-util@0.10.3':
     resolution: {integrity: sha512-F3fo1MYrRJYL3zER0OUOmkutjr1Vp23m7OsSgp7nq4SP6OqX6C/56XFIPAl5bt3zaBRjmW7SGz3u/6LwFpYcOg==}
 
+  '@types/asn1@0.2.4':
+    resolution: {integrity: sha512-V91DSJ2l0h0gRhVP4oBfBzRBN9lAbPUkGDMCnwedqPKX2d84aAMc9CulOvxdw1f7DfEYx99afab+Rsm3e52jhA==}
+
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
 
@@ -1661,6 +1762,9 @@ packages:
     resolution: {integrity: sha512-ik3ZgC9dY/lYVVM++OISsaYDeg1tb0VtP5uL3ouh1koGOaUMDPpbFIei4JkFimWUFPn90sbMNMXQAIVOlnYKJA==}
     engines: {node: '>=10'}
 
+  asn1@0.2.6:
+    resolution: {integrity: sha512-ix/FxPn0MDjeyJ7i/yoHGFt/EX6LyNbxSEhPPXODPL+KB0VPk86UYfL0lMdy+KCnv+fmvIzySwaK5COwqVbWTQ==}
+
   babel-jest@30.4.1:
     resolution: {integrity: sha512-fATAbM8piYxkiXQp3RBXmZHxZVNJZAVXXfyeyCN2Tida3+qJ8ea9UxhiJ2y4fLO90ZImKt6k9FlcH2+rLkJGhw==}
     engines: {node: ^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0}
@@ -2006,6 +2110,15 @@ packages:
 
   date-arithmetic@4.1.0:
     resolution: {integrity: sha512-QWxYLR5P/6GStZcdem+V1xoto6DMadYWpMXU82ES3/RfR3Wdwr3D0+be7mgOJ+Ov0G9D5Dmb9T17sNLQYj9XOg==}
+
+  debug@4.4.0:
+    resolution: {integrity: sha512-6WTZ/IxCY/T6BALoZHaE4ctp9xm+Z5kY/pzYaCHRFeyVhojxlrm+46y68HA6hr0TcwEssoxNiDEUJQjfPZ/RYA==}
+    engines: {node: '>=6.0'}
+    peerDependencies:
+      supports-color: '*'
+    peerDependenciesMeta:
+      supports-color:
+        optional: true
 
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
@@ -2565,6 +2678,9 @@ packages:
       node-notifier:
         optional: true
 
+  jose@6.2.9:
+    resolution: {integrity: sha512-XrchZOFZUl/T3vTwRe8XK+cJrGtMF4th1ARnDfwbBXFKThGhlsxEE4Zu03AD/bjJSt/9jT/mxrOCkJWOg77aPA==}
+
   js-md4@0.3.2:
     resolution: {integrity: sha512-/GDnfQYsltsjRswQhN9fhv3EMw2sCpUdrdxyWDOUK7eyD++r3gRhzgiQgc/x4MAv2i1iuQ4lxO5mvqM3vj4bwA==}
 
@@ -2601,6 +2717,10 @@ packages:
   kind-of@6.0.3:
     resolution: {integrity: sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==}
     engines: {node: '>=0.10.0'}
+
+  ldapts@7.4.0:
+    resolution: {integrity: sha512-QLgx2pLvxMXY1nCc85Fx+cwVJDvC0sQ3l4CJZSl1FJ/iV8Ypfl6m+5xz4lm1lhoXcUlvhPqxEoyIj/8LR6ut+A==}
+    engines: {node: '>=18'}
 
   leven@3.1.0:
     resolution: {integrity: sha512-qsda+H8jTaUaN/x5vzW2rzc+8Rw4TAQ/4KjB46IwK5VH+IlVeeeje/EoZRpiXvIqjFgK84QffqPztGI3VBLG1A==}
@@ -3007,6 +3127,10 @@ packages:
     resolution: {integrity: sha512-llQsMLSUDUPT44jdrU/O37qlnifitDP+ZwrmmZcoSKyLKvtZxpyV0n2/bD/N4tBAAZ/gJEdZU7KMraoK1+XYAg==}
     engines: {node: '>= 0.10'}
 
+  punycode@2.3.1:
+    resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
+    engines: {node: '>=6'}
+
   pure-rand@7.0.1:
     resolution: {integrity: sha512-oTUZM/NAZS8p7ANR3SHh30kXB+zK2r2BPcEn/awJIbOvq82WoMN4p62AWWp3Hhw50G0xMsw1mhIBLqHw64EcNQ==}
 
@@ -3245,6 +3369,9 @@ packages:
     resolution: {integrity: sha512-DvEy55V3DB7uknRo+4iOGT5fP1slR8wQohVdknigZPMpMstaKJQWhwiYBACJE3Ul2pTnATihhBYnRhZQHGBiRw==}
     engines: {node: '>= 0.8'}
 
+  strict-event-emitter-types@2.0.0:
+    resolution: {integrity: sha512-Nk/brWYpD85WlOgzw5h173aci0Teyv8YdIAEtV+N88nDB0dLlazZyJMIsN6eo1/AR61l+p6CJTG1JIyFaoNEEA==}
+
   string-length@4.0.2:
     resolution: {integrity: sha512-+l6rNN5fYHNhZZy41RXsYptCjA2Igmq4EG7kZAYFQI1E1VTXarr6ZPXBg6eq7Y6eK4FEhY6AJlyuFIb/v/S0VQ==}
     engines: {node: '>=10'}
@@ -3340,6 +3467,10 @@ packages:
     resolution: {integrity: sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA==}
     engines: {node: '>=0.6'}
 
+  tr46@5.1.1:
+    resolution: {integrity: sha512-hdF5ZgjTqgAntKkklYw0R03MG2x/bSzTtkxmIRw/sTNV8YXsCJ1tfLAX23lhxhHJlEf3CRCOCGGWw3vI3GaSPw==}
+    engines: {node: '>=18'}
+
   tree-kill@1.2.2:
     resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
     hasBin: true
@@ -3424,6 +3555,10 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
+  uuid@11.1.0:
+    resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
+    hasBin: true
+
   v8-to-istanbul@9.3.0:
     resolution: {integrity: sha512-kiGUalWN+rgBJ/1OHZsBtU4rXZOfj/7rKQxULKlIzwzQSvMJUUNgPwJEEh7gU6xEVxC0ahoOBvN2YI8GH6FNgA==}
     engines: {node: '>=10.12.0'}
@@ -3483,6 +3618,14 @@ packages:
 
   warning@4.0.3:
     resolution: {integrity: sha512-rpJyN222KWIvHJ/F53XSZv0Zl/accqHR8et1kpaMTD/fLCRxtV8iX8czMzY7sVZupTI3zcUTg8eycS2kNF9l6w==}
+
+  webidl-conversions@7.0.0:
+    resolution: {integrity: sha512-VwddBukDzu71offAQR975unBIGqfKZpM+8ZX6ySk8nYhVoo5CYaZyzt3YBvYtRtO+aoGlqxPg/B87NGVZ/fu6g==}
+    engines: {node: '>=12'}
+
+  whatwg-url@14.2.0:
+    resolution: {integrity: sha512-De72GdQZzNTUBBChsXueQUnPKDkg/5A5zp7pFDuQAj5UFoENpiACU0wlCvzpAGnTkj++ihpKwKyYewn/XNUbKw==}
+    engines: {node: '>=18'}
 
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
@@ -3673,9 +3816,15 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@azure/msal-browser@4.30.0':
+    dependencies:
+      '@azure/msal-common': 15.17.0
+
   '@azure/msal-browser@5.15.0':
     dependencies:
       '@azure/msal-common': 16.10.0
+
+  '@azure/msal-common@15.17.0': {}
 
   '@azure/msal-common@16.10.0': {}
 
@@ -4377,6 +4526,10 @@ snapshots:
       tslib: 2.8.1
     optional: true
 
+  '@types/asn1@0.2.4':
+    dependencies:
+      '@types/node': 25.9.1
+
   '@types/babel__core@7.20.5':
     dependencies:
       '@babel/parser': 7.29.7
@@ -4786,6 +4939,10 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
+  asn1@0.2.6:
+    dependencies:
+      safer-buffer: 2.1.2
+
   babel-jest@30.4.1(@babel/core@7.29.7):
     dependencies:
       '@babel/core': 7.29.7
@@ -5160,6 +5317,10 @@ snapshots:
       d3-zoom: 3.0.0
 
   date-arithmetic@4.1.0: {}
+
+  debug@4.4.0:
+    dependencies:
+      ms: 2.1.3
 
   debug@4.4.3:
     dependencies:
@@ -5941,6 +6102,8 @@ snapshots:
       - supports-color
       - ts-node
 
+  jose@6.2.9: {}
+
   js-md4@0.3.2: {}
 
   js-tokens@4.0.0: {}
@@ -5981,6 +6144,17 @@ snapshots:
       safe-buffer: 5.2.1
 
   kind-of@6.0.3: {}
+
+  ldapts@7.4.0:
+    dependencies:
+      '@types/asn1': 0.2.4
+      asn1: 0.2.6
+      debug: 4.4.0
+      strict-event-emitter-types: 2.0.0
+      uuid: 11.1.0
+      whatwg-url: 14.2.0
+    transitivePeerDependencies:
+      - supports-color
 
   leven@3.1.0: {}
 
@@ -6476,6 +6650,8 @@ snapshots:
       forwarded: 0.2.0
       ipaddr.js: 1.9.1
 
+  punycode@2.3.1: {}
+
   pure-rand@7.0.1: {}
 
   qs@6.15.3:
@@ -6794,6 +6970,8 @@ snapshots:
 
   statuses@2.0.2: {}
 
+  strict-event-emitter-types@2.0.0: {}
+
   string-length@4.0.2:
     dependencies:
       char-regex: 1.0.2
@@ -6899,6 +7077,10 @@ snapshots:
   tmpl@1.0.5: {}
 
   toidentifier@1.0.1: {}
+
+  tr46@5.1.1:
+    dependencies:
+      punycode: 2.3.1
 
   tree-kill@1.2.2: {}
 
@@ -7015,6 +7197,8 @@ snapshots:
     dependencies:
       react: 19.2.7
 
+  uuid@11.1.0: {}
+
   v8-to-istanbul@9.3.0:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
@@ -7052,6 +7236,13 @@ snapshots:
   warning@4.0.3:
     dependencies:
       loose-envify: 1.4.0
+
+  webidl-conversions@7.0.0: {}
+
+  whatwg-url@14.2.0:
+    dependencies:
+      tr46: 5.1.1
+      webidl-conversions: 7.0.0
 
   which@2.0.2:
     dependencies:

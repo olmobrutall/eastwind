@@ -7,7 +7,8 @@ import { QueryLogic } from "@altea/altea/server/dynamicQuery/queryLogic";
 import { ManualDynamicQueryCore } from "@altea/altea/server/dynamicQuery/dynamicQueryCore";
 import "@altea/altea/server/dynamicQuery/dQueryable"; // augments Query with .toDQueryable()
 import "@altea/altea/server/operationFluentInclude"; // FluentInclude.withSave / withDelete
-import { PersonEntity, CompanyEntity, CustomerRowModel, CustomerOperation } from "./Customer.data";
+import { CustomerEntity, PersonEntity, CompanyEntity, CustomerRowModel, CustomerOperation } from "./Customer.data";
+import { Graph } from "@altea/altea/server/graph";
 
 // Port of Southwind's CustomersLogic.Start (Southwind/Customers/CustomersLogic.cs). The highlight is
 // the MANUAL union query (Signum's DynamicQueryCore.Manual): a single "Customer" query whose rows are
@@ -15,13 +16,21 @@ import { PersonEntity, CompanyEntity, CustomerRowModel, CustomerOperation } from
 export namespace CustomersLogic {
     export function start(sb: SchemaBuilder): void {
         // The two concrete customer tables (each a plain WithQuery). CustomerEntity itself is abstract.
-        // Southwind calls `.WithSave(CustomerOperation.Save)` on BOTH Person and Company. altea's operation
-        // registry is keyed by the symbol alone, so the shared CustomerEntity Save is registered ONCE here
-        // (the contravariant ExecuteSymbol lets the CustomerEntity-typed symbol bind to the Person include).
-        // The client propagates it to both concrete customers (ReflectionClient subtype propagation) and
-        // getEntityPack evaluates it against either, so this single registration covers Company too.
-        sb.include(PersonEntity).withQuery().withSave(CustomerOperation.Save);
+        sb.include(PersonEntity).withQuery();
         sb.include(CompanyEntity).withQuery();
+
+        // Southwind calls `.WithSave(CustomerOperation.Save)` on BOTH Person and Company. altea's operation
+        // registry is keyed by the symbol alone (one implementation per symbol), so the shared Save is
+        // registered ONCE — owned by the ABSTRACT base, which is what makes both concrete customers inherit
+        // it (OperationLogic.operationsForType walks the prototype chain). `.withSave()` can't express this:
+        // it owns the operation with the type it was included for, which would give Person the button and
+        // leave Company without one.
+        new Graph.Execute<CustomerEntity>(CustomerOperation.Save, {
+            entityType: CustomerEntity,
+            canBeNew: true,
+            canBeModified: true,
+            execute: () => { }, // the operation's implicit save persists it
+        }).register();
 
         // Signum: `QueryLogic.Queries.Register(CustomerQuery.Customer, () => DynamicQueryCore.Manual(...))`.
         // altea registers a ManualDynamicQueryCore under the row-shape model (its query name). The

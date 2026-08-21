@@ -51,7 +51,11 @@
     "@altea/altea-toolbar": "workspace:*",
     "@altea/altea-templating": "workspace:*",
     "@altea/altea-email": "workspace:*",
-    "@altea/altea-office-template": "workspace:*"
+    "@altea/altea-office-template": "workspace:*",
+    "@altea/altea-auth-reset-password": "workspace:*",
+    "@altea/altea-auth-openid": "workspace:*",
+    "@altea/altea-auth-azuread": "workspace:*",
+    "@altea/altea-auth-windowsad": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

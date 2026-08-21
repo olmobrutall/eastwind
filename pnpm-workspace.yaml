@@ -15,6 +15,10 @@ packages:
   - altea/altea-office-template
   - altea/altea-migrations
   - altea/altea-cache
+  - altea/altea-auth-reset-password
+  - altea/altea-auth-openid
+  - altea/altea-auth-azuread
+  - altea/altea-auth-windowsad
   - altea/altea-chart
   - altea/quote-transformer
   - altea/quote-transformer-test

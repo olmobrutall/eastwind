@@ -7,6 +7,11 @@ import { ShippersClient } from "./shippers/ShipperClient.client";
 import { CustomersClient } from "./customers/CustomerClient.client";
 import { OrdersClient } from "./orders/OrderClient.client";
 import { AuthAdminClient } from "@altea/altea-auth/client/admin/AuthAdminClient";
+import { ActiveDirectoryClient } from "@altea/altea-auth/client/admin/ActiveDirectoryClient";
+import { AzureADClient } from "@altea/altea-auth-azuread/client/AzureADClient";
+import { OpenIDAdminClient } from "@altea/altea-auth-openid/client/OpenIDAdminClient";
+import { ResetPasswordClient } from "@altea/altea-auth-reset-password/client/ResetPasswordClient";
+import { WindowsADClient } from "@altea/altea-auth-windowsad/client/WindowsADClient";
 import { ProfilerClient } from "@altea/altea-profiler/client/ProfilerClient";
 import { CacheClient } from "@altea/altea-cache/client/CacheClient";
 import { UserQueriesClient } from "@altea/altea-user-queries/client/UserQueriesClient";
@@ -14,6 +19,7 @@ import { ChartClient } from "@altea/altea-chart/client/ChartClient";
 import { ColorPaletteClient } from "@altea/altea-chart/client/ColorPalette/ColorPaletteClient";
 import { UserChartClient } from "@altea/altea-chart/client/UserChart/UserChartClient";
 import { DashboardClient } from "@altea/altea-dashboard/client/DashboardClient";
+import { CultureInfoClient } from "@altea/altea/client/CultureInfoClient";
 import { FilesClient } from "@altea/altea-files/client/FilesClient";
 import { SchedulerClient } from "@altea/altea-scheduler/client/SchedulerClient";
 import { ProcessClient } from "@altea/altea-processes/client/ProcessClient";
@@ -33,6 +39,10 @@ export function startFull(routes: RouteObject[]): void {
     cb.startFramework();
 
     // Files (altea-files): the file lines / downloader used by the domain views (Category.picture).
+    // The culture table's query settings + the client half of the culture-name resolver. Before the
+    // template modules, whose `culture` fields reference it.
+    CultureInfoClient.start(cb);
+
     FilesClient.start(cb);
 
     EmployeesClient.start(cb);
@@ -45,6 +55,33 @@ export function startFull(routes: RouteObject[]): void {
     // admin. The PUBLIC auth routes (login / change password) are registered by AuthClient.startPublic
     // in MainPublic — they must work without this admin bundle.
     AuthAdminClient.start(cb, { types: true, permissions: true, operations: true, queries: true, properties: true });
+
+    // The "invite a user from the directory" UI (altea-auth's shared BaseAD half): an extra autocomplete
+    // entry on any user picker and a button on the User search page. It gates itself on the
+    // ActiveDirectoryPermission.InviteUsersFromAD permission — which no role holds by default — so enabling
+    // it costs nothing until a role is granted it and a directory is actually configured.
+    // (Southwind passes `inviteUsers: false` because it uses no directory at all.)
+    ActiveDirectoryClient.start({ inviteUsers: true });
+
+    // Azure AD / Entra ID (@altea/altea-auth-azuread): the configuration editor, the AD-group view, the two
+    // Microsoft Graph search pages and the profile-photo provider. `"cached"` serves avatars from the local
+    // CachedProfilePhoto copy rather than calling Graph per render; the provider is inert for a user with no
+    // `externalId`, which is every locally seeded eastwind user.
+    AzureADClient.start(cb, { adGroups: true, profilePhotos: "cached" });
+
+    // Self-service password reset (@altea/altea-auth-reset-password): the request table's query settings.
+    // Its two PAGES are public and registered in MainPublic; this call is what registers the entity's client
+    // TypeInfo, so /find/ResetPasswordRequest works.
+    ResetPasswordClient.start(cb);
+
+    // OpenID Connect (@altea/altea-auth-openid): just the configuration editor — the callback ROUTE is
+    // public and registered in MainPublic.
+    OpenIDAdminClient.start(cb);
+
+    // Windows AD (@altea/altea-auth-windowsad): the configuration editor. `profilePhotos` is left off: the
+    // Azure provider above already owns the avatar slot, and registering two providers would make every
+    // avatar try Azure first and Windows AD second.
+    WindowsADClient.start(cb, { profilePhotos: false });
 
     // Profiler admin (altea-profiler): the /profiler/heavy + /profiler/times pages (Signum's ProfilerClient).
     ProfilerClient.start(cb);

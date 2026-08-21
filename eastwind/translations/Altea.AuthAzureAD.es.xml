@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<Translations>
+  <Type Name="ActiveDirectoryGroupModel" Description="Grupos de Active Directory" />
+  <Type Name="ActiveDirectoryUserModel" Description="Usuarios de Active Directory" />
+  <Type Name="AzureADConfigurationEmbedded" Description="Configuración de Azure AD">
+    <Member Name="ApplicationID" Description="Azure Application (client) ID" />
+    <Member Name="ClientSecret" Description="Azure Client Secret ID" />
+    <Member Name="DirectoryID" Description="Azure Directory (tenant) ID" />
+  </Type>
+</Translations>

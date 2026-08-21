@@ -1,7 +1,8 @@
 import * as React from "react";
 import { Link } from "react-router";
 import * as AppContext from "@altea/altea/client/AppContext";
-import { getDefinedQueries } from "@altea/altea/client/Reflection";
+import { getDefinedQueries, getQueryNiceName } from "@altea/altea/client/Reflection";
+import { CultureClient } from "@altea/altea/client/CultureClient";
 
 // Landing page. Port of Southwind's Home.tsx behaviour: if a HOME DASHBOARD exists (the highest-priority
 // standalone dashboard the current role may see), redirect to it; otherwise fall back to eastwind's own
@@ -38,15 +39,20 @@ export default function Home(): React.JSX.Element | null {
     if (!loaded)
         return null;
 
-    const queries = getDefinedQueries().sort((a, b) => a.localeCompare(b));
+    // Show each query's NICE name (the type's plural, localized), not its raw key — and sort by what the
+    // reader actually sees, with the current culture's collator so accented names land in the right place.
+    const culture = CultureClient.getCurrentCulture();
+    const queries = getDefinedQueries()
+        .map(key => ({ key, niceName: getQueryNiceName(key) }))
+        .sort((a, b) => a.niceName.localeCompare(b.niceName, culture));
     return (
         <div>
             <h1 className="display-6">eastwind</h1>
             <p className="text-muted">Southwind ported onto the altea framework. Pick a query:</p>
             <ul className="list-unstyled">
                 {queries.map(q => (
-                    <li key={q} className="mb-1">
-                        <Link to={`/find/${q}`}>{q}</Link>
+                    <li key={q.key} className="mb-1">
+                        <Link to={`/find/${q.key}`}>{q.niceName}</Link>
                     </li>
                 ))}
             </ul>

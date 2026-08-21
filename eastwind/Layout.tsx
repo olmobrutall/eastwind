@@ -8,6 +8,7 @@ import { Breakpoints, useBreakpoint } from "@altea/altea/client/Hooks";
 import { LayoutMessage } from "@altea/altea-toolbar/data/Toolbar";
 import { SidebarContainer, SidebarToggleItem, type SidebarMode } from "@altea/altea-toolbar/client/SidebarContainer";
 import ToolbarRenderer from "@altea/altea-toolbar/client/Renderers/ToolbarRenderer";
+import CultureDropdown from "@altea/altea/client/CultureDropdown";
 import LoginDropdown from "@altea/altea-auth/client/public/LoginDropdown";
 import OmniboxAutocomplete from "@altea/altea-omnibox/client/OmniboxAutocomplete";
 
@@ -70,6 +71,9 @@ export default function Layout(): React.JSX.Element {
                     /api/omnibox route asserts OmniboxPermission.ViewOmnibox. */}
                 {AppContext.currentUser && <div className="sf-omnibox mx-3"><OmniboxAutocomplete inputAttrs={{ className: "form-control form-control-sm" }} /></div>}
                 <div className="navbar-nav ms-auto">
+                    {/* Language picker (Southwind's Layout has one too). Renders nothing unless the server
+                        reports more than one culture with translations loaded. */}
+                    <CultureDropdown isMobile={isMobile} />
                     <LoginDropdown />
                 </div>
             </nav>

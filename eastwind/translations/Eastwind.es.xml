@@ -67,6 +67,13 @@
   <Type Name="CustomerQuery">
     <Member Name="Customer" Description="Cliente" />
   </Type>
+<Type Name="CustomerRowModel" Description="Cliente" PluralDescription="Clientes" Gender="m">
+    <Member Name="Address" Description="Dirección" />
+    <Member Name="Entity" Description="Cliente" />
+    <Member Name="Fax" Description="Fax" />
+    <Member Name="Name" Description="Nombre" />
+    <Member Name="Phone" Description="Teléfono" />
+  </Type>
   <Type Name="EmployeeEntity" Description="Empleado">
     <Member Name="Address" Description="Dirección" />
     <Member Name="BirthDate" Description="Fecha de nacimiento" />
@@ -85,6 +92,12 @@
   </Type>
   <Type Name="EmployeeOperation">
     <Member Name="Save" Description="Guardar" />
+  </Type>
+<Type Name="EmployeePassageEntity" Description="Fragmento de empleado" PluralDescription="Fragmentos de empleado" Gender="m">
+    <Member Name="Chunk" Description="Fragmento" />
+    <Member Name="Employee" Description="Empleado" />
+    <Member Name="Index" Description="Índice" />
+    <Member Name="IsTitle" Description="Es título" />
   </Type>
   <Type Name="EmployeeQuery">
     <Member Name="EmployeesByTerritory" Description="Empleados por territorio" />
@@ -127,6 +140,13 @@
     <Member Name="Employee" Description="Empleado" />
     <Member Name="MaxOrderDate" Description="Fecha máxima de pedido" />
     <Member Name="MinOrderDate" Description="Fecha mínima de pedido" />
+  </Type>
+  <Type Name="OrderLineEntity" Description="Línea de pedido">
+    <Member Name="Discount" Description="Descuento" />
+    <Member Name="Product" Description="Producto" />
+    <Member Name="Quantity" Description="Cantidad" />
+    <Member Name="SubTotalPrice" Description="Precio sub-total" />
+    <Member Name="UnitPrice" Description="Precio unitario" />
   </Type>
   <Type Name="OrderMessage">
     <Member Name="CancelShippedOrder0" Description="Cancelar pedido enviado {0}." />

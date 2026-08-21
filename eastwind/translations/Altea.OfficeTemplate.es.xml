@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<Translations>
+  <Type Name="OfficeAttachmentEntity" Description="Archivo adjunto de Office" PluralDescription="Archivos adjuntos de Office" Gender="m">
+    <Member Name="FileName" Description="Nombre de archivo" />
+    <Member Name="ModelConverter" Description="Conversor de modelo" />
+    <Member Name="OverrideModel" Description="Reemplazar el modelo" />
+    <Member Name="OfficeTemplate" Description="Plantilla de Office" />
+  </Type>
+  <Type Name="OfficeConverterSymbol" Description="Convertidor de Office" />
+  <Type Name="OfficeModelEntity" Description="Modelo de Office">
+    <Member Name="FullClassName" Description="Full Class Name" />
+  </Type>
+  <Type Name="OfficeTemplateEntity" Description="Plantilla de Office">
+    <Member Name="Applicable" Description="Aplicable" />
+    <Member Name="Culture" Description="Cultura" />
+    <Member Name="DisableAuthorization" Description="Desactivar autorización" />
+    <Member Name="FileName" Description="Nombre de archivo" />
+    <Member Name="Filters" Description="Filtros" />
+    <Member Name="GroupResults" Description="Agrupar resultados" />
+    <Member Name="Model" Description="Modelo" />
+    <Member Name="Name" Description="Nombre" />
+    <Member Name="Orders" Description="Órdenes" />
+    <Member Name="Query" Description="Consulta" />
+    <Member Name="Template" Description="Plantilla" />
+    <Member Name="OfficeConverter" Description="Convertidor de Office" />
+    <Member Name="OfficeTransformer" Description="Transformador de Office" />
+  </Type>
+  <Type Name="OfficeTemplateMessage">
+    <Member Name="_01RequiresExtraParameters" Description="{0} {1} requiere parámetros adicionales" />
+    <Member Name="ChooseAReportTemplate" Description="Seleccione una plantilla de informe" />
+    <Member Name="ModelShouldBeSetToUseModel0" Description="Modelo debe establecerse para usar el modelo {0}" />
+    <Member Name="NoDefaultTemplateDefined" Description="No hay plantilla predeterminada definida" />
+    <Member Name="SelectTheSourceOfDataForYourTableOrChart" Description="Seleccione la fuente de datos para la tabla o gráfico" />
+    <Member Name="Type0DoesNotHaveAPropertyWithName1" Description="Tipo {0} no tiene una propiedad con el nombre {1}" />
+    <Member Name="OfficeReport" Description="Informe de Office" />
+    <Member Name="WriteThisKeyAsTileInTheAlternativeTextOfYourTableOrChart" Description="Escriba esta clave como título en el 'texto alternativo' de su tabla o gráfico" />
+  </Type>
+  <Type Name="OfficeTemplateOperation">
+    <Member Name="CreateOfficeReport" Description="Crear informe de Office" />
+    <Member Name="CreateOfficeTemplateFromOfficeModel" Description="Crear plantilla de Office a partir del modelo de Office" />
+    <Member Name="Delete" Description="Eliminar" />
+    <Member Name="Save" Description="Guardar" />
+  </Type>
+  <Type Name="OfficeTemplatePermission">
+    <Member Name="GenerateReport" Description="Generar informe" />
+  </Type>
+  <Type Name="OfficeTransformerSymbol" Description="Transformador de Office" />
+</Translations>

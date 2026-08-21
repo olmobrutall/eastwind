@@ -63,7 +63,8 @@ export class OrderEntity extends Entity {
 }
 
 export const OrderMessage = {
-    totalPrice: msg(),
+    // (Signum has no OrderMessage.TotalPrice: the expression's label is a MEMBER of OrderEntity, read via
+    // OrderEntity.nicePropertyName — see OrderLogic's expression registration.)
     subTotalPrice: msg()
 };
 

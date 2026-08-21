@@ -20,7 +20,8 @@ import { OrderEntity, OrderLineEntity, OrderState } from './Order.data'
 //   - `details` is a plain OrderLineEntity[] (not MList<OrderDetailEmbedded>) — no `.element`; the row's
 //     subtotal / order total come from the entity methods subTotalPrice() / totalPrice().
 //   - OrderDetailMixin (discountCode column) is omitted in eastwind → that column is dropped.
-//   - OrderMessage labels are inlined as literals (no OrderMessage enum ported).
+//   - the subtotal column's header reads the translated member (OrderLineEntity.nicePropertyName) rather
+//     than an inlined English literal.
 //   - luxon `DateTime.toRelative()` helpText is dropped (altea has no relative-time helper yet).
 //   - `AddressEmbedded.New({...address})` → `customer.address.clone()`; `order.modified = true` is dropped
 //     (altea tracks dirtiness by snapshot, so the mutation is detected automatically).
@@ -74,7 +75,9 @@ export default function Order(p: { ctx: TypeContext<OrderEntity> }): React.JSX.E
         { property: a => a.unitPrice, headerHtmlAttributes: { style: { width: "10%" } }, template: dc => <AutoLine ctx={dc.subCtx(a => a.unitPrice)} readOnly={true} /> },
         { property: a => a.discount, headerHtmlAttributes: { style: { width: "10%" } }, template: dc => <AutoLine ctx={dc.subCtx(a => a.discount)} onChange={() => forceUpdate()} /> },
         {
-          header: "Sub Total Price", headerHtmlAttributes: { style: { width: "10%" } },
+          // A JSX ATTRIBUTE, so the STRING overload: the quote-transformer does not rewrite lambdas here,
+          // and `nicePropertyName(a => a.subTotalPrice())` would throw for want of its `__quoted` tree.
+          header: OrderLineEntity.nicePropertyName("subTotalPrice"), headerHtmlAttributes: { style: { width: "10%" } },
           template: dc =>
             <FormGroup ctx={dc}>
               {id => <div className={dc.inputGroupClass}>

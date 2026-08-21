@@ -63,6 +63,13 @@
   <Type Name="CustomerQuery">
     <Member Name="Customer" Description="Kunde" />
   </Type>
+<Type Name="CustomerRowModel" Description="Kunde" PluralDescription="Kunden" Gender="m">
+    <Member Name="Address" Description="Adresse" />
+    <Member Name="Entity" Description="Kunde" />
+    <Member Name="Fax" Description="Fax" />
+    <Member Name="Name" Description="Name" />
+    <Member Name="Phone" Description="Telefon" />
+  </Type>
   <Type Name="EmployeeEntity" Description="Mitarbeiter" Gender="m">
     <Member Name="Address" Description="Adresse" />
     <Member Name="BirthDate" Description="Geburtsdatum" />
@@ -86,6 +93,12 @@
   </Type>
   <Type Name="EmployeeOperation">
     <Member Name="Save" Description="Speichern" />
+  </Type>
+<Type Name="EmployeePassageEntity" Description="Mitarbeiter-Textabschnitt" PluralDescription="Mitarbeiter-Textabschnitte" Gender="m">
+    <Member Name="Chunk" Description="Textabschnitt" />
+    <Member Name="Employee" Description="Mitarbeiter" />
+    <Member Name="Index" Description="Index" />
+    <Member Name="IsTitle" Description="Ist Titel" />
   </Type>
   <Type Name="EmployeeQuery">
     <Member Name="EmployeesByTerritory" Description="Mitarbeiter nach Gebiet" />
@@ -131,6 +144,13 @@
     <Member Name="Employee" Description="Mitarbeiter" />
     <Member Name="MaxOrderDate" Description="Maximales Bestelldatum" />
     <Member Name="MinOrderDate" Description="Mindestbestelldatum" />
+  </Type>
+  <Type Name="OrderLineEntity" Description="Bestellposition">
+    <Member Name="Discount" Description="Rabatt" />
+    <Member Name="Product" Description="Produkt" />
+    <Member Name="Quantity" Description="Menge" />
+    <Member Name="SubTotalPrice" Description="Zwischensummenpreis" />
+    <Member Name="UnitPrice" Description="Stückpreis" />
   </Type>
   <Type Name="OrderMessage">
     <Member Name="CancelShippedOrder0" Description="Ausgelieferte Bestellung stornieren {0}?" />
@@ -194,7 +214,7 @@
   <Type Name="ProductQuery">
     <Member Name="CurrentProducts" Description="Aktuelle Produkte" />
   </Type>
-  <Type Name="RegionEntity" Description="Region">
+  <Type Name="RegionEntity" Description="Region" PluralDescription="Regionen" Gender="f">
     <Member Name="Description" Description="Beschreibung" />
   </Type>
   <Type Name="RegionOperation">

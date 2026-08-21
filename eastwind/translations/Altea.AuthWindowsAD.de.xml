@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<Translations>
+  <Type Name="WindowsADConfigurationEmbedded" Description="Windows-Active-Directory-Konfiguration">
+    <Member Name="BaseDN" Description="Base DN" />
+    <Member Name="DirectoryRegistry_Password" Description="DirectoryRegistry-Kennwort" />
+    <Member Name="DirectoryRegistry_Username" Description="DirectoryRegistry-Benutzername" />
+    <Member Name="DomainName" Description="Domänenname" />
+    <Member Name="LdapUrl" Description="LDAP-URL" />
+    <Member Name="LoginWithActiveDirectoryRegistry" Description="Anmeldung mit Active Directory Registry" />
+    <Member Name="LoginWithWindowsAuthenticator" Description="Anmeldung mit Windows Authenticator" />
+  </Type>
+  <Type Name="WindowsADMessage">
+    <Member Name="TheUser0IsConnectedToActiveDirectoryAndCanNotHaveALocalPasswordSet" Description="Der Benutzer {0} ist mit Active Directory verbunden und kann kein lokales Kennwort festgelegt haben" />
+  </Type>
+  <Type Name="WindowsADTask">
+    <Member Name="DeactivateUsers" Description="Benutzer deaktivieren" />
+  </Type>
+</Translations>

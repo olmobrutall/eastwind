@@ -5,11 +5,17 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 import { fas } from "@fortawesome/free-solid-svg-icons";
 import { far } from "@fortawesome/free-regular-svg-icons";
 import { loadReflectionMetadata } from "@altea/altea/client/ReflectionClient";
+import { CultureClient } from "@altea/altea/client/CultureClient";
 import { SessionSharing, NotifyPendingFilter } from "@altea/altea/client/Services";
 import Notify from "@altea/altea/client/Frames/Notify";
 import * as AppContext from "@altea/altea/client/AppContext";
 import ErrorModal from "@altea/altea/client/Modals/ErrorModal";
 import { AuthClient } from "@altea/altea-auth/client/AuthClient";
+import { ResetPasswordClient } from "@altea/altea-auth-reset-password/client/ResetPasswordClient";
+import { OpenIDClient } from "@altea/altea-auth-openid/client/OpenIDClient";
+import { OpenIDAuthenticator } from "@altea/altea-auth-openid/client/OpenIDAuthenticator";
+import { AzureADAuthenticator } from "@altea/altea-auth-azuread/client/AzureADAuthenticator";
+import { WindowsADAuthenticator } from "@altea/altea-auth-windowsad/client/WindowsADAuthenticator";
 import { EntityOverrides } from "./entityOverrides.data";
 import Layout from "./Layout";
 import Home from "./Home";
@@ -60,9 +66,35 @@ async function boot(): Promise<void> {
     // Public auth routes (login / change password) — registered here, NOT in the admin bundle, so they
     // are available even when no user is logged in.
     AuthClient.startPublic(routes);
+
+    // Self-service password reset (@altea/altea-auth-reset-password): the /auth/forgotPasswordEmail and
+    // /auth/resetPassword pages + the "I have forgotten my password" link under the login form. PUBLIC, for
+    // the obvious reason — a visitor who cannot log in has to reach them.
+    ResetPasswordClient.startPublic(routes);
+
+    // OpenID Connect (@altea/altea-auth-openid): the /openid-callback route the provider redirects back to.
+    OpenIDClient.startPublic(routes);
+
+    // The DIRECTORY authenticators, registered BEFORE autoLogin (they add themselves to
+    // AuthClient.authenticators, which autoLogin walks) and awaited, because each asks the server for its
+    // configuration first. Both stand down silently when their module is not configured — the server answers
+    // null — so calling both unconditionally is safe and needs no client-side switch.
+    await Promise.all([
+        AzureADAuthenticator.registerAzureADAuthenticator(),
+        OpenIDAuthenticator.registerOpenIDAuthenticator(),
+    ]);
+
+    // Windows integrated authentication is the exception: it cannot self-gate (see env.d.ts), so it needs
+    // an explicit flag.
+    if (import.meta.env.VITE_WINDOWS_AUTH == "true")
+        WindowsADAuthenticator.registerWindowsAuthenticator();
+
     (await import("./MainAdmin.client")).startFull(routes);
 
-    await loadReflectionMetadata();
+    // Boot straight into the remembered culture, so the first paint is already translated (loading the
+    // default first and switching after would flash English).
+    await loadReflectionMetadata({ culture: CultureClient.savedCulture() });
+    document.documentElement.setAttribute("lang", CultureClient.getCurrentCulture());
 
     // Resolve the current user from a stored token before the first render (Signum's autoLogin).
     await AuthClient.autoLogin();

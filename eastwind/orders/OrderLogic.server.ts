@@ -9,7 +9,7 @@ import type { PrimaryKey } from "@altea/altea/data/entity";
 import { OrderEntity, OrderLineEntity, OrderState, OrderOperation, OrderMessage } from "./Order.data";
 import { EmployeeEntity } from "../employees/Employee.data";
 import { ProductEntity } from "../products/Product.data";
-import type { CustomerEntity } from "../customers/Customer.data";
+import { CustomerEntity } from "../customers/Customer.data";
 import { QueryLogic } from "@altea/altea/server/dynamicQuery/queryLogic";
 
 // ---- OrdersLogic.Start — port of Southwind's OrdersLogic.Start --------
@@ -21,7 +21,11 @@ export namespace OrdersLogic {
         sb.include(OrderEntity)
             .withQuery();
 
-        QueryLogic.expressions.register(OrderEntity, o => o.totalPrice(), { niceName: () => OrderMessage.totalPrice.niceToString() });
+        // Southwind labels TotalPrice as a MEMBER of OrderEntity (Signum's [AutoExpressionField] is a
+        // property, so its translation lives under the type) and SubTotalPrice as an OrderMessage member.
+        // Follow the translation file: reading the entity member keeps "Precio total" / "Gesamtpreis"
+        // working without duplicating the string into a message container.
+        QueryLogic.expressions.register(OrderEntity, o => o.totalPrice(), { niceName: () => OrderEntity.nicePropertyName(o => o.totalPrice()) });
         QueryLogic.expressions.register(OrderLineEntity, o => o.subTotalPrice(), { niceName: () => OrderMessage.subTotalPrice.niceToString() });
         // Register the OrderGraph's operations (Save/Ship/Cancel/Delete/Create…) with OperationLogic
         // (Signum's `new OrderGraph().Register()`). Without this the /api/operation/* endpoints and
@@ -74,6 +78,7 @@ export const OrderGraph = graph(OrderEntity, OrderState, g => {
     });
 
     g.ConstructFrom(OrderOperation.CreateOrderFromCustomer, {
+        entityType: CustomerEntity,
         toStates: [OrderState.New],
         construct: c => OrderEntity.create({
             state: OrderState.New,
@@ -85,6 +90,7 @@ export const OrderGraph = graph(OrderEntity, OrderState, g => {
     });
 
     g.ConstructFrom(OrderOperation.Clone, {
+        entityType: OrderEntity,
         canConstruct: o => o.state === OrderState.Shipped ? null : "Only shipped orders can be cloned.",
         toStates: [OrderState.Ordered],
         resultIsSaved: true,
@@ -109,6 +115,7 @@ export const OrderGraph = graph(OrderEntity, OrderState, g => {
     });
 
     g.ConstructFromMany(OrderOperation.CreateOrderFromProducts, {
+        entityType: ProductEntity,
         toStates: [OrderState.New],
         construct: async (prods, args) => {
             const prices = await currentPrices(prods);

@@ -12,6 +12,7 @@ import { AuthImportExport } from "@altea/altea-auth/server/AuthImportExport";
 import { UserAssetsImporter, warmUserAssetCaches } from "@altea/altea-user-assets/server/UserAssetsImportExport.server";
 import { EntityAction } from "@altea/altea-user-assets/data/UserAssets";
 import { CSharpMigrationRunner } from "@altea/altea-migrations/server/CSharpMigrationRunner.server";
+import { CultureInfoLogic } from "@altea/altea/server/cultureInfoLogic";
 import { EmployeeLoader } from "./employeeLoader";
 import { ProductLoader } from "./productLoader";
 import { CustomerLoader } from "./customerLoader";
@@ -47,6 +48,7 @@ export namespace EastwindMigrations {
 
         // The unique names are the MIGRATION IDENTITY in the database (renaming one re-runs it), so they are
         // the C# method names Southwind used rather than the console captions.
+        runner.add("CreateCultures", () => createCultures());
         runner.add("CreateRoles", () => createRoles());
         runner.add("CreateSystemUser", () => createSystemUser());
         runner.add("LoadRegions", () => EmployeeLoader.loadRegions());
@@ -65,6 +67,11 @@ export namespace EastwindMigrations {
         runner.add("ImportAuthRules", () => importAuthRules());
 
         await runner.run(autoRun);
+    }
+
+    /** The cultures eastwind ships translations for (Signum seeds CultureInfoEntity the same way). */
+    export async function createCultures(): Promise<void> {
+        await CultureInfoLogic.ensureCultures(["en", "es", "de"]);
     }
 
     export async function createRoles(): Promise<void> {
