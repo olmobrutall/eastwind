@@ -30,6 +30,8 @@ altea/
   altea-codemirror/   # code editors, CLIENT-ONLY (Signum.CodeMirror); CodeMirror 6, not 5
   altea-concurrent-user/ # live presence + stale-entity detection on an open entity (Signum.ConcurrentUser)
   altea-diff-log/     # before/after entity dumps on each operation log + the diff view (Signum.DiffLog)
+  altea-dynamic/      # views defined in the DATABASE and interpreted, + CSS overrides and SQL migrations
+                      #   from the admin UI (the INTERPRETED half of Signum.Dynamic — see below)
   altea-html-editor/  # WYSIWYG rich text over Lexical + viewer + html→text (Signum.HtmlEditor)
   altea-files-azure/  # Azure Blob Storage file store (Signum.Files.AzureBlobs)
   altea-files-s3/     # S3 / MinIO file store (Signum.Files.S3)
@@ -252,6 +254,36 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   support, so Lexical parses an existing `<a href>` back as bare TEXT and the anchor is dropped — and adding
   LinkExtension makes it worse, since `@lexical/link` normalizes any href it does not recognise as a url and
   turns a `@[m:url]` token into `mailto:@[m:url]`. Links belong in `HtmlComplex`.
+
+- **Signum.Dynamic splits in two on one question: does the feature need a COMPILER?** `altea-dynamic` is
+  the INTERPRETED half — `DynamicView` / `DynamicViewOverride` / `DynamicViewSelector` (a view is a JSON
+  node TREE plus small JavaScript snippets, interpreted client-side), `DynamicCSSOverride` and
+  `DynamicSqlMigration` (both plain text). The COMPILED half — `DynamicType`, `DynamicExpression`,
+  `DynamicValidation`, `DynamicApi`, `DynamicTypeCondition`, `DynamicMixinConnection`, `DynamicIsolation` —
+  does NOT port: each generates C# into a `CodeGen` directory, compiles it with Roslyn (via Signum.Eval)
+  and restarts the app. The blocker is not the compiler (TypeScript has one and altea drives it) but that
+  altea's entity model is stamped at BUILD time by the quote-transformer, so a runtime-invented type needs
+  the transformer over generated source + a process restart + a schema sync — a design project, not a port.
+  Signum.Eval does not port either; two of its pieces are re-homed (`EvalPanelPermission.ViewDynamicPanel` →
+  `DynamicPanelPermission`, `registerDynamicPanelSearch` → `DynamicClient`), and `TypeHelpComponent`'s one
+  needed function becomes `client/View/FieldExpression.ts`. Consequences worth knowing:
+  - it forced a CORE seam: `Navigator.ViewDispatcher` / `BasicViewDispatcher` / `setViewDispatcher` (altea
+    resolved views inline, with a `// TODO: real ViewDispatcher` where the seam belonged), and
+    `applyViewOverrides` now asks the DISPATCHER for overrides so a module can contribute them for a type it
+    does not own.
+  - the dispatcher's no-static-view FALLBACK deliberately differs from Signum's. In Signum a type with no
+    registered view cannot be shown, so it offers to design a dynamic one; altea AUTO-GENERATES from the
+    property routes, and many types rely on that — so it only ASKS when dynamic views actually exist.
+  - a node's stored `field` reaches `subCtx` AS A STRING (altea's string overload parses a field path).
+    It must NOT be turned into a runtime lambda: altea resolves a lambda through the `__quoted` tree the
+    transformer stamps, and an eval'd function carries none.
+  - suggested find options are ROOTLESS (`shipVia`, not Signum's `Entity.shipVia`), and they are computed
+    from the REFLECTION metadata rather than by walking built table columns — which handles an
+    `@implementedBy` field for free, where Signum needs a separate branch.
+  - a FileType picker cannot be reflected: altea symbols are declared, not enumerated (there is no
+    "SymbolContainer" TypeInfo kind), so the app registers them via `DynamicClient.registerFileTypes`.
+  - not registered as nodes: `EntityList` and `ColorLine` (no such altea Line); `IconTypeahead` and
+    `FileLine.dragAndDropMessage` have no counterpart either.
 
 - **CodeMirror 5 → CodeMirror 6.** `altea-codemirror` keeps every wrapper's PROPS identical (`script` /
   `onChange` / `isReadOnly` / `errorLineNumber` / `innerRef`) and rewrites everything behind them: CM5 is

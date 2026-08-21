@@ -41,6 +41,7 @@ import { ProcessSchedulerBridge } from "@altea/altea-processes/server/ProcessSch
 import { EastwindProcess } from "./eastwindProcesses.server";
 import { OmniboxLogic } from "@altea/altea-omnibox/server/OmniboxLogic";
 import { DiffLogLogic } from "@altea/altea-diff-log/server/DiffLogLogic";
+import { DynamicLogic } from "@altea/altea-dynamic/server/DynamicLogic.server";
 import { EmailLogic } from "@altea/altea-email/server/EmailLogic.server";
 import { FileTypeLogic } from "@altea/altea-files/server/FileTypeLogic.server";
 import { FileTypeAlgorithm } from "@altea/altea-files/server/FileTypeAlgorithm.server";
@@ -361,6 +362,13 @@ export namespace Starter {
         // LoadMethodLog every terminal load step writes. Server-only (the runners live in the terminal), and
         // the tables must be part of the schema for `sync` / the load menu to log into them.
         MigrationLogic.start(sb);
+
+        // Dynamic module (altea-dynamic): the three VIEW tables (a view defined in the database, a
+        // selector that picks between them, an override that rewrites an existing view), the CSS-override
+        // table + its anonymous endpoint, and the SQL-migration table. Before OperationLogic.start so its
+        // operation symbols get seeded. The COMPILED half of Signum.Dynamic (dynamic types / expressions /
+        // validations / api / type conditions) is not ported — see the module's DynamicLogic header.
+        DynamicLogic.start(sb);
 
         // Omnibox module (altea-omnibox): declares no tables (its ViewOmnibox permission symbol is seeded
         // through the PermissionSymbol table above); registers the entity / dynamic-query / special result

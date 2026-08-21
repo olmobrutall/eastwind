@@ -362,6 +362,27 @@ importers:
         specifier: 5.0.2
         version: 5.0.2
 
+  altea/altea-dynamic:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      '@altea/altea-codemirror':
+        specifier: workspace:*
+        version: link:../altea-codemirror
+      '@altea/altea-files':
+        specifier: workspace:*
+        version: link:../altea-files
+      '@altea/altea-migrations':
+        specifier: workspace:*
+        version: link:../altea-migrations
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
   altea/altea-email:
     dependencies:
       '@altea/altea':
@@ -766,6 +787,9 @@ importers:
       '@altea/altea-diff-log':
         specifier: workspace:*
         version: link:../altea/altea-diff-log
+      '@altea/altea-dynamic':
+        specifier: workspace:*
+        version: link:../altea/altea-dynamic
       '@altea/altea-email':
         specifier: workspace:*
         version: link:../altea/altea-email

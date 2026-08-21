@@ -65,7 +65,8 @@
     "@altea/altea-mailing-microsoft-graph": "workspace:*",
     "@altea/altea-mailing-pop3": "workspace:*",
     "@altea/altea-diff-log": "workspace:*",
-    "@altea/altea-html-editor": "workspace:*"
+    "@altea/altea-html-editor": "workspace:*",
+    "@altea/altea-dynamic": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

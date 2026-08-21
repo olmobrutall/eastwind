@@ -39,6 +39,8 @@ import { MailingPop3Client } from "@altea/altea-mailing-pop3/client/MailingPop3C
 import { OfficeClient } from "@altea/altea-office-template/client/OfficeClient";
 import { HtmlEditorClient } from "@altea/altea-html-editor/client/HtmlEditorClient";
 import { DiffLogClient } from "@altea/altea-diff-log/client/DiffLogClient";
+import { DynamicViewClient } from "@altea/altea-dynamic/client/DynamicViewClient";
+import { DynamicClient } from "@altea/altea-dynamic/client/DynamicClient";
 
 // The full (admin) registration bundle — Southwind's MainAdmin.startFull: the framework client modules
 // (Operations/Navigator/Finder) first, then each entity domain's client. Mirrors the server's
@@ -188,6 +190,13 @@ export function startFull(routes: RouteObject[]): void {
     // Omnibox (altea-omnibox): registers the three result-shape renderers the navbar's
     // <OmniboxAutocomplete/> (see Layout.tsx) draws its suggestions with. Registers no routes.
     OmniboxClient.start(cb);
+
+    // Dynamic views (altea-dynamic). This one is load-bearing beyond its own editors: it installs a
+    // ViewDispatcher that prefers a view stored in the DATABASE over the compiled one, for every type. With
+    // no DynamicView rows saved, every type keeps rendering exactly as before — the dispatcher falls through
+    // to the static view (or the auto-generated one).
+    DynamicViewClient.start(cb);
+    DynamicClient.start(cb);
 
     // DiffLog (altea-diff-log): the OperationLog view — the 7-tab strip that walks the log chain of one
     // entity and diffs each pair of dumps — plus the log search's default columns. LAST, so its

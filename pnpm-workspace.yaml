@@ -24,6 +24,7 @@ packages:
   - altea/altea-codemirror
   - altea/altea-concurrent-user
   - altea/altea-diff-log
+  - altea/altea-dynamic
   - altea/altea-html-editor
   - altea/altea-auth-reset-password
   - altea/altea-auth-openid

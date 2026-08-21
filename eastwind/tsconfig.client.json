@@ -33,6 +33,7 @@
     { "path": "../altea/altea-mailing-microsoft-graph/tsconfig.client.json" },
     { "path": "../altea/altea-mailing-pop3/tsconfig.client.json" },
     { "path": "../altea/altea-diff-log/tsconfig.client.json" },
-    { "path": "../altea/altea-html-editor/tsconfig.client.json" }
+    { "path": "../altea/altea-html-editor/tsconfig.client.json" },
+    { "path": "../altea/altea-dynamic/tsconfig.client.json" }
   ]
 }
