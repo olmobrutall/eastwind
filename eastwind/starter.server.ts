@@ -41,6 +41,8 @@ import { ProcessSchedulerBridge } from "@altea/altea-processes/server/ProcessSch
 import { EastwindProcess } from "./eastwindProcesses.server";
 import { OmniboxLogic } from "@altea/altea-omnibox/server/OmniboxLogic";
 import { DiffLogLogic } from "@altea/altea-diff-log/server/DiffLogLogic";
+import { WorkflowLogicStarter } from "@altea/altea-workflow/server/WorkflowLogicStarter.server";
+import { EastwindWorkflow } from "./eastwindWorkflow.server";
 import { DynamicLogic } from "@altea/altea-dynamic/server/DynamicLogic.server";
 import { EmailLogic } from "@altea/altea-email/server/EmailLogic.server";
 import { FileTypeLogic } from "@altea/altea-files/server/FileTypeLogic.server";
@@ -369,6 +371,17 @@ export namespace Starter {
         // operation symbols get seeded. The COMPILED half of Signum.Dynamic (dynamic types / expressions /
         // validations / api / type conditions) is not ported — see the module's DynamicLogic header.
         DynamicLogic.start(sb);
+
+        // Workflow module (@altea/altea-workflow): the BPMN engine — workflows / pools / lanes / nodes /
+        // connections, cases, case activities + notifications, the scheduled-start tasks and the script
+        // runner. AFTER the scheduler (its timeout sweep is a SimpleTask), processes (the timeout process
+        // algorithm) and auth (a lane's actors are users/roles), and before OperationLogic.start so its many
+        // operation symbols get seeded. eastwind then makes ORDER a case main entity and registers the app's
+        // condition / action / lane-actor hooks — Southwind starts the module but declares no main entity, so
+        // nothing could actually run through it (see eastwindWorkflow.server.ts).
+        WorkflowLogicStarter.start(sb, EastwindWorkflow.configuration);
+        EastwindWorkflow.registerOrderAsMainEntity(sb);
+        EastwindWorkflow.registerEvaluators();
 
         // Omnibox module (altea-omnibox): declares no tables (its ViewOmnibox permission symbol is seeded
         // through the PermissionSymbol table above); registers the entity / dynamic-query / special result

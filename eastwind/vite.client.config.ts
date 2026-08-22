@@ -12,39 +12,56 @@ import { fileURLToPath } from "node:url";
 // target with VITE_API_TARGET.
 const API_TARGET = process.env["VITE_API_TARGET"] ?? "http://localhost:3001";
 
-// altea's client components import co-located stylesheets (`import './Search.css'`). tsc emits those
-// imports into dist/client/*.js but does NOT copy the .css files there (tsc copies no assets). Rather
-// than add a build-time copy step, resolve any .css/.scss imported from an altea workspace package's dist
-// back to the co-located SOURCE file (dist/client/X.css -> client/X.css). Covers ALL altea packages
-// (@altea/altea, @altea/altea-auth, …). Dev + eastwind's own vite build only; a published package would
-// ship its CSS in dist instead.
+// altea's client components import co-located ASSETS — a stylesheet (`import './Search.css'`) or a raw
+// text file (`import './InitialWorkflow.xml?raw'`). tsc emits those imports into dist/client/*.js but does
+// NOT copy the files there (tsc copies no assets). Rather than add a build-time copy step, resolve an asset
+// imported from an altea workspace package's dist back to the co-located SOURCE file (dist/client/X.css →
+// client/X.css). Covers ALL altea packages (@altea/altea, @altea/altea-auth, …). Dev + eastwind's own vite
+// build only; a published package would ship its assets in dist instead.
 const ALTEA_WORKSPACE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../altea");
-function alteaDistCssToSource(): Plugin {
+const ASSET_EXTENSIONS = [".css", ".scss", ".xml", ".svg", ".txt", ".html"];
+
+function isAsset(source: string): boolean {
+    // Vite query suffixes (`?raw`, `?url`, `?inline`) are part of the specifier — strip before testing.
+    const bare = source.split("?")[0];
+    return ASSET_EXTENSIONS.some(ext => bare.endsWith(ext));
+}
+
+function alteaDistAssetToSource(): Plugin {
     return {
-        name: "altea-dist-css-to-source",
+        name: "altea-dist-asset-to-source",
         enforce: "pre",
         resolveId(source, importer) {
-            if (!(source.endsWith(".css") || source.endsWith(".scss")))
+            if (!isAsset(source))
                 return null;
             // (a) The APP importing package CSS by specifier (`@altea/<pkg>/client/X.css`): map the scoped
             //     specifier to the workspace source dir. The package `exports` only map .js, so resolve here.
             if (source.startsWith("@altea/"))
                 return path.join(ALTEA_WORKSPACE, source.slice("@altea/".length));
-            // (b) A package's own co-located CSS import emitted into its dist (dist/client/X.js → ./X.css):
-            //     if the importer lives under an altea package's dist, resolve the sibling .css to source.
-            if (importer == null)
+            // (b) A package's own co-located asset import emitted into its dist (dist/client/X.js →
+            //     ./X.css): if the importer lives under an altea package's dist, resolve the sibling to
+            //     source. ONLY for a RELATIVE specifier — a BARE one names another package
+            //     (`bpmn-js/dist/assets/…/bpmn-embedded.css`), which node resolution must handle, and
+            //     rewriting it as a sibling path is how it used to 404.
+            if (importer == null || !(source.startsWith("./") || source.startsWith("../")))
                 return null;
             const normImporter = path.normalize(importer);
             if (!normImporter.startsWith(ALTEA_WORKSPACE) || !normImporter.includes(`${path.sep}dist${path.sep}`))
                 return null;
-            const abs = path.resolve(path.dirname(normImporter), source);
-            return abs.replace(`${path.sep}dist${path.sep}`, `${path.sep}`);
+            const [bare, query] = splitQuery(source);
+            const abs = path.resolve(path.dirname(normImporter), bare);
+            return abs.replace(`${path.sep}dist${path.sep}`, `${path.sep}`) + query;
         },
     };
 }
 
+function splitQuery(source: string): [string, string] {
+    const i = source.indexOf("?");
+    return i < 0 ? [source, ""] : [source.slice(0, i), source.slice(i)];
+}
+
 export default defineConfig({
-    plugins: [alteaDistCssToSource(), react()],
+    plugins: [alteaDistAssetToSource(), react()],
     // The framework (@altea/altea/client) and the app both import react / react-router; they must
     // resolve to a SINGLE instance or React context (RouterProvider, etc.) won't cross the boundary.
     // fontawesome-svg-core is likewise a singleton: MainPublic's library.add(fas, far) must register

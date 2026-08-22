@@ -40,6 +40,7 @@ altea/
                       #   (Signum.Mailing.MicrosoftGraph, incl. its RemoteEmails half)
   altea-mailing-pop3/ # receiving over POP3 (Signum.Mailing.Pop3)
   altea-office-template/ # docx/pptx/xlsx templating (Signum.Word); hand-built OOXML substrate
+  altea-workflow/     # BPMN workflow engine + bpmn-js designer (Signum.Workflow)
   quote-transformer/  # ts-patch transformer for @quoted lambda navigations (see below)
 eastwind/
   entities/           # the app's entity domains (orders, customers, products, employees, shippers, …)
@@ -338,6 +339,64 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   instruction files teach is altea's (ROOTLESS, camelCase fields, PascalCase system tokens, case-sensitive);
   and a tool result is serialized with `Serializer.stringify`, NOT `JSON.stringify` — a plain stringify drops
   a Lite's entity type (its `entityType` is a constructor), leaving the model unable to build a filter value.
+
+- **Signum.Workflow → altea-workflow: the Evals become SYMBOLS, and `withQuoted` is query-only.** The BPMN
+  engine ports whole (designer, engine, inbox, case flow, activity monitor, script runner, scheduled starts),
+  but two things reshape it:
+  - **Every `EvalEmbedded<T>` becomes a code-declared `Symbol` plus a registered function**
+    (`data/WorkflowEval.ts` — the ONE place the divergence lives; 8 registries in `WorkflowLogic`). Signum
+    stores C# SOURCE in the row a designer types into and compiles it with Roslyn; altea has no Signum.Eval,
+    so a condition / action / timer condition / script / lane-actors / sub-entities / event-task
+    condition+action is *picked* from a dropdown and implemented in code (eastwind:
+    `eastwindWorkflowSymbols.data.ts` + `eastwindWorkflow.server.ts`). Consequences: the four "eval editor"
+    views collapse into symbol PICKERS, `WorkflowConditionTest` / `EvalClient.checkEvalFindOptions` /
+    `TypeHelpComponent` / `showWorkflowTransitionContextCodeHelp` are gone, and
+    `registerDynamicPanelSearch`'s `Code` columns become `Text` over the symbol key.
+  - **A `withQuoted` prototype member is QUERY-ONLY.** The transformer emits the quoted AST *beside* the body
+    and leaves the body's inner lambdas unstamped, so calling one in memory throws "The following lambda has
+    not been quoted" — Signum's `[AutoExpressionField]` members work both ways. Every other altea module only
+    uses them inside queries, so the asymmetry never showed; the workflow ENGINE needs both, so each member
+    has a plain query twin in `server/CaseQueries.server.ts` (same body). Signum's entity-level `PreSaving`
+    override has no counterpart either — it is a schema event (`entityEvents(T).preSaving`), so those two
+    bodies moved to the logic layer.
+
+  Other divergences worth knowing:
+  - **No ambient `EntityCache`, so nothing may be keyed by entity IDENTITY.** Signum wraps its graph build in
+    `using (new EntityCache())`, which makes every `RetrieveAll` hand back one instance per row; altea gives
+    each query its own Retriever, so a connection's `from` is a *different object* than the graph's node for
+    the same row. `DirectedEdgedGraph` therefore takes an optional `keyOf` (core), and `fillGraphs`,
+    `getAllConnections`, `trackId`, `LaneBuilder.getBpmnElementId` and the clone's old→new map all key by the
+    lite key. An identity-keyed collection here silently joins nothing.
+  - **`DirectedEdgedGraph<N,E>`** (edge-valued) is NEW in core beside `DirectedGraph<T>`; so are
+    `Synchronizer.synchronizeAsync`, `server/xml/xml{Element,Document}` (promoted out of
+    altea-office-template's `Oxml*`, which keep re-export shims) and `client/Basics/Color` (moved out of
+    altea-chart, plus a `Gradient`). Core also gained the polymorphic-`ModelEntity` serializer branch that
+    `BpmnEntityPairEmbedded.model` needs, `AuthLogic.rolesInheritingFrom`, and — surfaced here —
+    `applyMetadata` now stamps each DECLARED symbol's id from the blob (a client symbol was `isNew`, so
+    `toLite()` threw wherever a symbol is a filter value), `EnumCheckboxList` binds ORDINALS (it read
+    `TypeInfo.members`, i.e. NAMES, which matched nothing), an index selector may walk EMBEDDED steps
+    (`e => e.scriptExecution!.nextExecution`), and `Temporal.X.compare(a, b) <op> 0` translates to `a <op> b`
+    (Temporal has no relational operators, so that IS how a date comparison is written in a query).
+  - **The client's permission gate lives in altea-auth**, not core: `AuthClient.isPermissionAuthorized` reads
+    an `allowed` flag stamped onto the permission container's own metadata entry (Signum ships a
+    `permissions` side map and reads it through `AppContext.isPermissionAuthorized`).
+  - **The Inbox is named by its ROW MODEL** (`InboxRowModel`, so `/find/InboxRowModel`), not by Signum's
+    `CaseActivityQuery.Inbox` enum member — altea has no QueryDescription, so a manual query's name IS its row
+    type and each caption is the field's own `@niceName`. Its tokens are camelCase literals: the SERVER's
+    `QueryLogic.getToken` is a strict Map lookup, and `Type.token()` still PascalCases as Signum's
+    `tokenSequence` did.
+  - `MList<T>` is gone, so `mainEntityStrategies` / `actors` / `decisionOptions` / `viewNameProps` are `@part`
+    rows — which is why the designer has its own main-entity-strategy checkbox list (core's
+    `EnumCheckboxList` edits an array OF an enum, not of rows) — and `WorkflowActivityEntity.boundaryTimers`
+    (Signum's VirtualMList) is a NON-PERSISTED `@column(false)` list the graph loader fills.
+  - bpmn-js is pinned to Signum's exact 7.5.0 (+ diagram-js-minimap 2.0.4) with hand-written typings; the
+    custom renderer / context pad / popup menu / minimap are Signum's. `componentWillReceiveProps` becomes
+    `componentDidUpdate`. Signum's older navbar `WorkflowDropdown` is NOT ported (its toolbar menu config
+    superseded it). altea has no `AutoLineModal`, so "pick an expiration date" and "edit remarks" are two
+    small local modals.
+  - Not ported: `MyActiveAlerts` (no Signum.Alerts), Signum's SMS module, `PackageExecuteAlgorithm<T>` (the
+    timeout process walks its own package lines), `registerWhenAlreadyFilteringBy`, and
+    `PropertyRouteTranslationLogic` instance translation — as in the toolbar and dashboard ports.
 
 > `old/CLAUDE.md` and `old/**/AGENTS.md` describe **Signum's** conventions, not altea's — read them to understand the source, but altea's conventions above win.
 

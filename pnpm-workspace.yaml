@@ -31,6 +31,7 @@ packages:
   - altea/altea-auth-azuread
   - altea/altea-auth-windowsad
   - altea/altea-chart
+  - altea/altea-workflow
   - altea/quote-transformer
   - altea/quote-transformer-test
   - eastwind

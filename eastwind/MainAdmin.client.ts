@@ -38,6 +38,9 @@ import { RemoteEmailsClient } from "@altea/altea-mailing-microsoft-graph/client/
 import { MailingPop3Client } from "@altea/altea-mailing-pop3/client/MailingPop3Client";
 import { OfficeClient } from "@altea/altea-office-template/client/OfficeClient";
 import { HtmlEditorClient } from "@altea/altea-html-editor/client/HtmlEditorClient";
+import { WorkflowClient } from "@altea/altea-workflow/client/WorkflowClient";
+import { CaseActivityMixin } from "@altea/altea-workflow/data/CaseActivity";
+import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
 import { DiffLogClient } from "@altea/altea-diff-log/client/DiffLogClient";
 import { DynamicViewClient } from "@altea/altea-dynamic/client/DynamicViewClient";
 import { DynamicClient } from "@altea/altea-dynamic/client/DynamicClient";
@@ -197,6 +200,18 @@ export function startFull(routes: RouteObject[]): void {
     // to the static view (or the auto-generated one).
     DynamicViewClient.start(cb);
     DynamicClient.start(cb);
+
+    // Workflow (@altea/altea-workflow): the BPMN designer page, the case-activity page/modal + the Inbox's
+    // Finder settings, every case/workflow operation's button behaviour, and the two toolbar configs. AFTER
+    // ToolbarClient.start / DynamicClient.start — the configs it registers land in registries those own, and
+    // its designer views must be the last word on the workflow types.
+    WorkflowClient.start(cb);
+
+    // eastwind makes ORDER a case main entity (see eastwindWorkflow.server.ts), and the app declares
+    // CaseActivityMixin on EmailMessageEntity, so the mixin's read-only line goes on the email view after its
+    // `target` — Signum hard-codes that pair in WorkflowClient.start; altea takes it per type.
+    if (CaseActivityMixin.isDeclaredOn(EmailMessageEntity))
+        WorkflowClient.overrideCaseActivityMixinView(EmailMessageEntity, a => a.target);
 
     // DiffLog (altea-diff-log): the OperationLog view — the 7-tab strip that walks the log chain of one
     // entity and diffs each pair of dumps — plus the log search's default columns. LAST, so its

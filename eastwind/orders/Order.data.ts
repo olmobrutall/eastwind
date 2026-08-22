@@ -47,7 +47,11 @@ export class OrderEntity extends Entity {
     // Signum's [PreserveOrder] MList<OrderDetailEmbedded> Details → owned part rows.
     details: OrderLineEntity[];
 
-    isLegacy: boolean;
+    // `= false` is NOT restating a zero value: Signum's `public bool IsLegacy { get; set; }` IS initialized
+    // — by C#, to false — and altea's implicit NotNull validator rejects an unset non-nullable field, so a
+    // hand-created order (`/create/Order`, or the one a workflow's CreateNew strategy builds) could never be
+    // saved without it. Only the LOADER sets it true, for the imported Northwind orders.
+    isLegacy: boolean = false;
 
     state: OrderState;
 

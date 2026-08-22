@@ -40,10 +40,13 @@ import { UserChartEntity } from "@altea/altea-chart/data/UserChart";
 import { DashboardEntity } from "@altea/altea-dashboard/data/Dashboard";
 import { QueryEntity } from "@altea/altea/data/queryEntity";
 import { PermissionSymbol } from "@altea/altea-auth/data/Rules";
+import { WorkflowEntity } from "@altea/altea-workflow/data/Workflow";
 import {
     ToolbarElementBaseEntity, ToolbarEntity, ToolbarMenuEntity, ToolbarSwitcherEntity,
 } from "@altea/altea-toolbar/data/Toolbar";
 import { DiffLogMixin } from "@altea/altea-diff-log/data/DiffLog";
+import { CaseActivityMixin } from "@altea/altea-workflow/data/CaseActivity";
+import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
 
 export namespace EntityOverrides {
     export function start(): void {
@@ -58,6 +61,14 @@ export namespace EntityOverrides {
         // operation brackets. Declaring it adds those columns to the OperationLog table, so it belongs
         // here — both tiers, before any (de)serialization.
         DiffLogMixin.declare();
+
+        // The workflow mixin on EmailMessageEntity (Signum's
+        // `MixinDeclarations.Register<EmailMessageEntity, CaseActivityMixin>()`): an email produced INSIDE a
+        // case activity carries the activity it came from, so a message can be traced back to its step. Both
+        // tiers, because the client needs the PropertyRoute for the read-only line WorkflowClient adds; the
+        // SERVER also asks for the stamping (`sb.include(EmailMessageEntity).withCaseActivityMixin()` in
+        // eastwindWorkflow.server.ts), which is the half that fills it.
+        CaseActivityMixin.declareOn(EmailMessageEntity);
 
         // MixinDeclarations.register(EmployeeEntity, ColaboratorsMixin);
         // registerCustomLite(EmployeeEntity, EmployeeLite, e => EmployeeLite.create({ ... }), /*isDefault*/ true);
@@ -130,6 +141,10 @@ export namespace EntityOverrides {
             UserQueryEntity,
             UserChartEntity,
             DashboardEntity,
+            // Signum's Starter.cs adds WorkflowEntity to both toolbar implementedBy lists: a toolbar element
+            // pointing at a workflow STARTS a case of it (WorkflowToolbarConfig), and the whole workflow menu
+            // rides on one PermissionSymbol element (WorkflowToolbarMenuConfig, already covered above).
+            WorkflowEntity,
         ]);
 
         // Package / folder defaults (Signum's assembly [DefaultAssemblyCulture] + default schema). Written

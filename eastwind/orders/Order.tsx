@@ -101,7 +101,10 @@ export default function Order(p: { ctx: TypeContext<OrderEntity> }): React.JSX.E
           <FormGroup ctx={ctx4} label="Total Price">
             {id => <div className={ctx4.inputGroupClass}>
               <FormControlReadonly ctx={ctx4} id={id} className="total-price">
-                {formatNumber.format(ctx4.value.totalPrice().toNumber())}
+                {/* `Number(...)`, not `.toNumber()`: an EMPTY details array makes `sum` answer the plain
+                    number 0 (it picks the Decimal path off the first value, and there is none) — which a
+                    brand-new order has, e.g. the one a workflow's CreateNew strategy builds. */}
+                {formatNumber.format(Number(ctx4.value.totalPrice()))}
               </FormControlReadonly>
               <span className="input-group-text">€</span>
             </div>
