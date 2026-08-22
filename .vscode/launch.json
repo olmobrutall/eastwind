@@ -7,9 +7,9 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "altea-test (current file)",
-            "preLaunchTask": "build altea-test (tspc -b)",
-            "cwd": "${workspaceFolder}/altea/altea-test",
+            "name": "framework test (current file)",
+            "preLaunchTask": "build @altea/altea test (tspc -b)",
+            "cwd": "${workspaceFolder}/altea/altea",
             "env": {
                 "ALTEA_TEST_LOG_SQL": "1"
             },
@@ -19,11 +19,13 @@
                 "./register.mjs",
                 "--env-file=${input:envFile}",
                 "--test",
-                "--test-name-pattern=${input:testName}"
+                "--test-name-pattern=${input:testName}",
+                // The compiled twin of the open file, at any depth: the suite lives in test/{client,
+                // data,server}/**, so a flat dist/test/<name>.js never resolved. Node expands the glob.
+                "dist/test/**/${fileBasenameNoExtension}.js"
             ],
-            "program": "${workspaceFolder}/altea/altea-test/dist/test/${fileBasenameNoExtension}.js",
             "outFiles": [
-                "${workspaceFolder}/altea/altea-test/dist/**/*.js"
+                "${workspaceFolder}/altea/altea/dist/**/*.js"
             ],
             "sourceMaps": true,
             "resolveSourceMapLocations": [
@@ -39,9 +41,9 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "altea-test (all files)",
-            "preLaunchTask": "build altea-test (tspc -b)",
-            "cwd": "${workspaceFolder}/altea/altea-test",
+            "name": "framework test (all files)",
+            "preLaunchTask": "build @altea/altea test (tspc -b)",
+            "cwd": "${workspaceFolder}/altea/altea",
             "runtimeArgs": [
                 "--enable-source-maps",
                 "--import",
@@ -51,7 +53,7 @@
                 "dist/test/**/*.test.js"
             ],
             "outFiles": [
-                "${workspaceFolder}/altea/altea-test/dist/**/*.js"
+                "${workspaceFolder}/altea/altea/dist/**/*.js"
             ],
             "sourceMaps": true,
             "resolveSourceMapLocations": [
@@ -67,18 +69,18 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "altea-test (generate DB)",
-            "preLaunchTask": "build altea-test (tspc -b)",
-            "cwd": "${workspaceFolder}/altea/altea-test",
+            "name": "framework test (generate DB)",
+            "preLaunchTask": "build @altea/altea test (tspc -b)",
+            "cwd": "${workspaceFolder}/altea/altea",
             "runtimeArgs": [
                 "--enable-source-maps",
                 "--import",
                 "./register.mjs",
                 "--env-file=${input:envFile}"
             ],
-            "program": "${workspaceFolder}/altea/altea-test/dist/test/generateEnvironment.js",
+            "program": "${workspaceFolder}/altea/altea/dist/test/server/generateEnvironment.js",
             "outFiles": [
-                "${workspaceFolder}/altea/altea-test/dist/**/*.js"
+                "${workspaceFolder}/altea/altea/dist/**/*.js"
             ],
             "sourceMaps": true,
             "resolveSourceMapLocations": [
@@ -153,7 +155,7 @@
             "runtimeArgs": [
                 "--enable-source-maps",
                 "--import",
-                "./register.mjs",
+                "@altea/altea/register.mjs",
                 "--env-file=.env.postgres"
             ],
             "program": "${workspaceFolder}/eastwind/dist/webServer.server.js",
@@ -180,7 +182,7 @@
             "runtimeArgs": [
                 "--enable-source-maps",
                 "--import",
-                "./register.mjs",
+                "@altea/altea/register.mjs",
                 "--env-file=.env.sqlserver"
             ],
             "program": "${workspaceFolder}/eastwind/dist/webServer.server.js",
@@ -207,7 +209,7 @@
             "runtimeArgs": [
                 "--enable-source-maps",
                 "--import",
-                "./register.mjs",
+                "@altea/altea/register.mjs",
                 "--env-file=.env.postgres"
             ],
             "program": "${workspaceFolder}/eastwind/dist/terminal/terminal.js",
@@ -235,7 +237,7 @@
             "runtimeArgs": [
                 "--enable-source-maps",
                 "--import",
-                "./register.mjs",
+                "@altea/altea/register.mjs",
                 "--env-file=.env.sqlserver"
             ],
             "program": "${workspaceFolder}/eastwind/dist/terminal/terminal.js",

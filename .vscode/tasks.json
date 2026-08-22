@@ -70,11 +70,11 @@
 			"group": "build"
 		},
 		{
-			"label": "build altea-test (tspc -b)",
-			"detail": "Compiles altea-test (quote-transformer) to dist; preLaunchTask for the altea-test debug config. Skip the wait by running 'watch types' instead.",
+			"label": "build @altea/altea test (tspc -b)",
+			"detail": "Compiles @altea/altea (framework + its internalized test/ suite) to dist; preLaunchTask for the framework test debug configs. Skip the wait by running 'watch types' instead.",
 			"type": "shell",
 			"command": "pnpm exec tspc -b",
-			"options": { "cwd": "${workspaceFolder}/altea/altea-test" },
+			"options": { "cwd": "${workspaceFolder}/altea/altea" },
 			"problemMatcher": ["$tsc"],
 			"group": "build"
 		},
