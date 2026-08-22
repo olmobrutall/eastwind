@@ -730,6 +730,21 @@ importers:
         specifier: workspace:*
         version: link:../quote-transformer
 
+  altea/altea-time-machine:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      '@altea/altea-diff-log':
+        specifier: workspace:*
+        version: link:../altea-diff-log
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
   altea/altea-toolbar:
     dependencies:
       '@altea/altea':
@@ -741,6 +756,60 @@ importers:
       '@altea/altea-user-assets':
         specifier: workspace:*
         version: link:../altea-user-assets
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
+  altea/altea-tour:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      '@altea/altea-codemirror':
+        specifier: workspace:*
+        version: link:../altea-codemirror
+      '@altea/altea-dashboard':
+        specifier: workspace:*
+        version: link:../altea-dashboard
+      '@altea/altea-user-assets':
+        specifier: workspace:*
+        version: link:../altea-user-assets
+      '@altea/altea-user-queries':
+        specifier: workspace:*
+        version: link:../altea-user-queries
+      driver.js:
+        specifier: 1.3.6
+        version: 1.3.6
+      micromark:
+        specifier: 4.0.2
+        version: 4.0.2
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
+  altea/altea-translations:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      '@altea/altea-diff-log':
+        specifier: workspace:*
+        version: link:../altea-diff-log
+      '@altea/altea-html-editor':
+        specifier: workspace:*
+        version: link:../altea-html-editor
+      '@altea/altea-office-template':
+        specifier: workspace:*
+        version: link:../altea-office-template
+      '@altea/altea-omnibox':
+        specifier: workspace:*
+        version: link:../altea-omnibox
       quote-transformer:
         specifier: workspace:*
         version: link:../quote-transformer
@@ -943,9 +1012,18 @@ importers:
       '@altea/altea-templating':
         specifier: workspace:*
         version: link:../altea/altea-templating
+      '@altea/altea-time-machine':
+        specifier: workspace:*
+        version: link:../altea/altea-time-machine
       '@altea/altea-toolbar':
         specifier: workspace:*
         version: link:../altea/altea-toolbar
+      '@altea/altea-tour':
+        specifier: workspace:*
+        version: link:../altea/altea-tour
+      '@altea/altea-translations':
+        specifier: workspace:*
+        version: link:../altea/altea-translations
       '@altea/altea-user-assets':
         specifier: workspace:*
         version: link:../altea/altea-user-assets
@@ -3018,6 +3096,9 @@ packages:
 
   domutils@3.2.2:
     resolution: {integrity: sha512-6kZKyUajlDuqlHKVX1w7gyslj9MPIXzIFiz/rGu35uC1wMi+kMhQwGhl4lt9unC9Vb9INnY9Z3/ZA3+FhASLaw==}
+
+  driver.js@1.3.6:
+    resolution: {integrity: sha512-g2nNuu+tWmPpuoyk3ffpT9vKhjPz4NrJzq6mkRDZIwXCrFhrKdDJ9TX5tJOBpvCTBrBYjgRQ17XlcQB15q4gMg==}
 
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
@@ -7265,6 +7346,8 @@ snapshots:
       dom-serializer: 2.0.0
       domelementtype: 2.3.0
       domhandler: 5.0.3
+
+  driver.js@1.3.6: {}
 
   dunder-proto@1.0.1:
     dependencies:

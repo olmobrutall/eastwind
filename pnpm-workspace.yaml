@@ -35,6 +35,9 @@ packages:
   - altea/altea-alert
   - altea/altea-playwright
   - altea/altea-workflow
+  - altea/altea-time-machine
+  - altea/altea-tour
+  - altea/altea-translations
   - altea/quote-transformer
   - altea/quote-transformer-test
   - eastwind

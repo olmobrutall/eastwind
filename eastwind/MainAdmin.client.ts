@@ -45,6 +45,10 @@ import { WorkflowClient } from "@altea/altea-workflow/client/WorkflowClient";
 import { CaseActivityMixin } from "@altea/altea-workflow/data/CaseActivity";
 import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
 import { DiffLogClient } from "@altea/altea-diff-log/client/DiffLogClient";
+import { TimeMachineClient } from "@altea/altea-time-machine/client/TimeMachineClient";
+import { TourClient } from "@altea/altea-tour/client/TourClient";
+import { TranslationClient } from "@altea/altea-translations/client/TranslationClient";
+import { TranslatedInstanceClient } from "@altea/altea-translations/client/TranslatedInstanceClient";
 import { DynamicViewClient } from "@altea/altea-dynamic/client/DynamicViewClient";
 import { DynamicClient } from "@altea/altea-dynamic/client/DynamicClient";
 import { EvalClient } from "@altea/altea-eval/client/EvalClient";
@@ -241,4 +245,20 @@ export function startFull(routes: RouteObject[]): void {
     // entity and diffs each pair of dumps — plus the log search's default columns. LAST, so its
     // `cb.configure(OperationLogEntity)` is the app's final word on that type.
     DiffLogClient.start(cb);
+
+    // TimeMachine (altea-time-machine): the quick link + the "Time Machine" entry in every search
+    // control's menu, the /timeMachine page route, and the search-result markers that flag a row
+    // version as created / deleted. AFTER DiffLogClient, whose DiffDocument the page's data tab uses.
+    TimeMachineClient.start(cb);
+
+    // Tour (altea-tour): implements core's TourButton extension point, registers the tour editor views,
+    // and hangs the tour button on entity frames, dashboard pages and user-query search controls. AFTER
+    // DashboardClient / UserQueriesClient, whose extension points it pushes onto.
+    TourClient.start(cb);
+
+    // Translations (altea-translations): the four code pages + the three instance pages, the two omnibox
+    // "!TranslateCode" / "!TranslateInstances" actions, and the LINE TASK that puts a translate button on
+    // every @translatable text line. AFTER OmniboxClient, whose special-action registry it pushes onto.
+    TranslationClient.start(cb);
+    TranslatedInstanceClient.start(cb);
 }

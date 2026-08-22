@@ -40,6 +40,9 @@ import { ProcessLogic } from "@altea/altea-processes/server/ProcessLogic.server"
 import { ProcessSchedulerBridge } from "@altea/altea-processes/server/ProcessSchedulerBridge.server";
 import { OmniboxLogic } from "@altea/altea-omnibox/server/OmniboxLogic";
 import { DiffLogLogic } from "@altea/altea-diff-log/server/DiffLogLogic";
+import { TimeMachineLogic } from "@altea/altea-time-machine/server/TimeMachineLogic.server";
+import { TourLogic } from "@altea/altea-tour/server/TourLogic.server";
+import { TranslationLogic } from "@altea/altea-translations/server/TranslationLogic.server";
 import { WorkflowLogicStarter } from "@altea/altea-workflow/server/WorkflowLogicStarter.server";
 import { OrderWorkflow } from "./orders/OrderWorkflow.server";
 import { EastwindEval } from "./eastwindEval.server";
@@ -296,6 +299,11 @@ export namespace Starter {
         // only its own + the shared/global toolbars.
         ToolbarLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
         ToolbarLogic.registerRoleTypeCondition(EastwindTypeCondition.RoleEntities);
+        // Tour module (altea-tour): the Tour entity + its steps, the TourTrigger symbol table, the
+        // by-trigger lazy the tour button reads, and the XML (de)serializer. AFTER DashboardLogic and
+        // UserQueriesLogic: a tour's trigger is @implementedBy(Type, TourTrigger, Dashboard, UserQuery),
+        // and this module hangs its "drop stale steps" cascades off those two types' schema events.
+        TourLogic.start(sb);
 
         // Eval module (@altea/altea-eval): the ViewDynamicPanel permission, the eval-errors endpoint, and —
         // the part that matters — the COMPILER configuration plus the registry of what a stored script may
@@ -414,6 +422,12 @@ export namespace Starter {
         // registered query — the query REGISTRY is read per request, but keeping it last matches Signum's
         // OmniboxLogic.Start position and avoids any ordering surprise.
         OmniboxLogic.start(sb);
+        // Translations module (altea-translations): both halves — the pages that edit each PACKAGE's own
+        // translations/*.xml files (the code half, nothing stored), and the TranslatedInstance table +
+        // its pages (the instance half, for every @translatable route). BEFORE OperationLogic.start so
+        // its Save/Delete symbols get seeded; the default translator chain is the offline
+        // "already translated elsewhere" one, so no API key is needed.
+        TranslationLogic.start(sb);
 
         // Framework operation infrastructure (Signum's OperationLogic.Start): the OperationSymbol table
         // (seeded with the operations the modules above registered) + the OperationLogEntity table/query
@@ -426,6 +440,13 @@ export namespace Starter {
         // AFTER OperationLogic.start, whose OperationLogEntity table it decorates. `registerAll` is
         // Southwind's setting: dump EVERY entity type, not an opt-in list.
         DiffLogLogic.start(sb, { registerAll: true });
+
+        // TimeMachine module (altea-time-machine): the ShowTimeMachine permission plus the route the
+        // version page reads. It needs nothing else — what it browses is the HISTORY of the tables marked
+        // @systemVersioned (eastwind: OrderEntity, exactly as Southwind marks it), and the
+        // `PreviousOperationLog` column it shows is registered by OperationLogic above — which is why
+        // this call comes AFTER it.
+        TimeMachineLogic.start(sb);
 
         // The app's own GLOBALS (Southwind's Globals/GlobalsLogic.cs): the ApplicationConfiguration table
         // every module's configuration lambda above reads through GlobalsLogic.configuration(). LAST, exactly
