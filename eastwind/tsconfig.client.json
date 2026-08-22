@@ -1,7 +1,8 @@
 {
   // CLIENT layer — React UI; references DATA only, never server (the boundary that keeps server code out
   // of the Vite bundle). `types: [react, react-dom]` overrides the preset's `[]`. The preset's `*.d.ts`
-  // glob picks up styles.d.ts (ambient `declare module "*.css"` for the stylesheet side-effect imports).
+  // glob picks up env.d.ts; the `declare module "*.css"` for the stylesheet side-effect imports comes from
+  // the preset's own presets/styles.d.ts, shared by every client project.
   "extends": "../altea/altea/presets/client.json",
   "compilerOptions": { "types": ["react", "react-dom"] },
   "references": [
