@@ -8,6 +8,7 @@
     { "path": "./tsconfig.data.json" },
     { "path": "./tsconfig.server.json" },
     { "path": "./tsconfig.client.json" },
-    { "path": "./tsconfig.terminal.json" }
+    { "path": "./tsconfig.terminal.json" },
+    { "path": "./tsconfig.test.json" }
   ]
 }

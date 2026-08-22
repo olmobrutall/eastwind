@@ -1,0 +1,17 @@
+{
+    // TEST layer — the app's Playwright end-to-end suites. Node-only (Playwright drives a browser from
+    // node), compiled by the same `tspc -b` into dist/test/**, and referencing the DATA layer because the
+    // page objects take PROPERTY LAMBDAS over the app's entities (see @altea/altea-playwright).
+    "extends": "../altea/altea/presets/server.json",
+    "compilerOptions": {
+        "tsBuildInfoFile": "${configDir}/dist/.tsbuildinfo.test",
+        "types": ["node"]
+    },
+    "include": ["${configDir}/test/**/*"],
+    "exclude": [],
+    "references": [
+        { "path": "./tsconfig.data.json" },
+        { "path": "../altea/altea/tsconfig.data.json" },
+        { "path": "../altea/altea-playwright/tsconfig.json" }
+    ]
+}

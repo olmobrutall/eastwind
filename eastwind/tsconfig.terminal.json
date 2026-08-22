@@ -3,7 +3,7 @@
   // filename suffix), the terminal is a plain directory-based project: everything under terminal/ keeps
   // its own name (terminal.ts, customerLoader.ts, …). node-only; references DATA and SERVER (the loaders
   // use server APIs + the Starter). Kept separate so the web-host bundle never pulls loader code.
-  "extends": "../altea/altea/tsconfig.base.json",
+  "extends": "../altea/altea/presets/base.json",
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "dist",

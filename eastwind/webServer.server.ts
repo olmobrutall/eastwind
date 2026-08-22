@@ -7,7 +7,7 @@ import { Starter } from "./starter.server";
 // Starter sets it on the SchemaBuilder so each module's `XxxLogic.start` mounts its own HTTP surface
 // (auth middleware + /api/auth + /api/authAdmin from AuthLogic.start, the framework API from
 // SignumServer.start), then the host just listens. The host no longer re-lists the server modules.
-// Run: node --import ./register.mjs --env-file=.env.postgres dist/webServer.server.js
+// Run: node --import @altea/altea/register.mjs --env-file=.env.postgres dist/webServer.server.js
 async function main(): Promise<void> {
     const connStr = process.env["EASTWIND_DB"] ?? process.env["ALTEA_TEST_DB"];
     if (connStr == null || connStr === "")
