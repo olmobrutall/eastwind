@@ -11,6 +11,7 @@ import ToolbarRenderer from "@altea/altea-toolbar/client/Renderers/ToolbarRender
 import CultureDropdown from "@altea/altea/client/CultureDropdown";
 import LoginDropdown from "@altea/altea-auth/client/public/LoginDropdown";
 import OmniboxAutocomplete from "@altea/altea-omnibox/client/OmniboxAutocomplete";
+import AlertDropdown from "@altea/altea-alert/client/AlertDropdown";
 
 const ChatbotButton = React.lazy(() => import("@altea/altea-agent/client/ChatbotButton"));
 
@@ -73,6 +74,10 @@ export default function Layout(): React.JSX.Element {
                     /api/omnibox route asserts OmniboxPermission.ViewOmnibox. */}
                 {AppContext.currentUser && <div className="sf-omnibox mx-3"><OmniboxAutocomplete inputAttrs={{ className: "form-control form-control-sm" }} /></div>}
                 <div className="navbar-nav ms-auto">
+                    {/* The alerts BELL (Southwind puts <AlertDropdown/> in its navbar too): the unattended
+                        count, and a panel of toasts that attends an alert when you close it. Renders nothing
+                        for a user who may not view AlertEntity. */}
+                    {AppContext.currentUser && <AlertDropdown />}
                     {/* Language picker (Southwind's Layout has one too). Renders nothing unless the server
                         reports more than one culture with translations loaded. */}
                     <CultureDropdown isMobile={isMobile} />

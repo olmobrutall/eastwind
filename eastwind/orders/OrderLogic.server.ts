@@ -6,7 +6,14 @@ import { Lite } from "@altea/altea/data/lite";
 import { Temporal, toInt, Decimal } from "@altea/altea/data/basics";
 import { retrieveFromListOfLite } from "@altea/altea/server/Database";
 import type { PrimaryKey } from "@altea/altea/data/entity";
-import { OrderEntity, OrderLineEntity, OrderState, OrderOperation, OrderMessage } from "./Order.data";
+import { table } from "@altea/altea/server/table";
+import { Clock } from "@altea/altea/data/utils/clock";
+import type { Entity } from "@altea/altea/data/entity";
+import { SimpleTaskLogic } from "@altea/altea-scheduler/server/SimpleTaskLogic.server";
+import { ProcessLogic } from "@altea/altea-processes/server/ProcessLogic.server";
+import {
+    OrderEntity, OrderLineEntity, OrderState, OrderOperation, OrderMessage, OrderTask, OrderProcess,
+} from "./Order.data";
 import { EmployeeEntity } from "../employees/Employee.data";
 import { ProductEntity } from "../products/Product.data";
 import { CustomerEntity } from "../customers/Customer.data";
@@ -31,6 +38,55 @@ export namespace OrdersLogic {
         // (Signum's `new OrderGraph().Register()`). Without this the /api/operation/* endpoints and
         // the entity pack's canExecute see no operations.
         OrderGraph.register();
+
+        // The domain's scheduled TASKS and its process ALGORITHM, registered where Southwind registers
+        // them — in OrdersLogic, beside the graph (Orders/OrdersLogic.cs). Both registries are read when
+        // their module starts (the symbol tables are seeded from the registered keys), and OrdersLogic.start
+        // runs well before SchedulerLogic.start / ProcessLogic.start, so this is also the right ORDER.
+        registerTasks();
+        registerProcesses();
+    }
+
+    /** Southwind's two `SimpleTaskLogic.Register(OrderTask.…)` calls. */
+    function registerTasks(): void {
+        SimpleTaskLogic.register(OrderTask.CheckPendingOrders, async ctx => {
+            const pending = await table(OrderEntity).filter(o => o.shippedDate == null).toArray();
+
+            ctx.writeLine(`${Clock.now.toString()} — ${pending.length} order(s) not shipped yet`);
+
+            // The "product" of a run is whatever the panel should link to; the oldest pending order is the
+            // one worth looking at.
+            return (pending[0]?.toLite() ?? null) as Lite<Entity> | null;
+        });
+
+        SimpleTaskLogic.register(OrderTask.ReviewPendingOrders, async ctx => {
+            const pending = await table(OrderEntity).filter(o => o.shippedDate == null).toArray();
+
+            await ctx.forEachWriting(pending, o => `Order ${o.id}`, async order => {
+                // Nothing to change — this exists to exercise the per-element transaction + cancellation
+                // path that a real "process every pending order" task would use.
+                void order;
+            });
+
+            return null;
+        });
+    }
+
+    /** Southwind's `ProcessLogic.Register(OrderProcess.…, new CancelOrderAlgorithm())`. */
+    function registerProcesses(): void {
+        ProcessLogic.registerAction(OrderProcess.ReviewPendingOrders, async ctx => {
+            const pending = await table(OrderEntity).filter(o => o.shippedDate == null).toArray();
+
+            await ctx.writeMessage(`Reviewing ${pending.length} pending order(s)`);
+
+            await ctx.forEach(pending, o => `Order ${o.id}`, async order => {
+                // A real algorithm would do its work here; the point is that each element runs in its own
+                // transaction, progress ticks after each one, and a cancellation is honoured between them.
+                void order;
+            }, order => order.toLite());
+
+            await ctx.writeMessage(`Reviewed ${pending.length} order(s)`);
+        });
     }
 }
 

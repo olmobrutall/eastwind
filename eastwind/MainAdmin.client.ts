@@ -6,6 +6,7 @@ import { ProductsClient } from "./products/ProductClient.client";
 import { ShippersClient } from "./shippers/ShipperClient.client";
 import { CustomersClient } from "./customers/CustomerClient.client";
 import { OrdersClient } from "./orders/OrderClient.client";
+import { GlobalsClient } from "./globals/GlobalsClient.client";
 import { AuthAdminClient } from "@altea/altea-auth/client/admin/AuthAdminClient";
 import { ActiveDirectoryClient } from "@altea/altea-auth/client/admin/ActiveDirectoryClient";
 import { AzureADClient } from "@altea/altea-auth-azuread/client/AzureADClient";
@@ -29,6 +30,8 @@ import { FilesClient } from "@altea/altea-files/client/FilesClient";
 import { SchedulerClient } from "@altea/altea-scheduler/client/SchedulerClient";
 import { ProcessClient } from "@altea/altea-processes/client/ProcessClient";
 import { OmniboxClient } from "@altea/altea-omnibox/client/OmniboxClient";
+import { MigrationsClient } from "@altea/altea-migrations/client/MigrationsClient";
+import { AlertsClient } from "@altea/altea-alert/client/AlertsClient";
 import { ToolbarClient } from "@altea/altea-toolbar/client/ToolbarClient";
 import { MailingClient } from "@altea/altea-email/client/MailingClient";
 import { MailingReceptionClient } from "@altea/altea-email/client/MailingReceptionClient";
@@ -74,6 +77,12 @@ export function startFull(routes: RouteObject[]): void {
     ShippersClient.start(cb);
     CustomersClient.start(cb);
     OrdersClient.start(cb);
+
+    // The app GLOBALS (Southwind's GlobalsClient): the ApplicationConfiguration page — one tab per module,
+    // each rendering that module's own configuration view. AFTER the domains and BEFORE the module clients
+    // whose configuration views it embeds (they register those views from their own start(cb) below, and the
+    // page only resolves them when it is opened).
+    GlobalsClient.start(cb);
 
     // Authorization admin (altea-auth, part of the FULL bundle): the User/Role admin views + rule-pack
     // admin. The PUBLIC auth routes (login / change password) are registered by AuthClient.startPublic
@@ -190,6 +199,15 @@ export function startFull(routes: RouteObject[]): void {
     // Office reports (altea-office-template): the template editor, the "create report" operation, the
     // contextual menu on a search's selected rows, the query-toolbar button and the entity-frame button.
     OfficeClient.start(cb, { contextual: true, queryButton: true, entityButton: true });
+
+    // Alerts (@altea/altea-alert): the Alert view + its search settings (the Text column renders its
+    // placeholders as links), the alert operations' buttons and the "alerts about this entity" quick link.
+    // The navbar BELL is a component the app places itself — see Layout.tsx.
+    AlertsClient.start(cb);
+
+    // Migrations (altea-migrations): the query settings for the three history tables (SqlMigration /
+    // CSharpMigration / LoadMethodLog). Signum has no client module for them — see MigrationsClient.
+    MigrationsClient.start(cb);
 
     // Omnibox (altea-omnibox): registers the three result-shape renderers the navbar's
     // <OmniboxAutocomplete/> (see Layout.tsx) draws its suggestions with. Registers no routes.

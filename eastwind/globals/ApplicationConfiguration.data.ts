@@ -1,0 +1,137 @@
+import { Entity, EmbeddedEntity } from "@altea/altea/data/entity";
+import { entity, quoted } from "@altea/altea/data/decorators";
+import { reflect, init } from "@altea/altea/data/reflection";
+import { stringLengthValidator } from "@altea/altea/data/validators";
+import type { ExecuteSymbol } from "@altea/altea/data/operations";
+import type { TypeConditionSymbol } from "@altea/altea-auth/data/Rules";
+import { AgentSymbol } from "@altea/altea-agent/data/SkillCustomization";
+import { EmailConfigurationEmbedded } from "@altea/altea-email/data/Email";
+import { EmailSenderConfigurationEntity } from "@altea/altea-email/data/EmailSenderConfiguration";
+import { ChatbotConfigurationEmbedded } from "@altea/altea-agent/data/LanguageModel";
+import { WorkflowConfigurationEmbedded } from "@altea/altea-workflow/data/Workflow";
+import { AzureADConfigurationEmbedded } from "@altea/altea-auth-azuread/data/AzureAD";
+import { OpenIDConfigurationEmbedded } from "@altea/altea-auth-openid/data/OpenID";
+import { WindowsADConfigurationEmbedded } from "@altea/altea-auth-windowsad/data/WindowsAD";
+
+// Port of Southwind's `Globals/ApplicationConfigurationEntity.cs` — ONE persisted row holding every
+// module's settings, which each module's `Logic.start` reads through a lambda
+// (`EmailLogic.start(sb, { getConfiguration: () => GlobalsLogic.configuration().email, … })`, Signum's
+// `EmailLogic.Start(sb, () => Configuration.Value.Email, …)`).
+//
+// This replaces the per-module `eastwind<Module>.server.ts` configuration functions, which each read
+// `EASTWIND_*` environment variables: settings an administrator should be able to see and change are data,
+// not deployment wiring. What stays in the environment is what Southwind also keeps in `appsettings.json`
+// and passes to `Starter.Start` — the connection string, and the storage credentials / backend switch of
+// `eastwindFileStores.server.ts` (Southwind's `azureStorageConnectionString` parameter). The environment
+// still SEEDS this row on a fresh database (see terminal/eastwindMigrations.ts), so an existing `.env` keeps
+// working; after that the row is the source of truth.
+//
+// Divergences from Southwind's entity:
+//  - `Sms` and `Translation` have no members here: neither Signum.SMS nor Signum.Translation is ported.
+//  - `AuthTokens` neither: altea's counterpart (`AuthTokenServer.configuration`) is a server-side interface
+//    with one field, not an embedded entity, so there is nothing to store — `AuthServer.start` still takes
+//    it eagerly from the host.
+//  - `OpenID` / `WindowsAD` are NEW beside Southwind's `AzureAD`: altea ports all three directory modules
+//    (see eastwindAuthAD.server.ts), and each has the same shape of stored configuration.
+//  - `Folders` names eastwind's two file stores rather than Southwind's eight (the modules behind
+//    Predictor / ViewLog / RestLog / Help are not ported).
+//  - there is no `DatabaseName`: the row is selected by `environment`, through the `DB_ENVIRONMENT`
+//    environment variable — see the field.
+/**
+ * WHICH row this process runs as — `DB_ENVIRONMENT`, defaulting to "Development". Signum instead matches
+ * `DatabaseName` against `Connector.Current.DatabaseName()`; an explicit environment variable is what a
+ * deployment controls anyway, so a restored copy of production can be pointed at its own row without
+ * editing data. `GlobalsLogic.environment()` re-exports this, and the lazy selects the row with it.
+ *
+ * A module-level CONST for two reasons: `isActive` below is a @quoted expression, and the transformer
+ * captures a free identifier by VALUE (it becomes a SQL parameter) — a `process.env[…]` read inside the
+ * body would have no SQL translation. And it is read off `globalThis` rather than `process` directly
+ * because this file is DATA, i.e. isomorphic: the same module is evaluated in the browser, which has no
+ * `process` at all (and the data tsconfig ships no node types, by design).
+ */
+export const currentEnvironment: string =
+    (globalThis as { process?: { env?: Record<string, string | undefined> } })
+        .process?.env?.["DB_ENVIRONMENT"] || "Development";
+
+@entity("Main", "Master")
+export class ApplicationConfigurationEntity extends Entity {
+
+    /**
+     * The row's IDENTITY: one row per environment, and `DB_ENVIRONMENT` names which one this process runs as
+     * (see GlobalsLogic.environment). Signum instead matches its `DatabaseName` against
+     * `Connector.Current.DatabaseName()`; altea's Connector exposes no such name, and an explicit environment
+     * variable is what a deployment controls anyway — so a restored copy of production can be pointed at its
+     * own row without editing data.
+     */
+    @stringLengthValidator({ min: 3, max: 100 })
+    environment: string;
+
+    /*Email*/
+    email: EmailConfigurationEmbedded;
+
+    /** The sender the mail modules deliver through (Signum's `EmailSender`), a REFERENCE: the row is
+     *  edited on its own page and referenced here, so switching host is not a re-save of the whole
+     *  configuration. */
+    emailSender: EmailSenderConfigurationEntity | null;
+
+    /*Agent*/
+    chatbot: ChatbotConfigurationEmbedded;
+
+    /*Workflow*/
+    workflow: WorkflowConfigurationEmbedded;
+
+    /*Files*/
+    folders: FoldersConfigurationEmbedded;
+
+    /*Auth — at most one directory owns the login flow; see eastwindAuthAD.server.ts */
+    azureAD: AzureADConfigurationEmbedded | null;
+    openID: OpenIDConfigurationEmbedded | null;
+    windowsAD: WindowsADConfigurationEmbedded | null;
+
+    /** Whether THIS row is the one this process runs on — the search page's answer to "which of these is
+     *  live?". @quoted so it translates to SQL (`environment = @p`) and is therefore sortable / filterable,
+     *  and so the same body answers in memory. Registered as a query expression in GlobalsLogic.start. */
+    @quoted isActive(): boolean { return this.environment == currentEnvironment; }
+
+    @quoted toString(): string { return this.environment; }
+}
+
+export namespace ApplicationConfigurationOperation {
+    export const Save: ExecuteSymbol<ApplicationConfigurationEntity> = init();
+}
+
+// Signum's FoldersConfigurationEmbedded: where each local file store writes. Read LAZILY by the store's
+// algorithm (`physicalPrefix: () => …`), exactly as Signum's `GetFileTypeAlgorithm(p => p.CachedQueryFolder)`
+// does, so changing a folder here takes effect without a restart. Ignored when the store runs on Azure / S3.
+@reflect
+export class FoldersConfigurationEmbedded extends EmbeddedEntity {
+
+    @stringLengthValidator({ max: 300 })
+    profilePhotosFolder: string;
+
+    @stringLengthValidator({ max: 300 })
+    emailAttachmentsFolder: string;
+}
+
+// Southwind declares these two in the same file as its ApplicationConfiguration, and so does eastwind.
+
+// Port of Southwind's `[AutoInit] static class SouthwindTypeCondition`: the app's own row-level condition
+// symbols, referenced BOTH by the server (which registers the predicate for each entity type — see
+// starter.server.ts) and by the auth-rules admin UI (which offers them per role).
+//
+// `UserEntities`  — the row belongs to the current USER (a personal dashboard / user query / user chart).
+// `RoleEntities`  — the row is global (no owner) or owned by one of the current user's ROLES (shared).
+//
+// A symbol only bites once a role has a condition RULE using it (seeded in terminal/eastwindMigrations.ts for
+// "Standard user", editable in the Role → Type rules UI).
+export namespace EastwindTypeCondition {
+    export const UserEntities: TypeConditionSymbol = init();
+    export const RoleEntities: TypeConditionSymbol = init();
+}
+
+// Port of Southwind's `SouthwindAgentUseCases` — the app's own agents, beyond the three
+// @altea/altea-agent declares itself (Chatbot / QuestionSummarizer / ConversationSumarizer).
+export namespace EastwindAgentUseCases {
+    /** The tree exposed at /api/mcp — all sub-skills Lazy, so an external host discovers them one by one. */
+    export const MCP: AgentSymbol = init();
+}

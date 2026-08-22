@@ -13,6 +13,16 @@ import { UserAssetsImporter, warmUserAssetCaches } from "@altea/altea-user-asset
 import { EntityAction } from "@altea/altea-user-assets/data/UserAssets";
 import { CSharpMigrationRunner } from "@altea/altea-migrations/server/CSharpMigrationRunner.server";
 import { CultureInfoLogic } from "@altea/altea/server/cultureInfoLogic";
+import { EmailConfigurationEmbedded } from "@altea/altea-email/data/Email";
+import {
+    EmailSenderConfigurationEntity, SmtpEmailServiceEntity, SmtpNetworkDeliveryEmbedded,
+    SmtpDeliveryFormatEnum, SmtpDeliveryMethodEnum,
+} from "@altea/altea-email/data/EmailSenderConfiguration";
+import { ChatbotConfigurationEmbedded } from "@altea/altea-agent/data/LanguageModel";
+import { WorkflowConfigurationEmbedded } from "@altea/altea-workflow/data/Workflow";
+import {
+    ApplicationConfigurationEntity, FoldersConfigurationEmbedded, currentEnvironment,
+} from "../globals/ApplicationConfiguration.data";
 import { EmployeeLoader } from "./employeeLoader";
 import { ProductLoader } from "./productLoader";
 import { CustomerLoader } from "./customerLoader";
@@ -26,6 +36,8 @@ import { OrderLoader } from "./orderLoader";
 // ad-hoc tools, logged to LoadMethodLog but never recorded as migrations — see terminal.ts.
 //
 // The individual steps mirror Southwind's:
+//   • createCulturesAndConfiguration — CreateCulturesAndConfiguration: the supported cultures + THE
+//                         ApplicationConfiguration row every module's settings live on.
 //   • createRoles       — CreateRoles (AuthLogic.LoadRoles): Anonymous, Standard user, Super user
 //                         (Intersection), Advanced user ⊃ Standard.
 //   • createSystemUser  — CreateSystemUser: the "System" (Super user) + "Anonymous" users.
@@ -36,8 +48,8 @@ import { OrderLoader } from "./orderLoader";
 //                         terminal/AuthRules.xml). LAST, as in Southwind: the rules reference the types,
 //                         users and assets everything above created.
 //
-// Not ported (Southwind steps whose module does not exist here): CreateCulturesAndConfiguration,
-// SimulateOrderSystemTime, ImportWordReportTemplateForOrder, ImportInstanceTranslations, ImportPredictor.
+// Not ported (Southwind steps whose module does not exist here): SimulateOrderSystemTime,
+// ImportWordReportTemplateForOrder, ImportInstanceTranslations, ImportPredictor.
 // Passwords equal the username (Southwind's HashPassword(name, name)) — dev only. Every step is idempotent
 // on its own, so re-running one after deleting its CSharpMigration row is safe.
 export namespace EastwindMigrations {
@@ -48,7 +60,7 @@ export namespace EastwindMigrations {
 
         // The unique names are the MIGRATION IDENTITY in the database (renaming one re-runs it), so they are
         // the C# method names Southwind used rather than the console captions.
-        runner.add("CreateCultures", () => createCultures());
+        runner.add("CreateCulturesAndConfiguration", () => createCulturesAndConfiguration());
         runner.add("CreateRoles", () => createRoles());
         runner.add("CreateSystemUser", () => createSystemUser());
         runner.add("LoadRegions", () => EmployeeLoader.loadRegions());
@@ -69,9 +81,73 @@ export namespace EastwindMigrations {
         await runner.run(autoRun);
     }
 
-    /** The cultures eastwind ships translations for (Signum seeds CultureInfoEntity the same way). */
-    export async function createCultures(): Promise<void> {
+    /**
+     * Southwind's `CreateCulturesAndConfiguration`: the cultures eastwind ships translations for, and the
+     * ONE ApplicationConfiguration row for this environment — what every module's configuration lambda reads
+     * (see globals/GlobalsLogic.server.ts). Idempotent: an existing row for this environment is left alone.
+     *
+     * The initial VALUES come from the `EASTWIND_*` environment variables the per-module configuration
+     * functions used to read, so a developer's existing `.env` carries over on the first run — after that the
+     * row is the source of truth and the variables are ignored. The three DIRECTORY members are seeded null
+     * (Southwind seeds `AzureAD = null` too): a directory is configured on the page, not by redeploying.
+     */
+    export async function createCulturesAndConfiguration(): Promise<void> {
         await CultureInfoLogic.ensureCultures(["en", "es", "de"]);
+
+        const existing = await table(ApplicationConfigurationEntity)
+            .filter(a => a.environment == currentEnvironment).singleOrNull();
+        if (existing != null) {
+            console.log(`[configuration] '${currentEnvironment}' already exists`);
+            return;
+        }
+
+        // Southwind seeds a localhost SMTP sender so the mail module has somewhere to point; with
+        // `sendEmails` false nothing actually leaves the process.
+        const sender = EmailSenderConfigurationEntity.create({
+            name: "localhost",
+            service: SmtpEmailServiceEntity.create({
+                deliveryFormat: SmtpDeliveryFormatEnum.SevenBit,
+                deliveryMethod: SmtpDeliveryMethodEnum.Network,
+                network: SmtpNetworkDeliveryEmbedded.create({ host: "localhost" }),
+            }),
+        });
+        await sender.save();
+
+        await ApplicationConfigurationEntity.create({
+            environment: currentEnvironment,
+            email: EmailConfigurationEmbedded.create({
+                defaultCulture: process.env["EASTWIND_MAIL_CULTURE"] ?? "en",
+                urlLeft: (process.env["EASTWIND_MAIL_URL_LEFT"] ?? "http://localhost:5173").replace(/\/+$/, ""),
+                sendEmails: process.env["EASTWIND_MAIL_SEND"] === "true",
+                // The inbound half. Off by default for the same reason as `sendEmails`: a dev database should
+                // not touch a real mailbox — and with it false a poll FAILS LOUDLY rather than doing nothing.
+                reciveEmails: process.env["EASTWIND_MAIL_RECEIVE"] === "true",
+                overrideEmailAddress: process.env["EASTWIND_MAIL_OVERRIDE"] ?? null,
+                avoidSendingEmailsOlderThan: null,
+            }),
+            emailSender: sender,
+            chatbot: ChatbotConfigurationEmbedded.create({
+                openAIAPIKey: process.env["EASTWIND_AGENT_OPENAI_KEY"] ?? null,
+                anthropicAPIKey: process.env["EASTWIND_AGENT_ANTHROPIC_KEY"] ?? null,
+                geminiAPIKey: process.env["EASTWIND_AGENT_GEMINI_KEY"] ?? null,
+                mistralAPIKey: process.env["EASTWIND_AGENT_MISTRAL_KEY"] ?? null,
+                githubModelsToken: process.env["EASTWIND_AGENT_GITHUB_TOKEN"] ?? null,
+                deepSeekAPIKey: process.env["EASTWIND_AGENT_DEEPSEEK_KEY"] ?? null,
+                ollamaUrl: process.env["EASTWIND_AGENT_OLLAMA_URL"] ?? null,
+            }),
+            workflow: WorkflowConfigurationEmbedded.create({
+                avoidExecutingScriptsOlderThan: null,
+            }),
+            folders: FoldersConfigurationEmbedded.create({
+                profilePhotosFolder: process.env["EASTWIND_FILES_PROFILEPHOTOS"] ?? "./files/profilePhotos",
+                emailAttachmentsFolder: process.env["EASTWIND_FILES_EMAILATTACHMENTS"] ?? "./files/emailAttachments",
+            }),
+            azureAD: null,
+            openID: null,
+            windowsAD: null,
+        }).save();
+
+        console.log(`[configuration] created '${currentEnvironment}'`);
     }
 
     export async function createRoles(): Promise<void> {

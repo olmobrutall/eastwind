@@ -16,6 +16,7 @@ import { ProductsLogic } from "./products/ProductLogic.server";
 import { ShippersLogic } from "./shippers/ShipperLogic.server";
 import { CustomersLogic } from "./customers/CustomerLogic.server";
 import { OrdersLogic } from "./orders/OrderLogic.server";
+import { OrderEntity } from "./orders/Order.data";
 import { AuthLogic } from "@altea/altea-auth/server/AuthLogic";
 import { TypeAuthLogic } from "@altea/altea-auth/server/TypeAuthLogic";
 import { PermissionAuthLogic } from "@altea/altea-auth/server/PermissionAuthLogic";
@@ -35,14 +36,12 @@ import { FileLogic } from "@altea/altea-files/server/FileLogic.server";
 import { SchedulerLogic } from "@altea/altea-scheduler/server/SchedulerLogic.server";
 import { SimpleTaskLogic } from "@altea/altea-scheduler/server/SimpleTaskLogic.server";
 import { ScheduleTaskRunner } from "@altea/altea-scheduler/server/ScheduleTaskRunner.server";
-import { EastwindTask } from "./eastwindTasks.server";
 import { ProcessLogic } from "@altea/altea-processes/server/ProcessLogic.server";
 import { ProcessSchedulerBridge } from "@altea/altea-processes/server/ProcessSchedulerBridge.server";
-import { EastwindProcess } from "./eastwindProcesses.server";
 import { OmniboxLogic } from "@altea/altea-omnibox/server/OmniboxLogic";
 import { DiffLogLogic } from "@altea/altea-diff-log/server/DiffLogLogic";
 import { WorkflowLogicStarter } from "@altea/altea-workflow/server/WorkflowLogicStarter.server";
-import { EastwindWorkflow } from "./eastwindWorkflow.server";
+import { OrderWorkflow } from "./orders/OrderWorkflow.server";
 import { EastwindEval } from "./eastwindEval.server";
 import { DynamicLogic } from "@altea/altea-dynamic/server/DynamicLogic.server";
 import { EmailLogic } from "@altea/altea-email/server/EmailLogic.server";
@@ -55,13 +54,13 @@ import { MailingMicrosoftGraphLogic } from "@altea/altea-mailing-microsoft-graph
 import { RemoteEmailsLogic } from "@altea/altea-mailing-microsoft-graph/server/RemoteEmailsLogic";
 import { Pop3ConfigurationLogic } from "@altea/altea-mailing-pop3/server/Pop3ConfigurationLogic";
 import { EmailFileType } from "@altea/altea-email/data/Email";
-import { EastwindEmail } from "./eastwindEmail.server";
 import { OfficeTemplateLogic } from "@altea/altea-office-template/server/OfficeTemplateLogic.server";
 import { ToolbarLogic } from "@altea/altea-toolbar/server/ToolbarLogic.server";
 import { PlainExcelLogic } from "@altea/altea-office-template/server/excel/PlainExcelLogic.server";
 import { ExcelImportLogic } from "@altea/altea-office-template/server/excel/ExcelImportLogic.server";
 import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic.server";
-import { EastwindTypeCondition } from "./eastwindTypeConditions.data";
+import { EastwindTypeCondition, EastwindAgentUseCases } from "./globals/ApplicationConfiguration.data";
+import { GlobalsLogic } from "./globals/GlobalsLogic.server";
 import { CacheLogic } from "@altea/altea-cache/server/CacheLogic";
 import { ConcurrentUserLogic } from "@altea/altea-concurrent-user/server/ConcurrentUserLogic.server";
 import { ChatbotLogic } from "@altea/altea-agent/server/ChatbotLogic";
@@ -69,13 +68,16 @@ import { AgentLogic } from "@altea/altea-agent/server/AgentLogic";
 import { AgentMcpServer } from "@altea/altea-agent/server/AgentMcpServer";
 import { ChatbotServer } from "@altea/altea-agent/server/ChatbotServer";
 import { EastwindAgent } from "./eastwindAgent.server";
-import { EastwindAgentUseCases } from "./eastwindAgents.data";
 import { AzureADLogic } from "@altea/altea-auth-azuread/server/AzureADLogic";
 import { CachedProfilePhotoLogic } from "@altea/altea-auth-azuread/server/CachedProfilePhotoLogic";
 import { OpenIDLogic } from "@altea/altea-auth-openid/server/OpenIDLogic";
 import { WindowsADLogic } from "@altea/altea-auth-windowsad/server/WindowsADLogic";
 import { ResetPasswordRequestLogic } from "@altea/altea-auth-reset-password/server/ResetPasswordRequestLogic";
 import { EastwindAuthAD } from "./eastwindAuthAD.server";
+import { CurrentServerContextSkill } from "@altea/altea-agent/server/Skills/CurrentServerContextSkill";
+import { IntroductionSkill } from "@altea/altea-agent/server/Skills/IntroductionSkill";
+import { AlertLogic } from "@altea/altea-alert/server/AlertLogic.server";
+import { AlertNotificationLogic } from "@altea/altea-alert/server/AlertNotificationLogic.server";
 import { CacheServer } from "@altea/altea-cache/server/CacheServer";
 import { PostgresBroadcast } from "@altea/altea-cache/server/Broadcast/PostgresBroadcast";
 
@@ -170,9 +172,11 @@ export namespace Starter {
         // The photo store. `CachedProfilePhotoLogic.start` registers the file type itself (Signum's
         // `FileTypeLogic.Register(AuthADFileType.CachedProfilePhoto, algorithm)`), so the app only supplies
         // the algorithm — registering it here as well would be a duplicate registration.
-        // Which BACKEND holds the bytes is one env var away (EASTWIND_FILE_STORE=folder|azure|s3) — see
+        // Which BACKEND holds the bytes is one env var away (EASTWIND_FILE_STORE=folder|azure|s3), and WHERE
+        // a local store writes is the configuration's Folders member, read on every write — see
         // eastwindFileStores.server.ts. `onlyImages` is what makes an Azure / S3 store serve these INLINE.
-        CachedProfilePhotoLogic.start(sb, EastwindFileStores.store("profilePhotos", { onlyImages: true }));
+        CachedProfilePhotoLogic.start(sb, EastwindFileStores.store(
+            "profilePhotos", f => f.profilePhotosFolder, { onlyImages: true }));
 
         // OpenID contributes no tables, so it is started ALWAYS and only OWNS the login flow when it is the
         // selected provider. That keeps the client's boot probe (/api/auth/openIDConfig) a clean 200-null
@@ -187,19 +191,19 @@ export namespace Starter {
             });
 
         // Scheduler module (altea-scheduler): the ScheduledTask / log tables, the SimpleTaskSymbol table and
-        // the in-process runner's routes. The simple tasks are REGISTERED FIRST because the symbol table is
-        // seeded from the registered keys (SimpleTaskLogic.start reads them). After the auth logics so
-        // ViewSchedulerPanel lands in the same permission seed, and after FileLogic for the same
+        // the in-process runner's routes. The app's own tasks are already registered — each DOMAIN registers
+        // its own in its Logic.start (eastwind/orders), which is where Southwind keeps them and is safely
+        // before this call, since the SimpleTaskSymbol table is seeded from the registry here. After the auth
+        // logics so ViewSchedulerPanel lands in the same permission seed, and after FileLogic for the same
         // route-ordering reason.
-        EastwindTask.register();
         SchedulerLogic.start(sb);
 
         // Processes module (altea-processes): the Process / Package tables and the in-process runner's
-        // routes. Algorithms are REGISTERED FIRST (the ProcessAlgorithmSymbol table is seeded from their
-        // keys), and the SCHEDULER BRIDGE goes last: it makes a ProcessAlgorithmSymbol a valid
-        // ScheduledTask.task, so a scheduled entry creates + queues a process instead of running inline.
-        // (The matching implementedBy widening is declared in entityOverrides.data.ts — both tiers need it.)
-        EastwindProcess.register();
+        // routes. The algorithms are registered by their own DOMAIN (see the scheduler note above), which is
+        // before this call — the ProcessAlgorithmSymbol table is seeded from that registry here. The SCHEDULER
+        // BRIDGE goes last: it makes a ProcessAlgorithmSymbol a valid ScheduledTask.task, so a scheduled entry
+        // creates + queues a process instead of running inline. (The matching implementedBy widening is
+        // declared in entityOverrides.data.ts — both tiers need it.)
         ProcessLogic.start(sb);
         ProcessSchedulerBridge.start(sb);
 
@@ -209,9 +213,9 @@ export namespace Starter {
         // chatbot's own agent is handed to AgentLogic.start so DefaultAgent.Chatbot resolves, and the app's
         // extra MCP agent is registered after — before OperationLogic.start, so its symbols get seeded.
         // AFTER the chart module: the ChartSkill reads ChartScriptLogic's registered scripts.
-        EastwindAgent.setUrlLeft(EastwindEmail.configuration().urlLeft);
-        EastwindAgent.registerSkills();
-        ChatbotLogic.start(sb, EastwindAgent.configuration);
+        CurrentServerContextSkill.urlLeft = () => GlobalsLogic.configuration().email.urlLeft;
+        IntroductionSkill.applicationName = "eastwind";
+        ChatbotLogic.start(sb, () => GlobalsLogic.configuration().chatbot);
         ChatbotLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
         AgentLogic.start(sb, EastwindAgent.chatbotSkill);
         AgentLogic.registerAgent(EastwindAgentUseCases.MCP, EastwindAgent.mcpSkill);
@@ -307,12 +311,12 @@ export namespace Starter {
         // ViewAsyncEmailSenderPanel lands in the same permission seed; BEFORE OperationLogic.start so its
         // operation symbols get seeded.
         //
-        // The app supplies three things (see eastwindEmail.server.ts): the configuration, which sender
-        // configuration to use, and how to read an email owner's address. The default MASTER TEMPLATE and the
-        // email OWNERS are registered first, since EmailLogic.start's model seeding may already need them.
-        EastwindEmail.registerEmailOwners();
-        EastwindEmail.registerDefaultMasterTemplate();
-        FileTypeLogic.register(EmailFileType.Attachment, EastwindFileStores.store("emailAttachments"));
+        // The app supplies only what is app-specific — Signum's `EmailLogic.Start(sb, () => Configuration
+        // .Value.Email, (template, target, message) => Configuration.Value.EmailSender)`: the two members of
+        // the configuration row, and where attachments are stored. The USER email owner and the default
+        // master template are the MODULES' (altea-email registers both — see EmailLogic.start).
+        FileTypeLogic.register(EmailFileType.Attachment,
+            EastwindFileStores.store("emailAttachments", f => f.emailAttachmentsFolder));
         // Self-service password reset (@altea/altea-auth-reset-password): the ResetPasswordRequest table, the
         // two e-mail models and the three ANONYMOUS /api/auth/* routes (Southwind's
         // `ResetPasswordRequestLogic.Start(sb)`). BEFORE EmailLogic.start, because its e-mail models have to
@@ -320,8 +324,9 @@ export namespace Starter {
         ResetPasswordRequestLogic.start(sb);
 
         EmailLogic.start(sb, {
-            getConfiguration: () => EastwindEmail.configuration(),
-            getSenderConfiguration: EastwindEmail.senderConfiguration,
+            getConfiguration: () => GlobalsLogic.configuration().email,
+            // Signum's `(template, target, message) => Configuration.Value.EmailSender` — the row names it.
+            getSenderConfiguration: async () => GlobalsLogic.configuration().emailSender,
         });
 
         // The two extra SENDER services (@altea/altea-mailing-exchange, -microsoft-graph). Each contributes
@@ -349,6 +354,18 @@ export namespace Starter {
         // Entra tenant configured it would only ever show an error. EASTWIND_REMOTE_EMAILS=true enables it.
         if (process.env["EASTWIND_REMOTE_EMAILS"] === "true")
             RemoteEmailsLogic.start(sb);
+
+        // Alerts module (@altea/altea-alert): the Alert table + the AlertTypeSymbol table, the two endpoints
+        // the navbar bell polls and the WebSocket hub that pushes "your alerts changed". AFTER the auth logics
+        // (an alert is addressed to a USER) and BEFORE OperationLogic.start so its six operation symbols get
+        // seeded. `registerExpressionsFor` is Southwind's `AlertLogic.Start(sb, typeof(UserEntity),
+        // typeof(OrderEntity))`: those two types grow the `Alerts` / `MyActiveAlerts` sub-tokens.
+        AlertLogic.start(sb, { registerExpressionsFor: [UserEntity, OrderEntity as unknown as Type<Entity>] });
+
+        // …and its OPT-IN notification half (Signum's RegisterAlertNotificationMail): the e-mail model and
+        // the ScheduledTask that mails each user their pending alerts. AFTER EmailLogic.start (it registers an
+        // email model) and after SchedulerLogic.start (it registers a task type).
+        AlertNotificationLogic.start(sb);
 
         // Office-template module (altea-office-template): the OfficeTemplate / OfficeModel tables, the
         // OfficeTransformerSymbol / OfficeConverterSymbol symbol tables, the GenerateReport permission, and
@@ -386,10 +403,10 @@ export namespace Starter {
         // algorithm) and auth (a lane's actors are users/roles), and before OperationLogic.start so its many
         // operation symbols get seeded. eastwind then makes ORDER a case main entity and registers the app's
         // Southwind starts the module but declares no main entity, so nothing could actually run through it
-        // (see eastwindWorkflow.server.ts). Its conditions / actions / scripts are stored TypeScript compiled
+        // (see orders/OrderWorkflow.server.ts). Its conditions / actions / scripts are stored TypeScript compiled
         // by the eval module above.
-        WorkflowLogicStarter.start(sb, EastwindWorkflow.configuration);
-        EastwindWorkflow.registerOrderAsMainEntity(sb);
+        WorkflowLogicStarter.start(sb, () => GlobalsLogic.configuration().workflow);
+        OrderWorkflow.registerOrderAsMainEntity(sb);
 
         // Omnibox module (altea-omnibox): declares no tables (its ViewOmnibox permission symbol is seeded
         // through the PermissionSymbol table above); registers the entity / dynamic-query / special result
@@ -410,6 +427,13 @@ export namespace Starter {
         // Southwind's setting: dump EVERY entity type, not an opt-in list.
         DiffLogLogic.start(sb, { registerAll: true });
 
+        // The app's own GLOBALS (Southwind's Globals/GlobalsLogic.cs): the ApplicationConfiguration table
+        // every module's configuration lambda above reads through GlobalsLogic.configuration(). LAST, exactly
+        // where Southwind calls it: the row REFERENCES an EmailSenderConfiguration and embeds each module's
+        // configuration type, so those includes must already exist. Nothing above it evaluates a lambda —
+        // they are all read after the warm-up below.
+        GlobalsLogic.start(sb);
+
         // Expose a search query for the TypeEntity system table (Signum ships one). It's included by the
         // schema core but never `.withQuery()`'d, so `/find/Type` reported "not allowed"; register it here.
         // (Scoped to eastwind rather than the framework to avoid re-seeding altea-test's query table.)
@@ -423,8 +447,8 @@ export namespace Starter {
         // generation seeds the table. `create`/`sync` re-initialize afterwards (see terminal.ts).
         await sb.schema.initialize();
 
-        // Load translations from the app's single translations directory (TRANSLATIONS_ROOT/env or
-        // <cwd>/translations). Every module's `<Module>.<culture>.xml` lives there (Signum's model).
+        // Load translations: each installed module's own `translations/` directory (walked from this
+        // app's dependency graph), then the app's own `<cwd>/translations` last so it wins a collision.
         loadAppTranslations();
 
         // Warm the culture cache into its sync snapshot: the reflection endpoint answers the culture
@@ -432,9 +456,12 @@ export namespace Starter {
         // database, like schema.initialize above.
         try { await CultureInfoLogic.warmUp(); } catch { /* table not created yet — the seeder fills it */ }
 
-        // Resolve EASTWIND_AD_DEFAULT_ROLE (a role NAME) into the directory modules' `defaultRole`. After
-        // schema.initialize because it reads the Role table, and the configuration getters are synchronous.
-        await EastwindAuthAD.resolveDefaultRoleFromEnv();
+        // Load THIS environment's ApplicationConfiguration into its sync snapshot (Signum reads its
+        // `Starter.Configuration` lazy on first use; altea's ResetLazy is async and every module's
+        // configuration getter is not — see GlobalsLogic). Tolerant of a not-yet-generated or not-yet-seeded
+        // database, like the culture warm-up above: a module that then asks for its configuration fails with
+        // GlobalsLogic's message naming the migration, rather than silently running on defaults.
+        try { await GlobalsLogic.warmUp(); } catch (e) { console.warn(`[globals] ${(e as Error).message}`); }
 
         // Mount the framework HTTP API last (Signum's SignumServer.Start): after the modules' own routes
         // (registered by their Logic.start above) so the auth middleware/gate run first, and so the JSON

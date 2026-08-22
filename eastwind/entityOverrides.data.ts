@@ -17,6 +17,7 @@ import { ExceptionEntity } from "@altea/altea/data/exception";
 import { OperationLogEntity } from "@altea/altea/data/operationLog";
 import { UserEntity } from "@altea/altea-auth/data/User";
 import { SimpleTaskSymbol } from "@altea/altea-scheduler/data/Scheduler";
+import { SendNotificationEmailTaskEntity } from "@altea/altea-alert/data/Alert";
 import {
     EmailSenderConfigurationEntity, SmtpEmailServiceEntity,
 } from "@altea/altea-email/data/EmailSenderConfiguration";
@@ -83,9 +84,12 @@ export namespace EntityOverrides {
         // back in explicitly. Both tiers run this, which is the point of it living here.
         // A ScheduledTask may also point at an EMAIL RECEPTION CONFIGURATION (altea-email makes it an
         // ITaskEntity, as Signum does): scheduling "poll THIS mailbox" needs no task symbol of its own.
+        // …or at altea-alert's SendNotificationEmailTask ("mail everyone their pending alerts"), which
+        // AlertNotificationLogic.start re-checks and fails on if it is missing here.
         ProcessSchedulerBridgeOverrides.overrideTaskImplementations([
             SimpleTaskSymbol as unknown as Type<Entity>,
             EmailReceptionConfigurationEntity as unknown as Type<Entity>,
+            SendNotificationEmailTaskEntity as unknown as Type<Entity>,
         ]);
 
         // How this app SENDS mail. altea-email declares only its own SMTP service, so the two extra sender

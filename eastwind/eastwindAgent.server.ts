@@ -1,6 +1,4 @@
-import { ChatbotConfigurationEmbedded } from "@altea/altea-agent/data/LanguageModel";
 import { SkillActivationEnum } from "@altea/altea-agent/data/SkillCustomization";
-import { SkillCodeLogic } from "@altea/altea-agent/server/SkillCodeLogic";
 import type { SkillCode } from "@altea/altea-agent/server/SkillCode";
 import { IntroductionSkill } from "@altea/altea-agent/server/Skills/IntroductionSkill";
 import { AutocompleteSkill } from "@altea/altea-agent/server/Skills/AutocompleteSkill";
@@ -13,46 +11,20 @@ import { GetUIContextSkill } from "@altea/altea-agent/server/Skills/GetUIContext
 import { ConfirmUISkill } from "@altea/altea-agent/server/Skills/ConfirmUISkill";
 import { ChartSkill } from "@altea/altea-agent/server/Skills/ChartSkill";
 
-// eastwind's side of the agent module — Southwind keeps exactly this in Starter.cs: the CREDENTIALS, the
-// chatbot's SKILL TREE, and a second, all-lazy tree for the MCP endpoint.
+// eastwind's side of the agent module — Southwind keeps exactly this in Starter.cs: the chatbot's SKILL TREE
+// and a second, all-lazy tree for the MCP endpoint.
 //
-// The credentials come from the environment (`EASTWIND_AGENT_*`) rather than from a persisted
-// ApplicationConfiguration, for the same reason eastwind's mail settings do — there is no such entity here.
-// With none set the module still starts: a model row can be created and the panels work, and only the first
-// actual call to a provider fails, naming the missing key.
+// Two things that used to live here now belong to the module, because nothing about them is app-specific:
+// the list of skill CLASSES (altea-agent registers the ten it ships — Signum's `SkillCode` base constructor
+// auto-registers, so its apps never list them either) and `CurrentServerContextSkill.urlLeft`, which the
+// starter assigns in one line exactly as Signum's Starter.cs does.
+//
+// The provider CREDENTIALS are not here either: they are the `chatbot` member of the ApplicationConfiguration
+// row, which the starter hands to the module as `() => GlobalsLogic.configuration().chatbot` — Signum's
+// `ChatbotLogic.Start(sb, () => Configuration.Value.Chatbot)`. With none set the module still starts: a model
+// row can be created and the panels work, and only the first actual call to a provider fails, naming the
+// missing key.
 export namespace EastwindAgent {
-
-    let cached: ChatbotConfigurationEmbedded | undefined;
-
-    export function configuration(): ChatbotConfigurationEmbedded {
-        return cached ??= ChatbotConfigurationEmbedded.create({
-            openAIAPIKey: process.env["EASTWIND_AGENT_OPENAI_KEY"] ?? null,
-            anthropicAPIKey: process.env["EASTWIND_AGENT_ANTHROPIC_KEY"] ?? null,
-            geminiAPIKey: process.env["EASTWIND_AGENT_GEMINI_KEY"] ?? null,
-            mistralAPIKey: process.env["EASTWIND_AGENT_MISTRAL_KEY"] ?? null,
-            githubModelsToken: process.env["EASTWIND_AGENT_GITHUB_TOKEN"] ?? null,
-            deepSeekAPIKey: process.env["EASTWIND_AGENT_DEEPSEEK_KEY"] ?? null,
-            ollamaUrl: process.env["EASTWIND_AGENT_OLLAMA_URL"] ?? null,
-        });
-    }
-
-    /**
-     * Register every skill CLASS the app uses (Southwind relies on Signum's auto-register scope; altea asks
-     * for the classes explicitly — see SkillCodeLogic's header). Call BEFORE AgentLogic.start, because the
-     * SkillCode table is seeded from this registry and `registerAgent` asserts against it.
-     */
-    export function registerSkills(): void {
-        SkillCodeLogic.register(IntroductionSkill);
-        SkillCodeLogic.register(AutocompleteSkill);
-        SkillCodeLogic.register(SearchSkill);
-        SkillCodeLogic.register(RetrieveSkill);
-        SkillCodeLogic.register(OperationSkill);
-        SkillCodeLogic.register(CurrentServerContextSkill);
-        SkillCodeLogic.register(EntityUrlSkill);
-        SkillCodeLogic.register(GetUIContextSkill);
-        SkillCodeLogic.register(ConfirmUISkill);
-        SkillCodeLogic.register(ChartSkill);
-    }
 
     /** Southwind's chatbot tree: everything EAGER except charting, which the model unlocks with `Describe`. */
     export function chatbotSkill(): SkillCode {
@@ -97,9 +69,4 @@ export namespace EastwindAgent {
             .withSubSkill(SkillActivationEnum.Lazy, new ChartSkill());
     }
 
-    /** Signum's `CurrentServerContextSkill.UrlLeft = () => Configuration.Value.Email.UrlLeft`. */
-    export function setUrlLeft(urlLeft: string): void {
-        CurrentServerContextSkill.urlLeft = () => urlLeft;
-        IntroductionSkill.applicationName = "eastwind";
-    }
 }

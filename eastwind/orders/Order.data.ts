@@ -9,6 +9,8 @@ import { EmployeeEntity } from "../employees/Employee.data";
 import { ProductEntity } from "../products/Product.data";
 import { ShipperEntity } from "../shippers/Shipper.data";
 import { msg } from "@altea/altea/data/utils/localization";
+import type { SimpleTaskSymbol } from "@altea/altea-scheduler/data/Scheduler";
+import type { ProcessAlgorithmSymbol } from "@altea/altea-processes/data/Processes";
 import "@altea/altea/data/globals"; // Array.prototype.sum (in-memory) + its SQL-mappable aggregate (totalPrice)
 
 // Port of Southwind's Orders domain (Southwind/Orders/OrderEntity.cs), keeping Signum's Entity /
@@ -112,6 +114,21 @@ export class OrderFilterModel extends ModelEntity {
     employee: Lite<EmployeeEntity> | null = null;
     minOrderDate: Temporal.PlainDate | null = null;
     maxOrderDate: Temporal.PlainDate | null = null;
+}
+
+// Southwind's `[AutoInit] static class OrderTask` / `OrderProcess` (Orders/OrderEntity.cs) — the scheduled
+// tasks and the process algorithm this domain owns. They live HERE, beside the entity, because that is where
+// Southwind keeps them: a task that walks orders is part of the Orders domain, not of the application shell.
+export namespace OrderTask {
+    /** Counts the orders that are still not shipped, writing the count into the run's remarks. */
+    export const CheckPendingOrders: SimpleTaskSymbol = init();
+    /** Walks every unshipped order one by one, so a failure on one is a line and the run continues. */
+    export const ReviewPendingOrders: SimpleTaskSymbol = init();
+}
+
+export namespace OrderProcess {
+    /** The same review as a PROCESS: progress, suspend, one transaction per element. */
+    export const ReviewPendingOrders: ProcessAlgorithmSymbol = init();
 }
 
 // Signum's `[AutoInit] static class OrderOperation`. CancelWithProcess is omitted (Processes).
