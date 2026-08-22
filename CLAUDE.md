@@ -20,12 +20,15 @@ altea/
     client/           # React UI kit (Navigator, Finder, SearchControl, Lines, Operations, Frames, …)
     server/           # engine: connection/, linq/, schema/, sync/, dynamicQuery/  (+ logic/, server-only)
     test/             # the framework test suite (music model; runs against a real DB) — see "How to test"
+    translations/     # the framework's own `Altea.<culture>.xml` — EVERY package ships its own
   altea-auth/         # auth module (incl. the shared BaseAD half: directory config, ADAuthorizer, OIDC)
   altea-auth-reset-password/ # self-service password reset by e-mail (Signum.Authorization.ResetPassword)
   altea-auth-openid/  # OpenID Connect login (Signum.Authorization.OpenID)
   altea-auth-azuread/ # Entra ID login + Graph directory queries + photos (Signum.Authorization.AzureAD)
   altea-auth-windowsad/ # Windows AD login over LDAP (Signum.Authorization.WindowsAD)
   altea-agent/        # LLM chatbot + skills-as-tools + provider clients + an MCP endpoint (Signum.Agent)
+  altea-alert/        # user notifications: the Alert entity, the navbar bell + its WebSocket push, and the
+                      #   "mail me my pending alerts" scheduled task (Signum.Alerts)
   altea-cache/        # in-memory entity cache + cross-process invalidation (Signum.Caching)
   altea-codemirror/   # code editors, CLIENT-ONLY (Signum.CodeMirror); CodeMirror 6, not 5
   altea-concurrent-user/ # live presence + stale-entity detection on an open entity (Signum.ConcurrentUser)
@@ -43,19 +46,26 @@ altea/
   altea-mailing-pop3/ # receiving over POP3 (Signum.Mailing.Pop3)
   altea-office-template/ # docx/pptx/xlsx templating (Signum.Word); hand-built OOXML substrate
   altea-workflow/     # BPMN workflow engine + bpmn-js designer (Signum.Workflow)
+  altea-playwright/   # strongly-typed Playwright page objects for an altea UI, for an app's e2e suite
+                      #   (Signum.Playwright); the only package that is neither data/client/server
   quote-transformer/  # ts-patch transformer for @quoted lambda navigations (see below)
 eastwind/
   entities/           # the app's entity domains (orders, customers, products, employees, shippers, …)
+  globals/            # Southwind's Globals/: the ApplicationConfiguration row EVERY module's settings live
+                      #   on, its view, and the app's TypeCondition / agent symbols
   client/             # the app SPA (MainPublic/MainAdmin bootstrap, Layout, Home, per-domain *Client)
   server/             # the app web host (webServer.ts) + starter
   terminal/           # CLI host
-  translations/       # per-module translation files
+  test/               # the app's Playwright e2e suites (see "How to test in a browser")
+  translations/       # the APP's own `Eastwind.<culture>.xml` (each module ships its own)
 old/                  # Signum + Southwind sources — PORT FROM HERE, do not modify
 ```
 
 ## Naming & formatting conventions
 
-**Two layer organisations, both accepted.** The tsconfig presets (`altea/altea/presets/{data,client,server}.json`)
+**Two layer organisations, both accepted.** The tsconfig presets (`altea/altea/presets/{base,data,client,server}.json`
+— `base` is the shared compilerOptions every other one extends, and what a project that is NOT one of the three
+layers extends directly: eastwind's terminal, altea-playwright)
 glob each layer **both** ways: a `data/` / `client/` / `server/` **directory**, or co-located `*.data.ts` /
 `*.client.ts[x]` / `*.server.ts` **suffix** files (plus any `*.tsx` — a `.tsx` is always client). Use the
 **suffixes** for simple modules, where co-locating a domain (`eastwind/orders/`) matters more than separating it;
@@ -105,7 +115,7 @@ Port faithfully: **mirror Signum's class / method names and member order**, copy
 Known structural divergences from Signum (this is what "fix" means — don't port these 1:1):
 
 - **MLists are gone.** No `MList<T>` / `MListElement` wrapper. A collection is a **plain array** of `@part` row entities (or scalars on a row's `@valueField`). `@id` / `@order` / `@backReference` are markers, **not columns**.
-- **Do NOT initialize entity fields to a type's default.** `strictPropertyInitialization` is **off** (`altea/tsconfig.base.json`), so a field needs no initializer to compile — and adding one just to silence an imagined warning is noise. Write `@rowOrder order: int;`, `token: QueryTokenEmbedded | null;`, `orderType: OrderTypeEnum;`, `parts: DashboardEntity_Part[];` — **not** `= toInt(0)` / `= null` / `= OrderTypeEnum.Ascending` / `= []`. Specifically:
+- **Do NOT initialize entity fields to a type's default.** `strictPropertyInitialization` is **off** (`altea/altea/presets/base.json`), so a field needs no initializer to compile — and adding one just to silence an imagined warning is noise. Write `@rowOrder order: int;`, `token: QueryTokenEmbedded | null;`, `orderType: OrderTypeEnum;`, `parts: DashboardEntity_Part[];` — **not** `= toInt(0)` / `= null` / `= OrderTypeEnum.Ascending` / `= []`. Specifically:
   - a reflected `T[]` collection is seeded with `[]` by the quote-transformer, so `= []` is always redundant;
   - `@rowOrder` / `@backReference` are filled by the save cascade (and exempt from the implicit NotNull);
   - `= null` on a nullable field says nothing `undefined` doesn't.
@@ -119,7 +129,7 @@ Known structural divergences from Signum (this is what "fix" means — don't por
 - **Culture: a `CultureInfoEntity` table like Signum's, but the user's pick is a request HEADER, not a cookie.** `CultureInfoEntity` (`data/cultureInfoEntity` + `server/cultureInfoLogic`) is the application's supported-culture table, and it is what an email / Office template's `culture` REFERENCES (`Lite<CultureInfoEntity>`, as in Signum) rather than a free-text tag. `nativeName`/`englishName` come from `Intl.DisplayNames` where Signum uses .NET `CultureInfo`; a lookup falls back from a specific culture to its language ("en-US" → "en"). Where altea diverges:
   - the user's CHOICE lives in the BROWSER (`CultureClient`, localStorage) — Signum stores it server-side per user — and rides on every call as a bare `Accept-Language` tag, which `webApi` turns into a per-request `CultureInfo.withCultures` scope (Signum's ASP.NET request localization). Without that scope every SERVER-resolved label — a registered expression's niceName, validation and exception messages — answers in the process default no matter who asked, and a per-culture CACHE keyed on `currentCulture()` serves whichever language warmed it first to everyone.
   - switching culture RELOADS the page. Signum re-fetches its types and soft-resets, because all its labels are client-resolved; altea has server-resolved labels baked into already-fetched responses, which a soft `resetUI()` leaves stale.
-  - Translation files all live in ONE directory (`eastwind/translations`), alpha order sets precedence, so the app's file is named to sort after the framework's `Altea.*`. A Signum module renamed in altea (Word* → Office*) needs its ported XML's Type/Member NAMES remapped, or none of it lands.
+  - Translation files live in EACH PACKAGE's own `translations/` directory (`altea/altea-workflow/translations/Altea.Workflow.es.xml`), not in one per-app folder as in Signum — a module's translations travel with the module, so any application that installs it gets them for free. At boot `loadAppTranslations` walks the app's dependency graph (through packages that depend on `@altea/altea`), loads each module's directory in package-name order, and loads the app's own `<appRoot>/translations` LAST so an app file wins a key collision. A Signum module renamed in altea (Word* → Office*) needs its ported XML's Type/Member NAMES remapped, or none of it lands.
 - **Enums**: a numeric `XEnum` object + a string-union `type X = keyof typeof XEnum`; the **runtime/wire value is the STRING member name**, so compare with bare literals (`"Shipped"`), not `X.Shipped`.
 - **`@field` typeNames are capitalized**: `String` / `Number` / `Decimal` / `Boolean` / `PlainDate` / `Guid` / `Duration`, etc.
 - **Reflection metadata is ONE global blob** (nice names + auth + queries + operations) shipped eagerly at boot.
@@ -134,6 +144,109 @@ Known structural divergences from Signum (this is what "fix" means — don't por
 - **`@quoted` lambda navigations**: `entity.customer.name`-style navs inside queries are rewritten by `quote-transformer` (a ts-patch transformer). A nav off a **nullable** reference must use `singleOrNull` / `firstOrNull` (OUTER APPLY), not `single` / `first`.
 - **Rule sets live in `client/FinderRules.tsx`** (like Signum), not inline in `Finder.tsx` — the editors import Lines, and Lines import Finder, so keeping them separate avoids a module-eval import cycle. Finder imports `FinderRules` for its four `init*Rules()` and installs them, so `import { Finder }` is enough.
 
+- **Signum.Alerts → altea-alert: a notification is an entity, and the bell is a WebSocket consumer.** The
+  module ports whole (entity + operations, the two endpoints the bell polls, the dropdown, the alert view,
+  and the opt-in "mail me my pending alerts" task). Divergences:
+  - **AlertTypeSymbol is a plain Symbol, not a SemiSymbol** (altea has none — the same call altea-agent
+    makes for AgentSymbol), so an alert type is DECLARED in code via `AlertLogic.registerAlertType`; its
+    Save/Delete operations and its editor go with it.
+  - **`Title` / `Text` are stored columns, not expressions.** Signum declares them `[AutoExpressionField]`
+    and REPLACES them in the logic layer with bodies that call `AlertType.GetText()` — a dictionary lookup
+    no SQL can evaluate. altea has neither ReplaceExpression nor a way to lower that, so a query sees
+    `titleField` / `textField` and the alert-type fallback happens where the registry is: on the server at
+    RETRIEVE (`textFromAlertType`, Signum's same event) and on the client for the title.
+  - **`CurrentState` is in-memory** (a ternary returning an enum does not lower); its three boolean faces
+    (`alerted` / `attended` / `future`) ARE @quoted, so "what is due now" still filters in SQL — written
+    `Temporal.PlainDateTime.compare(a, b) <op> 0`, the form the provider translates.
+  - **SignalR → altea's WebSocket hub**, and the group a tab joins is the socket's OWN user (Signum trusts
+    the token the client passes to `Login`). Cross-process notification keeps Signum's shape exactly:
+    `CacheLogic.registerBroadcastReceiver("AlertForReceiver", …)` with the same "*"/chunked-ids protocol.
+  - the notification MAIL lives in its own `AlertNotificationLogic` (it is the only part needing altea-email
+    + altea-scheduler), sends without Signum's `EmailPackage` (not ported), and drops Signum's
+    `TextFormatted` — the link-placeholder expansion lives in the client's `AlertsClient.format`.
+  - it surfaced a CORE gap: `/api/operation/executeMultiple` + `deleteMultiple` did not exist, so every
+    contextual multi-operation 404'd; they are now NDJSON routes (one `{entity, error}` per line, each lite
+    in its own transaction), and the two client readers parse each line with `Serializer.parse` — a Lite is
+    a CLASS in altea, and the caller calls `.key()` on it.
+
+- **Signum.Playwright → altea-playwright: the page objects port, the C# ergonomics do not.** ~5.4k lines of
+  C# become ~1.5k of TypeScript, because the JS Playwright binding already auto-waits and composes locators
+  — what survives is the part that is about SIGNUM, not about Playwright: addressing a control by its
+  PROPERTY ROUTE and waiting on the app's own re-render markers. altea renders all of them
+  (`data-property-path`, `data-changes`, `data-main-entity`, `data-refresh-count`, `data-search-count`,
+  `data-entity`, `data-column-name`), so the selector contract carries over almost unchanged. Divergences:
+  - **`data-property-path` is the line's OWN member** (`city`), not Signum's full dotted route
+    (`shipAddress.city`) — altea re-roots the PropertyRoute at each embedded — so a nested line is reached
+    by narrowing step by step. The property LAMBDA is resolved by `PropertyRoute.addLambda` off the
+    quote-transformer's tree, which is why an e2e suite must be compiled by `tspc` (Playwright's own
+    esbuild transform would strip `__quoted` silently — hence `testDir: dist/test`).
+  - `data-entity` is `"CleanType;id"` (2 parts), where Signum's is `"typeName;id;isNew"`.
+  - altea's filter table ends with a `tr.sf-filter-create` row, so the rows are selected by class — a plain
+    `tbody > tr` (Signum's) addresses the wrong row after an add.
+  - Signum's ValidationSummary proxy looks for `ul.validation-summary`, which neither framework renders
+    (both render `validaton-summary`, missing the "i") — the port uses the class the DOM has.
+  - **the CLOSURE SCOPING is preserved**, because it is the heart of the API rather than a C# ergonomic:
+    Signum writes `b.SearchPageAsync(...).Then(async persons => { … })`, where `Then` (Signum.Utilities'
+    TaskExtensions) disposes the proxy in a `finally` — so the closure IS the open page / modal, and leaving
+    it closes the modal and waits for the line that opened it to re-render. `scoped(source, body)` is that
+    function one for one, and every scoped proxy also implements `Symbol.asyncDispose`, so `await using`
+    reads the same. (The modal openers therefore return a typed PROXY, not a Locator — which introduces a
+    module cycle proxy → modal → LineContainer → proxy, broken by importing the modal classes lazily inside
+    the methods.)
+  - NOT ported: the CDP debug-mode launcher (`@playwright/test` has --headed / --debug / UI mode), and the
+    proxies for lines altea does not have (EntityList, HtmlLine, GuidBox, EnumCheckBoxList, MultiValueLine)
+    plus the panel-level Toolbar / SearchValueLine / ColumnEditor / ContextMenu ones.
+
+- **A module registers what a module owns; the app registers only what only the app knows.** Signum's
+  modules seed their own surface, so Southwind's Starter is short. Where the altea port had pushed that work
+  into eastwind, it is now back in the module — the rule to apply when adding one:
+  - `EvalLogic` SEEDS the framework's own modules (Signum's pre-filled `AssemblyTypes` / `Namespaces`;
+    Southwind calls `EvalLogic.Start(sb)` and registers nothing), and altea-workflow registers its three
+    eval-visible modules from its own start. An app registers its ENTITY DOMAINS — which need `typesPath`,
+    since nothing depends on the app — plus altea-auth's, because a framework package must not depend on an
+    optional one.
+  - `AgentLogic.start` registers the ten skills the module SHIPS (Signum's `SkillCode` base constructor
+    auto-registers, so its apps never list them); the app supplies only the skill TREE.
+  - `EmailLogic.start` registers the USER as an email owner (Signum declares `UserEntity.EmailOwnerData` in
+    Signum.Authorization) and `EmailMasterTemplateLogic` ships a neutral default master template.
+  - the cloud file stores own their CONNECTION (`AzureBlobStorage` / `S3Storage`: cached client, container /
+    bucket naming); the app picks the backend and supplies credentials, which is where Signum keeps them
+    (`azureStorageConnectionString` is a `Starter.Start` parameter, never a configuration member).
+  - a DOMAIN's scheduled tasks, process algorithms and workflow wiring live in the domain folder
+    (`eastwind/orders/`), which is where Southwind keeps them (`Orders/OrdersLogic.cs` registers
+    `OrderProcess.CancelOrders` and the two `OrderTask`s, declared in `Orders/OrderEntity.cs`).
+
+- **App settings are ONE persisted row, and every module start takes a lambda to it.** eastwind ports
+  Southwind's `ApplicationConfigurationEntity` (`eastwind/globals/`): one row per environment carrying each
+  module's configuration embedded (mail, chatbot, workflow, folders, and the three directories), edited at
+  `/view/ApplicationConfiguration`, and each `Logic.start` receives `() => GlobalsLogic.configuration().x`
+  exactly as Signum's `EmailLogic.Start(sb, () => Configuration.Value.Email, …)` does. The per-module
+  `eastwind<Module>.server.ts` files keep only what is genuinely app CODE (skill trees, email owners, ORDER
+  as a case main entity, the store factory); nothing there reads `EASTWIND_*` for a setting any more — the
+  environment only SEEDS the row, in the `CreateCulturesAndConfiguration` migration. Divergences:
+  - **which row is `DB_ENVIRONMENT`**, matched against `environment`, where Signum matches `DatabaseName`
+    against `Connector.Current.DatabaseName()` (altea's Connector exposes no such name, and a deployment
+    controls an env var anyway). The entity carries a `@quoted isActive()` so the search page can say which
+    row is live; the value it compares against is a module CONST in the DATA layer, read off `globalThis`
+    (that layer is isomorphic and ships no node types) — the transformer captures a free identifier by
+    value, so a `process.env` read inside the quoted body would have no SQL translation.
+  - **the lazy is mirrored into a SYNC snapshot.** altea's ResetLazy is async while every module's
+    configuration getter is sync, so `GlobalsLogic.warmUp()` fills a snapshot after `schema.initialize()`
+    (the pattern `CultureInfoLogic` already uses) and the `saved` event refreshes it — which is what makes
+    an edit take effect without a restart, as Signum's `InvalidateWith` does.
+  - **what stays in the environment** is what Southwind also keeps in `appsettings.json`: the connection
+    string, the file-store BACKEND + its cloud credentials (Signum's `azureStorageConnectionString` is a
+    `Starter.Start` parameter), and `EASTWIND_AD_PROVIDER` — which directory owns the login flow, decided
+    while the schema is built, before a row can be read.
+  - **the AD configurations became `@part` ENTITIES** (`BaseADConfigurationEmbedded extends Entity`), because
+    persisting them means persisting `roleMapping`, and a collection is `@part` child rows whose back
+    reference needs a real owner TABLE — which a flattened embedded is not. Same reshaping altea-email
+    applied to `SmtpNetworkDeliveryEmbedded`; Signum's names are kept, "Embedded" suffix included. The ROW
+    type is declared per module (`AzureADConfigurationEmbedded_RoleMapping`, …) rather than shared, since a
+    `@part` collection is keyed by ONE back reference — three directories sharing one row type on one owner
+    would read each other's rows — hence `BaseADConfigurationEmbedded.roleMappings()`, the accessor the
+    shared ADAuthorizer reads.
+
 - **Directory login: ONE authorizer, ONE shared base, and no server-rendered config blob.** Signum copies
   ~120 lines of "match / create / update the local user + resolve the role" into each of
   `AzureADAuthorizer`, `OpenIDAuthorizer` and `WindowsADAuthorizer`; altea factors them into
@@ -143,7 +256,8 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   the find/create-AD-user routes, the invite-a-user UI, `ProfilePhoto.urlProviders`) likewise lives in
   altea-auth, exactly as it does in `Signum.Authorization`. Also:
   - `AuthLogic.authorizer` is a single slot, so at most ONE directory owns the login flow; the app picks
-    (eastwind: `EASTWIND_AD_PROVIDER`).
+    (eastwind: `EASTWIND_AD_PROVIDER`). The CONFIGURATION itself is a persisted @part entity on the app's
+    ApplicationConfiguration row — see the bullet above.
   - Signum injects the browser-visible configuration into `Index.cshtml`
     (`window.__azureADConfig` / `__openIDConfig`). altea has no server-rendered page, so each module serves
     it from an ANONYMOUS endpoint the client fetches once at boot — which makes
@@ -459,6 +573,20 @@ DB-free suites still run).
 
 - First run: seed that suite's DB with the matching `gen:postgres` (it CLEANS and regenerates it).
 - Each runs `tspc -b` then `node --test --test-isolation=none "dist/test/**/*.test.js"`.
+
+## How to test in a browser (eastwind e2e)
+
+The app's Playwright suites live in `eastwind/test/` and drive the real UI through the page objects of
+**@altea/altea-playwright** (Southwind.Test.React's counterpart). They run against a RUNNING stack:
+
+```bash
+pnpm --filter eastwind test:e2e
+```
+
+That is `tspc -b && playwright test`, and the build is not optional: a spec addresses lines with property
+LAMBDAS (`frame.lines.textBox(o => o.shipName)`), which only work once the quote-transformer has stamped
+them — so Playwright runs the COMPILED specs (`testDir: dist/test`), never the `.ts`. Point it elsewhere with
+`EASTWIND_E2E_URL` (default `http://localhost:5173/`). First run on a machine: `npx playwright install chromium`.
 
 ## How to start the web application (eastwind)
 
