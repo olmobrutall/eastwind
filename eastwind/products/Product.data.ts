@@ -1,7 +1,7 @@
 import { reflect, init } from "@altea/altea/data/reflection";
 import { Entity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
-import { entity, quoted, backReference, rowOrder } from "@altea/altea/data/decorators";
+import { entity, quoted, backReference, rowOrder, translatable } from "@altea/altea/data/decorators";
 import { type int, Decimal } from "@altea/altea/data/basics";
 import type { IQuery } from "@altea/altea/data/iquery";
 import type { ExecuteSymbol } from "@altea/altea/data/operations";
@@ -32,7 +32,13 @@ export namespace SupplierOperation {
 
 @entity("String", "Master")
 export class CategoryEntity extends Entity {
+    // Southwind marks both of these `[Translatable]` (Products/CategoryEntity.cs) — a category's name and
+    // blurb are the app's canonical example of text worth translating PER ROW, which is what
+    // @altea/altea-translations' instance half manages.
+    @translatable
     categoryName: string;
+
+    @translatable
     description: string;
     // Southwind's `FileEmbedded? Picture` (Products/CategoryEntity.cs) — the bytes live in the row. Loaded
     // from Northwind's Categories.Picture (an OLE-wrapped bitmap — see the loader).

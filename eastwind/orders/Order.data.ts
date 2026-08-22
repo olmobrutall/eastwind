@@ -1,6 +1,6 @@
 import { Entity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
-import { entity, backReference, rowOrder, quoted, implementedBy, unit, format } from "@altea/altea/data/decorators";
+import { entity, backReference, rowOrder, quoted, implementedBy, unit, format, systemVersioned } from "@altea/altea/data/decorators";
 import { Temporal, type int, Decimal } from "@altea/altea/data/basics";
 import { reflect, init } from "@altea/altea/data/reflection";
 import type { ConstructSymbol, From, FromMany, ExecuteSymbol, DeleteSymbol } from "@altea/altea/data/operations";
@@ -26,6 +26,11 @@ export enum OrderState {
     Canceled,
 }
 
+// Southwind marks the Order table system-versioned (`Starter.OverrideAttributes`:
+// `sb.Schema.Settings.TypeAttributes<OrderEntity>().Add(new SystemVersionedAttribute())`) — every row
+// version is kept in a history table, which is what @altea/altea-time-machine reads. altea has no
+// TypeAttributes side-channel, and eastwind owns this class, so the marker is the decorator itself.
+@systemVersioned
 @entity("Main", "Transactional")
 export class OrderEntity extends Entity {
     // Signum's OrderEntity.Customer — polymorphic across the concrete customer types.
