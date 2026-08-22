@@ -133,8 +133,7 @@ export const OrderGraph = graph(OrderEntity, OrderState, g => {
         },
     });
 
-    g.ConstructFrom(OrderOperation.CreateOrderFromCustomer, {
-        entityType: CustomerEntity,
+    g.ConstructFrom(CustomerEntity, OrderOperation.CreateOrderFromCustomer, {
         toStates: [OrderState.New],
         construct: c => OrderEntity.create({
             state: OrderState.New,
@@ -145,8 +144,7 @@ export const OrderGraph = graph(OrderEntity, OrderState, g => {
         }),
     });
 
-    g.ConstructFrom(OrderOperation.Clone, {
-        entityType: OrderEntity,
+    g.ConstructFrom(OrderEntity, OrderOperation.Clone, {
         canConstruct: o => o.state === OrderState.Shipped ? null : "Only shipped orders can be cloned.",
         toStates: [OrderState.Ordered],
         resultIsSaved: true,
@@ -170,8 +168,7 @@ export const OrderGraph = graph(OrderEntity, OrderState, g => {
         },
     });
 
-    g.ConstructFromMany(OrderOperation.CreateOrderFromProducts, {
-        entityType: ProductEntity,
+    g.ConstructFromMany(ProductEntity, OrderOperation.CreateOrderFromProducts, {
         toStates: [OrderState.New],
         construct: async (prods, args) => {
             const prices = await currentPrices(prods);

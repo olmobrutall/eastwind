@@ -25,8 +25,7 @@ export namespace CustomersLogic {
         // it (OperationLogic.operationsForType walks the prototype chain). `.withSave()` can't express this:
         // it owns the operation with the type it was included for, which would give Person the button and
         // leave Company without one.
-        new Graph.Execute<CustomerEntity>(CustomerOperation.Save, {
-            entityType: CustomerEntity,
+        new Graph.Execute<CustomerEntity>(CustomerEntity, CustomerOperation.Save, {
             canBeNew: true,
             canBeModified: true,
             execute: () => { }, // the operation's implicit save persists it
