@@ -45,6 +45,12 @@ altea/
                       #   (Signum.Mailing.MicrosoftGraph, incl. its RemoteEmails half)
   altea-mailing-pop3/ # receiving over POP3 (Signum.Mailing.Pop3)
   altea-office-template/ # docx/pptx/xlsx templating (Signum.Word); hand-built OOXML substrate
+  altea-time-machine/ # browse / compare / restore the versions of a @systemVersioned row
+                      #   (Signum.TimeMachine)
+  altea-tour/         # guided in-app tours over driver.js, anchored to a type / dashboard / user query /
+                      #   declared trigger (Signum.Tour)
+  altea-translations/ # translating the app: the per-package translation XML files (code) and the
+                      #   per-instance @translatable fields (data) — Signum.Translation, both halves
   altea-workflow/     # BPMN workflow engine + bpmn-js designer (Signum.Workflow)
   altea-playwright/   # strongly-typed Playwright page objects for an altea UI, for an app's e2e suite
                       #   (Signum.Playwright); the only package that is neither data/client/server
@@ -536,8 +542,89 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     superseded it). altea has no `AutoLineModal`, so "pick an expiration date" and "edit remarks" are two
     small local modals.
   - Not ported: `MyActiveAlerts` (no Signum.Alerts), Signum's SMS module, `PackageExecuteAlgorithm<T>` (the
-    timeout process walks its own package lines), `registerWhenAlreadyFilteringBy`, and
-    `PropertyRouteTranslationLogic` instance translation — as in the toolbar and dashboard ports.
+    timeout process walks its own package lines) and `registerWhenAlreadyFilteringBy`. (Instance
+    translation of a workflow / activity name IS available now — see altea-translations below — but the
+    workflow module does not opt its own routes into it.)
+
+- **Signum.TimeMachine → altea-time-machine: the READER of a history that core already keeps.** Everything
+  the page shows already exists — `@systemVersioned` tables, `SystemTime` (core's server/systemTime), the
+  SearchControl's system-time dropdown — so the module is one route, one page and the quick link.
+  Divergences:
+  - **core's `getTimeMachineIcon` was a STUB and is now real** (`altea/client/Lines/TimeMachineIcon`): the
+    per-line coloured dot that marks added / removed / changed / moved values is what the "UI differences"
+    tab IS, and every Line already called it. Its vocabulary went into `EntityControlMessage`
+    (`PreviousValueWas0`, `Moved`, `Removed0`, `Added`, `RemovedAndSelectedAgain`, `Selected`). No
+    `translateX` (no altea Line passes one) and the checkbox variant reads `oldCtx.value` DIRECTLY (no
+    MListElement) off the ENUM OBJECT rather than a TypeInfo.
+  - **`PreviousOperationLog` is registered in CORE**, exactly where Signum registers it
+    (`OperationLogic.registerPreviousLog`, on `schemaCompleted`, for every @systemVersioned table): the
+    version grid's "who ran which operation" columns. `e.SystemPeriod().Contains(ol.End)` is spelled out
+    against `.min` / `.max` — altea's `NullableInterval.contains` is an in-memory method, only the BOUNDS
+    lower — which is also why `NullableInterval`'s bounds narrowed to `PlainDateTime` (a cast to a
+    QUALIFIED type name is not quotable).
+  - **`Administrator.SaveDisableIdentity` needs no counterpart**: altea's insert path already writes an
+    explicit id into an identity PK when an entity is `isNew` with an `id`, so "restore this deleted row"
+    is `isNew = true` with the id left alone. Signum's MList re-insertion block (its own "not tested"
+    comment attached) disappears with MList: a `@part` row is an ordinary graph member.
+  - eastwind marks `OrderEntity` `@systemVersioned`, as Southwind does — **so an existing database needs a
+    `terminal sync` before the Time Machine has anything to read.**
+
+- **Signum.Tour → altea-tour: an assembly of core seams plus driver.js.** The engine ports whole (the
+  trigger model, the CSS-step discriminator, the editor, the player). Three pieces went into CORE where
+  Signum keeps them: `TourTriggerSymbol` + `TourTriggerLogic` (Signum.Basics — so any module can declare a
+  trigger without depending on the extension) and `TourButton` / `TourButtonOptions` (the renderer slot
+  altea-tour fills). A fourth is NEW in core because Signum has it and altea did not:
+  `EntityPack.extension` + `registerEntityPackExtension` (Signum's `EntityPackTS.AddExtension`), which is
+  how the frame widget knows whether a tour exists without a round-trip. Divergences:
+  - **`MList` → `@part` rows twice over** (steps, and each step's css steps), keeping Signum's
+    `CssStepEmbedded` NAME as the AD configurations did; Signum's `WithVirtualMList` needs no counterpart.
+  - **altea has no `PropertyRouteEntity`** (altea-auth keys a property rule by its route STRING), so a
+    "Property" css step stores the `propertyString()` — and the SELECTOR it builds uses the route's LAST
+    SEGMENT, because altea re-roots the PropertyRoute at each embedded and a Line's `data-property-path` is
+    its own member (the divergence altea-playwright documents). Signum's PropertyRouteEntity delete cascade
+    goes with the table.
+  - **`cssSelector` lives in the DATA layer**, computed once, so the editor's live preview and the DTO the
+    player consumes cannot drift (Signum computes it twice).
+  - `EntityAccordion` is not ported, so the steps use `EntityTabRepeater`; `MarkdownLine` (Signum.Markdown,
+    unported) becomes altea-codemirror's `MarkdownCodeMirror`; `PropertyRouteCombo` is local to this
+    package (Signum keeps it in the framework, and altea has no other consumer);
+    `getCurrentUserQuery` is a NEW `SearchControlLoaded` augmentation in altea-user-queries, derived from
+    `extraUrlParams.userQuery` rather than a dedicated field.
+
+- **Signum.Translation → altea-translations: a Signum ASSEMBLY is an altea PACKAGE.** Both halves port —
+  the CODE half (which edits each package's own `translations/*.xml`, nothing stored) and the INSTANCE half
+  (the `TranslatedInstance` table, for every `@translatable` route). The whole code half rests on that one
+  mapping, and it is a clean one: translations already live per package, and every registered name knows
+  its owning package through the transformer's `__fileInfo` (`getLocation`). Two renames follow —
+  Signum's second grouping level is the C# NAMESPACE, here it is the declaring FOLDER; and
+  `[DefaultAssemblyCulture]` is core's `setDefaultCulture`. Core gained three things for it:
+  - **`@translatable` + `FieldInfo.translatable`** (`"Text"` / `"Html"` / `false` to switch a sub-tree off).
+    It is on the COMPILE-TIME descriptor, so the client gets it for free — Signum has to ship it through
+    `ReflectionServer.PropertyRouteExtension`.
+  - **`PropertyRouteTranslationLogic`** (`altea/server/propertyRouteTranslation`), where Signum.Basics
+    keeps it: the translatable-route registry and the swappable resolver. With the module absent every call
+    falls through to the fallback, so a consumer needs no null checks. Its QUERY form is NOT ported —
+    Signum swaps in a `TranslatedFieldExpression` through `As.ReplaceExpression`, which has no counterpart
+    (the transformer stamps expression trees at BUILD time).
+  - **a serializer hook** (`setTranslatedFieldProvider`): every translatable field an entity writes is
+    followed by `<field>_translated`, so a Line can show the translation with no extra call — Signum ships
+    the same property through a per-type JSON PropertyConverter.
+  The instance half's ONE structural divergence simplifies most of it: **there is no rowId.** Signum keys a
+  translation by (root instance, a route through an MList, rowId); altea has no MList, so a collection row
+  is an ENTITY with its own lite and its own PropertyRoute root — the key is (culture, instance, route) and
+  Signum's `LocalizedInstanceKey` triple, its MList primary-key parsing, the `"route;rowId"` composite key
+  and `RemoveTranslationsForMissingRowIds` all collapse. Also:
+  - the translators are ASYNC (no blocking in JS); the SDKs become their own REST calls (Azure's already
+    was one; DeepL's `Translator` is three documented endpoints), and the proxy option is dropped
+    (`HTTPS_PROXY` instead). `AlreadyTranslatedTranslator` reads the package files rather than assemblies.
+  - `PlainExcelGenerator` gained `writeStringTable` / `readStringTable` — the honest counterpart of
+    Signum's reflection-driven `WritePlainExcel<T>(List<T>)`, since TypeScript erases the member list.
+  - NOT ported: `countLocalizationHits` (Signum counts un-translated hits per role to order the sync page;
+    that would put a counter on the framework's hottest path), and the TERMINAL commands `SynchronizeTypes`
+    / `CopyTranslations` — altea has neither problem, since a package's `translations/` IS the source and
+    nothing is copied at build time.
+  - `NaturalLanguage` gained `tryGetGenderFromDeterminer` / `determinersFor`, which the gender round-trip
+    (ask for "el pedido", read the gender back off the article) and the gender picker need.
 
 > `old/CLAUDE.md` and `old/**/AGENTS.md` describe **Signum's** conventions, not altea's — read them to understand the source, but altea's conventions above win.
 
