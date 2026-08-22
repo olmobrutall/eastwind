@@ -28,6 +28,7 @@
     { "path": "../altea/altea-diff-log/tsconfig.data.json" },
     { "path": "../altea/altea-html-editor/tsconfig.data.json" },
     { "path": "../altea/altea-dynamic/tsconfig.data.json" },
+    { "path": "../altea/altea-eval/tsconfig.data.json" },
     { "path": "../altea/altea-workflow/tsconfig.data.json" }
   ]
 }

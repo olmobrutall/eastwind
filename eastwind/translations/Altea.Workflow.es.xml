@@ -209,9 +209,11 @@
     <Member Name="ProcessIdentifier" Description="Identificador de proceso" />
     <Member Name="RetryCount" Description="Recuento de reintentos" />
   </Type>
-  <Type Name="SubEntitiesEval" Description="Evaluar subentidades" />
+  <Type Name="SubEntitiesEval" Description="Evaluar subentidades">
+    <Member Name="Script" Description="Script" />
+  </Type>
   <Type Name="SubWorkflowEmbedded" Description="Sub flujo de trabajo">
-    <Member Name="SubEntitiesEvaluator" Description="Evaluar subentidades" />
+    <Member Name="SubEntitiesEval" Description="Evaluar subentidades" />
     <Member Name="Workflow" Description="Flujo de trabajo" />
   </Type>
   <Type Name="TimeSpanEmbedded" Description="Intervalo de tiempo">
@@ -230,12 +232,14 @@
     <Member Name="Name" Description="Nombre" />
   </Type>
   <Type Name="WorkflowActionEntity" Description="Acción de flujo de trabajo">
-    <Member Name="Executor" Description="Evaluar" />
+    <Member Name="Eval" Description="Evaluar" />
     <Member Name="Guid" Description="Guid" />
     <Member Name="MainEntityType" Description="Tipo de entidad principal" />
     <Member Name="Name" Description="Nombre" />
   </Type>
-  <Type Name="WorkflowActionEval" Description="Evaluar acción de flujo de trabajo" />
+  <Type Name="WorkflowActionEval" Description="Evaluar acción de flujo de trabajo">
+    <Member Name="Script" Description="Script" />
+  </Type>
   <Type Name="WorkflowActionOperation">
     <Member Name="Clone" Description="Clonar" />
     <Member Name="Delete" Description="Eliminar" />
@@ -309,12 +313,14 @@
     <Member Name="Task" Description="Tarea" />
   </Type>
   <Type Name="WorkflowConditionEntity" Description="Condición de flujo de trabajo">
-    <Member Name="Evaluator" Description="Evaluar" />
+    <Member Name="Eval" Description="Evaluar" />
     <Member Name="Guid" Description="Guid" />
     <Member Name="MainEntityType" Description="Tipo de entidad principal" />
     <Member Name="Name" Description="Nombre" />
   </Type>
-  <Type Name="WorkflowConditionEval" Description="Evaluar condición de flujo de trabajo" />
+  <Type Name="WorkflowConditionEval" Description="Evaluar condición de flujo de trabajo">
+    <Member Name="Script" Description="Script" />
+  </Type>
   <Type Name="WorkflowConditionOperation">
     <Member Name="Clone" Description="Clonar" />
     <Member Name="Delete" Description="Eliminar" />
@@ -382,8 +388,12 @@
     <Member Name="Delete" Description="Eliminar" />
     <Member Name="Save" Description="Guardar" />
   </Type>
-  <Type Name="WorkflowEventTaskActionEval" Description="Evaluar acción de tarea de evento de flujo de trabajo" />
-  <Type Name="WorkflowEventTaskConditionEval" Description="Evaluar condición de tarea de evento de flujo de trabajo" />
+  <Type Name="WorkflowEventTaskActionEval" Description="Evaluar acción de tarea de evento de flujo de trabajo">
+    <Member Name="Script" Description="Script" />
+  </Type>
+  <Type Name="WorkflowEventTaskConditionEval" Description="Evaluar condición de tarea de evento de flujo de trabajo">
+    <Member Name="Script" Description="Script" />
+  </Type>
   <Type Name="WorkflowEventTaskConditionResultEntity" Description="Resultado de condición de tarea de evento de flujo">
     <Member Name="CreationDate" Description="Fecha de creación" />
     <Member Name="Result" Description="Resultado" />
@@ -445,10 +455,12 @@
     <Member Name="Error" Description="Error" />
     <Member Name="Warning" Description="Advertencia" />
   </Type>
-  <Type Name="WorkflowLaneActorsEval" Description="Evaluar actores de carril de flujo de trabajo" />
+  <Type Name="WorkflowLaneActorsEval" Description="Evaluar actores de carril de flujo de trabajo">
+    <Member Name="Script" Description="Script" />
+  </Type>
   <Type Name="WorkflowLaneEntity" Description="Carril de flujo de trabajo">
     <Member Name="Actors" Description="Actores" />
-    <Member Name="ActorsEvaluator" Description="Evaluar actores" />
+    <Member Name="ActorsEval" Description="Evaluar actores" />
     <Member Name="BpmnElementId" Description="Id de elemento BPMN" />
     <Member Name="Name" Description="Nombre" />
     <Member Name="Pool" Description="Pool" />
@@ -456,7 +468,7 @@
   </Type>
   <Type Name="WorkflowLaneModel" Description="Carril de flujo de trabajo">
     <Member Name="Actors" Description="Actores" />
-    <Member Name="ActorsEvaluator" Description="Evaluar actores" />
+    <Member Name="ActorsEval" Description="Evaluar actores" />
     <Member Name="MainEntityType" Description="Tipo de entidad principal" />
     <Member Name="Name" Description="Nombre" />
   </Type>
@@ -530,13 +542,13 @@
     <Member Name="Replacements" Description="Reemplazos de" />
   </Type>
   <Type Name="WorkflowScriptEntity" Description="Script de flujo de trabajo" Gender="m">
-    <Member Name="Executor" Description="Eval" />
+    <Member Name="Eval" Description="Eval" />
     <Member Name="Guid" Description="Guid" />
     <Member Name="MainEntityType" Description="Tipo de entidad principal" />
     <Member Name="Name" Description="Nombre" />
   </Type>
   <Type Name="WorkflowScriptEval" Description="Evaluar script de flujo de trabajo">
-    <Member Name="CustomTypes" Description="Tipos personalizados" />
+    <Member Name="Script" Description="Script" />
   </Type>
   <Type Name="WorkflowScriptOperation">
     <Member Name="Clone" Description="Clonar" />
@@ -556,12 +568,14 @@
     <Member Name="Save" Description="Guardar" />
   </Type>
   <Type Name="WorkflowTimerConditionEntity" Description="Condición de temporizador de flujo de trabajo">
-    <Member Name="Evaluator" Description="Evaluar" />
+    <Member Name="Eval" Description="Evaluar" />
     <Member Name="Guid" Description="Guid" />
     <Member Name="MainEntityType" Description="Tipo de entidad principal" />
     <Member Name="Name" Description="Nombre" />
   </Type>
-  <Type Name="WorkflowTimerConditionEval" Description="Evaluar condición de temporizador de flujo de trabajo" />
+  <Type Name="WorkflowTimerConditionEval" Description="Evaluar condición de temporizador de flujo de trabajo">
+    <Member Name="Script" Description="Script" />
+  </Type>
   <Type Name="WorkflowTimerConditionOperation">
     <Member Name="Clone" Description="Clonar" />
     <Member Name="Delete" Description="Eliminar" />

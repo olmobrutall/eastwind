@@ -32,6 +32,8 @@ altea/
   altea-diff-log/     # before/after entity dumps on each operation log + the diff view (Signum.DiffLog)
   altea-dynamic/      # views defined in the DATABASE and interpreted, + CSS overrides and SQL migrations
                       #   from the admin UI (the INTERPRETED half of Signum.Dynamic — see below)
+  altea-eval/         # EvalEmbedded<F>: a TypeScript script stored in the DATABASE, type-checked and run
+                      #   at runtime (Signum.Eval, whose Roslyn becomes the TypeScript compiler)
   altea-html-editor/  # WYSIWYG rich text over Lexical + viewer + html→text (Signum.HtmlEditor)
   altea-files-azure/  # Azure Blob Storage file store (Signum.Files.AzureBlobs)
   altea-files-s3/     # S3 / MinIO file store (Signum.Files.S3)
@@ -265,9 +267,11 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   and restarts the app. The blocker is not the compiler (TypeScript has one and altea drives it) but that
   altea's entity model is stamped at BUILD time by the quote-transformer, so a runtime-invented type needs
   the transformer over generated source + a process restart + a schema sync — a design project, not a port.
-  Signum.Eval does not port either; two of its pieces are re-homed (`EvalPanelPermission.ViewDynamicPanel` →
-  `DynamicPanelPermission`, `registerDynamicPanelSearch` → `DynamicClient`), and `TypeHelpComponent`'s one
-  needed function becomes `client/View/FieldExpression.ts`. Consequences worth knowing:
+  Signum.Eval itself DOES port (see altea-eval above), so the blocker is only the runtime-invented TYPE. The
+  pieces re-homed here stay where they are: this package owns the admin pages, so it keeps its own
+  `DynamicPanelPermission` beside altea-eval's `EvalPanelPermission`, and `registerDynamicPanelSearch` lives
+  on `DynamicClient`; `TypeHelpComponent`'s one needed function becomes `client/View/FieldExpression.ts`.
+  Consequences worth knowing:
   - it forced a CORE seam: `Navigator.ViewDispatcher` / `BasicViewDispatcher` / `setViewDispatcher` (altea
     resolved views inline, with a `// TODO: real ViewDispatcher` where the seam belonged), and
     `applyViewOverrides` now asks the DISPATCHER for overrides so a module can contribute them for a type it
@@ -340,18 +344,40 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   and a tool result is serialized with `Serializer.stringify`, NOT `JSON.stringify` — a plain stringify drops
   a Lite's entity type (its `entityType` is a constructor), leaving the model unable to build a filter value.
 
-- **Signum.Workflow → altea-workflow: the Evals become SYMBOLS, and `withQuoted` is query-only.** The BPMN
-  engine ports whole (designer, engine, inbox, case flow, activity monitor, script runner, scheduled starts),
-  but two things reshape it:
-  - **Every `EvalEmbedded<T>` becomes a code-declared `Symbol` plus a registered function**
-    (`data/WorkflowEval.ts` — the ONE place the divergence lives; 8 registries in `WorkflowLogic`). Signum
-    stores C# SOURCE in the row a designer types into and compiles it with Roslyn; altea has no Signum.Eval,
-    so a condition / action / timer condition / script / lane-actors / sub-entities / event-task
-    condition+action is *picked* from a dropdown and implemented in code (eastwind:
-    `eastwindWorkflowSymbols.data.ts` + `eastwindWorkflow.server.ts`). Consequences: the four "eval editor"
-    views collapse into symbol PICKERS, `WorkflowConditionTest` / `EvalClient.checkEvalFindOptions` /
-    `TypeHelpComponent` / `showWorkflowTransitionContextCodeHelp` are gone, and
-    `registerDynamicPanelSearch`'s `Code` columns become `Text` over the symbol key.
+- **Signum.Eval → altea-eval: a stored TypeScript module, type-checked with the TypeScript compiler.**
+  `EvalEmbedded<F>` keeps Signum's shape — a script in a column, compiled on first use, cached, its
+  diagnostics reported as a validation error on `script` — with `F` a FUNCTION type rather than an
+  interface, because a TypeScript module's natural unit is a function and the generated module's DEFAULT
+  EXPORT is the algorithm. Compiling is two passes: `ts.createProgram` over a virtual file for the CHECK
+  (against the app's real `.d.ts`, the counterpart of Roslyn's MetadataReferences), then
+  `ts.transpileModule` + `new Function` for the RUN. Divergences worth knowing:
+  - **Signum's assembly / namespace lists become a MODULE REGISTRY** (`EvalLogic.registerModule(specifier,
+    value, { typesPath, typeNames })`), and it is single-sided: the same entry resolves the import's TYPE and
+    is what the sandboxed `require` hands back, so a script can only reach what the app registered
+    (eastwind: `eastwindEval.server.ts`). `EvalLogic.addPreamble` is `GetUsingNamespaces()`. An APP's own
+    modules need `typesPath` (nothing depends on the app, so there is no node_modules entry to follow), and
+    a name that exists only as a TYPE needs `typeNames` (`specifierExporting` looks at runtime properties).
+  - **`[BindParent]` has no counterpart**, so an eval's owner is bound by `sb.include(Owner).withEvals()`,
+    which hangs off the `preSaving` and `retrieved` schema events (the retrieve also `reset()`s the cached
+    compilation). Forget it and `owner()` throws by name. An eval carried by a MODEL is left UNBOUND on
+    purpose — a ModelEntity is never included — so validation skips it and the real check runs when the model
+    is applied and its entity saved.
+  - the CHECK-EVALS registry is SERVER-side (`EvalLogic.registerEvalSource(name, load)`) where Signum keeps
+    a list of client FindOptions: only the server can compile, and a filter Signum needs a QueryRequest for
+    ("only lanes with an actors eval") is a `.filter(...)` here.
+  - not ported: `TypeHelp` (the honest equivalent is editor IntelliSense over the same `.d.ts`),
+    `GetCustomErrors`, and the EvalPanel PAGE — altea-dynamic owns the admin pages, so
+    `EvalPanelPermission` lives here but `registerDynamicPanelSearch` stays on `DynamicClient`.
+  - the editor is `altea-codemirror`'s `TypeScriptCodeMirror` inside one reusable
+    `EvalLine` (Signum spells the signature / editor / closing-brace sandwich out inline in each of its
+    eval views; there are ten of them here).
+  - a compiled script runs IN PROCESS with the server's rights, exactly as Signum's Roslyn-compiled C# does.
+    There is no sandbox; authoring one is gated by the owning entity's Save operation.
+
+- **Signum.Workflow → altea-workflow: `withQuoted` is query-only.** The BPMN engine ports whole (designer,
+  engine, inbox, case flow, activity monitor, script runner, scheduled starts), and its eight
+  `EvalEmbedded<T>`s port as such through altea-eval (each subclass beside the entity that owns it; the eight
+  `IXEvaluator` interfaces become the FUNCTION types in `data/WorkflowEval.ts`). One thing does reshape it:
   - **A `withQuoted` prototype member is QUERY-ONLY.** The transformer emits the quoted AST *beside* the body
     and leaves the body's inner lambdas unstamped, so calling one in memory throws "The following lambda has
     not been quoted" — Signum's `[AutoExpressionField]` members work both ways. Every other altea module only

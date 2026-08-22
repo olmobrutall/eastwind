@@ -44,6 +44,7 @@ import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
 import { DiffLogClient } from "@altea/altea-diff-log/client/DiffLogClient";
 import { DynamicViewClient } from "@altea/altea-dynamic/client/DynamicViewClient";
 import { DynamicClient } from "@altea/altea-dynamic/client/DynamicClient";
+import { EvalClient } from "@altea/altea-eval/client/EvalClient";
 
 // The full (admin) registration bundle — Southwind's MainAdmin.startFull: the framework client modules
 // (Operations/Navigator/Finder) first, then each entity domain's client. Mirrors the server's
@@ -200,6 +201,11 @@ export function startFull(routes: RouteObject[]): void {
     // to the static view (or the auto-generated one).
     DynamicViewClient.start(cb);
     DynamicClient.start(cb);
+
+    // Eval module (@altea/altea-eval): registers nothing today (the dynamic panel that reads its
+    // eval-errors endpoint belongs to altea-dynamic above) — see EvalClient's header. Kept so the module
+    // has the same wiring as every other, and so its script EDITORS are reachable from one import.
+    EvalClient.start(cb);
 
     // Workflow (@altea/altea-workflow): the BPMN designer page, the case-activity page/modal + the Inbox's
     // Finder settings, every case/workflow operation's button behaviour, and the two toolbar configs. AFTER

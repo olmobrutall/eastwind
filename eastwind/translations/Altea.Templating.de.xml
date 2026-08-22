@@ -16,8 +16,9 @@
   <Type Name="QueryModelMessage">
     <Member Name="ConfigureYourQueryAndPressSearchBeforeOk" Description="Konfigurieren Sie Ihre Abfrage und klicken Sie auf [suchen] vor Sie [Ok] drücken." />
   </Type>
-  <Type Name="TemplateApplicableEval" Description="Vorlage für eval" />
-<Type Name="TemplateApplicableSymbol" Description="Vorlagen-Anwendbarkeitsbedingung" PluralDescription="Vorlagen-Anwendbarkeitsbedingungen" Gender="f" />
+  <Type Name="TemplateApplicableEval" Description="Vorlage für eval">
+    <Member Name="Script" Description="Skript" />
+  </Type>
   <Type Name="TemplateMessage">
     <Member Name="CopyToClipboard" Description="In die Zwischenablage kopieren: Strg+C, ESC" />
     <Member Name="Template" Description="Vorlage" />

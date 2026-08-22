@@ -394,6 +394,9 @@ importers:
       '@altea/altea-codemirror':
         specifier: workspace:*
         version: link:../altea-codemirror
+      '@altea/altea-eval':
+        specifier: workspace:*
+        version: link:../altea-eval
       '@altea/altea-files':
         specifier: workspace:*
         version: link:../altea-files
@@ -422,6 +425,24 @@ importers:
       '@types/nodemailer':
         specifier: ^7.0.0
         version: 7.0.12
+
+  altea/altea-eval:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      '@altea/altea-codemirror':
+        specifier: workspace:*
+        version: link:../altea-codemirror
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+      typescript:
+        specifier: '*'
+        version: 6.0.3
 
   altea/altea-files:
     dependencies:
@@ -588,6 +609,9 @@ importers:
       '@altea/altea-email':
         specifier: workspace:*
         version: link:../altea-email
+      '@altea/altea-eval':
+        specifier: workspace:*
+        version: link:../altea-eval
       '@altea/altea-files':
         specifier: workspace:*
         version: link:../altea-files
@@ -666,6 +690,9 @@ importers:
       '@altea/altea-auth':
         specifier: workspace:*
         version: link:../altea-auth
+      '@altea/altea-eval':
+        specifier: workspace:*
+        version: link:../altea-eval
       quote-transformer:
         specifier: workspace:*
         version: link:../quote-transformer
@@ -729,6 +756,9 @@ importers:
       '@altea/altea-dynamic':
         specifier: workspace:*
         version: link:../altea-dynamic
+      '@altea/altea-eval':
+        specifier: workspace:*
+        version: link:../altea-eval
       '@altea/altea-omnibox':
         specifier: workspace:*
         version: link:../altea-omnibox
@@ -829,6 +859,9 @@ importers:
       '@altea/altea-email':
         specifier: workspace:*
         version: link:../altea/altea-email
+      '@altea/altea-eval':
+        specifier: workspace:*
+        version: link:../altea/altea-eval
       '@altea/altea-files':
         specifier: workspace:*
         version: link:../altea/altea-files

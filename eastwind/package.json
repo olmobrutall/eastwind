@@ -67,6 +67,7 @@
     "@altea/altea-diff-log": "workspace:*",
     "@altea/altea-html-editor": "workspace:*",
     "@altea/altea-dynamic": "workspace:*",
+    "@altea/altea-eval": "workspace:*",
     "@altea/altea-workflow": "workspace:*"
   },
   "devDependencies": {

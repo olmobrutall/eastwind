@@ -43,6 +43,7 @@ import { OmniboxLogic } from "@altea/altea-omnibox/server/OmniboxLogic";
 import { DiffLogLogic } from "@altea/altea-diff-log/server/DiffLogLogic";
 import { WorkflowLogicStarter } from "@altea/altea-workflow/server/WorkflowLogicStarter.server";
 import { EastwindWorkflow } from "./eastwindWorkflow.server";
+import { EastwindEval } from "./eastwindEval.server";
 import { DynamicLogic } from "@altea/altea-dynamic/server/DynamicLogic.server";
 import { EmailLogic } from "@altea/altea-email/server/EmailLogic.server";
 import { FileTypeLogic } from "@altea/altea-files/server/FileTypeLogic.server";
@@ -292,6 +293,13 @@ export namespace Starter {
         ToolbarLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
         ToolbarLogic.registerRoleTypeCondition(EastwindTypeCondition.RoleEntities);
 
+        // Eval module (@altea/altea-eval): the ViewDynamicPanel permission, the eval-errors endpoint, and —
+        // the part that matters — the COMPILER configuration plus the registry of what a stored script may
+        // import (see eastwindEval.server.ts, the counterpart of Signum's EvalLogic.AddFullAssembly block).
+        // BEFORE every module whose entities carry an EvalEmbedded: an e-mail / Office template's
+        // `applicable`, and the workflow's eight.
+        EastwindEval.start(sb);
+
         // Email + templating modules (altea-email / altea-templating): the EmailMessage / EmailTemplate /
         // EmailMasterTemplate / EmailSenderConfiguration tables, the template parser's symbol tables, the
         // async sender's routes, and the "send this template" lookups (Signum's EmailLogic.Start). AFTER
@@ -377,11 +385,11 @@ export namespace Starter {
         // runner. AFTER the scheduler (its timeout sweep is a SimpleTask), processes (the timeout process
         // algorithm) and auth (a lane's actors are users/roles), and before OperationLogic.start so its many
         // operation symbols get seeded. eastwind then makes ORDER a case main entity and registers the app's
-        // condition / action / lane-actor hooks — Southwind starts the module but declares no main entity, so
-        // nothing could actually run through it (see eastwindWorkflow.server.ts).
+        // Southwind starts the module but declares no main entity, so nothing could actually run through it
+        // (see eastwindWorkflow.server.ts). Its conditions / actions / scripts are stored TypeScript compiled
+        // by the eval module above.
         WorkflowLogicStarter.start(sb, EastwindWorkflow.configuration);
         EastwindWorkflow.registerOrderAsMainEntity(sb);
-        EastwindWorkflow.registerEvaluators();
 
         // Omnibox module (altea-omnibox): declares no tables (its ViewOmnibox permission symbol is seeded
         // through the PermissionSymbol table above); registers the entity / dynamic-query / special result

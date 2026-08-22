@@ -13,8 +13,9 @@
   <Type Name="QueryModelMessage">
     <Member Name="ConfigureYourQueryAndPressSearchBeforeOk" Description="Configure su consulta y pulse [Buscar] antes de [Aceptar]" />
   </Type>
-  <Type Name="TemplateApplicableEval" Description="Evaluar plantilla aplicable" />
-<Type Name="TemplateApplicableSymbol" Description="Condición de aplicabilidad de plantilla" PluralDescription="Condiciones de aplicabilidad de plantilla" Gender="f" />
+  <Type Name="TemplateApplicableEval" Description="Evaluar plantilla aplicable">
+    <Member Name="Script" Description="Script" />
+  </Type>
   <Type Name="TemplateTokenMessage">
     <Member Name="Insert" Description="Insertar" />
     <Member Name="NoColumnSelected" Description="Ninguna columna seleccionada" />

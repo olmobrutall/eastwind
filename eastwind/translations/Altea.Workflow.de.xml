@@ -208,9 +208,11 @@
     <Member Name="ProcessIdentifier" Description="Prozess Indentifikator" />
     <Member Name="RetryCount" Description="Wiederholungszähler" />
   </Type>
-  <Type Name="SubEntitiesEval" Description="Untereinheiten eval" />
+  <Type Name="SubEntitiesEval" Description="Untereinheiten eval">
+    <Member Name="Script" Description="Skript" />
+  </Type>
   <Type Name="SubWorkflowEmbedded" Description="Sub-Workflow">
-    <Member Name="SubEntitiesEvaluator" Description="Untereinheiten eval" />
+    <Member Name="SubEntitiesEval" Description="Untereinheiten eval" />
     <Member Name="Workflow" Description="Workflow" />
   </Type>
   <Type Name="TimeSpanEmbedded" Description="Zeitspanne">
@@ -224,12 +226,14 @@
     <Member Name="Name" Description="Name" />
   </Type>
   <Type Name="WorkflowActionEntity" Description="Workflow-Aktion">
-    <Member Name="Executor" Description="Eval" />
+    <Member Name="Eval" Description="Eval" />
     <Member Name="Guid" Description="Guid" />
     <Member Name="MainEntityType" Description="Haupt-Entitätstyp" />
     <Member Name="Name" Description="Name" />
   </Type>
-  <Type Name="WorkflowActionEval" Description="Workflow-Aktion eval" />
+  <Type Name="WorkflowActionEval" Description="Workflow-Aktion eval">
+    <Member Name="Script" Description="Skript" />
+  </Type>
   <Type Name="WorkflowActionOperation">
     <Member Name="Clone" Description="Klonen" />
     <Member Name="Delete" Description="Löschen" />
@@ -294,7 +298,7 @@
     <Member Name="Task" Description="Aufgabe" />
   </Type>
   <Type Name="WorkflowConditionEntity" Description="Workflow-Bedingung">
-    <Member Name="Evaluator" Description="Auswertung" />
+    <Member Name="Eval" Description="Auswertung" />
     <Member Name="MainEntityType" Description="Haupt-Entitätstyp" />
     <Member Name="Name" Description="Name" />
   </Type>

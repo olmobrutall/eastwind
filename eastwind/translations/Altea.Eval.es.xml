@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<Translations>
+  <Type Name="EvalMessage">
+    <Member Name="_0Errors" Description="{0} errores:" />
+    <Member Name="Line0_1" Description="Línea {0}: {1}" />
+    <Member Name="NoCompilerIsConfigured" Description="No hay ningún compilador configurado (no se ha llamado a EvalLogic.start)" />
+    <Member Name="TheOwnerOf0HasNotBeenBoundCallWithEvalsOnItsInclude" Description="El propietario de {0} no se ha vinculado. Llame a `.withEvals()` en su include." />
+    <Member Name="TheScriptHasNotBeenCompiled" Description="El script no se ha compilado" />
+  </Type>
+  <Type Name="EvalPanelMessage">
+    <Member Name="_0Found" Description="{0} encontrados" />
+    <Member Name="CheckEvals" Description="Comprobar evals" />
+    <Member Name="ExceptionChecking0" Description="Excepción comprobando {0}" />
+    <Member Name="NoErrorsFound" Description="No se han encontrado errores" />
+    <Member Name="OpenErrors" Description="Errores abiertos" />
+  </Type>
+  <Type Name="EvalPanelPermission">
+    <Member Name="ViewDynamicPanel" Description="Ver panel dinámico" />
+  </Type>
+</Translations>
