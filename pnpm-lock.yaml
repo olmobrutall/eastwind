@@ -925,6 +925,18 @@ importers:
         specifier: workspace:*
         version: link:../quote-transformer
 
+  altea/altea-view-log:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
   altea/altea-workflow:
     dependencies:
       '@altea/altea':
@@ -1120,6 +1132,9 @@ importers:
       '@altea/altea-user-queries':
         specifier: workspace:*
         version: link:../altea/altea-user-queries
+      '@altea/altea-view-log':
+        specifier: workspace:*
+        version: link:../altea/altea-view-log
       '@altea/altea-workflow':
         specifier: workspace:*
         version: link:../altea/altea-workflow

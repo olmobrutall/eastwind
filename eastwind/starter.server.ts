@@ -46,6 +46,10 @@ import { DiffLogLogic } from "@altea/altea-diff-log/server/DiffLogLogic";
 import { TimeMachineLogic } from "@altea/altea-time-machine/server/TimeMachineLogic.server";
 import { TreeModuleLogic } from "@altea/altea-tree/server/TreeModuleLogic.server";
 import { RestModuleLogic } from "@altea/altea-rest/server/RestModuleLogic.server";
+import { ViewLogLogic } from "@altea/altea-view-log/server/ViewLogLogic.server";
+import { UserQueryEntity } from "@altea/altea-user-queries/data/UserQuery";
+import { UserChartEntity } from "@altea/altea-chart/data/UserChart";
+import { DashboardEntity } from "@altea/altea-dashboard/data/Dashboard";
 import { CatalogApi } from "./publicApi/CatalogApi.server";
 import { TourLogic } from "@altea/altea-tour/server/TourLogic.server";
 import { TranslationLogic } from "@altea/altea-translations/server/TranslationLogic.server";
@@ -453,6 +457,20 @@ export namespace Starter {
         // key's Save/Delete symbols get seeded. Southwind starts the two halves as two calls
         // (`RestLogLogic.Start` / `RestApiKeyLogic.Start`); altea packages expose one start per module.
         RestModuleLogic.start(sb);
+
+        // ViewLog module (@altea/altea-view-log): one row per "the API handed this entity out" and per
+        // "a search ran", with the SQL the search executed. `registerExpressionsFor` is Southwind's exact
+        // set — the three user assets whose search pages get the "who looked at this?" sub-tokens.
+        // BEFORE OperationLogic.start, like every other include; the two subscriptions it installs are
+        // core seams (ExecutionMode.onApiRetrieved / QueryLogic.queries.queryExecuted), so nothing else
+        // needs to know it is here.
+        ViewLogLogic.start(sb, {
+            registerExpressionsFor: [
+                UserQueryEntity as unknown as Type<Entity>,
+                UserChartEntity as unknown as Type<Entity>,
+                DashboardEntity as unknown as Type<Entity>,
+            ],
+        });
         // Translations module (altea-translations): both halves — the pages that edit each PACKAGE's own
         // translations/*.xml files (the code half, nothing stored), and the TranslatedInstance table +
         // its pages (the instance half, for every @translatable route). BEFORE OperationLogic.start so
