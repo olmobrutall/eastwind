@@ -3,10 +3,10 @@
 Snapshot of the extension-by-extension port state, as of 2026-08-23.
 
 `old/Framework/Extensions/` holds **55** Signum extension projects (+ `Signum.Extensions.Test`, the shared
-suite). `altea/` holds **46** extension packages (+ `altea/altea` core, `quote-transformer`,
+suite). `altea/` holds **47** extension packages (+ `altea/altea` core, `quote-transformer`,
 `quote-transformer-test`).
 
-Counts: **48 ported**, **2 partial**, **3 deferred by design**, **5 pending** — of which **1 is started by
+Counts: **49 ported**, **2 partial**, **3 deferred by design**, **4 pending** — of which **1 is started by
 `Southwind/Starter.cs`** and so blocks eastwind parity.
 
 LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
@@ -46,6 +46,7 @@ LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
 | Signum.Migrations | `altea-migrations` | |
 | Signum.Omnibox | `altea-omnibox` | |
 | Signum.Playwright | `altea-playwright` | CDP debug launcher + 5 line proxies + 4 panel proxies unported |
+| Signum.Printing | `altea-printing` | print queue; StateValidator → per-field `@fieldValidation`; the print action is an app seam (default throws); found 2 core bugs (no client sub-tokens for `@implementedByAll`, `logException` in the caller's transaction) |
 | Signum.Processes | `altea-processes` | PackageOperation contextual menu unported |
 | Signum.Profiler | `altea-profiler` | |
 | Signum.Rest | `altea-rest` | Signum's MVC action filter becomes Express middleware mounted on a path prefix; a logged `?apiKey=` is redacted; no Swagger, no DeleteLogs |
@@ -81,15 +82,14 @@ LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
 
 ## Pending
 
-**Next up: Signum.WhatsNew.** (Signum.Map, Signum.Help, Signum.Tree, Signum.Rest, Signum.ViewLog, Signum.SMS, Signum.Markdown and Signum.Isolation are done — see Ported.)
+**Next up: Signum.WhatsNew.** (Signum.Map, Signum.Help, Signum.Tree, Signum.Rest, Signum.ViewLog, Signum.SMS, Signum.Markdown, Signum.Isolation and Signum.Printing are done — see Ported.)
 
 | # | Signum extension | What it is | LOC | Southwind starts it |
 | --- | --- | --- | --- | --- |
 | 1 | Signum.WhatsNew | release-notes entity, navbar dropdown, per-user read log | 1 292 | no |
-| 2 | Signum.Printing | `PrintLineEntity` print queue + admin panel | 633 | no |
-| 3 | Signum.Calendar | `CalendarDayEntity` — a working-days table | 72 | no |
-| 4 | Signum.WorkflowDynamic | glues Signum.Workflow to the **compiled** Dynamic half | 197 | via `DynamicLogicStarter` — blocked on Signum.Dynamic's compiled half |
-| 5 | Signum.Playwright.Workflow | `CaseFrame` page / modal proxies for the workflow UI | 169 | test-only |
+| 2 | Signum.Calendar | `CalendarDayEntity` — a working-days table | 72 | no |
+| 3 | Signum.WorkflowDynamic | glues Signum.Workflow to the **compiled** Dynamic half | 197 | via `DynamicLogicStarter` — blocked on Signum.Dynamic's compiled half |
+| 4 | Signum.Playwright.Workflow | `CaseFrame` page / modal proxies for the workflow UI | 169 | test-only |
 
 ## Adjacent gaps (not extension projects)
 

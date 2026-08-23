@@ -63,6 +63,8 @@ altea/
                       #   declared trigger (Signum.Tour)
   altea-translations/ # translating the app: the per-package translation XML files (code) and the
                       #   per-instance @translatable fields (data) — Signum.Translation, both halves
+  altea-printing/     # a print QUEUE: a line per document, batched into packages a process prints through
+                      #   an app-supplied hook, plus the panel and the file-reclaiming task (Signum.Printing)
   altea-rest/         # API-key authentication for an app's PUBLIC rest surface, plus a replayable log of
                       #   every request that reached it (Signum.Rest)
   altea-sms/          # SMS templates (per-culture text over a query / model), messages, and the send +
@@ -1006,6 +1008,38 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   Two Signum bugs are fixed rather than mirrored: `IsolationDropdown`'s `data-isolation={name}` is the JS
   global `window.name` (an empty string), so no item could be addressed; and the isolations endpoint's
   error text interpolates an `IsolationMixin` where the isolation is what is worth naming.
+
+- **Signum.Printing → altea-printing: a queue whose last step is an app seam.** A document producer drops a
+  LINE instead of printing, a PACKAGE is a batch a process walks, and `PrintingLogic.print` is what actually
+  prints — default THROWS, as Signum's does, because what "print" means is not something a framework can
+  know. eastwind wires the module and leaves that hook unset (the same call the SMS `provider` gets), but DOES
+  supply the test file type, which Southwind omits and thereby leaves `CreateTest` with nowhere to upload.
+  Divergences: Signum's table-driven `StateValidator` becomes per-field `@fieldValidation` (altea-email's
+  translation, and the table it replaces is written out in the file header); `[Ignore]` → `@column(false)`;
+  `PrintPackageEntity.Lines()` is a `withQuoted` prototype member where Signum has an
+  `[AutoExpressionField]` extension method; `IProcessAlgorithm` → a `registerAction` closure;
+  `ProcessLogic.AssertStarted` / `PermissionLogic.RegisterPermissions` / `OperationLogic.AllowSave<T>` have
+  no counterparts; both endpoints are gated by `ViewPrintPanel`, where Signum gates only the omnibox entry
+  and leaves them open to any authenticated user; `isCreable: "IsSearch"` cannot be expressed (altea's
+  `EntityClientBuilder` has no such option). Signum's `PrintPanelPage` uses `LinkButton` without importing
+  it — its page does not compile as written — and there is no custom `toString()` on either entity, as in
+  Signum: a first attempt built one from `PrintLineState[this.state]`, and **a reverse ENUM LOOKUP is a
+  subscript no SQL dialect can evaluate** ("cannot subscript type unknown" on every query of the table).
+  It found TWO core bugs, both older than this module:
+  - **an `@implementedByAll` reference had NO sub-tokens on the client.**
+    `QueryLogic.getImplementedByAllTypes` reads `Schema.Tables.Keys`, so it exists only on the server, and
+    only the server installed it as the token tree's provider — Signum needs no client half, since its token
+    tree is a server-built QueryDescription. So `ProcessEntity.data`, `OperationLogEntity.target`,
+    `ViewLogEntity.target` and `AlertEntity.target` offered nothing in the column chooser, and a `.cast(X)`
+    token could not resolve at all. The client's source is now the reflection registry narrowed by the
+    metadata blob's `kind`.
+  - **`ExceptionLogic.logException` wrote in the AMBIENT transaction.** It is nearly always called from a
+    catch block whose transaction is about to roll back, so the row went with it while the entity — stashed
+    on the Error for reuse — kept the id that insert handed out; the next caller then saved it as an
+    existing row and `exception.toLite()` pointed at an id that was never committed. That is why every
+    process whose per-item action threw died with "insert or update on process_exception_line violates
+    foreign key constraint" and ended in Error instead of Finished, losing the exception line too. Now in
+    its own transaction, which is what Signum's `ex.LogException()` does.
 
 ## How to build
 
