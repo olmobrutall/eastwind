@@ -573,6 +573,24 @@ importers:
         specifier: workspace:*
         version: link:../quote-transformer
 
+  altea/altea-isolation:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      '@altea/altea-files':
+        specifier: workspace:*
+        version: link:../altea-files
+      '@altea/altea-map':
+        specifier: workspace:*
+        version: link:../altea-map
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
   altea/altea-mailing-exchange:
     dependencies:
       '@altea/altea':

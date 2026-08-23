@@ -43,6 +43,7 @@ packages:
   - altea/altea-view-log
   - altea/altea-sms
   - altea/altea-markdown
+  - altea/altea-isolation
   - altea/altea-tour
   - altea/altea-translations
   - altea/quote-transformer
