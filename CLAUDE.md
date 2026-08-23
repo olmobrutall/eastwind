@@ -37,6 +37,9 @@ altea/
                       #   from the admin UI (the INTERPRETED half of Signum.Dynamic — see below)
   altea-eval/         # EvalEmbedded<F>: a TypeScript script stored in the DATABASE, type-checked and run
                       #   at runtime (Signum.Eval, whose Roslyn becomes the TypeScript compiler)
+  altea-help/         # in-app documentation: a page per type / package / query / appendix, its prose
+                      #   AUTO-GENERATED from reflection and editable in place, plus search and a
+                      #   zip import/export (Signum.Help)
   altea-html-editor/  # WYSIWYG rich text over Lexical + viewer + html→text (Signum.HtmlEditor)
   altea-files-azure/  # Azure Blob Storage file store (Signum.Files.AzureBlobs)
   altea-files-s3/     # S3 / MinIO file store (Signum.Files.S3)
@@ -44,6 +47,9 @@ altea/
   altea-mailing-microsoft-graph/ # sending through Graph + browsing a remote Outlook mailbox
                       #   (Signum.Mailing.MicrosoftGraph, incl. its RemoteEmails half)
   altea-mailing-pop3/ # receiving over POP3 (Signum.Mailing.Pop3)
+  altea-map/          # the schema map (a d3 force graph of tables + FKs, colourable by package / kind /
+                      #   size / per-role access) and the operation map (one type's state machine)
+                      #   — Signum.Map
   altea-office-template/ # docx/pptx/xlsx templating (Signum.Word); hand-built OOXML substrate
   altea-time-machine/ # browse / compare / restore the versions of a @systemVersioned row
                       #   (Signum.TimeMachine)
@@ -51,6 +57,8 @@ altea/
                       #   declared trigger (Signum.Tour)
   altea-translations/ # translating the app: the per-package translation XML files (code) and the
                       #   per-instance @translatable fields (data) — Signum.Translation, both halves
+  altea-tree/         # an entity whose rows form a FOREST: a depth-first route column, the tree page /
+                      #   modal / dashboard part, and add-child / move / copy / delete (Signum.Tree)
   altea-workflow/     # BPMN workflow engine + bpmn-js designer (Signum.Workflow)
   altea-playwright/   # strongly-typed Playwright page objects for an altea UI, for an app's e2e suite
                       #   (Signum.Playwright); the only package that is neither data/client/server
@@ -546,6 +554,102 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     translation of a workflow / activity name IS available now — see altea-translations below — but the
     workflow module does not opt its own routes into it.)
 
+- **Signum.Help → altea-help: the prose is GENERATED, and what is stored is only the overrides.** A help
+  page shows one sentence per type / property / operation / query / query column, assembled from
+  reflection by `HelpGenerator` (free, per request, never stored) with any human-written description
+  layered over it — which is why a page is never empty and why the four tables stay small. Divergences:
+  - **`PropertyRouteEntity` does not exist**, so a property's help is keyed by the route STRING
+    (`propertyString()`), the same key altea-auth's `RulePropertyEntity.path` uses. Signum's
+    PropertyRouteEntity delete cascade goes with the table; a route that no longer exists is dropped when
+    the XML is read (and by the synchronizer).
+  - **`NamespaceHelpEntity.name` holds a PACKAGE + FOLDER** — the same grouping string @altea/altea-map's
+    schema map colours by (`getLocation` off the transformer's `__fileInfo`), so the map and the help index
+    agree on what a module is. The INDEX page's first level is the package; the `(in …)` sub-label is shown
+    only when the folder tail says something the title does not.
+  - **there is no static COLUMN list for a query.** Signum reads `IDynamicQueryCore.StaticColumns`; altea
+    has no QueryDescription, so a query's documentable columns are the ROOT TOKEN's immediate sub-tokens
+    and `QueryColumnHelpEmbedded.columnName` holds a rootless token key. Strictly more capable, and it is
+    what the column chooser's first level shows.
+  - **MList → `@part` rows for the four stored collections, but EMBEDDEDs for the two import models.** A
+    `@part` collection's `@backReference` needs a real owner TABLE, and a ModelEntity has none — the
+    serializer's recover step then has no lite to build (`slot.owner.toLite is not a function`). The
+    preview / report lines are therefore plain `EmbeddedEntity`s, the shape altea-user-assets'
+    `UserAssetPreviewLineEmbedded` already uses.
+  - **`HelpSearch` is WIRED UP — in Signum it is dead code.** Nothing calls `.Search(`, there is no
+    endpoint, no `/help/search` route, and `Urls.searchUrl` (which the omnibox's "help 'text'" suggestion
+    navigates to) both 404s and runs `getQueryKey` over what is a free-text string. The scan itself is
+    complete, so the port keeps it and adds the missing route, page and URL helper.
+  - **the constructed type of a ConstructFrom is not named.** Signum reads `operationInfo.ReturnType` off
+    `Graph<F,T>`; TypeScript erases it. Filling Signum's "Constructs a new {0}" with the SOURCE type is
+    actively wrong (altea-alert's `CreateAlertFromEntity` on `Entity` came out as "Constructs a new
+    Order"), so those two reuse the Execute phrasing, which is true whatever they build.
+  - **the export/import is ONE kind-descriptor table**, not Signum's four near-identical ~250-line static
+    classes; the zip layout and XML are byte-compatible (`Help/<culture>/<Type|Namespace|Appendix|Query>/
+    <key>.help` + a sibling folder of images). `System.IO.Compression` → **fflate**, `XDocument` →
+    **fast-xml-parser** (both already the workspace's). NOT ported: the INTERACTIVE console mode (the web
+    preview supersedes it) and the XSD validation (it only guarded the unported disk path).
+  - `altea-html-editor`'s `ImageHandlerBase` seam is FILLED by this module (its header said "Signum's lives
+    in Signum.Help, which is not ported"). `ImageInfo.binaryFile` is base64 on both sides, but altea's
+    `FilePathEmbedded.binaryFile` is a `Uint8Array`, so the handler converts at that boundary.
+  - `Schema.ForceCultureInfo` has no counterpart: the culture falls back request UI culture → its language
+    → the first supported CultureInfoEntity row. `EntityCache(ForceNew)` likewise (altea has none);
+    `Transaction.forceNew` + `ExecutionMode.global` are kept, and each per-culture cache load is memoised
+    as an in-flight PROMISE so two concurrent first requests share one read.
+  - the `[t:Order]` / `[p:Order.shipDate]` link tokens survive verbatim — they are the one piece of
+    Signum's wiki syntax that a WYSIWYG editor cannot replace, because they are environment-independent
+    references where an `<a href>` is not. `HelpSyntaxMessage` shrinks to the two labels still in use.
+  - eastwind gains a third file store (`FoldersConfigurationEmbedded.helpImagesFolder`), which is where
+    Southwind keeps `HelpImagesFolder` too.
+
+- **Signum.Map → altea-map: two DERIVED views, so the module owns no tables.** Both pages are computed
+  from things that already exist — the live `Schema`, the operation registry, and the database's own
+  catalog views — so `MapLogic.start` is only two routes, the colour providers and an omnibox generator.
+  It forced ONE core seam and surfaced one core bug:
+  - **`Graph<T,S>.GetState` is now a `Quoted`** (`server/graph.ts` / `graphBuilder.ts`, read back through
+    the new `IGraphStateOperation` in `server/operation.ts`). Signum's is an `Expression<Func<T,S>>`, and
+    the operation map needs it as a TREE, not just a callable: it is the `groupBy` key that counts each
+    state's population in SQL, and its member list IS the query token the state node's Ctrl+Click filters
+    by. `Quoted<F>` is `F & { __quoted? }`, so every existing `g.GetState = o => o.state` compiles and
+    behaves unchanged.
+  - **the quote-transformer was not stamping ASSIGNMENTS to an OPTIONAL quoted member.**
+    `isQuoteTypedLValue` used the bare `isQuoteOfT`, which rejects the `Quoted<…> | undefined` union an
+    `X?: Quoted<…>` declaration has — so `g.GetState = o => o.state` silently produced no tree (the sibling
+    branches of `assignedToQuoteOfT` already used the union-aware predicate). Fixed there.
+  Divergences:
+  - **MList is gone, and with it half the schema map.** Signum draws a table's MList tables as extra CHILD
+    nodes (`TableInfo.mlistTables`) joined by an `mlist_arrow`, plus an `EntityBaseType.MList` shape. In
+    altea a collection is `@part` CHILD ROWS of an ordinary table, i.e. always Signum's VirtualMList shape
+    — already a node, already an edge. So `mlistTables` / `MListTableInfo` / `MListRelationInfo` /
+    `isMList` / the MList node kind are NOT ported; what survives is the arrow that made a virtual MList
+    readable, `isVirtualMListBackReference` → **`isBackReference`** (straight off `FieldInfo.isBackReference`,
+    where Signum has to look the route up in `VirtualMList.RegisteredVirtualMLists`). `SemiSymbol` goes too.
+  - **`namespace` is the owning PACKAGE plus the declaring FOLDER** (`@altea/altea-auth/data`,
+    `eastwind/orders`), read off the transformer's `__fileInfo` through `getLocation` — the same grouping
+    altea-translations uses. An ENUM table has no registration of its own, so its location is the enum's.
+  - **the state ENUM is discovered through the selector's PROPERTY ROUTE**, not a generic parameter (S is
+    erased): `PropertyRoute.root(T).addLambda(getState).type.getEnum()` yields the enum object, hence every
+    member, `Enum.isNotMapped` (Signum's `[Ignore]`) and `Enum.niceName`. It also crosses the
+    ordinal↔name boundary in both directions — `graph(T, StateEnum, …)` types S as the enum's numeric
+    values, so `toStates: [OrderState.Shipped]` stores `2` while `MapState.key` is the NAME.
+  - **one state machine per operation map.** Signum supports several state types per type; here
+    `operationsForType` walks the prototype chain, so an operation registered on an ABSTRACT BASE arrives
+    with a FOREIGN enum's states (altea-alert's `CreateAlertFromEntity` on `Entity`, `toStates:
+    [AlertState.New]`) — those would be drawn as this type's state 0, so an operation whose selector is not
+    this map's is treated as state-unaware (Start → End). `fromToStates` is not ported either (altea's
+    Graph.* have no such option), so a transition set is the cartesian product — Signum's own client
+    fallback.
+  - **single database**: `Schema.DatabaseNames()` / `OverrideDatabaseInSysViews` are dropped, as
+    `sync/schemaAssets.ts` already documents. Runtime stats needed three small core additions —
+    `PgClass.reltuples`, `PostgresFunctions.pg_total_relation_size`, and `sys.partitions` /
+    `sys.allocation_units` views (+ `SysIndexes.partitions()`); the SQL Server read joins them IN MEMORY
+    rather than leaning on a two-level correlated `SUM`.
+  - **no `useExpand()`**: altea has no Expander, and the app shell's wrapper is `display: block`, so a
+    `flexGrow` chain resolves to a 0-height box and `useSize` never reports a size — the graph container
+    carries an explicit `MAP_MIN_HEIGHT` (`75vh`) instead, the shape altea-chart's `ReactChart` uses.
+  - the colour-provider registry lives on `AppContext.clientState`, so Signum's `clearProviders` /
+    `clearSettingsActions` pair has no counterpart; each provider factory is registered ONCE per
+    dropdown entry, and the page throws if the server's list and the client's disagree.
+
 - **Signum.TimeMachine → altea-time-machine: the READER of a history that core already keeps.** Everything
   the page shows already exists — `@systemVersioned` tables, `SystemTime` (core's server/systemTime), the
   SearchControl's system-time dropdown — so the module is one route, one page and the quick link.
@@ -625,6 +729,59 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     nothing is copied at build time.
   - `NaturalLanguage` gained `tryGetGenderFromDeterminer` / `determinersFor`, which the gender round-trip
     (ask for "el pedido", read the gender back off the article) and the gender picker need.
+
+- **Signum.Tree → altea-tree: the route is a STRING, and the depth-first ORDER is computed in memory.**
+  Signum types `TreeEntity.Route` as `SqlHierarchyId` — a SQL Server CLR type — and leans on its methods
+  and its native ordering. Neither Node SQL driver surfaces hierarchyid and PostgreSQL has no such type, so
+  the column is a `varchar` holding hierarchyid's own TEXTUAL form (`/1/`, `/1/3/`, `/1/3.1/` — byte-for-byte
+  what `SqlHierarchyId.ToString()` emits, so a database migrated from Signum reads unchanged) and the
+  arithmetic moves into `server/TreeRoute.server.ts`: `IsDescendantOf` → an indexed `LIKE 'prefix%'`,
+  `GetAncestor(1)` → the `parentRoute` column Signum also stores, `GetReparentedValue` → a prefix swap,
+  `GetDescendant(a, b)` → a label strictly between two siblings' (an integer gap if one exists, else a
+  DOTTED label — `[3]`,`[4]` → `[3,1]` — which is exactly how hierarchyid keeps the order dense, so a node
+  can always be inserted between two adjacent siblings without renumbering). The one operation a string
+  genuinely cannot stand in for is `ORDER BY route`: `'/10/' < '/2/'` lexicographically, and a COLLATION may
+  order digits and punctuation differently per dialect and locale — so the sort is a label-wise NUMERIC
+  comparator in TypeScript. That is affordable because the tree UI only ever loads a bounded set of nodes
+  (the expanded ones plus the matches), but it is why the four "find the neighbouring sibling" queries order
+  in memory. This is the one part of the port that replaces a database TYPE with code, so it carries its own
+  suite (`test/treeRoute.test.ts`, 18 cases, including the density invariant over 25 repeated insertions).
+  Other divergences:
+  - **`Level` is a stored COLUMN**, where Signum declares it `[Ignore]` + `[ExpressionField]` over
+    `Route.GetLevel()`. With no hierarchyid there is no SQL function to compute it, and it is what the tree
+    page's default filter ("show me the roots") is — so storing it makes that an indexed integer compare. It
+    is maintained in one place, `TreeLogic.setRoute`, which is where Signum's `Route` setter maintained its
+    own copy. Consequently only FOUR of Signum's six expressions are registered (`Children` / `Parent` /
+    `Descendants` / `Ascendants`); `TreeInfo` is gone too — it existed so the controller could project a
+    node's display data through a query token and rebase it onto `Entity.Ascendants.Element.TreeInfo`, and
+    the server builds that DTO directly here (no QueryDescription to rebase onto).
+  - **each expression is a `withQuoted` prototype member plus a query TWIN**, the asymmetry altea-workflow
+    documents: the engine needs `descendants` both in SQL (a filter) and in memory (`fixName` walking a
+    subtree), and a `withQuoted` member is query-only.
+  - **`DisabledMixin` is not ported** (Signum.Basics has it, altea does not), so the cascade that
+    disables/enables a whole subtree is gone and `TreeInfo.disabled` is always false. The field and the
+    `tree-disabled` styling stay, so a host that adds such a mixin has somewhere to put it.
+  - `route` / `parentRoute` / `fullName` are ENGINE-maintained, so their validators are
+    `disabled: env => env !== "Saving"` — a new node reaches the server with all three empty and the Save
+    operation fills them. Signum says the same thing per field (`[NotNullValidator(Disabled = true)]`,
+    `DisabledInModelBinder`, `[InTypeScript(false)]` on Route).
+  - `TreeClient.configure(ti)` is Signum's four opt-ins in one call, and `hideSiblingsAndIsDisabled` becomes
+    `hideTreeInternals` — which needed a core seam: `FieldInfo.notVisible` (Signum's `MemberInfo.notVisible`),
+    honoured by `AutoComponent` and `EntityTable`'s default columns.
+  - the app supplies the tree TYPE. Southwind uses no tree, so eastwind's `departments/DepartmentEntity` is
+    the demo — a module cannot ship a tree type, and without one the pages, the omnibox suggestion and the
+    dashboard part are all unreachable.
+  It surfaced four CORE bugs, all of them latent long before this module: a registered expression on the
+  query's OWN type was invisible in every token picker (the root branch of `TokenCompleter.getSubTokens`
+  called the purely local `subTokens`, skipping the server merge — so `Order.TotalPrice`, `SystemValidFrom`
+  and the alert/case tokens were all unreachable while the same expression on a nested token showed fine);
+  `Finder.TokenCompleter.get("")` threw on the ROOT entity token although `resolveToken("")` handled it;
+  `/api/operation/{execute,delete}Multiple` wrote its NDJSON with `JSON.stringify`, which drops a Lite's
+  constructor-valued `entityType`, so every SINGLE-lite contextual operation died in the client reader; and
+  `EnumLine` labelled its options with the raw member name instead of `Enum.niceName` ("FirstNode", not
+  "First node"). One more is Signum's own and is fixed rather than mirrored: the viewer cached the selected
+  node's CONTEXTUAL menu items and reloaded them only when unset, so picking a second node and reopening the
+  "Selected" dropdown ran the FIRST node's operations — which deletes the wrong subtree.
 
 > `old/CLAUDE.md` and `old/**/AGENTS.md` describe **Signum's** conventions, not altea's — read them to understand the source, but altea's conventions above win.
 
