@@ -79,6 +79,7 @@
     "@altea/altea-html-editor": "workspace:*",
     "@altea/altea-markdown": "workspace:*",
     "@altea/altea-printing": "workspace:*",
+    "@altea/altea-whats-new": "workspace:*",
     "@altea/altea-dynamic": "workspace:*",
     "@altea/altea-eval": "workspace:*",
     "@altea/altea-alert": "workspace:*",

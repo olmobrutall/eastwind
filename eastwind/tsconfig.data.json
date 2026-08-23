@@ -17,6 +17,7 @@
     { "path": "../altea/altea-alert/tsconfig.data.json" },
     { "path": "../altea/altea-markdown/tsconfig.data.json" },
     { "path": "../altea/altea-printing/tsconfig.data.json" },
+    { "path": "../altea/altea-whats-new/tsconfig.data.json" },
     { "path": "../altea/altea-migrations/tsconfig.data.json" },
     { "path": "../altea/altea-cache/tsconfig.data.json" },
     { "path": "../altea/altea-agent/tsconfig.data.json" },

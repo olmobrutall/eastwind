@@ -12,6 +12,7 @@ import CultureDropdown from "@altea/altea/client/CultureDropdown";
 import LoginDropdown from "@altea/altea-auth/client/public/LoginDropdown";
 import OmniboxAutocomplete from "@altea/altea-omnibox/client/OmniboxAutocomplete";
 import AlertDropdown from "@altea/altea-alert/client/AlertDropdown";
+import WhatsNewDropdown from "@altea/altea-whats-new/client/WhatsNewDropdown";
 
 const ChatbotButton = React.lazy(() => import("@altea/altea-agent/client/ChatbotButton"));
 
@@ -78,6 +79,10 @@ export default function Layout(): React.JSX.Element {
                         count, and a panel of toasts that attends an alert when you close it. Renders nothing
                         for a user who may not view AlertEntity. */}
                     {AppContext.currentUser && <AlertDropdown />}
+                    {/* The release-notes BULLHORN (Signum puts <WhatsNewDropdown/> in the same place): the
+                        unread count, and a toast per news item that marks it read when you close it. Renders
+                        nothing for a user who may not view WhatsNewEntity. */}
+                    {AppContext.currentUser && <WhatsNewDropdown />}
                     {/* Language picker (Southwind's Layout has one too). Renders nothing unless the server
                         reports more than one culture with translations loaded. */}
                     <CultureDropdown isMobile={isMobile} />

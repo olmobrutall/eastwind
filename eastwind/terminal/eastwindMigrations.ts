@@ -146,6 +146,7 @@ export namespace EastwindMigrations {
                 emailAttachmentsFolder: process.env["EASTWIND_FILES_EMAILATTACHMENTS"] ?? "./files/emailAttachments",
                 helpImagesFolder: process.env["EASTWIND_FILES_HELPIMAGES"] ?? "./files/helpImages",
                 printTestFolder: process.env["EASTWIND_FILES_PRINTTEST"] ?? "./files/printTest",
+                whatsNewFolder: process.env["EASTWIND_FILES_WHATSNEW"] ?? "./files/whatsNew",
             }),
             sms: SMSConfigurationEmbedded.create({
                 // One of the cultures CreateCulturesAndConfiguration seeds just above (en / es / de);

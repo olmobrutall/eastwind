@@ -124,6 +124,10 @@ export class FoldersConfigurationEmbedded extends EmbeddedEntity {
     /** Where @altea/altea-printing's TEST lines upload their document (Signum's PrintingLogic test file type). */
     @stringLengthValidator({ max: 300 })
     printTestFolder: string;
+
+    /** Where @altea/altea-whats-new writes a news item's preview picture and its attachments. */
+    @stringLengthValidator({ max: 300 })
+    whatsNewFolder: string;
 }
 
 // Southwind declares these two in the same file as its ApplicationConfiguration, and so does eastwind.
@@ -140,6 +144,8 @@ export class FoldersConfigurationEmbedded extends EmbeddedEntity {
 export namespace EastwindTypeCondition {
     export const UserEntities: TypeConditionSymbol = init();
     export const RoleEntities: TypeConditionSymbol = init();
+    /** A @altea/altea-whats-new item that is PUBLISHED — what an ordinary user may see of the news. */
+    export const PublishedNews: TypeConditionSymbol = init();
 }
 
 // The app's own file types. `PrintingLogic.start(sb, { testFileType })` takes the type from the

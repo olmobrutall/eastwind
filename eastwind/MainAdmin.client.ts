@@ -46,6 +46,7 @@ import { OfficeClient } from "@altea/altea-office-template/client/OfficeClient";
 import { HtmlEditorClient } from "@altea/altea-html-editor/client/HtmlEditorClient";
 import { MarkdownClient } from "@altea/altea-markdown/client/MarkdownClient";
 import { PrintClient } from "@altea/altea-printing/client/PrintClient";
+import { WhatsNewClient } from "@altea/altea-whats-new/client/WhatsNewClient";
 import { WorkflowClient } from "@altea/altea-workflow/client/WorkflowClient";
 import { CaseActivityMixin } from "@altea/altea-workflow/data/CaseActivity";
 import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
@@ -95,6 +96,10 @@ export function startFull(routes: RouteObject[]): void {
     // Print queue (altea-printing): the PrintLine / PrintPackage views, the /printing/view panel and the
     // omnibox entry that reaches it.
     PrintClient.start(cb);
+
+    // Release notes (altea-whats-new): the news entity + read log views, the /news overview and
+    // /newspage/:id pages, and the "Preview" quick link. The navbar bullhorn is in Layout.tsx.
+    WhatsNewClient.start(cb);
 
     EmployeesClient.start(cb);
     ProductsClient.start(cb);

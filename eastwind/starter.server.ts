@@ -81,6 +81,9 @@ import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic.se
 import { EastwindTypeCondition, EastwindAgentUseCases, EastwindFileType } from "./globals/ApplicationConfiguration.data";
 import { PrintingLogic } from "@altea/altea-printing/server/PrintingLogic.server";
 import { PrintingServer } from "@altea/altea-printing/server/PrintingServer.server";
+import { WhatsNewLogic } from "@altea/altea-whats-new/server/WhatsNewLogic.server";
+import { WhatsNewServer } from "@altea/altea-whats-new/server/WhatsNewServer.server";
+import { WhatsNewFileType } from "@altea/altea-whats-new/data/WhatsNew";
 import { GlobalsLogic } from "./globals/GlobalsLogic.server";
 import { CacheLogic } from "@altea/altea-cache/server/CacheLogic";
 import { ConcurrentUserLogic } from "@altea/altea-concurrent-user/server/ConcurrentUserLogic.server";
@@ -510,6 +513,23 @@ export namespace Starter {
             EastwindFileStores.store("printTest", f => f.printTestFolder));
         if (sb.webBuilder)
             PrintingServer.start(sb.webBuilder);
+
+        // Release notes (@altea/altea-whats-new): the news item + its per-culture messages, the read log,
+        // and the six routes the navbar bullhorn / overview / news page call. BEFORE OperationLogic.start
+        // (five operation symbols to seed).
+        //
+        // The two FILE TYPES are the module's own; eastwind points both at one folder, as Southwind does
+        // for its own two. The PUBLISHED type condition is granted to ordinary users below, next to the
+        // other type-condition rules: without it a non-admin sees no news at all, since the row filter is
+        // what makes a Draft invisible.
+        WhatsNewLogic.start(sb);
+        FileTypeLogic.register(WhatsNewFileType.WhatsNewPreviewFileType,
+            EastwindFileStores.store("whatsNew", f => f.whatsNewFolder));
+        FileTypeLogic.register(WhatsNewFileType.WhatsNewAttachmentFileType,
+            EastwindFileStores.store("whatsNew", f => f.whatsNewFolder));
+        WhatsNewLogic.registerPublishedTypeCondition(EastwindTypeCondition.PublishedNews);
+        if (sb.webBuilder)
+            WhatsNewServer.start(sb.webBuilder);
 
         ViewLogLogic.start(sb, {
             registerExpressionsFor: [
