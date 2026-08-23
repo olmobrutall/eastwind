@@ -47,6 +47,9 @@ altea/
   altea-mailing-microsoft-graph/ # sending through Graph + browsing a remote Outlook mailbox
                       #   (Signum.Mailing.MicrosoftGraph, incl. its RemoteEmails half)
   altea-mailing-pop3/ # receiving over POP3 (Signum.Mailing.Pop3)
+  altea-markdown/     # a markdown editor line (text area + rendered preview + a syntax cheat sheet), the
+                      #   "Markdown" query-column format rule, and markdown→text for the excel export
+                      #   (Signum.Markdown)
   altea-map/          # the schema map (a d3 force graph of tables + FKs, colourable by package / kind /
                       #   size / per-role access) and the operation map (one type's state machine)
                       #   — Signum.Map
@@ -928,6 +931,40 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   `StartBackgroundProcesses` flag; eastwind imported `ScheduleTaskRunner` and never called it, so a
   scheduled task, a queued process and an async e-mail were all created and never run. Started now, web-host
   only — a terminal run must not pick work up.
+
+- **Signum.Markdown → altea-markdown: Markdig becomes mdast, which is the parser react-markdown already
+  is.** Three small things — the "Markdown" query-column format rule, the `MarkdownLine`, and
+  `markdownToText` for the excel export — and the only substrate swap has a one-for-one correspondence:
+  `Markdown.Parse(md, new MarkdownPipelineBuilder().Build())` → `fromMarkdown(md)`, both plain CommonMark
+  with no extensions, and Markdig's Block/Inline visitor cases map node for node onto mdast's
+  (`MarkdownDocument`→`root`, `LiteralInline`→`text`, `CodeInline`→`inlineCode`, `ContainerInline`→recurse,
+  …). So this is the one flattener in the workspace that needs no hand-written tokenizer, where
+  altea-html-editor's `HtmlToPlainText` does. It carries a 17-case suite, because a substrate swap is
+  exactly where behaviour drifts silently. Divergences:
+  - **`MarkdownMessage` lives in this package**, not in core as Signum's enum does — the same call
+    `HtmlEditorMessage` made. Nothing outside reads it, and a message in core has to be translated by every
+    application whether or not it installs the module.
+  - **`markdownOption` is actually APPLIED.** Signum declares the prop on MarkdownLineProps and never reads
+    it, so a caller asking for custom components or remark plugins silently got the defaults — the same
+    shape as the `controller.editorState` bug altea-html-editor fixes rather than mirrors.
+  - a CODE BLOCK, a thematic break and an html block flatten to NOTHING, mirrored deliberately: Markdig's
+    `CodeBlock` is a LeafBlock, and Signum's switch has cases for the container kinds and for Paragraph /
+    Heading / List only. An IMAGE needed one line rather than a recursion — Markdig models it as a
+    `LinkInline` whose CHILDREN are the alt text, mdast makes `alt` an attribute of a childless node.
+  - the cheat-sheet popover's right column RENDERS the left column's markdown instead of being hand-written
+    HTML, so it cannot drift from what the editor does (mapped to compact elements to keep Signum's look).
+  It filled two gaps outside itself. **`htmlToText` was dead code**: Signum's PlainExcelGenerator flattens a
+  column whose property format is Html or Markdown and lays it out multiline, and altea's had no such branch
+  at all — so a rich-text column exported as raw markup. Both flatteners are now reached by a plain import,
+  the dependency edge Signum.Excel also has (a registry seam would have to live in altea CORE, since neither
+  module may depend on altea-office-template, and would need each to grow a server `start` purely to
+  register — which Signum.Markdown does not have at all). And **the FontAwesome BRANDS set was missing**:
+  `library.add(fas, far)` is all Southwind does too, so this module's `["fab", "markdown"]` cheat-sheet
+  marker and altea-auth-windowsad's `["fab", "windows"]` sign-in icon both rendered as an empty span. Signum
+  declares the package; eastwind now adds `fab`.
+  With the module ported, **altea-agent's SkillCustomization and altea-tour's TourStep use the real
+  `MarkdownLine`**, as Signum does — both had stood in altea-codemirror's `MarkdownCodeMirror`, which stays
+  as the syntax-highlighting alternative.
 
 ## How to build
 

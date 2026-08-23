@@ -3,10 +3,10 @@
 Snapshot of the extension-by-extension port state, as of 2026-08-23.
 
 `old/Framework/Extensions/` holds **55** Signum extension projects (+ `Signum.Extensions.Test`, the shared
-suite). `altea/` holds **44** extension packages (+ `altea/altea` core, `quote-transformer`,
+suite). `altea/` holds **45** extension packages (+ `altea/altea` core, `quote-transformer`,
 `quote-transformer-test`).
 
-Counts: **46 ported**, **2 partial**, **3 deferred by design**, **7 pending** — of which **1 is started by
+Counts: **47 ported**, **2 partial**, **3 deferred by design**, **6 pending** — of which **1 is started by
 `Southwind/Starter.cs`** and so blocks eastwind parity.
 
 LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
@@ -40,6 +40,7 @@ LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
 | Signum.Mailing.ExchangeWS | `altea-mailing-exchange` | hand-built SOAP; no Autodiscover SCP/DNS-SRV, no TNEF, no integrated auth |
 | Signum.Mailing.MicrosoftGraph | `altea-mailing-microsoft-graph` | incl. the RemoteEmails half |
 | Signum.Mailing.Pop3 | `altea-mailing-pop3` | ~200 lines over `node:tls` + `mailparser` |
+| Signum.Markdown | `altea-markdown` | Markdig → mdast (the parser react-markdown itself uses); `MarkdownMessage` lives here, not in core; `markdownOption` is actually applied |
 | Signum.Map | `altea-map` | owns no tables; forced `Graph.GetState` → `Quoted` + a transformer fix; no MList half, no `fromToStates`, one state machine per map |
 | Signum.Migrations | `altea-migrations` | |
 | Signum.Omnibox | `altea-omnibox` | |
@@ -79,17 +80,16 @@ LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
 
 ## Pending
 
-**Next up: Signum.Markdown.** (Signum.Map, Signum.Help, Signum.Tree, Signum.Rest, Signum.ViewLog and Signum.SMS are done — see Ported.)
+**Next up: Signum.Isolation.** (Signum.Map, Signum.Help, Signum.Tree, Signum.Rest, Signum.ViewLog, Signum.SMS and Signum.Markdown are done — see Ported.)
 
 | # | Signum extension | What it is | LOC | Southwind starts it |
 | --- | --- | --- | --- | --- |
-| 1 | Signum.Markdown | `MarkdownLine` + the server markdown→html renderer | 189 | yes — the EDITOR half already stands in as `altea-codemirror`'s `MarkdownCodeMirror` |
-| 2 | Signum.Isolation | multi-tenant row isolation: `IsolationEntity`, the ambient query filter, the navbar picker | 718 | no (referenced only) |
-| 3 | Signum.WhatsNew | release-notes entity, navbar dropdown, per-user read log | 1 292 | no |
-| 4 | Signum.Printing | `PrintLineEntity` print queue + admin panel | 633 | no |
-| 5 | Signum.Calendar | `CalendarDayEntity` — a working-days table | 72 | no |
-| 6 | Signum.WorkflowDynamic | glues Signum.Workflow to the **compiled** Dynamic half | 197 | via `DynamicLogicStarter` — blocked on Signum.Dynamic's compiled half |
-| 7 | Signum.Playwright.Workflow | `CaseFrame` page / modal proxies for the workflow UI | 169 | test-only |
+| 1 | Signum.Isolation | multi-tenant row isolation: `IsolationEntity`, the ambient query filter, the navbar picker | 718 | no (referenced only) |
+| 2 | Signum.WhatsNew | release-notes entity, navbar dropdown, per-user read log | 1 292 | no |
+| 3 | Signum.Printing | `PrintLineEntity` print queue + admin panel | 633 | no |
+| 4 | Signum.Calendar | `CalendarDayEntity` — a working-days table | 72 | no |
+| 5 | Signum.WorkflowDynamic | glues Signum.Workflow to the **compiled** Dynamic half | 197 | via `DynamicLogicStarter` — blocked on Signum.Dynamic's compiled half |
+| 6 | Signum.Playwright.Workflow | `CaseFrame` page / modal proxies for the workflow UI | 169 | test-only |
 
 ## Adjacent gaps (not extension projects)
 
