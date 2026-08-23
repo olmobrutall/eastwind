@@ -15,6 +15,7 @@
     { "path": "../altea/altea-dashboard/tsconfig.client.json" },
     { "path": "../altea/altea-alert/tsconfig.client.json" },
     { "path": "../altea/altea-markdown/tsconfig.client.json" },
+    { "path": "../altea/altea-printing/tsconfig.client.json" },
     { "path": "../altea/altea-migrations/tsconfig.client.json" },
     { "path": "../altea/altea-omnibox/tsconfig.client.json" },
     { "path": "../altea/altea-profiler/tsconfig.client.json" },

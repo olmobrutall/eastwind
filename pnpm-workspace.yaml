@@ -44,6 +44,7 @@ packages:
   - altea/altea-sms
   - altea/altea-markdown
   - altea/altea-isolation
+  - altea/altea-printing
   - altea/altea-tour
   - altea/altea-translations
   - altea/quote-transformer

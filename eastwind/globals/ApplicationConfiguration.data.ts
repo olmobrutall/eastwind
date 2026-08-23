@@ -10,6 +10,7 @@ import { EmailSenderConfigurationEntity } from "@altea/altea-email/data/EmailSen
 import { ChatbotConfigurationEmbedded } from "@altea/altea-agent/data/LanguageModel";
 import { WorkflowConfigurationEmbedded } from "@altea/altea-workflow/data/Workflow";
 import { SMSConfigurationEmbedded } from "@altea/altea-sms/data/SMS";
+import { FileTypeSymbol } from "@altea/altea-files/data/Files";
 import { AzureADConfigurationEmbedded } from "@altea/altea-auth-azuread/data/AzureAD";
 import { OpenIDConfigurationEmbedded } from "@altea/altea-auth-openid/data/OpenID";
 import { WindowsADConfigurationEmbedded } from "@altea/altea-auth-windowsad/data/WindowsAD";
@@ -119,6 +120,10 @@ export class FoldersConfigurationEmbedded extends EmbeddedEntity {
     /** Where @altea/altea-help writes the images pasted into a help description (Southwind's HelpImagesFolder). */
     @stringLengthValidator({ max: 300 })
     helpImagesFolder: string;
+
+    /** Where @altea/altea-printing's TEST lines upload their document (Signum's PrintingLogic test file type). */
+    @stringLengthValidator({ max: 300 })
+    printTestFolder: string;
 }
 
 // Southwind declares these two in the same file as its ApplicationConfiguration, and so does eastwind.
@@ -135,6 +140,13 @@ export class FoldersConfigurationEmbedded extends EmbeddedEntity {
 export namespace EastwindTypeCondition {
     export const UserEntities: TypeConditionSymbol = init();
     export const RoleEntities: TypeConditionSymbol = init();
+}
+
+// The app's own file types. `PrintingLogic.start(sb, { testFileType })` takes the type from the
+// APPLICATION — Signum does the same, and Southwind passes none, which leaves its test flow with nowhere
+// to upload to; eastwind declares one so `PrintLineOperation.CreateTest` actually works.
+export namespace EastwindFileType {
+    export const PrintTest: FileTypeSymbol = init();
 }
 
 // Port of Southwind's `SouthwindAgentUseCases` — the app's own agents, beyond the three

@@ -21,6 +21,7 @@
     { "path": "../altea/altea-office-template/tsconfig.server.json" },
     { "path": "../altea/altea-alert/tsconfig.server.json" },
     { "path": "../altea/altea-markdown/tsconfig.server.json" },
+    { "path": "../altea/altea-printing/tsconfig.server.json" },
     { "path": "../altea/altea-migrations/tsconfig.server.json" },
     { "path": "../altea/altea-cache/tsconfig.server.json" },
     { "path": "../altea/altea-agent/tsconfig.server.json" },

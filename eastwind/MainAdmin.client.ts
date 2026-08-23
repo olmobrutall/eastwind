@@ -45,6 +45,7 @@ import { MailingPop3Client } from "@altea/altea-mailing-pop3/client/MailingPop3C
 import { OfficeClient } from "@altea/altea-office-template/client/OfficeClient";
 import { HtmlEditorClient } from "@altea/altea-html-editor/client/HtmlEditorClient";
 import { MarkdownClient } from "@altea/altea-markdown/client/MarkdownClient";
+import { PrintClient } from "@altea/altea-printing/client/PrintClient";
 import { WorkflowClient } from "@altea/altea-workflow/client/WorkflowClient";
 import { CaseActivityMixin } from "@altea/altea-workflow/data/CaseActivity";
 import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
@@ -90,6 +91,10 @@ export function startFull(routes: RouteObject[]): void {
     // Registers nothing else; its `MarkdownLine` is a line component the views import directly (the tour
     // step description and the agent skill instructions, exactly as in Signum).
     MarkdownClient.start();
+
+    // Print queue (altea-printing): the PrintLine / PrintPackage views, the /printing/view panel and the
+    // omnibox entry that reaches it.
+    PrintClient.start(cb);
 
     EmployeesClient.start(cb);
     ProductsClient.start(cb);

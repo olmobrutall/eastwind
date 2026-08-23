@@ -763,6 +763,30 @@ importers:
         specifier: workspace:*
         version: link:../quote-transformer
 
+  altea/altea-printing:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      '@altea/altea-files':
+        specifier: workspace:*
+        version: link:../altea-files
+      '@altea/altea-omnibox':
+        specifier: workspace:*
+        version: link:../altea-omnibox
+      '@altea/altea-processes':
+        specifier: workspace:*
+        version: link:../altea-processes
+      '@altea/altea-scheduler':
+        specifier: workspace:*
+        version: link:../altea-scheduler
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
   altea/altea-processes:
     dependencies:
       '@altea/altea':
@@ -1165,6 +1189,9 @@ importers:
       '@altea/altea-playwright':
         specifier: workspace:*
         version: link:../altea/altea-playwright
+      '@altea/altea-printing':
+        specifier: workspace:*
+        version: link:../altea/altea-printing
       '@altea/altea-processes':
         specifier: workspace:*
         version: link:../altea/altea-processes

@@ -78,7 +78,9 @@ import { ToolbarLogic } from "@altea/altea-toolbar/server/ToolbarLogic.server";
 import { PlainExcelLogic } from "@altea/altea-office-template/server/excel/PlainExcelLogic.server";
 import { ExcelImportLogic } from "@altea/altea-office-template/server/excel/ExcelImportLogic.server";
 import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic.server";
-import { EastwindTypeCondition, EastwindAgentUseCases } from "./globals/ApplicationConfiguration.data";
+import { EastwindTypeCondition, EastwindAgentUseCases, EastwindFileType } from "./globals/ApplicationConfiguration.data";
+import { PrintingLogic } from "@altea/altea-printing/server/PrintingLogic.server";
+import { PrintingServer } from "@altea/altea-printing/server/PrintingServer.server";
 import { GlobalsLogic } from "./globals/GlobalsLogic.server";
 import { CacheLogic } from "@altea/altea-cache/server/CacheLogic";
 import { ConcurrentUserLogic } from "@altea/altea-concurrent-user/server/ConcurrentUserLogic.server";
@@ -492,6 +494,22 @@ export namespace Starter {
         SMSProcessLogic.registerSMSOwnerData(CustomerEntity, c => ({
             owner: c.toLite(), telephoneNumber: c.phone, culture: null,
         }));
+
+        // Print queue (@altea/altea-printing): the PrintLine / PrintPackage tables, the line's state
+        // machine, the batch process and the "reclaim printed files" scheduled task. AFTER
+        // SchedulerLogic.start (it registers a SimpleTask) and BEFORE OperationLogic.start (five operation
+        // symbols to seed).
+        //
+        // `PrintingLogic.print` is deliberately UNSET — its default throws "PrintingLogic.print is not
+        // defined", exactly as Signum's does, because what "print" means (a spooler, a network printer, an
+        // SDK) is an app decision and eastwind has no printer. The same call the SMS `provider` gets above.
+        // The TEST file type IS supplied, so `PrintLineOperation.CreateTest` has somewhere to upload:
+        // Southwind passes none, which leaves that flow with nowhere to go.
+        PrintingLogic.start(sb, { testFileType: EastwindFileType.PrintTest });
+        FileTypeLogic.register(EastwindFileType.PrintTest,
+            EastwindFileStores.store("printTest", f => f.printTestFolder));
+        if (sb.webBuilder)
+            PrintingServer.start(sb.webBuilder);
 
         ViewLogLogic.start(sb, {
             registerExpressionsFor: [
