@@ -9,6 +9,7 @@ import { EmailConfigurationEmbedded } from "@altea/altea-email/data/Email";
 import { EmailSenderConfigurationEntity } from "@altea/altea-email/data/EmailSenderConfiguration";
 import { ChatbotConfigurationEmbedded } from "@altea/altea-agent/data/LanguageModel";
 import { WorkflowConfigurationEmbedded } from "@altea/altea-workflow/data/Workflow";
+import { SMSConfigurationEmbedded } from "@altea/altea-sms/data/SMS";
 import { AzureADConfigurationEmbedded } from "@altea/altea-auth-azuread/data/AzureAD";
 import { OpenIDConfigurationEmbedded } from "@altea/altea-auth-openid/data/OpenID";
 import { WindowsADConfigurationEmbedded } from "@altea/altea-auth-windowsad/data/WindowsAD";
@@ -76,6 +77,9 @@ export class ApplicationConfigurationEntity extends Entity {
 
     /*Agent*/
     chatbot: ChatbotConfigurationEmbedded;
+
+    /*Sms*/
+    sms: SMSConfigurationEmbedded;
 
     /*Workflow*/
     workflow: WorkflowConfigurationEmbedded;

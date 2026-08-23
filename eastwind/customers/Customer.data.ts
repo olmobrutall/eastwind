@@ -4,6 +4,7 @@ import { Lite } from "@altea/altea/data/lite";
 import { entity, quoted, implementedBy, primaryKey, stringLengthValidator, telephoneValidator } from "@altea/altea/data/decorators";
 import { Temporal } from "@altea/altea/data/basics";
 import type { ExecuteSymbol } from "@altea/altea/data/operations";
+import type { SMSOwnerData } from "@altea/altea-sms/data/SMS";
 
 // Port of Southwind's Customers domain (Southwind/Customers/*.cs). CustomerEntity is an ABSTRACT base
 // (like the music model's AwardEntity) with two concrete subclasses — Person and Company — reached
@@ -43,6 +44,17 @@ export abstract class CustomerEntity extends Entity {
 
     @stringLengthValidator({ min: 3, max: 24 }) @telephoneValidator()
     fax: string | null;
+
+    /**
+     * Who to text, at which number, in which language — @altea/altea-sms's `SMSOwnerData`. This is the
+     * member a query-based SMSTemplate's `to` token points at, and it is exactly the shape Signum's own
+     * DynamicType snippet generates (`SMSOwnerDataExpression = @this => new SMSOwnerData { … }`).
+     *
+     * `@quoted`, so it is a real query TOKEN the template editor can pick and the renderer can select.
+     */
+    @quoted smsOwnerData(): SMSOwnerData {
+        return { owner: this.toLite(), telephoneNumber: this.phone, culture: null };
+    }
 }
 
 @entity("Shared", "Transactional")

@@ -70,6 +70,7 @@
     "@altea/altea-map": "workspace:*",
     "@altea/altea-time-machine": "workspace:*",
     "@altea/altea-rest": "workspace:*",
+    "@altea/altea-sms": "workspace:*",
     "@altea/altea-view-log": "workspace:*",
     "@altea/altea-tree": "workspace:*",
     "@altea/altea-tour": "workspace:*",

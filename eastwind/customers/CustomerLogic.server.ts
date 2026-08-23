@@ -19,6 +19,13 @@ export namespace CustomersLogic {
         sb.include(PersonEntity).withQuery();
         sb.include(CompanyEntity).withQuery();
 
+        // The `SMSOwnerData` token a query-based SMSTemplate's `to` points at (see Customer.data.ts).
+        // Registered PER CONCRETE TYPE, like every altea extension token: the token walk follows the
+        // concrete prototype chain, so a registration on the abstract base is not offered on the subclasses.
+        for (const t of [PersonEntity, CompanyEntity])
+            QueryLogic.expressions.register(t, (c: CustomerEntity) => c.smsOwnerData(),
+                { key: "SMSOwnerData", niceName: () => CustomerEntity.nicePropertyName(c => c.smsOwnerData()) });
+
         // Southwind calls `.WithSave(CustomerOperation.Save)` on BOTH Person and Company. altea's operation
         // registry is keyed by the symbol alone (one implementation per symbol), so the shared Save is
         // registered ONCE — owned by the ABSTRACT base, which is what makes both concrete customers inherit

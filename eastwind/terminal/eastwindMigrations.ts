@@ -25,6 +25,7 @@ import {
 } from "../globals/ApplicationConfiguration.data";
 import { EmployeeLoader } from "./employeeLoader";
 import { DepartmentLoader } from "./departmentLoader";
+import { SMSConfigurationEmbedded } from "@altea/altea-sms/data/SMS";
 import { ProductLoader } from "./productLoader";
 import { CustomerLoader } from "./customerLoader";
 import { OrderLoader } from "./orderLoader";
@@ -144,6 +145,11 @@ export namespace EastwindMigrations {
                 profilePhotosFolder: process.env["EASTWIND_FILES_PROFILEPHOTOS"] ?? "./files/profilePhotos",
                 emailAttachmentsFolder: process.env["EASTWIND_FILES_EMAILATTACHMENTS"] ?? "./files/emailAttachments",
                 helpImagesFolder: process.env["EASTWIND_FILES_HELPIMAGES"] ?? "./files/helpImages",
+            }),
+            sms: SMSConfigurationEmbedded.create({
+                // One of the cultures CreateCulturesAndConfiguration seeds just above (en / es / de);
+                // Southwind uses en-GB, which is not in eastwind's set.
+                defaultCulture: process.env["EASTWIND_SMS_DEFAULTCULTURE"] ?? "en",
             }),
             azureAD: null,
             openID: null,

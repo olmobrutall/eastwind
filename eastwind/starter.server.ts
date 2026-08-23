@@ -18,6 +18,7 @@ import { DepartmentsLogic } from "./departments/DepartmentLogic.server";
 import { CustomersLogic } from "./customers/CustomerLogic.server";
 import { OrdersLogic } from "./orders/OrderLogic.server";
 import { OrderEntity } from "./orders/Order.data";
+import { CustomerEntity, PersonEntity, CompanyEntity } from "./customers/Customer.data";
 import { AuthLogic } from "@altea/altea-auth/server/AuthLogic";
 import { TypeAuthLogic } from "@altea/altea-auth/server/TypeAuthLogic";
 import { PermissionAuthLogic } from "@altea/altea-auth/server/PermissionAuthLogic";
@@ -37,6 +38,8 @@ import { FileLogic } from "@altea/altea-files/server/FileLogic.server";
 import { SchedulerLogic } from "@altea/altea-scheduler/server/SchedulerLogic.server";
 import { SimpleTaskLogic } from "@altea/altea-scheduler/server/SimpleTaskLogic.server";
 import { ScheduleTaskRunner } from "@altea/altea-scheduler/server/ScheduleTaskRunner.server";
+import { ProcessRunner } from "@altea/altea-processes/server/ProcessRunner.server";
+import { AsyncEmailSender } from "@altea/altea-email/server/AsyncEmailSender.server";
 import { ProcessLogic } from "@altea/altea-processes/server/ProcessLogic.server";
 import { ProcessSchedulerBridge } from "@altea/altea-processes/server/ProcessSchedulerBridge.server";
 import { OmniboxLogic } from "@altea/altea-omnibox/server/OmniboxLogic";
@@ -47,6 +50,9 @@ import { TimeMachineLogic } from "@altea/altea-time-machine/server/TimeMachineLo
 import { TreeModuleLogic } from "@altea/altea-tree/server/TreeModuleLogic.server";
 import { RestModuleLogic } from "@altea/altea-rest/server/RestModuleLogic.server";
 import { ViewLogLogic } from "@altea/altea-view-log/server/ViewLogLogic.server";
+import { SMSModuleLogic } from "@altea/altea-sms/server/SMSModuleLogic.server";
+import { SMSLogic } from "@altea/altea-sms/server/SMSLogic.server";
+import { SMSProcessLogic } from "@altea/altea-sms/server/SMSProcessLogic.server";
 import { UserQueryEntity } from "@altea/altea-user-queries/data/UserQuery";
 import { UserChartEntity } from "@altea/altea-chart/data/UserChart";
 import { DashboardEntity } from "@altea/altea-dashboard/data/Dashboard";
@@ -464,6 +470,29 @@ export namespace Starter {
         // BEFORE OperationLogic.start, like every other include; the two subscriptions it installs are
         // core seams (ExecutionMode.onApiRetrieved / QueryLogic.queries.queryExecuted), so nothing else
         // needs to know it is here.
+        // SMS module (@altea/altea-sms): the message + template tables, the send / update-status processes
+        // and the scheduled status refresh. `provider` is deliberately UNSET — Signum ships no gateway
+        // either and Southwind passes null, so a message can be authored and packaged but sending answers
+        // "No ISMSProvider set" until an app supplies one. BEFORE OperationLogic.start, so its eight
+        // operation symbols get seeded.
+        SMSModuleLogic.start(sb, { getConfiguration: () => GlobalsLogic.configuration().sms });
+
+        // eastwind's SMS owner: a CUSTOMER (Northwind's customers carry a phone). This is what earns
+        // Person / Company the `SMSMessages` sub-token, the "SMS messages" quick link, and the
+        // "send this text to all of these" contextual operation — Southwind registers none, so without it
+        // the module would have nothing to be about.
+        // The `SMSMessages` sub-token is registered PER CONCRETE TYPE (altea keys an extension token on a
+        // constructor — see the module's registerSMSOwner note)…
+        SMSLogic.registerSMSOwner(PersonEntity);
+        SMSLogic.registerSMSOwner(CompanyEntity);
+        // …but the "send to all of these" OPERATION is registered ONCE, on the abstract base: an operation
+        // is keyed by its symbol, and a subclass inherits its base's (OperationLogic.operationsForType walks
+        // the prototype chain — see CLAUDE.md). Signum registers it per concrete type only because C#
+        // generics force `Graph<ProcessEntity>.ConstructFromMany<T>` to name one.
+        SMSProcessLogic.registerSMSOwnerData(CustomerEntity, c => ({
+            owner: c.toLite(), telephoneNumber: c.phone, culture: null,
+        }));
+
         ViewLogLogic.start(sb, {
             registerExpressionsFor: [
                 UserQueryEntity as unknown as Type<Entity>,
@@ -538,6 +567,17 @@ export namespace Starter {
         // middleware sits behind the auth middleware AuthLogic.start installed.
         if (sb.webBuilder)
             CatalogApi.start(sb.webBuilder);
+
+        // The three BACKGROUND RUNNERS (Southwind.Server/Program.cs's `StartBackgroundProcesses` block).
+        // eastwind had never started them: a scheduled task, a queued process and an async e-mail were all
+        // created but nothing ever ran them — the SMS module's Send / UpdateStatus processes are what
+        // surfaced it. Like Southwind, they start a few seconds AFTER the schema is up (so the first pump
+        // does not race initialization) and only with a WEB host: a terminal run must not pick work up.
+        if (sb.webBuilder) {
+            ProcessRunner.startRunningProcessesAfter(5000);
+            ScheduleTaskRunner.startScheduledTasksAfter(5000);
+            AsyncEmailSender.startAsyncEmailSenderAfter(5000);
+        }
 
         // Mount the framework HTTP API last (Signum's SignumServer.Start): after the modules' own routes
         // (registered by their Logic.start above) so the auth middleware/gate run first, and so the JSON

@@ -38,6 +38,7 @@
     { "path": "../altea/altea-map/tsconfig.server.json" },
     { "path": "../altea/altea-time-machine/tsconfig.server.json" },
     { "path": "../altea/altea-rest/tsconfig.server.json" },
+    { "path": "../altea/altea-sms/tsconfig.server.json" },
     { "path": "../altea/altea-view-log/tsconfig.server.json" },
     { "path": "../altea/altea-tree/tsconfig.server.json" },
     { "path": "../altea/altea-tour/tsconfig.server.json" },

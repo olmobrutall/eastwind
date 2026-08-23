@@ -772,6 +772,27 @@ importers:
         specifier: workspace:*
         version: link:../quote-transformer
 
+  altea/altea-sms:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-processes':
+        specifier: workspace:*
+        version: link:../altea-processes
+      '@altea/altea-scheduler':
+        specifier: workspace:*
+        version: link:../altea-scheduler
+      '@altea/altea-templating':
+        specifier: workspace:*
+        version: link:../altea-templating
+      '@altea/altea-user-assets':
+        specifier: workspace:*
+        version: link:../altea-user-assets
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
   altea/altea-templating:
     dependencies:
       '@altea/altea':
@@ -1108,6 +1129,9 @@ importers:
       '@altea/altea-scheduler':
         specifier: workspace:*
         version: link:../altea/altea-scheduler
+      '@altea/altea-sms':
+        specifier: workspace:*
+        version: link:../altea/altea-sms
       '@altea/altea-templating':
         specifier: workspace:*
         version: link:../altea/altea-templating

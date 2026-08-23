@@ -53,6 +53,7 @@ import { TreeClient } from "@altea/altea-tree/client/TreeClient";
 import { RestClient } from "@altea/altea-rest/client/RestClient";
 import { RestApiKeyClient } from "@altea/altea-rest/client/RestApiKeyClient";
 import { ViewLogClient } from "@altea/altea-view-log/client/ViewLogClient";
+import { SMSClient } from "@altea/altea-sms/client/SMSClient";
 import { TourClient } from "@altea/altea-tour/client/TourClient";
 import { TranslationClient } from "@altea/altea-translations/client/TranslationClient";
 import { TranslatedInstanceClient } from "@altea/altea-translations/client/TranslatedInstanceClient";
@@ -288,6 +289,10 @@ export function startFull(routes: RouteObject[]): void {
     // ViewLog (altea-view-log): the global "who has looked at this?" quick link on every entity, plus the
     // log's own search columns. LAST of the log modules, so its quick link sits after the operation log's.
     ViewLogClient.start(cb);
+
+    // SMS (altea-sms): the template editor with its live remaining-character count, the message / package
+    // views, and the "SMS messages" quick link on every registered owner type (eastwind: Customer).
+    SMSClient.start(cb);
 
     // Tour (altea-tour): implements core's TourButton extension point, registers the tour editor views,
     // and hangs the tour button on entity frames, dashboard pages and user-query search controls. AFTER
