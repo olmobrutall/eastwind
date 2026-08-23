@@ -3,11 +3,11 @@
 Snapshot of the extension-by-extension port state, as of 2026-08-23.
 
 `old/Framework/Extensions/` holds **55** Signum extension projects (+ `Signum.Extensions.Test`, the shared
-suite). `altea/` holds **43** extension packages (+ `altea/altea` core, `quote-transformer`,
+suite). `altea/` holds **44** extension packages (+ `altea/altea` core, `quote-transformer`,
 `quote-transformer-test`).
 
-Counts: **45 ported**, **2 partial**, **3 deferred by design**, **8 pending** — of which **2 are started by
-`Southwind/Starter.cs`** and so block eastwind parity.
+Counts: **46 ported**, **2 partial**, **3 deferred by design**, **7 pending** — of which **1 is started by
+`Southwind/Starter.cs`** and so blocks eastwind parity.
 
 LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
 
@@ -48,6 +48,7 @@ LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
 | Signum.Profiler | `altea-profiler` | |
 | Signum.Rest | `altea-rest` | Signum's MVC action filter becomes Express middleware mounted on a path prefix; a logged `?apiKey=` is redacted; no Swagger, no DeleteLogs |
 | Signum.Scheduler | `altea-scheduler` | in-process `setTimeout` runner; owns `HolidayCalendar` |
+| Signum.SMS | `altea-sms` | structurally a small sibling of `altea-email`; the GSM-alphabet length rules carry their own suite (Signum's UCS-2 budget of 60 corrected to 70); no `SendAsyncSMS`, no DeleteLogs, no package NumLines/NumErrors columns |
 | Signum.Templating | `altea-templating` | the Roslyn Eval becomes `TemplateApplicableSymbol` |
 | Signum.TimeMachine | `altea-time-machine` | |
 | Signum.Toolbar | `altea-toolbar` | |
@@ -78,18 +79,17 @@ LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
 
 ## Pending
 
-**Next up: Signum.SMS.** (Signum.Map, Signum.Help, Signum.Tree, Signum.Rest and Signum.ViewLog are done — see Ported.)
+**Next up: Signum.Markdown.** (Signum.Map, Signum.Help, Signum.Tree, Signum.Rest, Signum.ViewLog and Signum.SMS are done — see Ported.)
 
 | # | Signum extension | What it is | LOC | Southwind starts it |
 | --- | --- | --- | --- | --- |
-| 1 | Signum.SMS | SMS templates, packages, send / receive process algorithms | 1 845 | yes |
-| 2 | Signum.Markdown | `MarkdownLine` + the server markdown→html renderer | 189 | yes — the EDITOR half already stands in as `altea-codemirror`'s `MarkdownCodeMirror` |
-| 3 | Signum.Isolation | multi-tenant row isolation: `IsolationEntity`, the ambient query filter, the navbar picker | 718 | no (referenced only) |
-| 4 | Signum.WhatsNew | release-notes entity, navbar dropdown, per-user read log | 1 292 | no |
-| 5 | Signum.Printing | `PrintLineEntity` print queue + admin panel | 633 | no |
-| 6 | Signum.Calendar | `CalendarDayEntity` — a working-days table | 72 | no |
-| 7 | Signum.WorkflowDynamic | glues Signum.Workflow to the **compiled** Dynamic half | 197 | via `DynamicLogicStarter` — blocked on Signum.Dynamic's compiled half |
-| 8 | Signum.Playwright.Workflow | `CaseFrame` page / modal proxies for the workflow UI | 169 | test-only |
+| 1 | Signum.Markdown | `MarkdownLine` + the server markdown→html renderer | 189 | yes — the EDITOR half already stands in as `altea-codemirror`'s `MarkdownCodeMirror` |
+| 2 | Signum.Isolation | multi-tenant row isolation: `IsolationEntity`, the ambient query filter, the navbar picker | 718 | no (referenced only) |
+| 3 | Signum.WhatsNew | release-notes entity, navbar dropdown, per-user read log | 1 292 | no |
+| 4 | Signum.Printing | `PrintLineEntity` print queue + admin panel | 633 | no |
+| 5 | Signum.Calendar | `CalendarDayEntity` — a working-days table | 72 | no |
+| 6 | Signum.WorkflowDynamic | glues Signum.Workflow to the **compiled** Dynamic half | 197 | via `DynamicLogicStarter` — blocked on Signum.Dynamic's compiled half |
+| 7 | Signum.Playwright.Workflow | `CaseFrame` page / modal proxies for the workflow UI | 169 | test-only |
 
 ## Adjacent gaps (not extension projects)
 

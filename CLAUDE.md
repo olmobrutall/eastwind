@@ -59,6 +59,8 @@ altea/
                       #   per-instance @translatable fields (data) — Signum.Translation, both halves
   altea-rest/         # API-key authentication for an app's PUBLIC rest surface, plus a replayable log of
                       #   every request that reached it (Signum.Rest)
+  altea-sms/          # SMS templates (per-culture text over a query / model), messages, and the send +
+                      #   update-status process algorithms (Signum.SMS)
   altea-view-log/     # who viewed which entity, and which searches they ran, with the SQL each ran
                       #   (Signum.ViewLog)
   altea-tree/         # an entity whose rows form a FOREST: a depth-first route column, the tree page /
@@ -881,6 +883,51 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   `LiteImp.toString()` keeps, instead of failing the query it decorates.
 
 > `old/CLAUDE.md` and `old/**/AGENTS.md` describe **Signum's** conventions, not altea's — read them to understand the source, but altea's conventions above win.
+
+- **Signum.SMS → altea-sms: a small sibling of altea-email, plus the GSM alphabet.** The module is a
+  TEMPLATE (per-culture text authored against a query and/or a code-declared model), a MESSAGE, two PACKAGES
+  a batch process walks, and a PROVIDER seam. Almost every structural decision is inherited from
+  @altea/altea-email, which ports the same template + model-registry + message shape: `MList` → `@part` rows,
+  the model registry keyed by CLEAN TYPE NAME and maintained through `Schema.Generating` /
+  `Schema.Synchronizing` (so a renamed model class keeps its row, and the FK every template holds), the
+  `SMSModel<T>` abstract base becoming an interface plus an `smsModel(...)` defaults factory, and the query
+  executed through `QueryLogic.queries.executeQueryAsync` with hand-built Columns / Filters / Orders because
+  there is no QueryDescription to thread. What is specific to this module:
+  - **`SMSCharacters` is the one piece worth its own suite** (`test/smsCharacters.test.ts`, 13 cases). The
+    GSM 03.38 rules are not intuitive — 160 basic characters, seven of them escaped and costing two, and ONE
+    character outside the alphabet re-prices the WHOLE message as UCS-2 — and a wrong answer silently
+    TRUNCATES a message (`messageLengthExceeded: TextPruning` cuts to whatever it returns). Two divergences:
+    the tables are SETS of code points (Signum maps each character to its own code point and only ever tests
+    presence), and the UCS-2 budget is **70**, not Signum's `maxLength = 60`, which is neither the
+    single-part nor the concatenated figure. Counting iterates by CODE POINT, so an emoji costs one unit and
+    correctly forces UCS-2.
+  - **`SMSOwnerData` is a plain interface, and the object projection LOWERS TO SQL.** Signum makes it a
+    `DescriptionOptions` POCO; altea needs no reflected type, because a `@quoted` member returning a
+    hand-built object (`{ owner: this.toLite(), telephoneNumber: this.phone, culture: null }`) is a real
+    query token — verified on eastwind's `CustomerEntity.smsOwnerData()`. That is what a template's `to`
+    points at. It still has to be REGISTERED as an expression per concrete type (`@quoted` alone is not a
+    token), and its `Equals`-based de-duplication becomes a key Set.
+  - **`SendAsyncSMS` is dropped** (Signum's detached `Task.Factory.StartNew`): a floating promise in Node is
+    an unhandled rejection waiting to happen and races process exit — the Send PROCESS is what
+    fire-and-forget means here. Same call altea-view-log made for its log write.
+  - **`MultipleTelephoneValidator` / `DateTimePrecisionValidator` have no altea counterparts**: the
+    comma-separated form is a `@fieldValidation`, and `sendDate` is truncated where it is assigned.
+  - **the two ConstructFromMany operations THROW where Signum returns null.** altea's `construct` must
+    return an entity, so "nothing to package" says so instead of silently answering nothing.
+  - **`registerSMSOwnerData` is registered ONCE for a hierarchy**, on the abstract base — an operation is
+    keyed by its symbol and a subclass inherits its base's. Signum registers per concrete type only because
+    C# generics force `Graph<ProcessEntity>.ConstructFromMany<T>` to name one. The projector also retrieves
+    through the LITE's own concrete type, since an abstract base has no table.
+  - NOT ported: both `ExceptionLogic.DeleteLogs` handlers, `SMSModelEntity`'s `[TicksColumn(false)]` (no such
+    option, and the row is only ever written by the synchronizer), the `Retrieved` / `AfterDeserialization`
+    token re-parse (altea resolves tokens client-side), and the two package queries' `NumLines` /
+    `LastProcess` / `NumErrors` columns — altea-processes exposes neither `LastProcess()` nor
+    `ExceptionLines()` as an expression, so each package's VIEW shows its messages in a SearchControl.
+  It also surfaced an eastwind gap: **the three background runners had never been started.** Southwind's
+  `Program.cs` starts `ProcessRunner` / `ScheduleTaskRunner` / `AsyncEmailSender` 5 s after boot behind a
+  `StartBackgroundProcesses` flag; eastwind imported `ScheduleTaskRunner` and never called it, so a
+  scheduled task, a queued process and an async e-mail were all created and never run. Started now, web-host
+  only — a terminal run must not pick work up.
 
 ## How to build
 
