@@ -870,11 +870,15 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     `Changelog.ts` — an empty dictionary in the source — is not ported.
   - NOT ported: `ExceptionLogic.DeleteLogs` and `EntityEvents<TypeEntity>.PreDeleteSqlSync` (no such schema
     event, so deleting a TypeEntity row does not sweep this table's `@implementedByAll` orphans).
-  It also surfaced a CORE gap it could only paper over: an `@implementedByAll` column stores just
-  (id, typeId), so a query hands back a lite with NO display string — Signum fills it with one batched query
-  per type (`IRetriever.RequestLite`), which altea does not do. Until it does, `Lite.toString()` falls back
-  to `"<NiceName> <id>"`, so the target column reads "Order 10248" instead of being BLANK — which is what
-  `OperationLogEntity.target` had been showing all along.
+  It also surfaced a CORE gap, since fixed: an `@implementedByAll` column stores just (id, typeId), so a
+  query handed the lite back with NO display string — the Target column of every operation-log and view-log
+  row rendered BLANK. **The Retriever now resolves it exactly as Signum's `IRetriever.RequestLite` does**:
+  each nameless lite is registered, and at the end of `completeAll` (after the id-only stub drain, which can
+  surface more) ONE query per TYPE names them all — a lite PROJECTION (`map(e => e.toLite())`), so the SELECT
+  is the id plus that row's own display columns, never the whole entity. It runs with the CALLER's rights
+  (never `ExecutionMode.global`), so no name the user may not see can leak; and each type group is wrapped, so
+  an unreadable type or a since-DELETED row leaves that one lite with the `"<NiceName> <id>"` fallback
+  `LiteImp.toString()` keeps, instead of failing the query it decorates.
 
 > `old/CLAUDE.md` and `old/**/AGENTS.md` describe **Signum's** conventions, not altea's — read them to understand the source, but altea's conventions above win.
 
