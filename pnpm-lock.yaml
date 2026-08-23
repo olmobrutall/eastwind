@@ -745,6 +745,21 @@ importers:
         specifier: workspace:*
         version: link:../quote-transformer
 
+  altea/altea-rest:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      '@altea/altea-diff-log':
+        specifier: workspace:*
+        version: link:../altea-diff-log
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
   altea/altea-scheduler:
     dependencies:
       '@altea/altea':
@@ -1075,6 +1090,9 @@ importers:
       '@altea/altea-profiler':
         specifier: workspace:*
         version: link:../altea/altea-profiler
+      '@altea/altea-rest':
+        specifier: workspace:*
+        version: link:../altea/altea-rest
       '@altea/altea-scheduler':
         specifier: workspace:*
         version: link:../altea/altea-scheduler

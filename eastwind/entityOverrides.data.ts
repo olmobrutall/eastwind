@@ -14,6 +14,7 @@
 import { overrideImplementedBy } from "@altea/altea/data/decorators";
 import type { Entity, Type } from "@altea/altea/data/entity";
 import { ExceptionEntity } from "@altea/altea/data/exception";
+import { RestLogEntity } from "@altea/altea-rest/data/Rest";
 import { OperationLogEntity } from "@altea/altea/data/operationLog";
 import { UserEntity } from "@altea/altea-auth/data/User";
 import { SimpleTaskSymbol } from "@altea/altea-scheduler/data/Scheduler";
@@ -110,6 +111,7 @@ export namespace EntityOverrides {
 
         overrideImplementedBy(ExceptionEntity, "user", () => [UserEntity]);
         overrideImplementedBy(OperationLogEntity, "user", () => [UserEntity]);
+        overrideImplementedBy(RestLogEntity, "user", () => [UserEntity]);
 
         // The dashboard PART types this app offers (Southwind did exactly this in Starter.cs:
         // `FieldAttributes((DashboardEntity a) => a.Parts.First().Content).Replace(new ImplementedByAttribute(

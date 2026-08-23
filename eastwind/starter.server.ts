@@ -45,6 +45,8 @@ import { HelpModuleLogic } from "@altea/altea-help/server/HelpModuleLogic.server
 import { DiffLogLogic } from "@altea/altea-diff-log/server/DiffLogLogic";
 import { TimeMachineLogic } from "@altea/altea-time-machine/server/TimeMachineLogic.server";
 import { TreeModuleLogic } from "@altea/altea-tree/server/TreeModuleLogic.server";
+import { RestModuleLogic } from "@altea/altea-rest/server/RestModuleLogic.server";
+import { CatalogApi } from "./publicApi/CatalogApi.server";
 import { TourLogic } from "@altea/altea-tour/server/TourLogic.server";
 import { TranslationLogic } from "@altea/altea-translations/server/TranslationLogic.server";
 import { WorkflowLogicStarter } from "@altea/altea-workflow/server/WorkflowLogicStarter.server";
@@ -445,6 +447,12 @@ export namespace Starter {
         // OperationLogic.start, so the seven operation symbols `withTree` registers get seeded.
         TreeModuleLogic.start(sb);
         DepartmentsLogic.start(sb);
+
+        // Rest module (@altea/altea-rest): the API-key table + its authenticator, and the replayable log
+        // of every request that reached the app's public REST surface. BEFORE OperationLogic.start so the
+        // key's Save/Delete symbols get seeded. Southwind starts the two halves as two calls
+        // (`RestLogLogic.Start` / `RestApiKeyLogic.Start`); altea packages expose one start per module.
+        RestModuleLogic.start(sb);
         // Translations module (altea-translations): both halves — the pages that edit each PACKAGE's own
         // translations/*.xml files (the code half, nothing stored), and the TranslatedInstance table +
         // its pages (the instance half, for every @translatable route). BEFORE OperationLogic.start so
@@ -506,6 +514,12 @@ export namespace Starter {
         // database, like the culture warm-up above: a module that then asks for its configuration fails with
         // GlobalsLogic's message naming the migration, rather than silently running on defaults.
         try { await GlobalsLogic.warmUp(); } catch (e) { console.warn(`[globals] ${(e as Error).message}`); }
+
+        // The app's own PUBLIC REST surface (Southwind's Public/CatalogAPIController) — what an API key
+        // authenticates against and what @altea/altea-rest logs. After every module, so its RestLog
+        // middleware sits behind the auth middleware AuthLogic.start installed.
+        if (sb.webBuilder)
+            CatalogApi.start(sb.webBuilder);
 
         // Mount the framework HTTP API last (Signum's SignumServer.Start): after the modules' own routes
         // (registered by their Logic.start above) so the auth middleware/gate run first, and so the JSON

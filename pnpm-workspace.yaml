@@ -39,6 +39,7 @@ packages:
   - altea/altea-map
   - altea/altea-help
   - altea/altea-tree
+  - altea/altea-rest
   - altea/altea-tour
   - altea/altea-translations
   - altea/quote-transformer

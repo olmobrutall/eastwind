@@ -69,6 +69,7 @@
     "@altea/altea-help": "workspace:*",
     "@altea/altea-map": "workspace:*",
     "@altea/altea-time-machine": "workspace:*",
+    "@altea/altea-rest": "workspace:*",
     "@altea/altea-tree": "workspace:*",
     "@altea/altea-tour": "workspace:*",
     "@altea/altea-translations": "workspace:*",

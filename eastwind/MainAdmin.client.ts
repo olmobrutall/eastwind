@@ -50,6 +50,8 @@ import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
 import { DiffLogClient } from "@altea/altea-diff-log/client/DiffLogClient";
 import { TimeMachineClient } from "@altea/altea-time-machine/client/TimeMachineClient";
 import { TreeClient } from "@altea/altea-tree/client/TreeClient";
+import { RestClient } from "@altea/altea-rest/client/RestClient";
+import { RestApiKeyClient } from "@altea/altea-rest/client/RestApiKeyClient";
 import { TourClient } from "@altea/altea-tour/client/TourClient";
 import { TranslationClient } from "@altea/altea-translations/client/TranslationClient";
 import { TranslatedInstanceClient } from "@altea/altea-translations/client/TranslatedInstanceClient";
@@ -272,6 +274,15 @@ export function startFull(routes: RouteObject[]): void {
     // DashboardClient / UserQueriesClient, whose registries it writes into. The app's tree TYPE is
     // configured separately, by DepartmentsClient above — the two are independent.
     TreeClient.start(cb);
+
+    // Rest (altea-rest): the API-key editor with its generate button, and the request log with its
+    // replay-and-diff tabs. `registerAuthenticator` is what lets `?apiKey=…` in the address bar log a
+    // caller in — the flow that lands an API client inside the app already authenticated. It is a separate
+    // call in Signum too, because a host may want the key ENTITY without letting a url parameter log
+    // anyone in; eastwind opts in, as Southwind does.
+    RestClient.start(cb);
+    RestApiKeyClient.start(cb);
+    RestApiKeyClient.registerAuthenticator();
 
     // Tour (altea-tour): implements core's TourButton extension point, registers the tour editor views,
     // and hangs the tour button on entity frames, dashboard pages and user-query search controls. AFTER
