@@ -3,10 +3,10 @@
 Snapshot of the extension-by-extension port state, as of 2026-08-23.
 
 `old/Framework/Extensions/` holds **55** Signum extension projects (+ `Signum.Extensions.Test`, the shared
-suite). `altea/` holds **42** extension packages (+ `altea/altea` core, `quote-transformer`,
+suite). `altea/` holds **43** extension packages (+ `altea/altea` core, `quote-transformer`,
 `quote-transformer-test`).
 
-Counts: **44 ported**, **2 partial**, **3 deferred by design**, **9 pending** — of which **3 are started by
+Counts: **45 ported**, **2 partial**, **3 deferred by design**, **8 pending** — of which **2 are started by
 `Southwind/Starter.cs`** and so block eastwind parity.
 
 LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
@@ -54,6 +54,7 @@ LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
 | Signum.Tour | `altea-tour` | |
 | Signum.Translation | `altea-translations` | both halves; `countLocalizationHits` + the two terminal commands unported |
 | Signum.Tree | `altea-tree` | `SqlHierarchyId` → a textual route + TypeScript arithmetic; the depth-first ORDER is computed in memory; `DisabledMixin` not ported |
+| Signum.ViewLog | `altea-view-log` | three new core seams (`ExecutionMode.onApiRetrieved`, `queryExecuted`, `Connector.withSqlCapture`); the SQL sink is async-local, not a global logger swap; the other modules report through the seam rather than depending on this one |
 | Signum.UserAssets | `altea-user-assets` | |
 | Signum.UserQueries | `altea-user-queries` | |
 | Signum.Word | `altea-office-template` | docx/pptx/xlsx; `Word*` → `Office*` rename |
@@ -77,19 +78,18 @@ LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
 
 ## Pending
 
-**Next up: Signum.ViewLog.** (Signum.Map, Signum.Help, Signum.Tree and Signum.Rest are done — see Ported.)
+**Next up: Signum.SMS.** (Signum.Map, Signum.Help, Signum.Tree, Signum.Rest and Signum.ViewLog are done — see Ported.)
 
 | # | Signum extension | What it is | LOC | Southwind starts it |
 | --- | --- | --- | --- | --- |
-| 1 | Signum.ViewLog | logs "who viewed which entity" | 295 | yes (UserQuery / UserChart / Dashboard) |
-| 2 | Signum.SMS | SMS templates, packages, send / receive process algorithms | 1 845 | yes |
-| 3 | Signum.Markdown | `MarkdownLine` + the server markdown→html renderer | 189 | yes — the EDITOR half already stands in as `altea-codemirror`'s `MarkdownCodeMirror` |
-| 4 | Signum.Isolation | multi-tenant row isolation: `IsolationEntity`, the ambient query filter, the navbar picker | 718 | no (referenced only) |
-| 5 | Signum.WhatsNew | release-notes entity, navbar dropdown, per-user read log | 1 292 | no |
-| 6 | Signum.Printing | `PrintLineEntity` print queue + admin panel | 633 | no |
-| 7 | Signum.Calendar | `CalendarDayEntity` — a working-days table | 72 | no |
-| 8 | Signum.WorkflowDynamic | glues Signum.Workflow to the **compiled** Dynamic half | 197 | via `DynamicLogicStarter` — blocked on Signum.Dynamic's compiled half |
-| 9 | Signum.Playwright.Workflow | `CaseFrame` page / modal proxies for the workflow UI | 169 | test-only |
+| 1 | Signum.SMS | SMS templates, packages, send / receive process algorithms | 1 845 | yes |
+| 2 | Signum.Markdown | `MarkdownLine` + the server markdown→html renderer | 189 | yes — the EDITOR half already stands in as `altea-codemirror`'s `MarkdownCodeMirror` |
+| 3 | Signum.Isolation | multi-tenant row isolation: `IsolationEntity`, the ambient query filter, the navbar picker | 718 | no (referenced only) |
+| 4 | Signum.WhatsNew | release-notes entity, navbar dropdown, per-user read log | 1 292 | no |
+| 5 | Signum.Printing | `PrintLineEntity` print queue + admin panel | 633 | no |
+| 6 | Signum.Calendar | `CalendarDayEntity` — a working-days table | 72 | no |
+| 7 | Signum.WorkflowDynamic | glues Signum.Workflow to the **compiled** Dynamic half | 197 | via `DynamicLogicStarter` — blocked on Signum.Dynamic's compiled half |
+| 8 | Signum.Playwright.Workflow | `CaseFrame` page / modal proxies for the workflow UI | 169 | test-only |
 
 ## Adjacent gaps (not extension projects)
 

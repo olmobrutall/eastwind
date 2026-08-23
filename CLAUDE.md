@@ -59,6 +59,8 @@ altea/
                       #   per-instance @translatable fields (data) — Signum.Translation, both halves
   altea-rest/         # API-key authentication for an app's PUBLIC rest surface, plus a replayable log of
                       #   every request that reached it (Signum.Rest)
+  altea-view-log/     # who viewed which entity, and which searches they ran, with the SQL each ran
+                      #   (Signum.ViewLog)
   altea-tree/         # an entity whose rows form a FOREST: a depth-first route column, the tree page /
                       #   modal / dashboard part, and add-child / move / copy / delete (Signum.Tree)
   altea-workflow/     # BPMN workflow engine + bpmn-js designer (Signum.Workflow)
@@ -831,6 +833,48 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   occurrence — Signum REFUSES a request carrying two keys rather than picking one); and
   `Duration.total({ unit })` did not translate to SQL, only the bare-string `total("ms")` form did — so the
   object form every duration helper in the workspace is written in failed at query time.
+
+- **Signum.ViewLog → altea-view-log: the module IS three subscriptions.** One table plus "the API handed out
+  an entity", "a query ran", and the two navigations that let a type's search page ask "who looked at this
+  one?". The port is small; what it needed was three CORE seams, all in the shape
+  `OperationLogic.surroundOperation` established (a handler returning an AFTER callback, where Signum's event
+  returns an `IDisposable` and the `using` scope runs the second half):
+  - **`ExecutionMode.onApiRetrieved` / `apiRetrievedScope`** — Signum's same event, in the same place and for
+    the same reason: the DATA layer must not know about HTTP, and other modules report their own "a client
+    just looked at this" scopes through it. Opened by `/api/entity/:type/:id` and `/api/entityPack/:type/:id`,
+    exactly where Signum's EntityController opens it. **It is also how altea-dashboard / -user-queries /
+    -chart report their scopes**, where Signum has those three modules import Signum.ViewLog directly — so an
+    optional module stays optional and nothing happens when no observer is installed. (Of the three, only the
+    DASHBOARD ones are reachable: the user-query / user-chart `retrieve*` functions are cache-hit fast paths
+    nothing routes to, because altea's SPA fetches a user asset through the generic `/api/entity/…` — which
+    logs it under `EntitiesController.GetEntity` anyway.)
+  - **`DynamicQueryContainer.queryExecuted`** — Signum's same event minus its `ExecuteType` argument, which
+    it only ever used as the logged action name: altea funnels every read through one `executeQueryAsync`
+    (the queryValue route builds a QueryRequest too), so there is nothing to discriminate.
+  - **`Connector.withSqlCapture(sink, fn)`** — an ASYNC-LOCAL SQL sink, because Signum captures the SQL of a
+    query by swapping the process-wide `Connector.CurrentLogger` for a StringWriter for its duration. That
+    swap is racy on a server running concurrent work: the StringWriter sees every OTHER query's SQL too. The
+    sink is additive (`currentLogger` keeps working, so Signum's `DuplicateTextWriter` is unnecessary) and
+    the CALLER owns the array, which is what lets the observer log a query that THREW.
+  Other divergences:
+  - **the row is saved INLINE, awaited**, where Signum fires a detached `Task.Factory.StartNew`. A floating
+    promise in Node is an unhandled rejection waiting to happen and races process exit; the write is one
+    INSERT in its own transaction and the response has already been sent.
+  - **`registerExpressions` is per CONCRETE type** — Signum hangs `ViewLogs()` / `ViewLogMyLast()` off
+    `Entity` itself, but altea keys an extension token on a constructor and the token walk follows the
+    concrete prototype chain (the accommodation altea-alert already makes). `ViewLogMyLast` also stays a
+    QUERY rather than Signum's single-row `FirstOrDefault()`: altea's registered expressions are projections
+    and there is no single-entity extension token.
+  - `Duration` is a `@quoted` member plus a registered expression (as in @altea/altea-rest);
+    `registerChangeLogModule` has no counterpart (altea has no per-module changelog registry), so Signum's
+    `Changelog.ts` — an empty dictionary in the source — is not ported.
+  - NOT ported: `ExceptionLogic.DeleteLogs` and `EntityEvents<TypeEntity>.PreDeleteSqlSync` (no such schema
+    event, so deleting a TypeEntity row does not sweep this table's `@implementedByAll` orphans).
+  It also surfaced a CORE gap it could only paper over: an `@implementedByAll` column stores just
+  (id, typeId), so a query hands back a lite with NO display string — Signum fills it with one batched query
+  per type (`IRetriever.RequestLite`), which altea does not do. Until it does, `Lite.toString()` falls back
+  to `"<NiceName> <id>"`, so the target column reads "Order 10248" instead of being BLANK — which is what
+  `OperationLogEntity.target` had been showing all along.
 
 > `old/CLAUDE.md` and `old/**/AGENTS.md` describe **Signum's** conventions, not altea's — read them to understand the source, but altea's conventions above win.
 
