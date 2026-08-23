@@ -36,6 +36,9 @@ packages:
   - altea/altea-playwright
   - altea/altea-workflow
   - altea/altea-time-machine
+  - altea/altea-map
+  - altea/altea-help
+  - altea/altea-tree
   - altea/altea-tour
   - altea/altea-translations
   - altea/quote-transformer

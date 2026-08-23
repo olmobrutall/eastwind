@@ -14,6 +14,7 @@ import { EntityOverrides } from "./entityOverrides.data";
 import { EmployeesLogic } from "./employees/EmployeeLogic.server";
 import { ProductsLogic } from "./products/ProductLogic.server";
 import { ShippersLogic } from "./shippers/ShipperLogic.server";
+import { DepartmentsLogic } from "./departments/DepartmentLogic.server";
 import { CustomersLogic } from "./customers/CustomerLogic.server";
 import { OrdersLogic } from "./orders/OrderLogic.server";
 import { OrderEntity } from "./orders/Order.data";
@@ -39,8 +40,11 @@ import { ScheduleTaskRunner } from "@altea/altea-scheduler/server/ScheduleTaskRu
 import { ProcessLogic } from "@altea/altea-processes/server/ProcessLogic.server";
 import { ProcessSchedulerBridge } from "@altea/altea-processes/server/ProcessSchedulerBridge.server";
 import { OmniboxLogic } from "@altea/altea-omnibox/server/OmniboxLogic";
+import { MapLogic } from "@altea/altea-map/server/MapLogic.server";
+import { HelpModuleLogic } from "@altea/altea-help/server/HelpModuleLogic.server";
 import { DiffLogLogic } from "@altea/altea-diff-log/server/DiffLogLogic";
 import { TimeMachineLogic } from "@altea/altea-time-machine/server/TimeMachineLogic.server";
+import { TreeModuleLogic } from "@altea/altea-tree/server/TreeModuleLogic.server";
 import { TourLogic } from "@altea/altea-tour/server/TourLogic.server";
 import { TranslationLogic } from "@altea/altea-translations/server/TranslationLogic.server";
 import { WorkflowLogicStarter } from "@altea/altea-workflow/server/WorkflowLogicStarter.server";
@@ -422,6 +426,25 @@ export namespace Starter {
         // registered query — the query REGISTRY is read per request, but keeping it last matches Signum's
         // OmniboxLogic.Start position and avoids any ordering surprise.
         OmniboxLogic.start(sb);
+
+        // Schema / operation map (@altea/altea-map): owns no tables — both pages are derived from the live
+        // Schema, the operation registry and the database's own catalog views. AFTER OmniboxLogic.start,
+        // because it pushes a generator onto `OmniboxParser.generators` (the array is read per request, so
+        // the order is only for readability — the same reason Southwind starts MapLogic after Omnibox).
+        MapLogic.start(sb);
+
+        // In-app documentation (@altea/altea-help): the four help tables + their operations, the reflection
+        // prose generator, the pages, the search and the zip import/export. AFTER OmniboxLogic.start (it
+        // pushes a generator) and BEFORE OperationLogic.start so its eight operation symbols get seeded.
+        // The image store is the app's, exactly as Southwind's `GetFileTypeAlgorithm(p => p.HelpImagesFolder)`.
+        HelpModuleLogic.start(sb, EastwindFileStores.store("helpImages", f => f.helpImagesFolder, { onlyImages: true }));
+
+        // Tree module (@altea/altea-tree): the UserTreePart dashboard part, the three endpoints the tree
+        // viewer reads, and the omnibox suggestion. Owns no tree TYPE — the app's is DepartmentEntity,
+        // registered below. AFTER OmniboxLogic.start (it pushes a generator) and BEFORE
+        // OperationLogic.start, so the seven operation symbols `withTree` registers get seeded.
+        TreeModuleLogic.start(sb);
+        DepartmentsLogic.start(sb);
         // Translations module (altea-translations): both halves — the pages that edit each PACKAGE's own
         // translations/*.xml files (the code half, nothing stored), and the TranslatedInstance table +
         // its pages (the instance half, for every @translatable route). BEFORE OperationLogic.start so

@@ -24,6 +24,7 @@ import {
     ApplicationConfigurationEntity, FoldersConfigurationEmbedded, currentEnvironment,
 } from "../globals/ApplicationConfiguration.data";
 import { EmployeeLoader } from "./employeeLoader";
+import { DepartmentLoader } from "./departmentLoader";
 import { ProductLoader } from "./productLoader";
 import { CustomerLoader } from "./customerLoader";
 import { OrderLoader } from "./orderLoader";
@@ -75,6 +76,7 @@ export namespace EastwindMigrations {
         runner.add("LoadOrders", () => OrderLoader.loadOrders());
         runner.add("CreateUsers", () => EmployeeLoader.createUsers());
         runner.add("LoadEmployeePassages", () => EmployeeLoader.loadEmployeePassages());
+        runner.add("LoadDepartments", () => DepartmentLoader.loadDepartments());
         runner.add("ImportUserAssets", () => importUserAssets());
         runner.add("ImportAuthRules", () => importAuthRules());
 
@@ -141,6 +143,7 @@ export namespace EastwindMigrations {
             folders: FoldersConfigurationEmbedded.create({
                 profilePhotosFolder: process.env["EASTWIND_FILES_PROFILEPHOTOS"] ?? "./files/profilePhotos",
                 emailAttachmentsFolder: process.env["EASTWIND_FILES_EMAILATTACHMENTS"] ?? "./files/emailAttachments",
+                helpImagesFolder: process.env["EASTWIND_FILES_HELPIMAGES"] ?? "./files/helpImages",
             }),
             azureAD: null,
             openID: null,

@@ -4,6 +4,7 @@ import { ClientBuilder } from "@altea/altea/client/ClientBuilder";
 import { EmployeesClient } from "./employees/EmployeeClient.client";
 import { ProductsClient } from "./products/ProductClient.client";
 import { ShippersClient } from "./shippers/ShipperClient.client";
+import { DepartmentsClient } from "./departments/DepartmentClient.client";
 import { CustomersClient } from "./customers/CustomerClient.client";
 import { OrdersClient } from "./orders/OrderClient.client";
 import { GlobalsClient } from "./globals/GlobalsClient.client";
@@ -30,6 +31,8 @@ import { FilesClient } from "@altea/altea-files/client/FilesClient";
 import { SchedulerClient } from "@altea/altea-scheduler/client/SchedulerClient";
 import { ProcessClient } from "@altea/altea-processes/client/ProcessClient";
 import { OmniboxClient } from "@altea/altea-omnibox/client/OmniboxClient";
+import { MapClient } from "@altea/altea-map/client/MapClient";
+import { HelpClient } from "@altea/altea-help/client/HelpClient";
 import { MigrationsClient } from "@altea/altea-migrations/client/MigrationsClient";
 import { AlertsClient } from "@altea/altea-alert/client/AlertsClient";
 import { ToolbarClient } from "@altea/altea-toolbar/client/ToolbarClient";
@@ -46,6 +49,7 @@ import { CaseActivityMixin } from "@altea/altea-workflow/data/CaseActivity";
 import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
 import { DiffLogClient } from "@altea/altea-diff-log/client/DiffLogClient";
 import { TimeMachineClient } from "@altea/altea-time-machine/client/TimeMachineClient";
+import { TreeClient } from "@altea/altea-tree/client/TreeClient";
 import { TourClient } from "@altea/altea-tour/client/TourClient";
 import { TranslationClient } from "@altea/altea-translations/client/TranslationClient";
 import { TranslatedInstanceClient } from "@altea/altea-translations/client/TranslatedInstanceClient";
@@ -79,6 +83,7 @@ export function startFull(routes: RouteObject[]): void {
     EmployeesClient.start(cb);
     ProductsClient.start(cb);
     ShippersClient.start(cb);
+    DepartmentsClient.start(cb);
     CustomersClient.start(cb);
     OrdersClient.start(cb);
 
@@ -217,6 +222,17 @@ export function startFull(routes: RouteObject[]): void {
     // <OmniboxAutocomplete/> (see Layout.tsx) draws its suggestions with. Registers no routes.
     OmniboxClient.start(cb);
 
+    // Schema / operation map (@altea/altea-map): the /map and /map/:type pages, the omnibox suggestion and
+    // the built-in colour providers. AFTER OmniboxClient.start, which creates the provider registry this
+    // one registers into.
+    MapClient.start(cb);
+
+    // In-app documentation (@altea/altea-help): the five help pages, the in-place editors, the "?" widget on
+    // every entity frame + the per-line help badge, the export quick link, and the omnibox provider and
+    // "!ImportHelp" special action. AFTER OmniboxClient.start (the provider registry) and AFTER
+    // HtmlEditorClient.start (its editors are the description editor).
+    HelpClient.start(cb);
+
     // Dynamic views (altea-dynamic). This one is load-bearing beyond its own editors: it installs a
     // ViewDispatcher that prefers a view stored in the DATABASE over the compiled one, for every type. With
     // no DynamicView rows saved, every type keeps rendering exactly as before — the dispatcher falls through
@@ -250,6 +266,12 @@ export function startFull(routes: RouteObject[]): void {
     // control's menu, the /timeMachine page route, and the search-result markers that flag a row
     // version as created / deleted. AFTER DiffLogClient, whose DiffDocument the page's data tab uses.
     TimeMachineClient.start(cb);
+
+    // Tree (altea-tree): the /tree/:typeName page, the Move/Copy modals, the "sitemap" button on every
+    // tree type's search control, the omnibox suggestion and the UserTreePart dashboard renderer. AFTER
+    // DashboardClient / UserQueriesClient, whose registries it writes into. The app's tree TYPE is
+    // configured separately, by DepartmentsClient above — the two are independent.
+    TreeClient.start(cb);
 
     // Tour (altea-tour): implements core's TourButton extension point, registers the tour editor views,
     // and hangs the tour button on entity frames, dashboard pages and user-query search controls. AFTER

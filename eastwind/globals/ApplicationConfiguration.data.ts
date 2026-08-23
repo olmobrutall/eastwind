@@ -33,7 +33,7 @@ import { WindowsADConfigurationEmbedded } from "@altea/altea-auth-windowsad/data
 //    it eagerly from the host.
 //  - `OpenID` / `WindowsAD` are NEW beside Southwind's `AzureAD`: altea ports all three directory modules
 //    (see eastwindAuthAD.server.ts), and each has the same shape of stored configuration.
-//  - `Folders` names eastwind's two file stores rather than Southwind's eight (the modules behind
+//  - `Folders` names eastwind's three file stores rather than Southwind's eight (the modules behind
 //    Predictor / ViewLog / RestLog / Help are not ported).
 //  - there is no `DatabaseName`: the row is selected by `environment`, through the `DB_ENVIRONMENT`
 //    environment variable — see the field.
@@ -111,6 +111,10 @@ export class FoldersConfigurationEmbedded extends EmbeddedEntity {
 
     @stringLengthValidator({ max: 300 })
     emailAttachmentsFolder: string;
+
+    /** Where @altea/altea-help writes the images pasted into a help description (Southwind's HelpImagesFolder). */
+    @stringLengthValidator({ max: 300 })
+    helpImagesFolder: string;
 }
 
 // Southwind declares these two in the same file as its ApplicationConfiguration, and so does eastwind.
