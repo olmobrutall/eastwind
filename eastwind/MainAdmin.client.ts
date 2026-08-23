@@ -44,6 +44,7 @@ import { RemoteEmailsClient } from "@altea/altea-mailing-microsoft-graph/client/
 import { MailingPop3Client } from "@altea/altea-mailing-pop3/client/MailingPop3Client";
 import { OfficeClient } from "@altea/altea-office-template/client/OfficeClient";
 import { HtmlEditorClient } from "@altea/altea-html-editor/client/HtmlEditorClient";
+import { MarkdownClient } from "@altea/altea-markdown/client/MarkdownClient";
 import { WorkflowClient } from "@altea/altea-workflow/client/WorkflowClient";
 import { CaseActivityMixin } from "@altea/altea-workflow/data/CaseActivity";
 import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
@@ -83,6 +84,12 @@ export function startFull(routes: RouteObject[]): void {
     // routes and no entity settings — the EDITOR is a line component the views below import directly.
     // Before the modules whose searches have html columns (the email + office templates).
     HtmlEditorClient.start();
+
+    // Markdown (altea-markdown): the same shape one format down — the "Markdown" cell formatter, so a query
+    // column whose token carries format "Markdown" renders as rendered markdown rather than as its source.
+    // Registers nothing else; its `MarkdownLine` is a line component the views import directly (the tour
+    // step description and the agent skill instructions, exactly as in Signum).
+    MarkdownClient.start();
 
     EmployeesClient.start(cb);
     ProductsClient.start(cb);

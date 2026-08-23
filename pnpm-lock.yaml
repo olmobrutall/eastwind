@@ -11,6 +11,9 @@ importers:
       '@fortawesome/fontawesome-svg-core':
         specifier: ^7.3.1
         version: 7.3.1
+      '@fortawesome/free-brands-svg-icons':
+        specifier: ^7.3.1
+        version: 7.3.1
       '@fortawesome/free-regular-svg-icons':
         specifier: ^7.3.1
         version: 7.3.1
@@ -99,12 +102,12 @@ importers:
       '@altea/altea-chart':
         specifier: workspace:*
         version: link:../altea-chart
-      '@altea/altea-codemirror':
-        specifier: workspace:*
-        version: link:../altea-codemirror
       '@altea/altea-diff-log':
         specifier: workspace:*
         version: link:../altea-diff-log
+      '@altea/altea-markdown':
+        specifier: workspace:*
+        version: link:../altea-markdown
       '@modelcontextprotocol/sdk':
         specifier: ^1.30.0
         version: 1.30.0(zod@4.4.3)
@@ -649,6 +652,24 @@ importers:
         specifier: workspace:*
         version: link:../quote-transformer
 
+  altea/altea-markdown:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@types/mdast':
+        specifier: ^4.0.4
+        version: 4.0.4
+      mdast-util-from-markdown:
+        specifier: ^2.0.3
+        version: 2.0.3
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+      react-markdown:
+        specifier: ^10.1.0
+        version: 10.1.0(@types/react@19.2.17)(react@19.2.7)
+
   altea/altea-migrations:
     dependencies:
       '@altea/altea':
@@ -678,6 +699,12 @@ importers:
       '@altea/altea-files':
         specifier: workspace:*
         version: link:../altea-files
+      '@altea/altea-html-editor':
+        specifier: workspace:*
+        version: link:../altea-html-editor
+      '@altea/altea-markdown':
+        specifier: workspace:*
+        version: link:../altea-markdown
       '@altea/altea-templating':
         specifier: workspace:*
         version: link:../altea-templating
@@ -846,12 +873,12 @@ importers:
       '@altea/altea-auth':
         specifier: workspace:*
         version: link:../altea-auth
-      '@altea/altea-codemirror':
-        specifier: workspace:*
-        version: link:../altea-codemirror
       '@altea/altea-dashboard':
         specifier: workspace:*
         version: link:../altea-dashboard
+      '@altea/altea-markdown':
+        specifier: workspace:*
+        version: link:../altea-markdown
       '@altea/altea-user-assets':
         specifier: workspace:*
         version: link:../altea-user-assets
@@ -1105,6 +1132,9 @@ importers:
       '@altea/altea-map':
         specifier: workspace:*
         version: link:../altea/altea-map
+      '@altea/altea-markdown':
+        specifier: workspace:*
+        version: link:../altea/altea-markdown
       '@altea/altea-migrations':
         specifier: workspace:*
         version: link:../altea/altea-migrations
@@ -1163,6 +1193,9 @@ importers:
         specifier: workspace:*
         version: link:../altea/altea-workflow
       '@fortawesome/fontawesome-svg-core':
+        specifier: ^7.3.1
+        version: 7.3.1
+      '@fortawesome/free-brands-svg-icons':
         specifier: ^7.3.1
         version: 7.3.1
       '@fortawesome/free-regular-svg-icons':
@@ -1802,6 +1835,10 @@ packages:
 
   '@fortawesome/fontawesome-svg-core@7.3.1':
     resolution: {integrity: sha512-BoxVN3PKnMbgStHhjoaky/oWdxHomDqmBVA24IA3KEmssFGeI7u9YT/BJceOjIum/t6TpPa/vcMKaVYQeIQ/3Q==}
+    engines: {node: '>=6'}
+
+  '@fortawesome/free-brands-svg-icons@7.3.1':
+    resolution: {integrity: sha512-8eiNzycuFhy3mZsi5EVO8JpO3H8l7/kSCl4Gk4iUew9hJuzYFqAAD6kqgeEup3+YZ9hL+5cjjorGzrRLkYuURg==}
     engines: {node: '>=6'}
 
   '@fortawesome/free-regular-svg-icons@7.3.1':
@@ -5814,6 +5851,10 @@ snapshots:
   '@fortawesome/fontawesome-common-types@7.3.1': {}
 
   '@fortawesome/fontawesome-svg-core@7.3.1':
+    dependencies:
+      '@fortawesome/fontawesome-common-types': 7.3.1
+
+  '@fortawesome/free-brands-svg-icons@7.3.1':
     dependencies:
       '@fortawesome/fontawesome-common-types': 7.3.1
 

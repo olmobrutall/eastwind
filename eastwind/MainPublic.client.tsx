@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider, type RouteObject } from "react-rou
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { fas } from "@fortawesome/free-solid-svg-icons";
 import { far } from "@fortawesome/free-regular-svg-icons";
+import { fab } from "@fortawesome/free-brands-svg-icons";
 import { loadReflectionMetadata } from "@altea/altea/client/ReflectionClient";
 import { CultureClient } from "@altea/altea/client/CultureClient";
 import { SessionSharing, NotifyPendingFilter } from "@altea/altea/client/Services";
@@ -24,7 +25,11 @@ import NotFound from "./NotFound";
 // Register the full free solid + regular icon sets so string-named icons resolve (Signum's
 // MainPublic.tsx: library.add(fas, far)). Without this, <FontAwesomeIcon icon="save" /> and
 // tuple forms like icon={["fas","layer-group"]} used across the client render nothing.
-library.add(fas, far);
+//
+// BRANDS too, which Southwind does NOT add although Signum declares the package: the two `["fab", …]`
+// icons in the workspace — @altea/altea-markdown's syntax-cheat-sheet marker and
+// @altea/altea-auth-windowsad's sign-in button — rendered as an empty span without it.
+library.add(fas, far, fab);
 
 // Wire the global error / unhandled-rejection handlers to the ErrorModal (Southwind's MainPublic.tsx:
 // `ErrorModal.register()`). Without this, an unhandled promise rejection — e.g. a failing
