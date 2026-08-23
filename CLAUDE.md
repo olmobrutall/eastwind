@@ -41,6 +41,9 @@ altea/
                       #   AUTO-GENERATED from reflection and editable in place, plus search and a
                       #   zip import/export (Signum.Help)
   altea-html-editor/  # WYSIWYG rich text over Lexical + viewer + html→text (Signum.HtmlEditor)
+  altea-isolation/    # multi-tenancy by ROW: an isolation per tenant, an ambient current isolation, and a
+                      #   query filter + save rule per isolated table (Signum.Isolation). NOT wired into
+                      #   eastwind — see the divergence bullet; its own test/ suite is the verification
   altea-files-azure/  # Azure Blob Storage file store (Signum.Files.AzureBlobs)
   altea-files-s3/     # S3 / MinIO file store (Signum.Files.S3)
   altea-mailing-exchange/ # sending through Exchange Web Services (Signum.Mailing.ExchangeWS)
@@ -966,6 +969,44 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   `MarkdownLine`**, as Signum does — both had stood in altea-codemirror's `MarkdownCodeMirror`, which stays
   as the syntax-highlighting alternative.
 
+- **Signum.Isolation → altea-isolation: an app-wide commitment, so eastwind does not make it.** Every
+  table declares a STRATEGY (`Isolated` / `Optional` / `None`), an isolated table gains an isolation
+  column, and a request that has picked one sees only its rows — the filter is a WHERE the LINQ binder
+  splices onto every query of that type, so retrieve, dynamic query and navigation are covered by one
+  registration. Startup FAILS if any table declared nothing, which is why an app either goes multi-tenant
+  or does not install the module; Southwind only REFERENCES Signum.Isolation and never starts it, so
+  eastwind wires nothing either and the module's own `test/` suite is the verification (21 DB-free cases +
+  18 gated on `ALTEA_ISOLATION_TEST_DB`). Divergences:
+  - **the strategy table lives in the DATA layer** (`Isolation.register(T, strategy)`, called from the
+    app's shared entity-overrides module), where Signum's `IsolationLogic.Register<T>` is server-only.
+    altea INLINES a mixin's fields onto its owner, so the CLIENT has to know a type carries the mixin to
+    deserialize `isolation` at all — Signum's client reads a separately serialized mixin bag.
+  - **the ambient current-isolation is SCOPE-shaped and lives in `server/`**: an AsyncLocalStorage cannot
+    be entered without a callback, and the data layer ships no node types. `IsolationMixin`'s
+    `IsRetrieving ? null : Current` initializer goes with it, losing nothing — Signum also stamps in its
+    global PreSaving, which is what the port does for every new row.
+  - **`[AttachToUniqueIndexes]` / `[ForceNotNullable]` are applied from `start`**, not as decorators (two
+    general Signum attributes with one user between them): the unique indexes of every isolated table are
+    rewritten on `schemaCompleted` — where Signum applies the first too — and the required rule is a
+    `NotNullValidator` pushed onto the route's FieldInfo. That route needs the MIXIN STEP even though the
+    column is flat, the accommodation altea-diff-log documents.
+  - `EntityEventsGlobal.PreSaving` → a per-type handler on the isolated types only; `IsolationStrategy` →
+    a plain string union (never a column, never translated); the MVC `IsolationFilter` → Express
+    middleware, as altea-rest's RestLogFilter; the picked isolation is stored as the lite KEY, since
+    `JSON.stringify` drops a Lite's constructor-valued `entityType`.
+  - `Schema.AttachToUniqueFilter` is NOT ported — its only consumer resolves an entity's id by unique key
+    inside a generated migration script, and altea's sync writes no such lookup.
+  It needed FOUR core seams, all Signum's own: `ExecutionMode.onSetIsolation` / `withIsolationOf` (whose
+  four callers — the process runner, the scheduled-task runner and the two model renderers — now adopt the
+  row's scope exactly as Signum's do); `OperationLogic.aroundOperation`, the SCOPING half of Signum's one
+  `SurroundOperation` (altea's observing half must not break what it observes, which is the wrong contract
+  for a security scope, and its "after" runs at a precise point); `EntityEvents.preUnsafeInsert` now
+  taking the CONSTRUCTOR and able to return a replacement, which is Signum's actual signature and was
+  documented as unported until this consumer appeared; and `exceptionFilter.applyMixins`.
+  Two Signum bugs are fixed rather than mirrored: `IsolationDropdown`'s `data-isolation={name}` is the JS
+  global `window.name` (an empty string), so no item could be addressed; and the isolations endpoint's
+  error text interpolates an `IsolationMixin` where the isolation is what is worth naming.
+
 ## How to build
 
 Types are compiled with **`tspc`** (ts-patch, for the quote-transformer), project-references style:
@@ -996,6 +1037,7 @@ DB-free suites still run).
 | framework (music model) | `ALTEA_TEST_DB` | `pnpm --filter @altea/altea test:postgres` |
 | authorization (sample domain) | `ALTEA_AUTH_TEST_DB` | `pnpm --filter @altea/altea-auth test:postgres` |
 | cache (shop domain) | `ALTEA_CACHE_TEST_DB` | `pnpm --filter @altea/altea-cache test:postgres` |
+| isolation (tenancy domain) | `ALTEA_ISOLATION_TEST_DB` | `pnpm --filter @altea/altea-isolation test:postgres` |
 
 - First run: seed that suite's DB with the matching `gen:postgres` (it CLEANS and regenerates it).
 - Each runs `tspc -b` then `node --test --test-isolation=none "dist/test/**/*.test.js"`.

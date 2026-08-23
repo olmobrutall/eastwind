@@ -3,10 +3,10 @@
 Snapshot of the extension-by-extension port state, as of 2026-08-23.
 
 `old/Framework/Extensions/` holds **55** Signum extension projects (+ `Signum.Extensions.Test`, the shared
-suite). `altea/` holds **45** extension packages (+ `altea/altea` core, `quote-transformer`,
+suite). `altea/` holds **46** extension packages (+ `altea/altea` core, `quote-transformer`,
 `quote-transformer-test`).
 
-Counts: **47 ported**, **2 partial**, **3 deferred by design**, **6 pending** — of which **1 is started by
+Counts: **48 ported**, **2 partial**, **3 deferred by design**, **5 pending** — of which **1 is started by
 `Southwind/Starter.cs`** and so blocks eastwind parity.
 
 LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
@@ -34,6 +34,7 @@ LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
 | Signum.Files | `altea-files` | |
 | Signum.Files.AzureBlobs | `altea-files-azure` | refuses `renameAlgorithm` and `readAllBytesSync` |
 | Signum.Files.S3 | `altea-files-s3` | idem; SigV4 presigning is async, so `presignedUrl()` not `fullWebPath()` |
+| Signum.Isolation | `altea-isolation` | strategy table in the DATA layer (mixin fields are flattened); scope-shaped ambient; the app must declare EVERY table — eastwind does not, as Southwind does not; verified by the package suite |
 | Signum.Help | `altea-help` | prose auto-generated from reflection; no PropertyRouteEntity (route strings); query columns are root sub-TOKENS; the dead `HelpSearch` is wired up; no interactive console import |
 | Signum.HtmlEditor | `altea-html-editor` | Lexical pinned to Signum's exact 0.45 |
 | Signum.Mailing | `altea-email` | incl. Signum.Mailing's Reception half |
@@ -80,16 +81,15 @@ LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
 
 ## Pending
 
-**Next up: Signum.Isolation.** (Signum.Map, Signum.Help, Signum.Tree, Signum.Rest, Signum.ViewLog, Signum.SMS and Signum.Markdown are done — see Ported.)
+**Next up: Signum.WhatsNew.** (Signum.Map, Signum.Help, Signum.Tree, Signum.Rest, Signum.ViewLog, Signum.SMS, Signum.Markdown and Signum.Isolation are done — see Ported.)
 
 | # | Signum extension | What it is | LOC | Southwind starts it |
 | --- | --- | --- | --- | --- |
-| 1 | Signum.Isolation | multi-tenant row isolation: `IsolationEntity`, the ambient query filter, the navbar picker | 718 | no (referenced only) |
-| 2 | Signum.WhatsNew | release-notes entity, navbar dropdown, per-user read log | 1 292 | no |
-| 3 | Signum.Printing | `PrintLineEntity` print queue + admin panel | 633 | no |
-| 4 | Signum.Calendar | `CalendarDayEntity` — a working-days table | 72 | no |
-| 5 | Signum.WorkflowDynamic | glues Signum.Workflow to the **compiled** Dynamic half | 197 | via `DynamicLogicStarter` — blocked on Signum.Dynamic's compiled half |
-| 6 | Signum.Playwright.Workflow | `CaseFrame` page / modal proxies for the workflow UI | 169 | test-only |
+| 1 | Signum.WhatsNew | release-notes entity, navbar dropdown, per-user read log | 1 292 | no |
+| 2 | Signum.Printing | `PrintLineEntity` print queue + admin panel | 633 | no |
+| 3 | Signum.Calendar | `CalendarDayEntity` — a working-days table | 72 | no |
+| 4 | Signum.WorkflowDynamic | glues Signum.Workflow to the **compiled** Dynamic half | 197 | via `DynamicLogicStarter` — blocked on Signum.Dynamic's compiled half |
+| 5 | Signum.Playwright.Workflow | `CaseFrame` page / modal proxies for the workflow UI | 169 | test-only |
 
 ## Adjacent gaps (not extension projects)
 
