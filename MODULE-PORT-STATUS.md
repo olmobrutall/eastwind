@@ -3,10 +3,10 @@
 Snapshot of the extension-by-extension port state, as of 2026-08-23.
 
 `old/Framework/Extensions/` holds **55** Signum extension projects (+ `Signum.Extensions.Test`, the shared
-suite). `altea/` holds **41** extension packages (+ `altea/altea` core, `quote-transformer`,
+suite). `altea/` holds **42** extension packages (+ `altea/altea` core, `quote-transformer`,
 `quote-transformer-test`).
 
-Counts: **43 ported**, **2 partial**, **3 deferred by design**, **10 pending** — of which **4 are started by
+Counts: **44 ported**, **2 partial**, **3 deferred by design**, **9 pending** — of which **3 are started by
 `Southwind/Starter.cs`** and so block eastwind parity.
 
 LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
@@ -46,6 +46,7 @@ LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
 | Signum.Playwright | `altea-playwright` | CDP debug launcher + 5 line proxies + 4 panel proxies unported |
 | Signum.Processes | `altea-processes` | PackageOperation contextual menu unported |
 | Signum.Profiler | `altea-profiler` | |
+| Signum.Rest | `altea-rest` | Signum's MVC action filter becomes Express middleware mounted on a path prefix; a logged `?apiKey=` is redacted; no Swagger, no DeleteLogs |
 | Signum.Scheduler | `altea-scheduler` | in-process `setTimeout` runner; owns `HolidayCalendar` |
 | Signum.Templating | `altea-templating` | the Roslyn Eval becomes `TemplateApplicableSymbol` |
 | Signum.TimeMachine | `altea-time-machine` | |
@@ -76,20 +77,19 @@ LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
 
 ## Pending
 
-**Next up: Signum.Rest.** (Signum.Map, Signum.Help and Signum.Tree are done — see Ported.)
+**Next up: Signum.ViewLog.** (Signum.Map, Signum.Help, Signum.Tree and Signum.Rest are done — see Ported.)
 
 | # | Signum extension | What it is | LOC | Southwind starts it |
 | --- | --- | --- | --- | --- |
-| 1 | Signum.Rest | `RestApiKeyEntity` (API-key authentication) + `RestLog` (request / response logging) | 776 | yes |
-| 2 | Signum.ViewLog | logs "who viewed which entity" | 295 | yes (UserQuery / UserChart / Dashboard) |
-| 3 | Signum.SMS | SMS templates, packages, send / receive process algorithms | 1 845 | yes |
-| 4 | Signum.Markdown | `MarkdownLine` + the server markdown→html renderer | 189 | yes — the EDITOR half already stands in as `altea-codemirror`'s `MarkdownCodeMirror` |
-| 5 | Signum.Isolation | multi-tenant row isolation: `IsolationEntity`, the ambient query filter, the navbar picker | 718 | no (referenced only) |
-| 6 | Signum.WhatsNew | release-notes entity, navbar dropdown, per-user read log | 1 292 | no |
-| 7 | Signum.Printing | `PrintLineEntity` print queue + admin panel | 633 | no |
-| 8 | Signum.Calendar | `CalendarDayEntity` — a working-days table | 72 | no |
-| 9 | Signum.WorkflowDynamic | glues Signum.Workflow to the **compiled** Dynamic half | 197 | via `DynamicLogicStarter` — blocked on Signum.Dynamic's compiled half |
-| 10 | Signum.Playwright.Workflow | `CaseFrame` page / modal proxies for the workflow UI | 169 | test-only |
+| 1 | Signum.ViewLog | logs "who viewed which entity" | 295 | yes (UserQuery / UserChart / Dashboard) |
+| 2 | Signum.SMS | SMS templates, packages, send / receive process algorithms | 1 845 | yes |
+| 3 | Signum.Markdown | `MarkdownLine` + the server markdown→html renderer | 189 | yes — the EDITOR half already stands in as `altea-codemirror`'s `MarkdownCodeMirror` |
+| 4 | Signum.Isolation | multi-tenant row isolation: `IsolationEntity`, the ambient query filter, the navbar picker | 718 | no (referenced only) |
+| 5 | Signum.WhatsNew | release-notes entity, navbar dropdown, per-user read log | 1 292 | no |
+| 6 | Signum.Printing | `PrintLineEntity` print queue + admin panel | 633 | no |
+| 7 | Signum.Calendar | `CalendarDayEntity` — a working-days table | 72 | no |
+| 8 | Signum.WorkflowDynamic | glues Signum.Workflow to the **compiled** Dynamic half | 197 | via `DynamicLogicStarter` — blocked on Signum.Dynamic's compiled half |
+| 9 | Signum.Playwright.Workflow | `CaseFrame` page / modal proxies for the workflow UI | 169 | test-only |
 
 ## Adjacent gaps (not extension projects)
 
