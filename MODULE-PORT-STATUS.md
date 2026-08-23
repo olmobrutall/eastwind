@@ -3,10 +3,10 @@
 Snapshot of the extension-by-extension port state, as of 2026-08-23.
 
 `old/Framework/Extensions/` holds **55** Signum extension projects (+ `Signum.Extensions.Test`, the shared
-suite). `altea/` holds **47** extension packages (+ `altea/altea` core, `quote-transformer`,
+suite). `altea/` holds **48** extension packages (+ `altea/altea` core, `quote-transformer`,
 `quote-transformer-test`).
 
-Counts: **49 ported**, **2 partial**, **3 deferred by design**, **4 pending** — of which **1 is started by
+Counts: **50 ported**, **2 partial**, **3 deferred by design**, **3 pending** — of which **1 is started by
 `Southwind/Starter.cs`** and so blocks eastwind parity.
 
 LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
@@ -62,6 +62,7 @@ LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
 | Signum.UserAssets | `altea-user-assets` | |
 | Signum.UserQueries | `altea-user-queries` | |
 | Signum.Word | `altea-office-template` | docx/pptx/xlsx; `Word*` → `Office*` rename |
+| Signum.WhatsNew | `altea-whats-new` | not cached (the row filter comes from the query); 2 MLists → `@part` rows; DTO dates are ISO strings; found `raiseEntityChanged(Type)` notifying nobody |
 | Signum.Workflow | `altea-workflow` | no `MyActiveAlerts`, no `PackageExecuteAlgorithm<T>` |
 | Signum.Extensions.Test | *(each package's own `test/`)* | altea keeps a suite inside the package it tests |
 
@@ -82,14 +83,13 @@ LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
 
 ## Pending
 
-**Next up: Signum.WhatsNew.** (Signum.Map, Signum.Help, Signum.Tree, Signum.Rest, Signum.ViewLog, Signum.SMS, Signum.Markdown, Signum.Isolation and Signum.Printing are done — see Ported.)
+**Next up: Signum.Calendar** (72 LOC — a working-days table). Signum.Map, Signum.Help, Signum.Tree, Signum.Rest, Signum.ViewLog, Signum.SMS, Signum.Markdown, Signum.Isolation, Signum.Printing and Signum.WhatsNew are done — see Ported.
 
 | # | Signum extension | What it is | LOC | Southwind starts it |
 | --- | --- | --- | --- | --- |
-| 1 | Signum.WhatsNew | release-notes entity, navbar dropdown, per-user read log | 1 292 | no |
-| 2 | Signum.Calendar | `CalendarDayEntity` — a working-days table | 72 | no |
-| 3 | Signum.WorkflowDynamic | glues Signum.Workflow to the **compiled** Dynamic half | 197 | via `DynamicLogicStarter` — blocked on Signum.Dynamic's compiled half |
-| 4 | Signum.Playwright.Workflow | `CaseFrame` page / modal proxies for the workflow UI | 169 | test-only |
+| 1 | Signum.Calendar | `CalendarDayEntity` — a working-days table | 72 | no |
+| 2 | Signum.WorkflowDynamic | glues Signum.Workflow to the **compiled** Dynamic half | 197 | via `DynamicLogicStarter` — blocked on Signum.Dynamic's compiled half |
+| 3 | Signum.Playwright.Workflow | `CaseFrame` page / modal proxies for the workflow UI | 169 | test-only |
 
 ## Adjacent gaps (not extension projects)
 

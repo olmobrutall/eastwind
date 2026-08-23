@@ -73,6 +73,8 @@ altea/
                       #   (Signum.ViewLog)
   altea-tree/         # an entity whose rows form a FOREST: a depth-first route column, the tree page /
                       #   modal / dashboard part, and add-child / move / copy / delete (Signum.Tree)
+  altea-whats-new/    # in-app RELEASE NOTES: a news item per release (one message per culture), the navbar
+                      #   bullhorn, and a per-user read log (Signum.WhatsNew)
   altea-workflow/     # BPMN workflow engine + bpmn-js designer (Signum.Workflow)
   altea-playwright/   # strongly-typed Playwright page objects for an altea UI, for an app's e2e suite
                       #   (Signum.Playwright); the only package that is neither data/client/server
@@ -1040,6 +1042,31 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     process whose per-item action threw died with "insert or update on process_exception_line violates
     foreign key constraint" and ended in Error instead of Finished, losing the exception line too. Now in
     its own transaction, which is what Signum's `ex.LogException()` does.
+
+- **Signum.WhatsNew → altea-whats-new: the news are NOT cached, and that is what makes them safe.** Signum
+  keeps a `GlobalLazy` of every news item and then re-applies row security to the cached list with
+  `Schema.GetInMemoryFilter<T>(userInterface: false)`. altea's `globalLazy` is async and has no in-memory
+  twin of a TypeCondition filter (an app registers one explicitly — see eastwind's user-asset scoping), so
+  the port QUERIES the table: the row filter is spliced by the LINQ binder exactly as for any other query,
+  and the table is one row per release. Same reasoning retires
+  `Administrator.QueryDisableAssertAllowed<WhatsNewLogEntity>()` inside `IsRead` — altea's filter cannot be
+  suppressed for one subquery, and reading the log directly is equivalent unless an app conditions
+  WhatsNewLog, which would mean "you may not see your own read marks". Other divergences: the two `MList`s
+  become `@part` rows (`Attachment` → `attachments`, since it is a collection); `[DefaultFileType]` and
+  `Schema.ForceCultureInfo` have no counterparts, so the file types are NAMED and the required culture is a
+  settable `WhatsNewLogic.defaultCulture` (Signum's own "en" fallback); the static property validation
+  becomes a `customValidation` on the route's FieldInfo; `setNewsLog` inserts row by row, because Signum's
+  set-based `UnsafeInsert` reads the current user inside a query lambda; and the preview-picture route stays
+  AUTHENTICATED where Signum marks it anonymous — the picture is the one part of an unpublished item that
+  would otherwise have no gate. **The wire DTOs are declared once in the DATA layer, and their dates are ISO
+  STRINGS**, exactly as Signum's generated `string /*DateTime*/`: a DTO is not an entity, so nothing revives
+  a Temporal value inside it, and typing one `Temporal.PlainDateTime` compiles and then throws on the first
+  `.since(…)`. Three Signum pieces are dead there and not ported (the changelog module registration and its
+  two-line `Changelog.ts`, `WhatsNewToast.icons`, and the two placeholder helpers declared inside `start`),
+  and one Signum bug is fixed: its optimistic count decrement subtracts ONE even for "Close all". It found a
+  CORE bug of altea's own — **`Navigator.raiseEntityChanged(SomeType)` notified nobody**, because a `Type<T>`
+  is a constructor here and `.toString()` is its source text, never the clean name `useEntityChanged`
+  registered under (Signum's argument is a string, so its `.toString()` is right).
 
 ## How to build
 
