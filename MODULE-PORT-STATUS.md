@@ -6,7 +6,7 @@ Snapshot of the extension-by-extension port state, as of 2026-08-23.
 suite). `altea/` holds **48** extension packages (+ `altea/altea` core, `quote-transformer`,
 `quote-transformer-test`).
 
-Counts: **50 ported**, **2 partial**, **3 deferred by design**, **3 pending** — of which **1 is started by
+Counts: **50 ported**, **2 partial**, **4 deferred by design**, **2 pending** — of which **1 is started by
 `Southwind/Starter.cs`** and so blocks eastwind parity.
 
 LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
@@ -80,16 +80,16 @@ LOC = `.cs` + `.ts` + `.tsx` lines still in `old/`, as a rough size signal only.
 | Signum.Selenium | the pre-Playwright e2e driver | 4 597 | superseded by Signum.Playwright **inside Signum itself**; `altea-playwright` is the port |
 | Signum.MachineLearning | `PredictorEntity`, neural-net training / prediction over CNTK / TensorFlow | 5 988 | no substrate on Node, and hosting a training runtime is out of altea's scope. Southwind's SalesEstimation panel is dropped with it (noted in `eastwind/products/Product.tsx`) |
 | Signum.Notes | `NoteEntity` — free-text notes attached to any entity, plus the frame widget | 289 | out of scope for the demo app |
+| Signum.Calendar | `CalendarDayEntity` — a densely populated date table to LEFT JOIN for a gap-free day series | 72 | nothing in Signum or Southwind references it, and eastwind has no use for one. Trivially portable if a report ever needs it |
 
 ## Pending
 
-**Next up: Signum.Calendar** (72 LOC — a working-days table). Signum.Map, Signum.Help, Signum.Tree, Signum.Rest, Signum.ViewLog, Signum.SMS, Signum.Markdown, Signum.Isolation, Signum.Printing and Signum.WhatsNew are done — see Ported.
+**Both remaining entries are blocked or test-only** — see their rows. Signum.Map, Signum.Help, Signum.Tree, Signum.Rest, Signum.ViewLog, Signum.SMS, Signum.Markdown, Signum.Isolation, Signum.Printing and Signum.WhatsNew are done — see Ported.
 
 | # | Signum extension | What it is | LOC | Southwind starts it |
 | --- | --- | --- | --- | --- |
-| 1 | Signum.Calendar | `CalendarDayEntity` — a working-days table | 72 | no |
-| 2 | Signum.WorkflowDynamic | glues Signum.Workflow to the **compiled** Dynamic half | 197 | via `DynamicLogicStarter` — blocked on Signum.Dynamic's compiled half |
-| 3 | Signum.Playwright.Workflow | `CaseFrame` page / modal proxies for the workflow UI | 169 | test-only |
+| 1 | Signum.WorkflowDynamic | glues Signum.Workflow to the **compiled** Dynamic half | 197 | via `DynamicLogicStarter` — blocked on Signum.Dynamic's compiled half |
+| 2 | Signum.Playwright.Workflow | `CaseFrame` page / modal proxies for the workflow UI | 169 | test-only |
 
 ## Adjacent gaps (not extension projects)
 
