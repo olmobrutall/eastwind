@@ -6,7 +6,7 @@ import type { Query } from "@altea/altea/server/query";
 import { QueryLogic } from "@altea/altea/server/dynamicQuery/queryLogic";
 import { ManualDynamicQueryCore } from "@altea/altea/server/dynamicQuery/dynamicQueryCore";
 import "@altea/altea/server/dynamicQuery/dQueryable"; // augments Query with .toDQueryable()
-import "@altea/altea/server/operationFluentInclude"; // FluentInclude.withSave / withDelete
+import "@altea/altea/server/fluentOperations"; // FluentInclude.withSave / withDelete
 import { CustomerEntity, PersonEntity, CompanyEntity, CustomerRowModel, CustomerOperation } from "./Customer.data";
 import { Graph } from "@altea/altea/server/graph";
 

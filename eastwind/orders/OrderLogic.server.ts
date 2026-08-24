@@ -1,6 +1,5 @@
-import "@altea/altea/server"; // installs Entity.save()/delete() (used by the OrderGraph)
+import "@altea/altea/server"; // installs Entity.save()/delete() (used by the order operations)
 import "@altea/altea/server/dynamicQuery/fluentIncludeQuery"; // FluentInclude.withQuery
-import { graph } from "@altea/altea/server/graphBuilder";
 import { SchemaBuilder } from "@altea/altea/server/schema";
 import { Lite } from "@altea/altea/data/lite";
 import { Temporal, toInt, Decimal } from "@altea/altea/data/basics";
@@ -18,14 +17,16 @@ import { EmployeeEntity } from "../employees/Employee.data";
 import { ProductEntity } from "../products/Product.data";
 import { CustomerEntity } from "../customers/Customer.data";
 import { QueryLogic } from "@altea/altea/server/dynamicQuery/queryLogic";
+import { type FluentStateMachine } from "@altea/altea/server/fluentOperations";
 
 // ---- OrdersLogic.Start — port of Southwind's OrdersLogic.Start --------
-// Registers OrderEntity's default WithQuery and wires the OrderGraph. OrderLineEntity is an owned
+// Registers OrderEntity's default WithQuery and its operation state machine. OrderLineEntity is an owned
 // part entity, pulled in transitively via OrderEntity.details. Employee/Product/Shipper/Customer are
 // included by their own *Logic modules.
 export namespace OrdersLogic {
     export function start(sb: SchemaBuilder): void {
         sb.include(OrderEntity)
+            .withStateMachine(o => o.state, registerOrderOperations)
             .withQuery();
 
         // Southwind labels TotalPrice as a MEMBER of OrderEntity (Signum's [AutoExpressionField] is a
@@ -34,11 +35,6 @@ export namespace OrdersLogic {
         // working without duplicating the string into a message container.
         QueryLogic.expressions.register(OrderEntity, o => o.totalPrice(), { niceName: () => OrderEntity.nicePropertyName(o => o.totalPrice()) });
         QueryLogic.expressions.register(OrderLineEntity, o => o.subTotalPrice(), { niceName: () => OrderMessage.subTotalPrice.niceToString() });
-        // Register the OrderGraph's operations (Save/Ship/Cancel/Delete/Create…) with OperationLogic
-        // (Signum's `new OrderGraph().Register()`). Without this the /api/operation/* endpoints and
-        // the entity pack's canExecute see no operations.
-        OrderGraph.register();
-
         // The domain's scheduled TASKS and its process ALGORITHM, registered where Southwind registers
         // them — in OrdersLogic, beside the graph (Orders/OrdersLogic.cs). Both registries are read when
         // their module starts (the symbol tables are seeded from the registered keys), and OrdersLogic.start
@@ -90,7 +86,7 @@ export namespace OrdersLogic {
     }
 }
 
-// ---- OrderGraph — port of Southwind's OrdersLogic.OrderGraph -----------------------
+// ---- The order state machine — port of Southwind's OrdersLogic.OrderGraph ----------
 // `new Execute(sym){ … }.Register()` → `g.Execute(sym, { … })`; `GetState = o => o.State`
 // → `g.GetState = o => o.state`. Adapted stand-ins: Clock.Today → today();
 // EmployeeEntity.Current → currentEmployee(); `args.TryGetArgC/S<T>()` → `args[i] as T`;
@@ -115,10 +111,8 @@ async function currentPrices(products: Lite<ProductEntity>[]): Promise<Map<Prima
     return new Map(entities.map(p => [p.id, p.unitPrice]));
 }
 
-export const OrderGraph = graph(OrderEntity, OrderState, g => {
-    g.GetState = o => o.state;
-
-    g.Construct(OrderOperation.Create, {
+function registerOrderOperations(sm: FluentStateMachine<OrderEntity, OrderState>): void {
+    sm.withConstruct(OrderOperation.Create, {
         toStates: [OrderState.New],
         construct: async args => {
             const customerLite = args[0] as Lite<CustomerEntity> | undefined;
@@ -133,7 +127,7 @@ export const OrderGraph = graph(OrderEntity, OrderState, g => {
         },
     });
 
-    g.ConstructFrom(CustomerEntity, OrderOperation.CreateOrderFromCustomer, {
+    sm.withConstructFrom(CustomerEntity, OrderOperation.CreateOrderFromCustomer, {
         toStates: [OrderState.New],
         construct: c => OrderEntity.create({
             state: OrderState.New,
@@ -144,7 +138,7 @@ export const OrderGraph = graph(OrderEntity, OrderState, g => {
         }),
     });
 
-    g.ConstructFrom(OrderEntity, OrderOperation.Clone, {
+    sm.withConstructFrom(OrderEntity, OrderOperation.Clone, {
         canConstruct: o => o.state === OrderState.Shipped ? null : "Only shipped orders can be cloned.",
         toStates: [OrderState.Ordered],
         resultIsSaved: true,
@@ -168,7 +162,7 @@ export const OrderGraph = graph(OrderEntity, OrderState, g => {
         },
     });
 
-    g.ConstructFromMany(ProductEntity, OrderOperation.CreateOrderFromProducts, {
+    sm.withConstructFromMany(ProductEntity, OrderOperation.CreateOrderFromProducts, {
         toStates: [OrderState.New],
         construct: async (prods, args) => {
             const prices = await currentPrices(prods);
@@ -190,7 +184,7 @@ export const OrderGraph = graph(OrderEntity, OrderState, g => {
         },
     });
 
-    g.Execute(OrderOperation.Save, {
+    sm.withExecute(OrderOperation.Save, {
         fromStates: [OrderState.New, OrderState.Ordered],
         toStates: [OrderState.Ordered],
         canBeNew: true,
@@ -202,7 +196,7 @@ export const OrderGraph = graph(OrderEntity, OrderState, g => {
         },
     });
 
-    g.Execute(OrderOperation.Ship, {
+    sm.withExecute(OrderOperation.Ship, {
         canExecute: o => o.details.length === 0 ? "Details is empty." : null,
         fromStates: [OrderState.Ordered],
         toStates: [OrderState.Shipped],
@@ -213,7 +207,7 @@ export const OrderGraph = graph(OrderEntity, OrderState, g => {
         },
     });
 
-    g.Execute(OrderOperation.Cancel, {
+    sm.withExecute(OrderOperation.Cancel, {
         fromStates: [OrderState.Ordered, OrderState.Shipped],
         toStates: [OrderState.Canceled],
         execute: o => {
@@ -222,8 +216,8 @@ export const OrderGraph = graph(OrderEntity, OrderState, g => {
         },
     });
 
-    g.Delete(OrderOperation.Delete, {
+    sm.withDelete(OrderOperation.Delete, {
         fromStates: [OrderState.Ordered],
         delete: o => o.delete(),
     });
-});
+}
