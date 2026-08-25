@@ -62,11 +62,23 @@
 			"group": "build"
 		},
 		{
-			"label": "tsc: build - quote-transformer-test",
-			"detail": "preLaunchTask for the transformer-test debug configs.",
-			"type": "typescript",
-			"tsconfig": "altea/quote-transformer-test/tsconfig.json",
+			"label": "build quote-transformer",
+			"detail": "Compiles the ts-patch transformer itself (altea/quote-transformer -> dist).",
+			"type": "shell",
+			"command": "pnpm exec tsc",
+			"options": { "cwd": "${workspaceFolder}/altea/quote-transformer" },
 			"problemMatcher": ["$tsc"],
+			"group": "build"
+		},
+		{
+			"label": "build quote-transformer-test",
+			"detail": "Compiles the transformer's test package (and the transformer it loads); preLaunchTask for the transformer-test debug configs.",
+			"type": "shell",
+			"command": "pnpm exec tsc",
+			"options": { "cwd": "${workspaceFolder}/altea/quote-transformer-test" },
+			"problemMatcher": ["$tsc"],
+			"dependsOn": ["build quote-transformer"],
+			"dependsOrder": "sequence",
 			"group": "build"
 		},
 		{

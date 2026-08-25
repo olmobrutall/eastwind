@@ -97,11 +97,11 @@
             "type": "node",
             "request": "launch",
             "name": "quote-transformer-test (Debug)",
-            "preLaunchTask": "tsc: build - quote-transformer-test",
-            "program": "${workspaceFolder}/quote-transformer-test/dist/initTransformer.js",
-            "cwd": "${workspaceFolder}/quote-transformer-test/",
+            "preLaunchTask": "build quote-transformer-test",
+            "program": "${workspaceFolder}/altea/quote-transformer-test/dist/initTransformer.js",
+            "cwd": "${workspaceFolder}/altea/quote-transformer-test/",
             "outFiles": [
-                "${workspaceFolder}/quote-transformer-test/dist/**/*.js"
+                "${workspaceFolder}/altea/quote-transformer-test/dist/**/*.js"
             ],
             "sourceMaps": true
         },
@@ -109,14 +109,14 @@
             "type": "node",
             "request": "launch",
             "name": "quote-transformer-test (Debug Jest)",
-            "preLaunchTask": "tsc: build - quote-transformer-test",
-            "program": "${workspaceFolder}/quote-transformer-test/node_modules/jest/bin/jest.js",
+            "preLaunchTask": "build quote-transformer-test",
+            "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
             "args": [
                 "--runInBand"
             ],
-            "cwd": "${workspaceFolder}/quote-transformer-test/",
+            "cwd": "${workspaceFolder}/altea/quote-transformer-test/",
             "outFiles": [
-                "${workspaceFolder}/quote-transformer-test/dist/**/*.js"
+                "${workspaceFolder}/altea/quote-transformer-test/dist/**/*.js"
             ],
             "sourceMaps": true,
             "console": "integratedTerminal"
