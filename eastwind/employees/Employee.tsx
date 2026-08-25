@@ -5,11 +5,13 @@ import { EntityDetail } from '@altea/altea/client/Lines/EntityDetail'
 import { EntityStrip } from '@altea/altea/client/Lines/EntityStrip'
 import { TextAreaLine } from '@altea/altea/client/Lines/TextAreaLine'
 import { TypeContext } from '@altea/altea/client/TypeContext'
+import { FileImageLine } from '@altea/altea-files/client/Components/FileImageLine'
 import { EmployeeEntity } from './Employee.data'
 
-// Ported from Southwind/Employees/Employee.tsx. Divergences: Southwind's Photo (Signum.Files FileLine +
-// fetched <img>) is dropped — eastwind keeps only a plain `photoPath` string; Territories is an owned
-// junction part-array (EmployeeEntity_Territory) rather than an MList<TerritoryEntity>.
+// Ported from Southwind/Employees/Employee.tsx. Divergences: the Photo is a FileEmbedded rendered by
+// FileImageLine, where Southwind holds a Lite<FileEntity> and hand-rolls a fetched <img> (same line
+// Category.tsx uses for its picture); Territories is an owned junction part-array
+// (EmployeeEntity_Territory) rather than an MList<TerritoryEntity>.
 export default function Employee(p: { ctx: TypeContext<EmployeeEntity> }): React.JSX.Element {
   const ctx = p.ctx;
   const ctxBasic = ctx.subCtx({ formGroupStyle: "SrOnly" });
@@ -47,6 +49,7 @@ export default function Employee(p: { ctx: TypeContext<EmployeeEntity> }): React
       </div>
 
       <div className="col-sm-3">
+        <FileImageLine ctx={ctx.subCtx(e => e.photo)} imageHtmlAttributes={{ style: { maxWidth: "100%" } }} />
         <AutoLine ctx={ctx.subCtx(e => e.photoPath)} />
         <div>
           <TextAreaLine ctx={ctx.subCtx(e => e.notes, { formGroupStyle: "Basic" })} valueHtmlAttributes={{ rows: 10, className: "notes" }} />

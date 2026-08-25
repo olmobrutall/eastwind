@@ -1,4 +1,4 @@
-import { Entity, EmbeddedEntity } from "@altea/altea/data/entity";
+import { Entity } from "@altea/altea/data/entity";
 import { entity, quoted } from "@altea/altea/data/decorators";
 import { reflect, init } from "@altea/altea/data/reflection";
 import { stringLengthValidator } from "@altea/altea/data/validators";
@@ -24,9 +24,9 @@ import { WindowsADConfigurationEmbedded } from "@altea/altea-auth-windowsad/data
 // `EASTWIND_*` environment variables: settings an administrator should be able to see and change are data,
 // not deployment wiring. What stays in the environment is what Southwind also keeps in `appsettings.json`
 // and passes to `Starter.Start` — the connection string, and the storage credentials / backend switch of
-// `eastwindFileStores.server.ts` (Southwind's `azureStorageConnectionString` parameter). The environment
-// still SEEDS this row on a fresh database (see terminal/eastwindMigrations.ts), so an existing `.env` keeps
-// working; after that the row is the source of truth.
+// `eastwindFileStores.server.ts` (Southwind's `azureStorageConnectionString` parameter). A fresh database
+// gets this row from CreateCulturesAndConfiguration with plain dev DEFAULTS (terminal/eastwindMigrations.ts);
+// from then on the row is the only source of truth, and no setting here is read from the environment.
 //
 // Divergences from Southwind's entity:
 //  - `Sms` and `Translation` have no members here: neither Signum.SMS nor Signum.Translation is ported.
@@ -35,8 +35,10 @@ import { WindowsADConfigurationEmbedded } from "@altea/altea-auth-windowsad/data
 //    it eagerly from the host.
 //  - `OpenID` / `WindowsAD` are NEW beside Southwind's `AzureAD`: altea ports all three directory modules
 //    (see eastwindAuthAD.server.ts), and each has the same shape of stored configuration.
-//  - `Folders` names eastwind's three file stores rather than Southwind's eight (the modules behind
-//    Predictor / ViewLog / RestLog / Help are not ported).
+//  - there is no `Folders` member at all. Southwind stores one editable path per local file store; here a
+//    store's folder is derived from the store's own NAME (`./files/<name>`, see eastwindFileStores.store),
+//    so the paths cannot drift from the code that names the stores. WHICH backend holds the bytes is still
+//    a deployment choice, and stays in the environment as EASTWIND_FILE_STORE.
 //  - there is no `DatabaseName`: the row is selected by `environment`, through the `DB_ENVIRONMENT`
 //    environment variable — see the field.
 /**
@@ -85,9 +87,6 @@ export class ApplicationConfigurationEntity extends Entity {
     /*Workflow*/
     workflow: WorkflowConfigurationEmbedded;
 
-    /*Files*/
-    folders: FoldersConfigurationEmbedded;
-
     /*Auth — at most one directory owns the login flow; see eastwindAuthAD.server.ts */
     azureAD: AzureADConfigurationEmbedded | null;
     openID: OpenIDConfigurationEmbedded | null;
@@ -103,31 +102,6 @@ export class ApplicationConfigurationEntity extends Entity {
 
 export namespace ApplicationConfigurationOperation {
     export const Save: ExecuteSymbol<ApplicationConfigurationEntity> = init();
-}
-
-// Signum's FoldersConfigurationEmbedded: where each local file store writes. Read LAZILY by the store's
-// algorithm (`physicalPrefix: () => …`), exactly as Signum's `GetFileTypeAlgorithm(p => p.CachedQueryFolder)`
-// does, so changing a folder here takes effect without a restart. Ignored when the store runs on Azure / S3.
-@reflect
-export class FoldersConfigurationEmbedded extends EmbeddedEntity {
-
-    @stringLengthValidator({ max: 300 })
-    profilePhotosFolder: string;
-
-    @stringLengthValidator({ max: 300 })
-    emailAttachmentsFolder: string;
-
-    /** Where @altea/altea-help writes the images pasted into a help description (Southwind's HelpImagesFolder). */
-    @stringLengthValidator({ max: 300 })
-    helpImagesFolder: string;
-
-    /** Where @altea/altea-printing's TEST lines upload their document (Signum's PrintingLogic test file type). */
-    @stringLengthValidator({ max: 300 })
-    printTestFolder: string;
-
-    /** Where @altea/altea-whats-new writes a news item's preview picture and its attachments. */
-    @stringLengthValidator({ max: 300 })
-    whatsNewFolder: string;
 }
 
 // Southwind declares these two in the same file as its ApplicationConfiguration, and so does eastwind.

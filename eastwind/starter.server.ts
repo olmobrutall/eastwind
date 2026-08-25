@@ -103,7 +103,6 @@ import { IntroductionSkill } from "@altea/altea-agent/server/Skills/Introduction
 import { AlertLogic } from "@altea/altea-alert/server/AlertLogic.server";
 import { AlertNotificationLogic } from "@altea/altea-alert/server/AlertNotificationLogic.server";
 import { CacheServer } from "@altea/altea-cache/server/CacheServer";
-import { PostgresBroadcast } from "@altea/altea-cache/server/Broadcast/PostgresBroadcast";
 
 // Port of Southwind's Starter.Start (Southwind/Starter.cs): the single global entry that builds the
 // schema, binds the connector, registers each module's logic and completes. Extensions are excluded
@@ -134,7 +133,12 @@ export namespace Starter {
         // processes to invalidate; on Postgres that is LISTEN/NOTIFY, which needs no configuration
         // (Signum's `PostgresBroadcast`). A single-process host works fine without one — every write goes
         // through this process, so its own events cover it.
-        CacheLogic.start(sb, { serverBroadcast: connector.isPostgres ? new PostgresBroadcast() : undefined });
+        // `PostgresBroadcast` is loaded lazily for the same reason the connector above is: it imports the
+        // postgres connector, so a static import here would pull the `pg` driver into a SQL Server host.
+        const serverBroadcast = connector.isPostgres
+            ? new (await import("@altea/altea-cache/server/Broadcast/PostgresBroadcast")).PostgresBroadcast()
+            : undefined;
+        CacheLogic.start(sb, { serverBroadcast });
 
         // Framework logic (Signum's part of Starter.Start): the exception log table.
         ExceptionLogic.start(sb);
@@ -196,11 +200,10 @@ export namespace Starter {
         // The photo store. `CachedProfilePhotoLogic.start` registers the file type itself (Signum's
         // `FileTypeLogic.Register(AuthADFileType.CachedProfilePhoto, algorithm)`), so the app only supplies
         // the algorithm — registering it here as well would be a duplicate registration.
-        // Which BACKEND holds the bytes is one env var away (EASTWIND_FILE_STORE=folder|azure|s3), and WHERE
-        // a local store writes is the configuration's Folders member, read on every write — see
-        // eastwindFileStores.server.ts. `onlyImages` is what makes an Azure / S3 store serve these INLINE.
-        CachedProfilePhotoLogic.start(sb, EastwindFileStores.store(
-            "profilePhotos", f => f.profilePhotosFolder, { onlyImages: true }));
+        // Which BACKEND holds the bytes is one env var away (EASTWIND_FILE_STORE=folder|azure|s3), and the
+        // store's NAME is where it writes — see eastwindFileStores.server.ts. `onlyImages` is what makes an
+        // Azure / S3 store serve these INLINE.
+        CachedProfilePhotoLogic.start(sb, EastwindFileStores.store("profile-photos", { onlyImages: true }));
 
         // OpenID contributes no tables, so it is started ALWAYS and only OWNS the login flow when it is the
         // selected provider. That keeps the client's boot probe (/api/auth/openIDConfig) a clean 200-null
@@ -345,7 +348,7 @@ export namespace Starter {
         // the configuration row, and where attachments are stored. The USER email owner and the default
         // master template are the MODULES' (altea-email registers both — see EmailLogic.start).
         FileTypeLogic.register(EmailFileType.Attachment,
-            EastwindFileStores.store("emailAttachments", f => f.emailAttachmentsFolder));
+            EastwindFileStores.store("email-attachments"));
         // Self-service password reset (@altea/altea-auth-reset-password): the ResetPasswordRequest table, the
         // two e-mail models and the three ANONYMOUS /api/auth/* routes (Southwind's
         // `ResetPasswordRequestLogic.Start(sb)`). BEFORE EmailLogic.start, because its e-mail models have to
@@ -454,7 +457,7 @@ export namespace Starter {
         // prose generator, the pages, the search and the zip import/export. AFTER OmniboxLogic.start (it
         // pushes a generator) and BEFORE OperationLogic.start so its eight operation symbols get seeded.
         // The image store is the app's, exactly as Southwind's `GetFileTypeAlgorithm(p => p.HelpImagesFolder)`.
-        HelpModuleLogic.start(sb, EastwindFileStores.store("helpImages", f => f.helpImagesFolder, { onlyImages: true }));
+        HelpModuleLogic.start(sb, EastwindFileStores.store("help-images", { onlyImages: true }));
 
         // Tree module (@altea/altea-tree): the UserTreePart dashboard part, the three endpoints the tree
         // viewer reads, and the omnibox suggestion. Owns no tree TYPE — the app's is DepartmentEntity,
@@ -510,7 +513,7 @@ export namespace Starter {
         // Southwind passes none, which leaves that flow with nowhere to go.
         PrintingLogic.start(sb, { testFileType: EastwindFileType.PrintTest });
         FileTypeLogic.register(EastwindFileType.PrintTest,
-            EastwindFileStores.store("printTest", f => f.printTestFolder));
+            EastwindFileStores.store("print-test"));
         if (sb.webBuilder)
             PrintingServer.start(sb.webBuilder);
 
@@ -524,9 +527,9 @@ export namespace Starter {
         // what makes a Draft invisible.
         WhatsNewLogic.start(sb);
         FileTypeLogic.register(WhatsNewFileType.WhatsNewPreviewFileType,
-            EastwindFileStores.store("whatsNew", f => f.whatsNewFolder));
+            EastwindFileStores.store("whats-new"));
         FileTypeLogic.register(WhatsNewFileType.WhatsNewAttachmentFileType,
-            EastwindFileStores.store("whatsNew", f => f.whatsNewFolder));
+            EastwindFileStores.store("whats-new"));
         WhatsNewLogic.registerPublishedTypeCondition(EastwindTypeCondition.PublishedNews);
         if (sb.webBuilder)
             WhatsNewServer.start(sb.webBuilder);

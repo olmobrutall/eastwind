@@ -30,9 +30,6 @@ export default function ApplicationConfiguration(p: { ctx: TypeContext<Applicati
                 <Tab eventKey="workflow" title={ctx.niceName(a => a.workflow)}>
                     <RenderEntity ctx={ctx.subCtx(a => a.workflow)} />
                 </Tab>
-                <Tab eventKey="folders" title={ctx.niceName(a => a.folders)}>
-                    <RenderEntity ctx={ctx.subCtx(a => a.folders)} />
-                </Tab>
                 <Tab eventKey="azureAD" title={ctx.niceName(a => a.azureAD)}>
                     <EntityDetail ctx={ctx.subCtx(a => a.azureAD)} />
                 </Tab>

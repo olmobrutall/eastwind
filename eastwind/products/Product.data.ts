@@ -41,8 +41,9 @@ export class CategoryEntity extends Entity {
     @translatable
     description: string;
     // Southwind's `FileEmbedded? Picture` (Products/CategoryEntity.cs) — the bytes live in the row. Loaded
-    // from Northwind's Categories.Picture (an OLE-wrapped bitmap — see the loader).
-    picture: FileEmbedded | null = null;
+    // from terminal/image_categories rather than Northwind's own Categories.Picture, which the two vendor
+    // scripts disagree about (see northwindSeed.ts).
+    picture: FileEmbedded | null;
     @quoted toString(): string { return this.categoryName; }
 }
 

@@ -1,7 +1,5 @@
 import "@altea/altea/server"; // installs save()/toLite()
 import * as fs from "node:fs";
-import * as path from "node:path";
-import * as url from "node:url";
 import { table } from "@altea/altea/server/table";
 import { PasswordEncoding } from "@altea/altea/server/passwordEncoding";
 import { Replacements } from "@altea/altea/server/sync/synchronizer";
@@ -20,15 +18,15 @@ import {
 } from "@altea/altea-email/data/EmailSenderConfiguration";
 import { ChatbotConfigurationEmbedded } from "@altea/altea-agent/data/LanguageModel";
 import { WorkflowConfigurationEmbedded } from "@altea/altea-workflow/data/Workflow";
-import {
-    ApplicationConfigurationEntity, FoldersConfigurationEmbedded, currentEnvironment,
-} from "../globals/ApplicationConfiguration.data";
+import { ApplicationConfigurationEntity, currentEnvironment } from "../globals/ApplicationConfiguration.data";
 import { EmployeeLoader } from "./employeeLoader";
 import { DepartmentLoader } from "./departmentLoader";
 import { SMSConfigurationEmbedded } from "@altea/altea-sms/data/SMS";
 import { ProductLoader } from "./productLoader";
 import { CustomerLoader } from "./customerLoader";
 import { OrderLoader } from "./orderLoader";
+import { NorthwindSeed } from "./northwindSeed";
+import { terminalFile } from "./terminalFile";
 
 // Port of Southwind.Terminal/SouthwindMigrations.cs — the app's C# MIGRATIONS: the ordered list of code
 // steps that bring a fresh database to a usable state, each recorded in CSharpMigrationEntity so it runs
@@ -62,6 +60,9 @@ export namespace EastwindMigrations {
 
         // The unique names are the MIGRATION IDENTITY in the database (renaming one re-runs it), so they are
         // the C# method names Southwind used rather than the console captions.
+        // FIRST: every Load* step below reads the Northwind SOURCE database through the `Nw*` views, and
+        // Southwind simply assumes it is there (the SQL Server sample everyone had installed). eastwind ships
+        // the vendor script for both dialects and seeds it, so `csharp` is self-contained on a fresh machine.
         runner.add("CreateCulturesAndConfiguration", () => createCulturesAndConfiguration());
         runner.add("CreateRoles", () => createRoles());
         runner.add("CreateSystemUser", () => createSystemUser());
@@ -89,10 +90,11 @@ export namespace EastwindMigrations {
      * ONE ApplicationConfiguration row for this environment — what every module's configuration lambda reads
      * (see globals/GlobalsLogic.server.ts). Idempotent: an existing row for this environment is left alone.
      *
-     * The initial VALUES come from the `EASTWIND_*` environment variables the per-module configuration
-     * functions used to read, so a developer's existing `.env` carries over on the first run — after that the
-     * row is the source of truth and the variables are ignored. The three DIRECTORY members are seeded null
-     * (Southwind seeds `AzureAD = null` too): a directory is configured on the page, not by redeploying.
+     * The initial VALUES are plain DEFAULTS for a dev machine, as Southwind's literals are — not environment
+     * reads: the row is the source of truth from the first run, and what a deployment must decide BEFORE a
+     * row can be read stays in the environment (see .env.example). Every credential — the chatbot provider
+     * keys, the three DIRECTORY members — is seeded empty / null, exactly as Southwind seeds `AzureAD = null`:
+     * those are configured on the page, not by redeploying.
      */
     export async function createCulturesAndConfiguration(): Promise<void> {
         await CultureInfoLogic.ensureCultures(["en", "es", "de"]);
@@ -119,39 +121,25 @@ export namespace EastwindMigrations {
         await ApplicationConfigurationEntity.create({
             environment: currentEnvironment,
             email: EmailConfigurationEmbedded.create({
-                defaultCulture: process.env["EASTWIND_MAIL_CULTURE"] ?? "en",
-                urlLeft: (process.env["EASTWIND_MAIL_URL_LEFT"] ?? "http://localhost:5173").replace(/\/+$/, ""),
-                sendEmails: process.env["EASTWIND_MAIL_SEND"] === "true",
-                // The inbound half. Off by default for the same reason as `sendEmails`: a dev database should
-                // not touch a real mailbox — and with it false a poll FAILS LOUDLY rather than doing nothing.
-                reciveEmails: process.env["EASTWIND_MAIL_RECEIVE"] === "true",
-                overrideEmailAddress: process.env["EASTWIND_MAIL_OVERRIDE"] ?? null,
+                defaultCulture: "en",
+                urlLeft: "http://localhost:5173",
+                sendEmails: false,
+                // The inbound half. Off for the same reason as `sendEmails`: a dev database should not touch
+                // a real mailbox — and with it false a poll FAILS LOUDLY rather than doing nothing.
+                reciveEmails: false,
                 avoidSendingEmailsOlderThan: null,
             }),
             emailSender: sender,
-            chatbot: ChatbotConfigurationEmbedded.create({
-                openAIAPIKey: process.env["EASTWIND_AGENT_OPENAI_KEY"] ?? null,
-                anthropicAPIKey: process.env["EASTWIND_AGENT_ANTHROPIC_KEY"] ?? null,
-                geminiAPIKey: process.env["EASTWIND_AGENT_GEMINI_KEY"] ?? null,
-                mistralAPIKey: process.env["EASTWIND_AGENT_MISTRAL_KEY"] ?? null,
-                githubModelsToken: process.env["EASTWIND_AGENT_GITHUB_TOKEN"] ?? null,
-                deepSeekAPIKey: process.env["EASTWIND_AGENT_DEEPSEEK_KEY"] ?? null,
-                ollamaUrl: process.env["EASTWIND_AGENT_OLLAMA_URL"] ?? null,
-            }),
+            // Every provider key is left EMPTY: a key is a credential, and the Chatbot tab is where one is
+            // pasted (Southwind seeds none either).
+            chatbot: ChatbotConfigurationEmbedded.create({}),
             workflow: WorkflowConfigurationEmbedded.create({
                 avoidExecutingScriptsOlderThan: null,
-            }),
-            folders: FoldersConfigurationEmbedded.create({
-                profilePhotosFolder: process.env["EASTWIND_FILES_PROFILEPHOTOS"] ?? "./files/profilePhotos",
-                emailAttachmentsFolder: process.env["EASTWIND_FILES_EMAILATTACHMENTS"] ?? "./files/emailAttachments",
-                helpImagesFolder: process.env["EASTWIND_FILES_HELPIMAGES"] ?? "./files/helpImages",
-                printTestFolder: process.env["EASTWIND_FILES_PRINTTEST"] ?? "./files/printTest",
-                whatsNewFolder: process.env["EASTWIND_FILES_WHATSNEW"] ?? "./files/whatsNew",
             }),
             sms: SMSConfigurationEmbedded.create({
                 // One of the cultures CreateCulturesAndConfiguration seeds just above (en / es / de);
                 // Southwind uses en-GB, which is not in eastwind's set.
-                defaultCulture: process.env["EASTWIND_SMS_DEFAULTCULTURE"] ?? "en",
+                defaultCulture: "en",
             }),
             azureAD: null,
             openID: null,
@@ -234,11 +222,11 @@ export namespace EastwindMigrations {
 
     /**
      * The XML seed files that live next to this source (Southwind kept them next to Program.cs and reached
-     * them as "../../../AuthRules.xml" from the bin folder). Resolved off this module's own location so a
-     * command works whatever the cwd: dist/terminal/eastwindMigrations.js → ../../terminal/<name>.
+     * them as "../../../AuthRules.xml" from the bin folder). See {@link terminalFile} for why they are
+     * resolved off the module's own location rather than the cwd.
      */
     export function seedFile(name: string): string {
-        return path.resolve(url.fileURLToPath(new URL(".", import.meta.url)), "../../terminal", name);
+        return terminalFile(name);
     }
 
     async function ensureRole(name: string, strategy: MergeStrategy, inheritsFrom: RoleEntity[]): Promise<RoleEntity> {

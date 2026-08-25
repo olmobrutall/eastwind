@@ -1,24 +1,5 @@
-import { defineConfig, type Plugin } from "vite";
-import fs from "node:fs";
-
-// Two-stage build: tspc emits .js + .js.map (mapping to the .ts source), then
-// Vite bundles the .js. This plugin feeds each emitted .js.map into Rollup so
-// the final bundle sourcemap *chains* back to the original .ts files — letting
-// you set breakpoints in logic/main.ts (not the dist .js).
-function chainEmittedSourcemaps(): Plugin {
-    return {
-        name: "chain-emitted-sourcemaps",
-        load(id) {
-            if (!id.endsWith(".js")) return null;
-            const mapPath = id + ".map";
-            if (!fs.existsSync(mapPath)) return null;
-            return {
-                code: fs.readFileSync(id, "utf8"),
-                map: JSON.parse(fs.readFileSync(mapPath, "utf8")),
-            };
-        },
-    };
-}
+import { defineConfig } from "vite";
+import { chainEmittedSourcemaps } from "./vite.emittedJs";
 
 // Server bundle. Runs AFTER `tspc -b` has emitted the transformed logic JS.
 // Vite/Rollup bundles the emitted plain JS (logic + entities layers, plus the

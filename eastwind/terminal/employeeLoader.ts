@@ -12,6 +12,8 @@ import { AddressEmbedded } from "../customers/Customer.data";
 import { RoleEntity } from "@altea/altea-auth/data/Role";
 import { UserEntity, UserState } from "@altea/altea-auth/data/User";
 import { Northwind, NwRegion, NwTerritory, NwEmployee, NwEmployeeTerritory } from "./northwindSchema";
+import { NorthwindImages } from "./northwindImages";
+import { terminalFile } from "./terminalFile";
 
 // Port of Southwind.Terminal/EmployeeLoader.cs. Reads Northwind through IView classes under a second
 // connector (Signum's Connector.Override(...).Using), and bulk-inserts eastwind entities preserving the
@@ -21,7 +23,7 @@ import { Northwind, NwRegion, NwTerritory, NwEmployee, NwEmployeeTerritory } fro
 // (altea's bulkInsertTable is single-table — it does not cascade owned rows the way Signum's does).
 export namespace EmployeeLoader {
     export async function loadRegions(): Promise<void> {
-        const regions = await Connector.withConnector(Northwind.connector(), () => view(NwRegion).toArray());
+        const regions = await Connector.withConnector(await Northwind.connector(), () => view(NwRegion).toArray());
         await BulkInserter.bulkInsert(regions.map(r => {
             const e = RegionEntity.create({ description: r.RegionDescription.trim() });
             e.id = r.RegionID;
@@ -33,7 +35,7 @@ export namespace EmployeeLoader {
         // Signum's `regionDic = Database.RetrieveAll<RegionEntity>().ToDictionary(Id)` — TerritoryEntity.region
         // is a full RegionEntity reference (regions were inserted with their Northwind ids preserved).
         const regionDic = new Map((await table(RegionEntity).toArray()).map(r => [Number(r.id), r]));
-        const territories = await Connector.withConnector(Northwind.connector(), () => view(NwTerritory).toArray());
+        const territories = await Connector.withConnector(await Northwind.connector(), () => view(NwTerritory).toArray());
         await BulkInserter.bulkInsert(territories.map(t => {
             const e = TerritoryEntity.create({
                 region: regionDic.get(t.RegionID)!,
@@ -45,8 +47,8 @@ export namespace EmployeeLoader {
     }
 
     export async function loadEmployees(): Promise<void> {
-        const nwEmployees = await Connector.withConnector(Northwind.connector(), () => view(NwEmployee).toArray());
-        const nwEmpTerr = await Connector.withConnector(Northwind.connector(), () => view(NwEmployeeTerritory).toArray());
+        const nwEmployees = await Connector.withConnector(await Northwind.connector(), () => view(NwEmployee).toArray());
+        const nwEmpTerr = await Connector.withConnector(await Northwind.connector(), () => view(NwEmployeeTerritory).toArray());
 
         // Territories junction rows grouped by employee (Signum's MList<TerritoryEntity>). The
         // employee back-reference is wired by bulkInsert's cascade — only the @valueField is set here.
@@ -75,6 +77,9 @@ export namespace EmployeeLoader {
                 // ids are preserved, so the self-reference resolves inline (no second SaveList pass).
                 reportsTo: e.ReportsTo != null ? EmployeeEntity.newLite(e.ReportsTo) : null,
                 photoPath: e.PhotoPath,
+                // Southwind reads Northwind's own Employees.Photo (an OLE-wrapped bitmap) — the column the
+                // seed drops, so the photo comes off disk instead (northwindImages.ts).
+                photo: NorthwindImages.employeePhoto(e.FirstName, e.LastName),
                 territories: terrByEmp.get(e.EmployeeID) ?? [],
             });
             emp.id = e.EmployeeID;
@@ -101,10 +106,9 @@ export namespace EmployeeLoader {
     }
 
     // The { chunkText: float[] } embeddings dictionary shipped alongside the loader (Southwind's
-    // passagesWithEmbeddings.json). The compiled loader lives in dist/terminal, so the source file is
-    // two levels up under terminal/. Returns undefined (embeddings skipped) if the file is missing.
+    // passagesWithEmbeddings.json). Returns undefined (embeddings skipped) if the file is missing.
     function readEmbeddings(): Record<string, number[]> | undefined {
-        const file = path.resolve(import.meta.dirname, "..", "..", "terminal", "passagesWithEmbeddings.json");
+        const file = terminalFile("passagesWithEmbeddings.json");
         if (!fs.existsSync(file)) {
             console.log(`[passages] ${path.basename(file)} not found — inserting passages without embeddings.`);
             return undefined;

@@ -187,6 +187,43 @@ Known structural divergences from Signum (this is what "fix" means — don't por
 - **`@quoted` lambda navigations**: `entity.customer.name`-style navs inside queries are rewritten by `quote-transformer` (a ts-patch transformer). A nav off a **nullable** reference must use `singleOrNull` / `firstOrNull` (OUTER APPLY), not `single` / `first`.
 - **Rule sets live in `client/FinderRules.tsx`** (like Signum), not inline in `Finder.tsx` — the editors import Lines, and Lines import Finder, so keeping them separate avoids a module-eval import cycle. Finder imports `FinderRules` for its four `init*Rules()` and installs them, so `import { Finder }` is enough.
 
+- **Physical NAMING is overridable on both builders, as it is in Signum.** Signum makes its naming
+  `virtual` on `SchemaBuilder` (`GenerateTableName`, `GenerateFieldName`, `GenerateCleanTypeName`, …); altea
+  spreads the same decisions over two classes plus `SchemaSettings`, and each is an override point:
+  - ENTITIES — `SchemaSettings.tableName(type)` / `.schemaForType(type)` for the table, and
+    `SchemaBuilder.columnName(fi)` / `.idiomatic(logical)` for the columns. Signum's `GenerateFieldName`
+    bundles three things (the per-field name, the `ID` suffix keyed by `KindOfField`, and `Idiomatic`);
+    altea splits them, so `columnName` is the CONVENTION only and cannot change the `ID` rule itself. Reach:
+    `columnName` sees every field a FieldInfo describes — value, embedded (whose members it then prefixes), a
+    reference's `<Field>ID`, an enum's, and each `@implementedBy` / `@implementedByAll` implementation column
+    — and `idiomatic` additionally covers the fixed `ID` / `Ticks` / `ToStr` / period columns, which have no
+    FieldInfo to route. A `@backReference` needs no counterpart of Signum's `GenerateBackReferenceName`: it
+    is an ordinary reference field on the child.
+    An explicit **`@column({columnName})` IS the column name** — verbatim, no prefix, no `ID` suffix, no
+    dialect mapping — read where Signum reads its `[ColumnName]` (before any convention applies), so it means
+    the same thing for every kind. One divergence, in the corner Signum composes: for `@implementedBy` /
+    `@implementedByAll` one field owns SEVERAL columns, so Signum appends the implementation to the given
+    name (`Foo_Artist`) while altea THROWS — naming those is what subclassing is for. Signum's
+    `[BackReferenceColumnName]` / altea's former `@fkProperty` are both gone here: one option names a column,
+    whatever kind of field it sits on. `columnNaming.test.ts` pins all of it.
+    Auditing that pair found a BUG: `@column` used to default its `columnName` option to the raw property
+    key, so `columnName`'s `cap(fi.name)` fallback never ran for a decorated field and it got a camelCase
+    column beside its PascalCase siblings (`exceptionType` next to `ExceptionMessage` on `ExceptionEntity`).
+    Postgres hid it — `pascalToSnake` maps both spellings to the same name — so it only ever showed on SQL
+    Server. Fixed by leaving the option unset; **a SQL Server database therefore needs a `sync` to rename
+    the ~19 affected columns** (ExceptionEntity's eleven, RestLog/RestApiKey's six, `UserEntity.passwordHash`,
+    `EmployeePassageEntity.embedding`). No Postgres database is affected.
+  - VIEWS — `ViewBuilder.tableName(typeInfo)` / `.columnName(fi)`, for reading a FOREIGN database whose
+    spelling is not altea's (see the Northwind bullet). Not applied to a temp-table view's FK column: a temp
+    table is CREATED by altea, so its names are altea's already.
+  Two asymmetries worth knowing. A `SchemaBuilder` subclass is used by CONSTRUCTING it (the app writes
+  `new SchemaBuilder()` in its Starter), whereas a `ViewBuilder` is constructed by `Schema.view()` — hence
+  the `Schema.viewBuilder` slot, and no equivalent slot for the SchemaBuilder. And **`cleanTypeName` is
+  deliberately NOT a hook**, where Signum's `GenerateCleanTypeName` is virtual: in altea it is the
+  reflection IDENTITY (the `TypeEntity.cleanName` column, the serialization discriminator, the suffix of an
+  `@implementedBy` column) and it is computed in the DATA layer, which the client compiles too — so a
+  server-side override would let the two halves disagree about what a type is called.
+
 - **Signum.Alerts → altea-alert: a notification is an entity, and the bell is a WebSocket consumer.** The
   module ports whole (entity + operations, the two endpoints the bell polls, the dropdown, the alert view,
   and the opt-in "mail me my pending alerts" task). Divergences:
@@ -259,14 +296,49 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     (`eastwind/orders/`), which is where Southwind keeps them (`Orders/OrdersLogic.cs` registers
     `OrderProcess.CancelOrders` and the two `OrderTask`s, declared in `Orders/OrderEntity.cs`).
 
+- **The Northwind SOURCE database is seeded, on either dialect, and its images come off disk.** Southwind
+  assumes a Northwind database is already installed (the SQL Server sample everyone had), so
+  `NorthwindSchema.cs` needs no seed and no dialect question. eastwind runs on both, so `terminal
+  seed-northwind` — also the FIRST `csharp` migration, so that command is self-contained — creates it from
+  the vendor script matching `NORTHWIND_DB`'s own prefix: `Northwind.SqlServer.sql` (Microsoft's
+  `instnwnd.sql`, `GO`-separated) or `Northwind.Postgree.sql` (the pg_dump port, `;`-separated). **Both run
+  VERBATIM** — the seed only SPLITS them into the units a driver accepts (neither driver takes a script
+  containing `GO`; node-postgres takes one statement per parameterised call), and rewrites no SQL at all.
+  One statement is DROPPED and it is the only exception: `SET default_with_oids` names a parameter
+  PostgreSQL removed in 12. The two things the scripts disagree about are settled where each belongs:
+  - **NAMING** — SQL Server is PascalCase under `dbo`, the pg_dump is snake_case under `public`. A view maps
+    each column by FIELD NAME VERBATIM, so this used to mean rewriting the dump's identifiers; instead
+    `ViewBuilder` gained two override points, **`tableName(typeInfo)` / `columnName(fi)`**, and `Schema` a
+    swappable **`viewBuilder`** slot. The `Nw*` classes are declared once in Northwind's own SQL Server
+    spelling and `NorthwindPostgresViewBuilder` (eastwind's, ~15 lines: one PascalCase→snake_case rule plus
+    `HomePage` → `homepage`, which the dump spells as one word) maps them for the Postgres source. It is
+    installed on the NORTHWIND connector's own Schema, so nothing else in the app sees it — which works
+    because `view()` resolves through the CURRENT connector's schema, and `Northwind.connector()` builds its
+    own. That is the general seam for reading a FOREIGN database (one altea neither generates nor
+    synchronizes) whose spelling is not altea's.
+  - **IMAGES**, the only real DATA difference: `Categories.Picture` / `Employees.Photo` are ~700 KB of
+    OLE-wrapped bitmap as `0x…` literals in the SQL Server script and an EMPTY bytea in the Postgres one.
+    Neither wins, and neither is MAPPED by any view — so whatever a script puts there is never read, and the
+    loaders take the pictures from `terminal/image_categories` + `terminal/image_photos` instead
+    (`northwindImages.ts`, by base name with the extension discovered from the directory), the same bytes on
+    both dialects. Hence no `Picture` column on `NwCategory` and no `RemoveOlePrefix`. A category name may
+    hold a slash, so ONE mechanical rule maps it to a file (`Grains/Cereals` → `Grains-Cereals`); an
+    employee photo is `<FirstName> <LastName>`.
+    `EmployeeEntity.photo` is a `FileEmbedded` where Southwind holds a `Lite<FileEntity>` — the shape
+    `CategoryEntity.picture` already uses, so the demo needs no FileEntity table and no FileType of its own.
+    **An existing database therefore needs a `terminal sync` before an employee photo has a column to live
+    in.**
+
 - **App settings are ONE persisted row, and every module start takes a lambda to it.** eastwind ports
   Southwind's `ApplicationConfigurationEntity` (`eastwind/globals/`): one row per environment carrying each
-  module's configuration embedded (mail, chatbot, workflow, folders, and the three directories), edited at
+  module's configuration embedded (mail, chatbot, workflow, SMS, and the three directories), edited at
   `/view/ApplicationConfiguration`, and each `Logic.start` receives `() => GlobalsLogic.configuration().x`
   exactly as Signum's `EmailLogic.Start(sb, () => Configuration.Value.Email, …)` does. The per-module
   `eastwind<Module>.server.ts` files keep only what is genuinely app CODE (skill trees, email owners, ORDER
-  as a case main entity, the store factory); nothing there reads `EASTWIND_*` for a setting any more — the
-  environment only SEEDS the row, in the `CreateCulturesAndConfiguration` migration. Divergences:
+  as a case main entity, the store factory); nothing there reads `EASTWIND_*` for a setting any more, and
+  neither does the migration that CREATES the row — `CreateCulturesAndConfiguration` seeds plain dev
+  defaults and leaves every credential empty, so the row is the only source of truth from the first run.
+  Divergences:
   - **which row is `DB_ENVIRONMENT`**, matched against `environment`, where Signum matches `DatabaseName`
     against `Connector.Current.DatabaseName()` (altea's Connector exposes no such name, and a deployment
     controls an env var anyway). The entity carries a `@quoted isActive()` so the search page can say which
@@ -279,8 +351,17 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     an edit take effect without a restart, as Signum's `InvalidateWith` does.
   - **what stays in the environment** is what Southwind also keeps in `appsettings.json`: the connection
     string, the file-store BACKEND + its cloud credentials (Signum's `azureStorageConnectionString` is a
-    `Starter.Start` parameter), and `EASTWIND_AD_PROVIDER` — which directory owns the login flow, decided
-    while the schema is built, before a row can be read.
+    `Starter.Start` parameter), `NORTHWIND_DB` (the terminal's demo-data SOURCE — see the bullet below), and
+    `EASTWIND_AD_PROVIDER` — which directory owns the login flow, decided while the schema is built, before
+    a row can be read.
+  - **Southwind's `Folders` member is NOT ported.** It stores one editable path per local file store; here
+    a store's folder is derived from the store's own NAME — `EastwindFileStores.store("help-images")` writes
+    to `./files/help-images`, and the same name is the Azure container / S3 bucket, so it is KEBAB-CASE and
+    checked at registration (those two accept only lower-case letters, digits and hyphens; Southwind hits
+    the same rule by hand, since it passes the configured folder straight to `new BlobContainerClient`).
+    The paths were never a
+    deployment choice (every one read `./files/<the store name>`), and as data they were five more rows to
+    keep in step with the code that names the stores.
   - **the AD configurations became `@part` ENTITIES** (`BaseADConfigurationEmbedded extends Entity`), because
     persisting them means persisting `roleMapping`, and a collection is `@part` child rows whose back
     reference needs a real owner TABLE — which a flattened embedded is not. Same reshaping altea-email
@@ -626,8 +707,8 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   - the `[t:Order]` / `[p:Order.shipDate]` link tokens survive verbatim — they are the one piece of
     Signum's wiki syntax that a WYSIWYG editor cannot replace, because they are environment-independent
     references where an `<a href>` is not. `HelpSyntaxMessage` shrinks to the two labels still in use.
-  - eastwind gains a third file store (`FoldersConfigurationEmbedded.helpImagesFolder`), which is where
-    Southwind keeps `HelpImagesFolder` too.
+  - eastwind gains a third file store, `EastwindFileStores.store("help-images")` — Southwind keeps the same
+    thing as `Folders.HelpImagesFolder`, a configured path (see the ApplicationConfiguration bullet).
 
 - **Signum.Map → altea-map: two DERIVED views, so the module owns no tables.** Both pages are computed
   from things that already exist — the live `Schema`, the operation registry, and the database's own

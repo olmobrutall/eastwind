@@ -14,6 +14,7 @@ import { ConsoleSwitch } from "./consoleSwitch";
 import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic.server";
 import { SqlMigrationRunner } from "@altea/altea-migrations/server/SqlMigrationRunner.server";
 import { Northwind } from "./northwindSchema";
+import { NorthwindSeed } from "./northwindSeed";
 import { RegionEntity, TerritoryEntity, EmployeeEntity } from "../employees/Employee.data";
 import { SupplierEntity, CategoryEntity, ProductEntity } from "../products/Product.data";
 import { ShipperEntity } from "../shippers/Shipper.data";
@@ -32,6 +33,9 @@ import { EastwindMigrations } from "./eastwindMigrations";
 // connection string comes from EASTWIND_DB (falling back to ALTEA_TEST_DB); "postgres…" → PG, else SQL Server.
 
 async function main(): Promise<void> {
+
+    console.log("Loading Eastwind...");
+
     const args = process.argv.slice(2);
     const command = args[0]?.toLowerCase();
 
@@ -70,9 +74,10 @@ async function main(): Promise<void> {
                 case "export-auth": await exportAuth(args.slice(1)); break;
                 case "import-auth": await importAuth(args.slice(1)); break;
                 case "import-assets": await importAssets(args.slice(1)); break;
+                case "seed-northwind": await NorthwindSeed.seed(); break;
                 case "migrations":
                 case "sql": await migrations(args.slice(1)); break;
-                default: console.log(`Unknown command '${command}'. Valid: new, sync, sql, csharp, load [EA,IA,IU,SO], check, export-auth, import-auth, import-assets`);
+                default: console.log(`Unknown command '${command}'. Valid: new, sync, sql, csharp, load [SN,EA,IA,IU,SO], check, export-auth, import-auth, import-assets, seed-northwind`);
             }
         }
     } finally {
@@ -101,6 +106,7 @@ function formatErrorRed(err: unknown): string {
 async function interactive(): Promise<void> {
     for (; ;) {
         const action = await new ConsoleSwitch<() => Promise<void>>("..:: Welcome to the Eastwind Loading Application ::..")
+            .add("SN", "Seed Northwind database", () => NorthwindSeed.seed())
             .add("N", "New Database (clean + generate schema)", () => create())
             .add("S", "Synchronize (diff model vs DB)", () => synchronize())
             .add("SQL", "SQL Migrations (apply / create versioned .sql)", () => migrations([]))
@@ -129,11 +135,13 @@ async function interactive(): Promise<void> {
  * Southwind's entries were AR (import/export auth rules), HL (help), TP (train predictor), SO (show order)
  * and EE (export embeddings). Help / MachineLearning are not ported, and there is no embeddings EXPORT here
  * (only the loader), so those three are out; AR is split into its two halves and the user-asset import — the
- * sibling of AR, and the other file-based seed — is added.
+ * sibling of AR, and the other file-based seed — is added. SN is new: Southwind assumes a Northwind database
+ * is already installed, eastwind ships the vendor script for both dialects and seeds it.
  */
 async function load(args: string[]): Promise<void> {
     for (; ;) {
-        const selected = await new ConsoleSwitch<() => Promise<void>>("Load processes (e.g. EA,IA):")
+        const selected = await new ConsoleSwitch<() => Promise<void>>("Load processes (e.g. SN,EA,IA):")
+            .add("SN", "Seed Northwind (the demo-data SOURCE database)", () => NorthwindSeed.seed())
             .add("EA", "Export Auth Rules (to ./AuthRules.xml)", () => EastwindMigrations.exportAuthRules())
             .add("IA", "Import Auth Rules (terminal/AuthRules.xml)", () => EastwindMigrations.importAuthRules())
             .add("IU", "Import User Assets (terminal/UserAssets.xml)", () => EastwindMigrations.importUserAssets())

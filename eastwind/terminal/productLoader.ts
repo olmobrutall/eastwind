@@ -3,17 +3,17 @@ import { Connector } from "@altea/altea/server/connection/connector";
 import { view } from "@altea/altea/server/table";
 import { BulkInserter } from "@altea/altea/server/bulkInserter";
 import { toInt, Decimal } from "@altea/altea/data/basics";
-import { FileEmbedded } from "@altea/altea-files/data/Files";
 import { SupplierEntity, CategoryEntity, ProductEntity, ProductEntity_AdditionalInformation } from "../products/Product.data";
 import { AddressEmbedded } from "../customers/Customer.data";
 import { Northwind, NwSupplier, NwCategory, NwProduct } from "./northwindSchema";
+import { NorthwindImages } from "./northwindImages";
 
 // Port of Southwind.Terminal/ProductLoader.cs (SupplierFaxes.csv, Category.Picture and the EAN/diet
 // AdditionalInformation rules are simplified/extension-free). Ids are preserved so Product's Supplier
 // and Category lites resolve inline via Type.newLite(id).
 export namespace ProductLoader {
     export async function loadSuppliers(): Promise<void> {
-        const suppliers = await Connector.withConnector(Northwind.connector(), () => view(NwSupplier).toArray());
+        const suppliers = await Connector.withConnector(await Northwind.connector(), () => view(NwSupplier).toArray());
         await BulkInserter.bulkInsert(suppliers.map(s => {
             const e = SupplierEntity.create({
                 companyName: s.CompanyName,
@@ -33,30 +33,24 @@ export namespace ProductLoader {
     }
 
     export async function loadCategories(): Promise<void> {
-        const categories = await Connector.withConnector(Northwind.connector(), () => view(NwCategory).toArray());
+        const categories = await Connector.withConnector(await Northwind.connector(), () => view(NwCategory).toArray());
         await BulkInserter.bulkInsert(categories.map(c => {
             const e = CategoryEntity.create({
                 categoryName: c.CategoryName,
                 description: c.Description ?? "",
-                // Southwind's `Picture = new FileEmbedded { … RemoveOlePrefix(s.Picture) }`.
-                picture: c.Picture == null ? null : FileEmbedded.create({
-                    fileName: c.CategoryName + ".bmp",
-                    binaryFile: removeOlePrefix(c.Picture),
-                }),
+                // Southwind's `Picture = new FileEmbedded { … RemoveOlePrefix(s.Picture) }` reads Northwind's
+                // own Categories.Picture — an OLE-wrapped bitmap behind a 78-byte header. That column is the
+                // one place the two vendor scripts disagree, so the seed drops it and the picture comes off
+                // disk instead (northwindImages.ts).
+                picture: NorthwindImages.category(c.CategoryName),
             });
             e.id = c.CategoryID;
             return e;
         }));
     }
 
-    // Port of Southwind's EmployeeLoader.RemoveOlePrefix: Access stored these images as OLE objects, so the
-    // real bitmap starts 78 bytes in.
-    function removeOlePrefix(bytes: Uint8Array): Uint8Array {
-        return bytes.length > 78 ? bytes.subarray(78) : bytes;
-    }
-
     export async function loadProducts(): Promise<void> {
-        const products = await Connector.withConnector(Northwind.connector(), () => view(NwProduct).toArray());
+        const products = await Connector.withConnector(await Northwind.connector(), () => view(NwProduct).toArray());
 
         // Signum's `.BulkInsert(disableIdentity:true)`: preserved ids + the AdditionalInformation MList
         // cascade. The product back-reference + @rowOrder are wired by the cascade.

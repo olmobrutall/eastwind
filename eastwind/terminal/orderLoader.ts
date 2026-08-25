@@ -16,7 +16,7 @@ import { Northwind, NwShipper, NwOrder, NwOrderDetail, NwCustomer } from "./nort
 // exactly like Southwind. SimulateOrderSystemTime is omitted (no system-versioning; extension-free).
 export namespace OrderLoader {
     export async function loadShippers(): Promise<void> {
-        const shippers = await Connector.withConnector(Northwind.connector(), () => view(NwShipper).toArray());
+        const shippers = await Connector.withConnector(await Northwind.connector(), () => view(NwShipper).toArray());
         await BulkInserter.bulkInsert(shippers.map(s => {
             const e = ShipperEntity.create({ companyName: s.CompanyName, phone: s.Phone ?? "" });
             e.id = s.ShipperID;
@@ -27,14 +27,14 @@ export namespace OrderLoader {
     export async function loadOrders(): Promise<void> {
         // Correlate Northwind CustomerID → ContactName → the persisted CustomerEntity (Signum's
         // `customers` dictionary keyed by ContactName / FirstName+LastName).
-        const nwCustomers = await Connector.withConnector(Northwind.connector(), () => view(NwCustomer).toArray());
+        const nwCustomers = await Connector.withConnector(await Northwind.connector(), () => view(NwCustomer).toArray());
         const nameById = new Map(nwCustomers.map(c => [c.CustomerID, c.ContactName ?? c.CompanyName]));
         const custByName = new Map<string, CustomerEntity>();
         for (const c of await table(CompanyEntity).toArray()) custByName.set(c.contactName, c);
         for (const p of await table(PersonEntity).toArray()) custByName.set(`${p.firstName} ${p.lastName}`, p);
 
-        const nwOrders = await Connector.withConnector(Northwind.connector(), () => view(NwOrder).toArray());
-        const nwDetails = await Connector.withConnector(Northwind.connector(), () => view(NwOrderDetail).toArray());
+        const nwOrders = await Connector.withConnector(await Northwind.connector(), () => view(NwOrder).toArray());
+        const nwDetails = await Connector.withConnector(await Northwind.connector(), () => view(NwOrderDetail).toArray());
         const detailsByOrder = new Map<number, NwOrderDetail[]>();
         for (const d of nwDetails) {
             const list = detailsByOrder.get(d.OrderID) ?? [];

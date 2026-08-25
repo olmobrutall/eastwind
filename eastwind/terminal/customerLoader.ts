@@ -11,7 +11,7 @@ import { Northwind, NwCustomer } from "./northwindSchema";
 // here the split is done in memory to avoid a nullable-string LIKE translation on the view read.
 export namespace CustomerLoader {
     export async function loadCompanies(): Promise<void> {
-        const customers = await Connector.withConnector(Northwind.connector(), () => view(NwCustomer).toArray());
+        const customers = await Connector.withConnector(await Northwind.connector(), () => view(NwCustomer).toArray());
         const companies = customers.filter(c => !(c.ContactTitle ?? "").includes("Owner"));
         await BulkInserter.bulkInsert(companies.map(c => CompanyEntity.create({
             companyName: c.CompanyName,
@@ -30,7 +30,7 @@ export namespace CustomerLoader {
     }
 
     export async function loadPersons(): Promise<void> {
-        const customers = await Connector.withConnector(Northwind.connector(), () => view(NwCustomer).toArray());
+        const customers = await Connector.withConnector(await Northwind.connector(), () => view(NwCustomer).toArray());
         const persons = customers.filter(c => (c.ContactTitle ?? "").includes("Owner"));
         await BulkInserter.bulkInsert(persons.map(c => {
             const name = c.ContactName ?? c.CompanyName;
