@@ -18,7 +18,8 @@ const API_TARGET = process.env["VITE_API_TARGET"] ?? "http://localhost:3001";
 // imported from an altea workspace package's dist back to the co-located SOURCE file (dist/client/X.css →
 // client/X.css). Covers ALL altea packages (@altea/altea, @altea/altea-auth, …). Dev + eastwind's own vite
 // build only; a published package would ship its assets in dist instead.
-const ALTEA_WORKSPACE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../altea");
+const APP_ROOT = path.dirname(fileURLToPath(import.meta.url));
+const ALTEA_WORKSPACE = path.resolve(APP_ROOT, "../altea");
 const ASSET_EXTENSIONS = [".css", ".scss", ".xml", ".svg", ".txt", ".html"];
 
 function isAsset(source: string): boolean {
@@ -43,10 +44,13 @@ function alteaDistAssetToSource(): Plugin {
             //     source. ONLY for a RELATIVE specifier — a BARE one names another package
             //     (`bpmn-js/dist/assets/…/bpmn-embedded.css`), which node resolution must handle, and
             //     rewriting it as a sibling path is how it used to 404.
+            //     APP_ROOT is in the same rule because eastwind's own emitted JS has the same problem:
+            //     dist/main.client.js imports `./site.css`, which tsc did not copy next to it.
             if (importer == null || !(source.startsWith("./") || source.startsWith("../")))
                 return null;
             const normImporter = path.normalize(importer);
-            if (!normImporter.startsWith(ALTEA_WORKSPACE) || !normImporter.includes(`${path.sep}dist${path.sep}`))
+            const inWorkspace = normImporter.startsWith(ALTEA_WORKSPACE) || normImporter.startsWith(APP_ROOT);
+            if (!inWorkspace || !normImporter.includes(`${path.sep}dist${path.sep}`))
                 return null;
             const [bare, query] = splitQuery(source);
             const abs = path.resolve(path.dirname(normImporter), bare);

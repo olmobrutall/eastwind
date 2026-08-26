@@ -8,4 +8,7 @@ import "react-widgets-up/styles.css";
 // `.sf-page-container` tinted background so content cards + their shadows read, modal sizing, etc. Loaded
 // app-wide (not just on the entity-frame routes) so every page, including the search page, gets it.
 import "@altea/altea/client/Frames/Frames.css";
+// The app's own stylesheet (Southwind's site.css, imported by its Index.cshtml): the full-bleed hero the
+// landing page and the public catalog render into. Last, so it wins over bootstrap.
+import "./site.css";
 import "./MainPublic.client"; // self-boots (Southwind's main.tsx -> MainPublic)

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Link, Outlet, useLocation, Navigate } from "react-router";
+import { Link, Outlet, useLocation } from "react-router";
 import { GlobalModalContainer } from "@altea/altea/client/Modals";
 import Notify from "@altea/altea/client/Frames/Notify";
 import { ErrorBoundary } from "@altea/altea/client/Components";
@@ -17,9 +17,9 @@ import WhatsNewDropdown from "@altea/altea-whats-new/client/WhatsNewDropdown";
 const ChatbotButton = React.lazy(() => import("@altea/altea-agent/client/ChatbotButton"));
 
 // The app shell (Southwind's Layout): a top navbar (with the sidebar toggle, the omnibox and the login/user
-// dropdown) + a SIDEBAR rendering the current "Side" toolbar + the routed page via <Outlet/>. Auth-aware: a
-// login guard redirects to /auth/login when no user is authenticated. GlobalModalContainer stays mounted for
-// every modal host.
+// dropdown) + a SIDEBAR rendering the current "Side" toolbar + the routed page via <Outlet/>. Auth-aware only
+// in what it SHOWS — every navbar item that needs a user checks for one; there is no redirect guard (see the
+// note in the component). GlobalModalContainer stays mounted for every modal host.
 
 // Re-render this shell whenever the current user changes (login / logout / switch user), so the guard
 // and the dropdown reflect the new state.
@@ -55,11 +55,11 @@ export default function Layout(): React.JSX.Element {
     const isMobile = useBreakpoint() <= Breakpoints.sm;
     const [sidebarMode, setSidebarMode] = useSidebarMode(isMobile);
 
-    // Secure-by-default on the client too: without a user, only the /auth/* pages (login, change
-    // password) are reachable; everything else redirects to the login page.
+    // NO login guard here, exactly as in Southwind's Layout. Client-side authorization is expressed by
+    // which routes EXIST: MainPublic only calls `startFull` for a real (non-anonymous) user, so an admin
+    // path an anonymous visitor types falls through to NotFound and never renders. The real enforcement is
+    // the server's role rules — the Anonymous role may read Category and Product and nothing else.
     const isAuthRoute = location.pathname.startsWith("/auth");
-    if (!AppContext.currentUser && !isAuthRoute)
-        return <Navigate to="/auth/login" replace />;
 
     // The sidebar only exists for a logged-in user (the /api/toolbar route answers per role) and never on the
     // login pages.

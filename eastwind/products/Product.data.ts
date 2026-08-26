@@ -3,6 +3,7 @@ import { Entity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
 import { entity, quoted, backReference, rowOrder, translatable } from "@altea/altea/data/decorators";
 import { type int, Decimal } from "@altea/altea/data/basics";
+import { msg } from "@altea/altea/data/utils/localization";
 import type { IQuery } from "@altea/altea/data/iquery";
 import type { ExecuteSymbol } from "@altea/altea/data/operations";
 import { FileEmbedded } from "@altea/altea-files/data/Files";
@@ -87,3 +88,16 @@ export class ProductEntity_AdditionalInformation extends Entity {
 export namespace ProductOperation {
     export const Save: ExecuteSymbol<ProductEntity> = init();
 }
+
+// Southwind's `[AllowUnauthenticated] enum CatalogMessage` (Products/ProductEntity.cs) — the four column
+// captions of the ANONYMOUS public catalog page (publicApi/PublicCatalog.tsx). They are MESSAGES rather
+// than `ProductEntity.nicePropertyName(...)` reads because that page is reachable with no user, and a
+// property's nice name is part of the role-filtered metadata blob. altea needs no `[AllowUnauthenticated]`
+// counterpart: a message lives in the translation files, which the reflection endpoint already serves
+// anonymously.
+export const CatalogMessage = {
+    productName: msg(),
+    unitPrice: msg(),
+    quantityPerUnit: msg(),
+    unitsInStock: msg(),
+};

@@ -28,8 +28,15 @@ export namespace CatalogApi {
         // RestLogFilter header) — and AFTER AuthLogic.start, so the per-request user scope already exists.
         ws.app.use("/api/catalog", RestLogFilter.middleware({ name: "CatalogApi", allowReplay: true }));
 
-        // `allowAnonymous` is NOT set: the secure-by-default gate applies, so a caller must present a
-        // valid API key (or a session token). That is exactly what Southwind's swagger flow does.
+        // `allowAnonymous` is NOT set, exactly as Southwind's controller carries no `[SignumAllowAnonymous]`.
+        // Note what that does and does not buy once an ANONYMOUS USER is configured (it is, see
+        // AuthLogic.start in starter.server.ts): the route-level gate no longer rejects a caller with no
+        // token — Signum's authenticator chain resolves the anonymous user BEFORE it consults
+        // `[SignumAllowAnonymous]`, and altea's does the same — so this endpoint is reachable without an API
+        // key and answers whatever the Anonymous ROLE may read. Category is on that list, so it answers.
+        // The API key is what gets a caller MORE than the anonymous role, and what the RestLog above
+        // attributes the request to. This is Southwind's behaviour verbatim; an app that wants the endpoint
+        // shut to anonymous callers gives the Anonymous role no Category rule.
         ws.get("/api/catalog/categories",
             { res: CustomType<CategoryDto[]>() },
             async (_req, res) => {

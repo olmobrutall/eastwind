@@ -57,6 +57,7 @@ import { UserQueryEntity } from "@altea/altea-user-queries/data/UserQuery";
 import { UserChartEntity } from "@altea/altea-chart/data/UserChart";
 import { DashboardEntity } from "@altea/altea-dashboard/data/Dashboard";
 import { CatalogApi } from "./publicApi/CatalogApi.server";
+import { PublicCatalogApi } from "./publicApi/PublicCatalog.server";
 import { TourLogic } from "@altea/altea-tour/server/TourLogic.server";
 import { TranslationLogic } from "@altea/altea-translations/server/TranslationLogic.server";
 import { WorkflowLogicStarter } from "@altea/altea-workflow/server/WorkflowLogicStarter.server";
@@ -156,7 +157,15 @@ export namespace Starter {
 
         // Authentication module (altea-auth): registers RoleEntity + UserEntity, their operations, and
         // the UserGraph state machine. Before OperationLogic.start so its operation symbols get seeded.
-        AuthLogic.start(sb);
+        //
+        // The two user names are Southwind's (`AuthLogic.Start(sb, "System", "Anonymous")`, Starter.cs).
+        // The SECOND one is the app's unauthenticated posture: a request with no token is authenticated as
+        // the "Anonymous" user, so it reaches every route and is limited by that user's ROLE RULES rather
+        // than by the route-level gate. That role is seeded by `createRoles` and its rules are in
+        // terminal/AuthRules.xml, which grants it Read on exactly Category + Product — the public catalog
+        // (publicApi/PublicCatalog.server.ts) and nothing else. Those rules had been ported already and were
+        // inert until now, because nothing ever ran as that role.
+        AuthLogic.start(sb, "System", "Anonymous");
         // Authorization engine (coarse slice): Type + Permission rules. Registers Rule* tables + the
         // PermissionSymbol table.
         TypeAuthLogic.start(sb);
@@ -606,8 +615,13 @@ export namespace Starter {
         // The app's own PUBLIC REST surface (Southwind's Public/CatalogAPIController) — what an API key
         // authenticates against and what @altea/altea-rest logs. After every module, so its RestLog
         // middleware sits behind the auth middleware AuthLogic.start installed.
-        if (sb.webBuilder)
+        if (sb.webBuilder) {
             CatalogApi.start(sb.webBuilder);
+            // The ANONYMOUS catalog the public landing page reads (Southwind's Public/CatalogController).
+            // Its property routes resolve through the reflection metadata, so it must come after the
+            // entity modules — as it does here.
+            PublicCatalogApi.start(sb.webBuilder);
+        }
 
         // The three BACKGROUND RUNNERS (Southwind.Server/Program.cs's `StartBackgroundProcesses` block).
         // eastwind had never started them: a scheduled task, a queued process and an async e-mail were all
