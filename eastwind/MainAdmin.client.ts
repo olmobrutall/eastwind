@@ -43,6 +43,7 @@ import { MailingMicrosoftGraphClient } from "@altea/altea-mailing-microsoft-grap
 import { RemoteEmailsClient } from "@altea/altea-mailing-microsoft-graph/client/RemoteEmails/RemoteEmailsClient";
 import { MailingPop3Client } from "@altea/altea-mailing-pop3/client/MailingPop3Client";
 import { OfficeClient } from "@altea/altea-office-template/client/OfficeClient";
+import { ExcelClient } from "@altea/altea-office-template/client/ExcelClient";
 import { HtmlEditorClient } from "@altea/altea-html-editor/client/HtmlEditorClient";
 import { MarkdownClient } from "@altea/altea-markdown/client/MarkdownClient";
 import { PrintClient } from "@altea/altea-printing/client/PrintClient";
@@ -108,16 +109,19 @@ export function startFull(routes: RouteObject[]): void {
     CustomersClient.start(cb);
     OrdersClient.start(cb);
 
-    // The app GLOBALS (Southwind's GlobalsClient): the ApplicationConfiguration page — one tab per module,
-    // each rendering that module's own configuration view. AFTER the domains and BEFORE the module clients
-    // whose configuration views it embeds (they register those views from their own start(cb) below, and the
-    // page only resolves them when it is opened).
-    GlobalsClient.start(cb);
-
     // Authorization admin (altea-auth, part of the FULL bundle): the User/Role admin views + rule-pack
     // admin. The PUBLIC auth routes (login / change password) are registered by AuthClient.startPublic
     // in MainPublic — they must work without this admin bundle.
     AuthAdminClient.start(cb, { types: true, permissions: true, operations: true, queries: true, properties: true });
+
+    // The app GLOBALS (Southwind's GlobalsClient): the ApplicationConfiguration page — one tab per module,
+    // each rendering that module's own configuration view (registered by each module's own start(cb), and
+    // resolved only when the page is opened, so the order between them does not matter) — plus the
+    // UserEmployeeMixin line on the User view. That line is why this comes AFTER AuthAdminClient, which is
+    // what registers UserEntity's own EntitySettings: overriding a view the builder has not created yet
+    // would claim the settings first and make its `withView` throw "Key User already added". Southwind's
+    // GlobalsClient sits after its auth clients for the same reason (it reads `getSettings(UserEntity)!`).
+    GlobalsClient.start(cb);
 
     // The "invite a user from the directory" UI (altea-auth's shared BaseAD half): an extra autocomplete
     // entry on any user picker and a button on the User search page. It gates itself on the
@@ -229,6 +233,12 @@ export function startFull(routes: RouteObject[]): void {
     // Office reports (altea-office-template): the template editor, the "create report" operation, the
     // contextual menu on a search's selected rows, the query-toolbar button and the entity-frame button.
     OfficeClient.start(cb, { contextual: true, queryButton: true, entityButton: true });
+
+    // Excel export / import (the Signum.Excel half of @altea/altea-office-template): the "Export to Excel"
+    // button on every SearchControl toolbar — and on the chart page — plus "Import from Excel" beside it,
+    // each gated by its own permission. Southwind also passes `excelReport: true`; that half is not ported
+    // (an .xlsx OfficeTemplate supersedes it — see ExcelClient's header).
+    ExcelClient.start(cb, { plainExcel: true, importFromExcel: true });
 
     // Alerts (@altea/altea-alert): the Alert view + its search settings (the Text column renders its
     // placeholders as links), the alert operations' buttons and the "alerts about this entity" quick link.

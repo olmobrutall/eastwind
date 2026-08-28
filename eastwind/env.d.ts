@@ -20,3 +20,13 @@ interface ImportMetaEnv {
 interface ImportMeta {
     readonly env: ImportMetaEnv;
 }
+
+interface Window {
+    /**
+     * Takes index.html's pre-React splash down (it is fixed, opaque and z-index 2000, so anything it is
+     * not removed for is invisible). Normally the splash's own MutationObserver does this the moment
+     * #root gets content; this is the hook MainPublic's `boot().catch` calls so a bootstrap that fails
+     * before rendering cannot leave a spinner running over its error.
+     */
+    __hideAppSplash?: () => void;
+}

@@ -148,6 +148,12 @@ function App({ router }: { router: Parameters<typeof RouterProvider>[0]["router"
     return <RouterProvider key={key} router={router} />;
 }
 
+/** The stashed router Location → a url string. Signum's `navigate` takes react-router's `To`, so it can be
+ *  handed the Location object directly; altea's takes a plain string. */
+function backUrl(loc: AppContext.RouterLocation | undefined): string | undefined {
+    return loc?.pathname == null ? undefined : loc.pathname + (loc.search ?? "") + (loc.hash ?? "");
+}
+
 async function boot(): Promise<void> {
     EntityOverrides.start();
 
@@ -169,7 +175,15 @@ async function boot(): Promise<void> {
     //              that does not exist until startFull has run.
     //   onLogout — navigate FIRST, then rebuild: leaving the admin route before its route object disappears
     //              avoids a NotFound flash on the way out. Southwind does the same.
-    AuthClient.Options.onLogin = (back?: string) => { void reload().then(() => AppContext.navigate(back || "/")); };
+    //
+    // `onLogin` has TWO places to look for where to go back to, and Southwind checks them in this order:
+    // the router STATE, which is what NotFound stashes when it bounces an anonymous deep link to the login
+    // page, and then the `?back=` query parameter the login page itself forwards. The state is read AFTER
+    // the reload (as Southwind does): the rebuild replaces the router, and the new one initialises its
+    // location from history — state included.
+    AuthClient.Options.onLogin = (back?: string) => {
+        void reload().then(() => AppContext.navigate(backUrl(AppContext.location().state?.back) ?? (back || "/")));
+    };
     AuthClient.Options.onLogout = async () => { AppContext.navigate("/"); await reload(); };
 
     // DEV-ONLY password-less login (not in Signum): with VITE_PASSWORD_IS_USERNAME=true the login form
@@ -199,6 +213,98 @@ async function boot(): Promise<void> {
 
 boot().catch(err => {
     console.error("[eastwind boot] failed:", err);
-    const el = document.getElementById("root");
-    if (el) el.textContent = "Boot failed: " + (err?.stack ?? err?.message ?? String(err));
+    showBootFailure(err);
 });
+
+// ---- The bootstrap's own failure screen ----------------------------------------------------------
+
+/**
+ * Everything above runs before React exists, so a throw in it has no ErrorBoundary and no ErrorModal to
+ * land in — the page would just keep showing index.html's splash. This is that screen: the FIRST error,
+ * rendered by hand.
+ *
+ * Two things it must do, both learned the hard way:
+ *  - render an ELEMENT and take the splash down explicitly. The splash is fixed, opaque and z-index 2000;
+ *    the old code assigned `root.textContent`, which the splash's observer did not count as content, so a
+ *    failing /api call at boot (an API that is not running answers the vite proxy's 500) showed a spinner
+ *    that never stopped, with the message invisible beneath it.
+ *  - carry its own inline styles and read the error WITHOUT assuming `Error`. altea's ajax layer throws a
+ *    `ServiceError`, which is a plain class: no `.message`, no `.stack`, and the useful parts —
+ *    exception type, server message, the url that failed — live on `httpError`.
+ */
+function showBootFailure(err: unknown): void {
+    const root = document.getElementById("root");
+    if (root == null)
+        return;
+
+    const e = err as {
+        message?: string; stack?: string; url?: string;
+        httpError?: { exceptionType?: string | null; exceptionMessage?: string | null; stackTrace?: string | null };
+    } | null | undefined;
+
+    const http = e?.httpError;
+    const title = http?.exceptionType ?? (err instanceof Error ? err.name : null) ?? "Error";
+    const message = http?.exceptionMessage ?? e?.message ?? String(err);
+    // A JS stack repeats "Name: message" on its first line, which the heading above already shows.
+    const rawDetail = http?.stackTrace ?? e?.stack ?? null;
+    const detail = rawDetail?.startsWith(title + ": " + message)
+        ? rawDetail.slice((title + ": " + message).length).trimStart()
+        : rawDetail;
+
+    root.textContent = "";
+
+    const panel = document.createElement("div");
+    panel.setAttribute("role", "alert");
+    panel.style.cssText = "max-width:60rem;margin:3rem auto;padding:1.5rem 1.75rem;border:1px solid #dc3545;"
+        + "border-radius:.5rem;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;line-height:1.5";
+
+    const heading = document.createElement("h1");
+    heading.textContent = "eastwind could not start";
+    heading.style.cssText = "font-size:1.25rem;margin:0 0 .75rem;color:#dc3545";
+    panel.appendChild(heading);
+
+    const first = document.createElement("p");
+    first.textContent = title + ": " + message;
+    first.style.cssText = "margin:0 0 .75rem;font-weight:600;white-space:pre-wrap";
+    panel.appendChild(first);
+
+    if (e?.url != null) {
+        const where = document.createElement("p");
+        where.textContent = "while calling " + e.url;
+        where.style.cssText = "margin:0 0 .75rem;opacity:.75;font-size:.875rem";
+        panel.appendChild(where);
+    }
+
+    // A request that never reached a server is the common case in development, and its message ("Internal
+    // Server Error", which is what the vite proxy answers for a refused connection) says nothing about why.
+    // The url is on the error for an ajax-layer throw and only inside the message for a hand-thrown one.
+    if (e?.url?.startsWith("/api") == true || message.includes("/api/")) {
+        const hint = document.createElement("p");
+        hint.textContent = "The API did not answer. Is it running? `pnpm --filter eastwind stack:postgres`"
+            + " starts the server and the client together.";
+        hint.style.cssText = "margin:0 0 .75rem;opacity:.75;font-size:.875rem";
+        panel.appendChild(hint);
+    }
+
+    if (detail != null) {
+        const pre = document.createElement("pre");
+        pre.textContent = detail;
+        pre.style.cssText = "margin:0;padding:.75rem;overflow:auto;max-height:20rem;font-size:.8125rem;"
+            + "background:rgba(127,127,127,.12);border-radius:.375rem";
+        panel.appendChild(pre);
+    }
+
+    const retry = document.createElement("button");
+    retry.type = "button";
+    retry.textContent = "Retry";
+    retry.style.cssText = "margin-top:1rem;padding:.375rem 1rem;border:1px solid currentColor;"
+        + "border-radius:.375rem;background:transparent;color:inherit;cursor:pointer";
+    retry.addEventListener("click", () => location.reload());
+    panel.appendChild(retry);
+
+    root.appendChild(panel);
+
+    // Belt and braces: appending the panel already trips the splash's observer, but a failure that
+    // happens with no #root content of its own must still uncover whatever there is.
+    window.__hideAppSplash?.();
+}

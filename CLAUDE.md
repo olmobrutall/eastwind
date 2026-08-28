@@ -1161,6 +1161,114 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   is a constructor here and `.toString()` is its source text, never the clean name `useEntityChanged`
   registered under (Signum's argument is a string, so its `.toString()` is right).
 
+- **Signum.Excel's CLIENT half → altea-office-template (its server half was already there).** The package
+  had shipped `PlainExcelLogic` / `ExcelImportLogic` and their three routes since the Word port, with
+  nothing calling them: `ExcelClient` / `ExcelMenu` / `ImportExcelProgressModal` /
+  `Templates/ImportExcelModel` are that missing caller, so "Export to Excel" and "Import from Excel" are on
+  the SearchControl toolbar (and the export on the chart page) as they are in Southwind. Divergences beyond
+  the ones `data/Excel.ts` already documents (ExcelReportEntity is not ported, so the menu is two fixed
+  items and collapses to a single BUTTON when only export is enabled — Signum's own branch):
+  - **there is no QueryDescription**, so the imported type comes off the query's ROOT token
+    (`Finder.getQueryRoot(...).type.typeInfos()`) where Signum reads `qd.columns["Entity"].type`, and the
+    collection token the validate route answers with is a STRING that `Finder.parseSingleToken` resolves.
+  - `token.fullKey` / `queryTokenType == "Element"` are METHODS here (`fullKey()` / `isElement()`), a
+    `getTypeInfo(t).operations` read becomes `Operations.operationInfos(ti)`, an enum FIELD holds its
+    ORDINAL so `mode` compares through `ImportExcelMode.*` rather than Signum's `"Insert"` literals, and
+    the per-row label is built OUTSIDE the JSX attribute (the transformer does not rewrite a lambda there).
+  It exposed a CORE gap that had nothing to do with Excel: **`/api/operation/stateCanExecutes` did not
+  exist**, so EVERY contextual right-click on a search whose type has a ConstructFromMany — or on a
+  multi-row selection — died with "Error in getOperationsContextualItems" and the whole Operations block
+  vanished. The route is now `OperationLogic.getContextualCanExecute`: the selection's distinct STATES read
+  in ONE `groupBy` over the operation's `getState` `Quoted`, checked against its `fromStates`, with no
+  entity retrieved. Divergences: the registry is keyed by symbol alone, so Signum's per-type
+  `FindOperation(type, key)` and its group-by-StateType collapse into a lookup; Signum also folds in
+  `CanExecuteExpression`, which altea has no counterpart for (`OperationMetadata.hasCanExecuteExpression`
+  is never set), so only the state check runs. `AnyReadonly` becomes the `OperationLogic.onAnyReadonly`
+  seam that altea-auth fills, set-based exactly as Signum's `CountReadonly` is: the Min/Max bounds first,
+  then ONE `SELECT COUNT(*) … WHERE id IN (…) AND NOT(<the role's condition algebra at WRITE level>)` —
+  `buildAuthFilter` already compiles that predicate for the row filter, and the count is assembled at
+  EXPRESSION level because it only exists at runtime while `Query.count` takes a build-time `Quoted`. A
+  role WITH conditions on a type is the normal case, not the exception, so a per-row evaluation there would
+  cost one retrieve per selected row on every right-click. The one thing Signum's
+  `TypeAuthLogic.DisableQueryFilter()` buys that altea cannot express is suppressing the READ filter for
+  that single query; it changes nothing for the caller, whose lites came from an already-read-filtered
+  search. Pinned by `altea-auth/test/server/contextualReadonly.test.ts`. The response field is named `isReadOnly`, which is what the CLIENT reads — Signum's
+  server writes `AnyReadonly`, so the flag never reached its menu at all. **The route carries the only
+  gate**: Signum's whole API is authorized globally by ASP.NET, so its `ParseOperationAssert` is about
+  which operation, not about whether one is logged in; here that assert IS what stops an anonymous caller
+  from reading any table's state distribution. Fixed alongside: `renderContextualItems` appended a block's
+  items only `if (block.header)`, so a header-less block silently contributed nothing.
+  And **`getEntityPack` was evaluating EVERY operation in the application against every entity** — ~180
+  `canExecute` entries per row for an Order, most of them another type's (`UserOperation.Deactivate`,
+  `PrintLineOperation.Print`, …), each one's throw swallowed by a bare `catch`. Its header said altea had no
+  server-side per-type registry, which stopped being true when `OperationLogic.operationsForType` landed. It
+  is now Signum's `ServiceCanExecute` filter for filter: the operations of the entity's own type (plus every
+  one registered on a base it inherits from — the prototype walk is the counterpart of Signum's polymorphic
+  (type, symbol) registry), `canBeNew || !isNew`, then the UI authorization. 6 entries for an Order, 2 for a
+  Product. A throw from a canExecute body now PROPAGATES, named (Signum rethrows with `e.Data["entity"]`);
+  swallowing only made sense while the loop was deliberately running operations that did not apply. Signum's
+  `CreateMultiCanExecuteState` scratchpad is not ported — nothing in altea writes to it.
+
+- **A download's file name is written in BOTH `Content-Disposition` forms, from one helper.** ASP.NET's
+  `File(bytes, contentType, fileName)` emits `filename="…"; filename*=UTF-8''…` and Signum's
+  `Services.getFileName` reads the `filename*=` one first, so its ASCII branch — `.replace("\"", "")`,
+  which drops only the FIRST quote because a string pattern is not global — is dead code there. altea's
+  routes wrote only the quoted form, so that branch ran and left a trailing `"` on every download name;
+  a browser sanitises one to `_`, which is why an Excel export saved as `Product….xlsx_` with a
+  "XLSX_ File (*.xlsx_)" type. The fix is on the WRITING side, so the reader stays Signum's verbatim:
+  `attachmentDisposition(fileName)` (`altea/server/webApi`) writes the ASP.NET pair — the legacy quoted
+  form with `"` / `\` replaced, plus the RFC 5987 `filename*=UTF-8''` one — and every route that serves a
+  file goes through it, so the `filename*=` branch always wins and the buggy ASCII one is unreachable here
+  too. It also fixes a second latent bug at the four call sites that were
+  percent-encoding INTO the plain `filename=`: a non-ASCII name arrived as literal escapes
+  (`Pedido%20a%C3%B1o.xlsx`). @altea/altea-mailing-microsoft-graph's attachment route was the only one
+  already writing the pair by hand — it is now the helper's caller like the rest.
+
+- **The MULTI-SETTER ("bulk modifications") is ported on both sides, and its property paths never cross an
+  entity reference.** Signum's 561-line `MultiPropertySetter.tsx` had been left a STUB whose `show()`
+  resolved to no setters — so a contextual operation labelled "(Multi setter)" ran with no dialog — and its
+  server counterpart (`OperationController`'s `MultiSetter.SetSetters`) was not ported at all. Both exist
+  now: `altea/client/Operations/MultiPropertySetter.tsx` (the dialog) and `altea/server/multiSetter.ts`
+  (which the three `*Multiple` routes call on each freshly retrieved entity, in that lite's own
+  transaction, before the operation runs). Divergences:
+  - **a setter's `property` is an EMBEDDED-only path.** altea's `PropertyRoute.add` RE-ROOTS at a
+    referenced concrete type (Signum's AddImp), so `"supplier.companyName"` is not a representable route
+    string — the prefix is lost. The selector therefore stops at every entity reference and the server
+    REFUSES such a path rather than guessing. Nothing is given up: a reference is edited through
+    `ModifyEntity` / `CreateNewEntity`, whose nested setters are rooted at the referenced type — the same
+    mechanism a collection already uses. Signum's own `PropertyPart` meant to allow the in-path form for a
+    Part and got the condition wrong (`ti.entityKind == "Part" || ti?.entityKind != "SharedPart"`, true for
+    both branches it meant to admit), so a Part could not be drilled into there either.
+  - **MList is gone**, so a collection's element is a `@part` row ENTITY: Signum's
+    `isCollection && (isEmbedded || isPart(name))` collapses to "the element is a part entity", and the
+    nested block is rooted with `PropertyRoute.root(elementCtor)`. `RemoveElementsWhere` / `RemoveElement`
+    splice IN PLACE, so the saver's snapshot diff sees the removal exactly as for a UI edit.
+  - **the predicate is EVALUATED, not compiled.** Signum reuses
+    `QueryUtils.GetCompareExpression(..., inMemory: true)`; altea's filters only ever lower to SQL, so
+    `compareInMemory` implements the operations `FindOptions.filterOperations` offers per FilterType and
+    REFUSES the full-text / Complex / Smart ones rather than approximating them.
+  - **a value is coerced against the target route**, the way `queryServer`'s `deserializeFilterValue`
+    coerces a filter value: the setter list is not an entity graph, so the request deserializer revives only
+    what carries a discriminator (a Lite / entity / embedded) and a date, a decimal and an enum arrive as
+    their wire scalar. (An enum value posted by the dialog is the ORDINAL, because the line binds a plain
+    object property rather than a reflected field; a member NAME is accepted too.)
+  - **`AssertCanWrite` becomes `propertyWriteAccess`** (`data/serializer`, new beside
+    `serializationAuthMetadata`): the same gate the codec applies, asked directly because these writes
+    bypass the codec, and it THROWS where the codec silently keeps the original — "changed 500 rows" must
+    not be a lie.
+  - **a missing embedded along a path is CREATED.** Signum initializes a non-nullable embedded in the field
+    declaration so its walk never meets a null; altea deliberately declares no such initializers, so
+    "set `shipAddress.city`" would otherwise fail for exactly the rows whose address is unset.
+  - **`id` / `ticks` are not offered.** Signum lists them (its `TypeInfo.members` carries both and its
+    selector filters nothing), but setting either in bulk is never meaningful — `id` would repoint the row
+    and `ticks` is the concurrency stamp, the same two the serializer excludes. `@backReference` /
+    `@rowOrder` / `@serialize(false)` members are dropped for the same reason.
+  It also filled a route GAP: **`/api/operation/constructFromMultiple` did not exist.**
+  `Operations.API.constructFromMultiple` is what a contextual ConstructFrom over a MULTI-row selection
+  posts to (as opposed to `constructFromMany`, one entity out of the whole selection), and it had always
+  been called — so every such menu entry 404'd. And `PropertyOperationEnum` is now `registerEnum`'d, so
+  `Enum.niceName` finds the translated member names the shipped XMLs already carried.
+
 ## How to build
 
 Types are compiled with **`tspc`** (ts-patch, for the quote-transformer), project-references style:
