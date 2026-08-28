@@ -1,41 +1,147 @@
-/* App-shell styles ported from Southwind's `site.css` — only the rules the two ported PUBLIC pages need:
-   the full-bleed hero (Home + publicApi/PublicCatalog) and the two white headings on top of it. The rest of
-   Southwind's file styles a layout eastwind does not have (#site-content / #main-container). */
+/* App-shell styles ported from Southwind's `site.css`: the full-viewport shell (its #site-content /
+   #main-container, under eastwind's own name), the full-bleed hero the two PUBLIC pages render into
+   (Home + publicApi/PublicCatalog) and the two white headings on top of it. */
 
+/* THE SHELL OWNS THE VIEWPORT HEIGHT — Southwind's #site-content + #main-container, which are
+   `height: 100%` + `flex-grow: 1; display: flex`. Two things follow, and both are the point:
+    - the shell always reaches the bottom of the window, so a short page still paints its background
+      (and #hero's `flexGrow: 1` has a definite height to grow into) instead of stopping mid-window;
+    - the DOCUMENT never scrolls. The two panes inside do, independently: the sidebar through
+      `.sidebar-inner`'s own overflow (Sidebar.css) and the page through <main>'s `overflow-auto`
+      (Layout.tsx) — so scrolling a long search page leaves the toolbar where it is, and a long toolbar
+      does not push the page down.
+   `dvh` rather than Southwind's `height: 100%`: it needs no `height: 100%` on html/body, and on mobile
+   it tracks the browser chrome collapsing, which `vh` does not. */
+.sf-app-shell {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Signum caps `.sidebar-container` at `max-height: 100vh` (Sidebar.css) because in Southwind the navbar
+   lives INSIDE that container. eastwind's navbar sits ABOVE it, so 100vh double-counts the navbar and
+   pushes the shell exactly its height past the bottom of the window — which is what made the page scroll
+   as a whole. The shell above already hands down a definite height, so: take what is left of it, and allow
+   shrinking below the content height (`min-height: 0`, which a flex item does NOT do by default) so the
+   overflow lands on the two panes inside instead of bursting out of the container. */
+.sf-app-shell > .sidebar-container {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+}
+
+/* Sidebar.css sizes `.navbar-brand` for SIGNUM's shell, where the brand is rendered INSIDE the sidebar
+   column: `width: 251px; margin: -5px` lines it up with the 250px sidebar. eastwind renders the brand in
+   the navbar, immediately after the sidebar toggle, so both parts of that rule misfire — the negative
+   margin pulls the wordmark left ONTO the toggle's chevron (the icon ended at x=43.0 and the "e" began at
+   43.2, so they touched), and the 251px turns a one-word link into a quarter-screen hit area that pushes
+   the omnibox away. Reset both, and keep a real gap from the toggle instead. */
+.sf-app-shell .navbar-brand {
+    width: auto;
+    margin: 0 0 0 0.5rem;
+}
+
+/* THE NAVBAR'S LEADING BLOCK IS AS WIDE AS THE SIDEBAR BELOW IT — the sidebar toggle and the wordmark
+   stand over the sidebar column, and the omnibox starts where the PAGE content starts, at the sidebar's
+   right edge. It follows the sidebar through every mode change and through a resize drag, so the two
+   edges never come apart.
+
+   Why a data attribute rather than measuring the sidebar: the widths are the sidebar's own declared ones
+   (Sidebar.css), the mode is React state the shell already has, and a declared width transitions on the
+   same curve as the sidebar (200ms linear) instead of chasing it a frame behind, as a ResizeObserver
+   would. The wide one is --sidebar-width, the variable SidebarContainer's drag handle writes, so the
+   block tracks a resize live.
+
+   Only from 768px up, which is where Sidebar.css turns .sidebar-container into a ROW: below that the
+   sidebar is an absolutely positioned overlay (or full width), so there is no edge to line up with. */
+.sf-app-shell .sf-navbar-lead {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    /* The left inset the navbar used to carry as px-3. Owning it here is what lets the block start at the
+       viewport edge as the sidebar does; border-box, so it counts INSIDE the sidebar's width. */
+    box-sizing: border-box;
+    padding-left: 1rem;
+}
+
+@media (min-width: 768px) {
+    .sf-app-shell[data-sidebar="wide"] .sf-navbar-lead,
+    .sf-app-shell[data-sidebar="narrow"] .sf-navbar-lead {
+        overflow: hidden;
+        transition: width 200ms linear; /* the sidebar's own transition (Sidebar.css) */
+    }
+
+    .sf-app-shell[data-sidebar="wide"] .sf-navbar-lead {
+        width: var(--sidebar-width); /* == .sidebar.sidebar-nav.wide:not(.mobile) */
+    }
+
+    .sf-app-shell[data-sidebar="narrow"] .sf-navbar-lead {
+        width: 56px; /* == .sidebar.sidebar-nav.narrow:not(.mobile) */
+        /* No inset: the toggle's own padding centres it in the rail, as the sidebar centres its icons. */
+        padding-left: 0;
+    }
+
+    /* A 56px rail has no room for a wordmark, and the sidebar under it is showing icons only — so the
+       toggle IS the rail. The wordmark comes back with the sidebar. */
+    .sf-app-shell[data-sidebar="narrow"] .sf-navbar-lead .navbar-brand {
+        display: none;
+    }
+
+    /* The drag handle rewrites --sidebar-width on every mousemove, and Sidebar.css drops the sidebar's own
+       transition while that happens for the same reason: with one, this block would trail the edge it is
+       tracking. */
+    body.sidebar-resizing .sf-app-shell .sf-navbar-lead {
+        transition: none;
+    }
+}
+
+/* Full-bleed: cancel the spacing of the shell #hero lives inside, which is Layout's
+   `<main id="sf-main-content" className="container-fluid overflow-auto pt-3">`.
+
+   DIVERGENCE from Southwind's numbers (width: calc(100% + 30px); margin: -8px -12px -18px), which are
+   tuned to ITS shell — `<main className="container-fluid overflow-auto pt-2">`. Two things differ:
+    - the top spacing is `pt-3`'s 1rem, not `pt-2`'s 8px, so Southwind's -8px left half of it uncovered
+      and `.sf-page-container`'s #f8f9fa showed as a strip under the navbar;
+    - the -18px/-12px are asymmetric, so against a 12px gutter the hero hung 6px off the left edge
+      (clipped, cropping the background image) while sitting flush on the right.
+   So the bleed is derived from what it actually has to cancel instead: bootstrap's own gutter variable,
+   and `pt-3`'s 1rem. Width is left AUTO — a block in flow resolves it to the container's width plus
+   whatever the negative side margins reclaim, which is exactly the full bleed `calc(100% + 30px)` was
+   approximating. */
 #hero {
-    width: calc(100% + 30px);
     position: relative;
-    margin-top: -8px;
-    margin-left: -18px;
-    margin-right: -12px;
+    margin-top: -1rem; /* == the shell's pt-3 */
+    margin-left: calc(var(--bs-gutter-x, 1.5rem) * -0.5);
+    margin-right: calc(var(--bs-gutter-x, 1.5rem) * -0.5);
     flex-grow: 1;
 }
 
-#hero .hero-container {
-    position: absolute;
-    bottom: 0;
-    top: 0;
-    left: 0;
-    right: 0;
+/* #hero is the flex COLUMN the page content centres in (its `flexGrow: 1` fills <main>, which
+   Frames.css makes a flex column). Only .hero-container is centred, not every child, so
+   publicApi/PublicCatalog's own full-width card list still stretches. */
+#hero {
     display: flex;
+    flex-direction: column;
+}
+
+/* CENTRED BY `margin: auto`, which is the whole divergence from Southwind here. Signum absolutely
+   positions this box over the hero and then, below 576px wide or 800px tall, switches it back to
+   `position: static; margin-top: 20px` — because a box taller than the hero would otherwise have its
+   top clipped, unreachably. Two consequences it accepts: at any ordinary window height (720, 800) the
+   fallback is what runs, so the content is NOT centred but top-aligned; and while absolute, the box is
+   out of flow, so it cannot make the hero any taller.
+   Auto margins on a flex item do both jobs in one rule: they absorb the free space (centring on both
+   axes) and resolve to 0 when there is none, so a tall card simply flows from the top and scrolls with
+   <main>. Hence no media queries, and the box stays IN flow. */
+#hero .hero-container {
+    margin: auto;
+    padding: 1.5rem 0; /* the breathing room the removed `margin-top: 20px` fallback gave */
+    display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    flex-direction: column;
     text-align: center;
-}
-
-@media (max-width: 575.98px) {
-    #hero .hero-container {
-        position: static;
-        margin-top: 20px;
-    }
-}
-
-@media (max-height: 800px) {
-    #hero .hero-container {
-        position: static;
-        margin-top: 20px;
-    }
 }
 
 h1.white {
