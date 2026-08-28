@@ -774,9 +774,6 @@ importers:
       '@altea/altea-files':
         specifier: workspace:*
         version: link:../altea-files
-      '@altea/altea-omnibox':
-        specifier: workspace:*
-        version: link:../altea-omnibox
       '@altea/altea-processes':
         specifier: workspace:*
         version: link:../altea-processes
@@ -954,9 +951,6 @@ importers:
       '@altea/altea-office-template':
         specifier: workspace:*
         version: link:../altea-office-template
-      '@altea/altea-omnibox':
-        specifier: workspace:*
-        version: link:../altea-omnibox
       quote-transformer:
         specifier: workspace:*
         version: link:../quote-transformer
@@ -1059,9 +1053,6 @@ importers:
       '@altea/altea-eval':
         specifier: workspace:*
         version: link:../altea-eval
-      '@altea/altea-omnibox':
-        specifier: workspace:*
-        version: link:../altea-omnibox
       '@altea/altea-processes':
         specifier: workspace:*
         version: link:../altea-processes
