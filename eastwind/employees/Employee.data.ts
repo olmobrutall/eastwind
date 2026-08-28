@@ -1,6 +1,7 @@
 import { reflect, init } from "@altea/altea/data/reflection";
 import { Entity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
+import { CurrentUser } from "@altea/altea/data/security";
 import { entity, quoted, backReference, valueField, fullTextIndex, vectorIndex, column } from "@altea/altea/data/decorators";
 import { customValidators } from "@altea/altea/data/validators";
 import { Temporal, type int, toInt } from "@altea/altea/data/basics";
@@ -10,7 +11,7 @@ import { FileEmbedded } from "@altea/altea-files/data/Files";
 import { AddressEmbedded } from "../customers/Customer.data";
 
 // Port of Southwind's Employees domain (Southwind/Employees/*.cs). Extension-free: EmployeeEntity's
-// Photo (Signum.Files), the EmployeeLiteModel and Employee.Current (auth) are omitted; PhotoPath is
+// Photo (Signum.Files) and the EmployeeLiteModel are omitted; PhotoPath is
 // kept as a plain string. Territories is an MList<TerritoryEntity> → the owned junction part entity
 // EmployeeEntity_Territory (altea models every MList as a part entity, like music's BandEntity_Member).
 
@@ -70,6 +71,19 @@ export class EmployeeEntity extends Entity {
     territories: EmployeeEntity_Territory[];
 
     @quoted toString(): string { return `${this.firstName} ${this.lastName}`; }
+
+    /**
+     * Southwind's `EmployeeEntity.Current` — the employee behind the current login, off the "Employee"
+     * claim the UserEmployeeMixin fills (eastwind's entityOverrides). Null for a user with no employee
+     * linked (System, Anonymous) and outside any login.
+     *
+     * Southwind's is server-only; this answers on BOTH TIERS, because the claim is filled on both and the
+     * ambient user is an injected provider (`CurrentUser`, altea's data/security): the server resolves it
+     * from the request scope, the client from the logged-in user.
+     */
+    static current(): Lite<EmployeeEntity> | null {
+        return CurrentUser.claim<Lite<EmployeeEntity>>("Employee");
+    }
 }
 
 // Junction rows for EmployeeEntity.territories (Signum's MList<TerritoryEntity>).

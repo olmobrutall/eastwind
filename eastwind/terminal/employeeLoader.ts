@@ -11,6 +11,7 @@ import { RegionEntity, TerritoryEntity, EmployeeEntity, EmployeeEntity_Territory
 import { AddressEmbedded } from "../customers/Customer.data";
 import { RoleEntity } from "@altea/altea-auth/data/Role";
 import { UserEntity, UserState } from "@altea/altea-auth/data/User";
+import { UserEmployeeMixin } from "../globals/UserEmployeeMixin.data";
 import { Northwind, NwRegion, NwTerritory, NwEmployee, NwEmployeeTerritory } from "./northwindSchema";
 import { NorthwindImages } from "./northwindImages";
 import { terminalFile } from "./terminalFile";
@@ -146,28 +147,45 @@ export namespace EmployeeLoader {
 
     // Port of Southwind's EmployeeLoader.CreateUsers: one user per employee (UserName = FirstName,
     // password = FirstName), role by index over employees ordered by Notes length descending —
-    // `i < 2 ? "Super user" : i < 5 ? "Advanced user" : "Standard user"`. Run AFTER loadEmployees and
-    // after the roles exist (EastwindMigrations.createRoles). altea divergence: no UserEmployeeMixin, so
-    // the user isn't linked back to its employee. Idempotent (skips an existing username).
+    // `i < 2 ? "Super user" : i < 5 ? "Advanced user" : "Standard user"`, each linked back to its employee
+    // through the UserEmployeeMixin (Southwind's `.SetMixin((UserEmployeeMixin e) => e.Employee,
+    // employee.ToLite())`). Run AFTER loadEmployees and after the roles exist
+    // (EastwindMigrations.createRoles). Idempotent: an existing username is left alone, except that a
+    // user with no employee linked yet gets one (a database seeded before the mixin existed).
     export async function createUsers(): Promise<void> {
         const roles = new Map((await table(RoleEntity).toArray() as RoleEntity[]).map(r => [r.name, r]));
-        const existing = new Set((await table(UserEntity).toArray() as UserEntity[]).map(u => u.userName));
+        const existing = new Map((await table(UserEntity).toArray() as UserEntity[]).map(u => [u.userName, u]));
         const employees = (await table(EmployeeEntity).toArray() as EmployeeEntity[])
             .sort((a, b) => (b.notes?.length ?? 0) - (a.notes?.length ?? 0));
 
         for (let i = 0; i < employees.length; i++) {
             const userName = employees[i].firstName;
-            if (existing.has(userName))
+            const employee = employees[i].toLite();
+
+            // A user created before the mixin existed has no employee linked, and without one nothing it
+            // creates can be stamped — so an existing row is TOPPED UP rather than skipped.
+            const already = existing.get(userName);
+            if (already != null) {
+                if (already.mixin(UserEmployeeMixin).employee == null) {
+                    already.mixin(UserEmployeeMixin).employee = employee;
+                    await already.save();
+                }
                 continue;
+            }
+
             const role = roles.get(i < 2 ? "Super user" : i < 5 ? "Advanced user" : "Standard user");
             if (role == null)
                 continue;
-            await UserEntity.create({
+            const user = UserEntity.create({
                 userName,
                 role: role.toLite(),
                 state: UserState.Active,
                 passwordHash: PasswordEncoding.hashPassword(userName, userName),
-            }).save();
+            });
+            // altea inlines a mixin's fields onto the owner, so Signum's SetMixin is a plain assignment
+            // through the typed `mixin()` cast.
+            user.mixin(UserEmployeeMixin).employee = employee;
+            await user.save();
         }
     }
 }

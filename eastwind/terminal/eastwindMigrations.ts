@@ -77,6 +77,11 @@ export namespace EastwindMigrations {
         runner.add("LoadShippers", () => OrderLoader.loadShippers());
         runner.add("LoadOrders", () => OrderLoader.loadOrders());
         runner.add("CreateUsers", () => EmployeeLoader.createUsers());
+        // altea addition — no Southwind counterpart: its CreateUsers has always set the UserEmployeeMixin,
+        // while eastwind's did not exist until the mixin was ported. Re-running the same idempotent step
+        // under a new name links the users a database seeded before then already has; on a fresh database
+        // CreateUsers has just done it and this is a no-op.
+        runner.add("LinkUsersToEmployees", () => EmployeeLoader.createUsers());
         runner.add("LoadEmployeePassages", () => EmployeeLoader.loadEmployeePassages());
         runner.add("LoadDepartments", () => DepartmentLoader.loadDepartments());
         runner.add("ImportUserAssets", () => importUserAssets());

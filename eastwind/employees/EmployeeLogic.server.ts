@@ -6,6 +6,10 @@ import { RegionEntity, TerritoryEntity, EmployeeEntity, EmployeePassageEntity, R
 
 // Port of Southwind's EmployeesLogic.Start. The EmployeeEntity_Territory junction (the territories
 // MList) is pulled into the schema transitively via EmployeeEntity.territories.
+//
+// altea divergence: Southwind's `UserWithClaims.FillClaims += … Claims["Employee"] = …` is NOT here. altea
+// builds a UserWithClaims on both tiers, so the filler is declared once in the app's entityOverrides (the
+// data layer) and `EmployeeEntity.current()` reads it on either side.
 export namespace EmployeesLogic {
     export function start(sb: SchemaBuilder): void {
         sb.include(RegionEntity)

@@ -9,8 +9,8 @@
 // exist before the metadata response can even be parsed. Living here (the shared entities layer) means
 // the server Starter and the client bootstrap run the exact same declarations.
 //
-// Empty today: eastwind registers no mixins, every lite model is the default, and implementedBy is
-// declared inline via @implementedBy on OrderEntity.customer. As those needs arise, register them here.
+// Today: four mixins (three of them a module's, plus the app's own UserEmployeeMixin), every lite model
+// is the default, and implementedBy is declared inline via @implementedBy on OrderEntity.customer.
 import { overrideImplementedBy } from "@altea/altea/data/decorators";
 import type { Entity, Type } from "@altea/altea/data/entity";
 import { ExceptionEntity } from "@altea/altea/data/exception";
@@ -18,6 +18,8 @@ import { RestLogEntity } from "@altea/altea-rest/data/Rest";
 import { ViewLogEntity } from "@altea/altea-view-log/data/ViewLog";
 import { OperationLogEntity } from "@altea/altea/data/operationLog";
 import { UserEntity } from "@altea/altea-auth/data/User";
+import { MixinDeclarations } from "@altea/altea/data/mixinDeclarations";
+import { UserWithClaims } from "@altea/altea/data/security";
 import { SimpleTaskSymbol } from "@altea/altea-scheduler/data/Scheduler";
 import { SendNotificationEmailTaskEntity } from "@altea/altea-alert/data/Alert";
 import {
@@ -50,6 +52,7 @@ import {
 import { DiffLogMixin } from "@altea/altea-diff-log/data/DiffLog";
 import { CaseActivityMixin } from "@altea/altea-workflow/data/CaseActivity";
 import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
+import { UserEmployeeMixin } from "./globals/UserEmployeeMixin.data";
 
 export namespace EntityOverrides {
     export function start(): void {
@@ -72,6 +75,20 @@ export namespace EntityOverrides {
         // SERVER also asks for the stamping (`sb.include(EmailMessageEntity).withCaseActivityMixin()` in
         // eastwindWorkflow.server.ts), which is the half that fills it.
         CaseActivityMixin.declareOn(EmailMessageEntity);
+
+        // The employee behind a login — Southwind writes exactly this in its Starter.cs. Declaring it adds
+        // `employee_id` to the User table, so it belongs here: both tiers, before any (de)serialization.
+        MixinDeclarations.register(UserEntity, UserEmployeeMixin as unknown as Type<UserEmployeeMixin>);
+
+        // …and the CLAIM that goes with it (Southwind fills it in EmployeesLogic, i.e. server-only). Here it
+        // is one data-layer filler for both tiers — the server runs it when a request's user is resolved,
+        // the client when someone logs in — which is what makes `EmployeeEntity.current()` a single accessor
+        // instead of a server one and a client one. It rides in the auth token from there (AuthTokenServer).
+        // NOTE the client's copy is only as good as what the user entity carries: a role that may not READ
+        // `employee` gets null there, while the server (which fills the claim from the row) still sees it.
+        UserWithClaims.fillClaims.push((uwc, user) => {
+            uwc.claims["Employee"] = (user as UserEntity).mixin(UserEmployeeMixin).employee ?? null;
+        });
 
         // MixinDeclarations.register(EmployeeEntity, ColaboratorsMixin);
         // registerCustomLite(EmployeeEntity, EmployeeLite, e => EmployeeLite.create({ ... }), /*isDefault*/ true);

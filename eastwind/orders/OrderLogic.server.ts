@@ -89,21 +89,13 @@ export namespace OrdersLogic {
 // ---- The order state machine — port of Southwind's OrdersLogic.OrderGraph ----------
 // `new Execute(sym){ … }.Register()` → `g.Execute(sym, { … })`; `GetState = o => o.State`
 // → `g.GetState = o => o.state`. Adapted stand-ins: Clock.Today → today();
-// EmployeeEntity.Current → currentEmployee(); `args.TryGetArgC/S<T>()` → `args[i] as T`;
+// `args.TryGetArgC/S<T>()` → `args[i] as T`; `EmployeeEntity.Current!` is kept verbatim (the non-null
+// assertion is Southwind's: a user with no employee linked gets an order with an empty Employee line, which
+// the implicit NotNull validator reports on save — better than a construct that refuses to open the form);
 // DB reads are async. CancelWithProcess is omitted (Processes not ported).
 
 function today(): Temporal.PlainDate {
     return Temporal.Now.plainDateISO();
-}
-
-let _currentEmployee: Lite<EmployeeEntity> | null = null;
-export function setCurrentEmployee(employee: Lite<EmployeeEntity> | null): void {
-    _currentEmployee = employee;
-}
-function currentEmployee(): Lite<EmployeeEntity> {
-    if (_currentEmployee == null)
-        throw new Error("No current employee set (Signum's EmployeeEntity.Current).");
-    return _currentEmployee;
 }
 
 async function currentPrices(products: Lite<ProductEntity>[]): Promise<Map<PrimaryKey, Decimal>> {
@@ -121,7 +113,7 @@ function registerOrderOperations(sm: FluentStateMachine<OrderEntity, OrderState>
                 customer: customer!,
                 shipAddress: customer?.address.clone()!,
                 state: OrderState.New,
-                employee: currentEmployee(),
+                employee: EmployeeEntity.current()!,
                 requiredDate: today().add({ days: 3 }),
             });
         },
@@ -132,7 +124,7 @@ function registerOrderOperations(sm: FluentStateMachine<OrderEntity, OrderState>
         construct: c => OrderEntity.create({
             state: OrderState.New,
             customer: c,
-            employee: currentEmployee(),
+            employee: EmployeeEntity.current()!,
             shipAddress: c.address.clone(),
             requiredDate: today().add({ days: 3 }),
         }),
@@ -147,7 +139,7 @@ function registerOrderOperations(sm: FluentStateMachine<OrderEntity, OrderState>
             const order = OrderEntity.create({
                 state: OrderState.Ordered,
                 customer: o.customer,
-                employee: currentEmployee(),
+                employee: EmployeeEntity.current()!,
                 shipAddress: o.shipAddress.clone(),
                 requiredDate: today().add({ days: 3 }),
                 orderDate: today(),
@@ -172,7 +164,7 @@ function registerOrderOperations(sm: FluentStateMachine<OrderEntity, OrderState>
                 customer: customer!,
                 shipAddress: customer?.address.clone()!,
                 state: OrderState.New,
-                employee: currentEmployee(),
+                employee: EmployeeEntity.current()!,
                 requiredDate: today().add({ days: 3 }),
                 details: prods.map(p => OrderLineEntity.create({
                     product: p,

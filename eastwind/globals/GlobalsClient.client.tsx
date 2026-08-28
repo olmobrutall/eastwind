@@ -1,9 +1,13 @@
+import * as React from "react";
 import { ClientBuilder } from "@altea/altea/client/ClientBuilder";
+import { Navigator } from "@altea/altea/client/Navigator";
+import { EntityLine } from "@altea/altea/client/Lines/EntityLine";
+import { UserEntity } from "@altea/altea-auth/data/User";
 import { ApplicationConfigurationEntity } from "./ApplicationConfiguration.data";
+import { UserEmployeeMixin } from "./UserEmployeeMixin.data";
 
-// Port of Southwind's `Globals/GlobalsClient.tsx`: the ApplicationConfiguration view + its search settings.
-// (Southwind's other job there — adding the UserEmployeeMixin line to the User view — is done in eastwind by
-// the app's entityOverrides + CustomerClient, so it is not repeated here.)
+// Port of Southwind's `Globals/GlobalsClient.tsx`: the ApplicationConfiguration view + its search settings,
+// and the UserEmployeeMixin line added to the User view right after its Role line.
 //
 // There is no menu entry, as in Southwind: the row is reached through the omnibox / `/find/ApplicationConfiguration`,
 // and only a role with Read on the type sees it at all.
@@ -22,5 +26,15 @@ export namespace GlobalsClient {
                     token(a => a.email.urlLeft),
                 ],
             }));
+
+        // Southwind's `Navigator.getSettings(UserEntity)!.overrideView(rep => rep.insertAfterLine(u => u.role,
+        // …))`, verbatim. `getSettings(…)!` and not `getOrAddSettings`: this must run AFTER the settings
+        // exist (AuthAdminClient.start — see MainAdmin), and claiming them here instead would make that
+        // start throw "Key User already added". A missing view is a wiring bug, so it should be loud.
+        Navigator.getSettings(UserEntity)!.overrideView(rep => {
+            rep.insertAfterLine(u => u.role, ctx => [
+                <EntityLine ctx={ctx.subCtx(u => u.mixin(UserEmployeeMixin).employee)} />,
+            ]);
+        });
     }
 }
