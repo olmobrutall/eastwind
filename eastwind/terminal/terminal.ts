@@ -3,6 +3,7 @@ import * as path from "node:path";
 import * as url from "node:url";
 import chalk from "chalk";
 import { Connector } from "@altea/altea/server/connection/connector";
+import { formatError } from "@altea/altea/server/formatError";
 import { Schema } from "@altea/altea/server/schema";
 import { Replacements } from "@altea/altea/server/sync/synchronizer";
 import { openSqlFileRetry, syncFileName } from "@altea/altea/server/sync/openSqlFile";
@@ -94,12 +95,11 @@ main()
 // Errors that surface to main are printed in red with their type, message and stack trace so a failed
 // command stands out on the console. chalk handles the ANSI codes and auto-disables colour when the
 // output isn't a TTY (e.g. redirected to a file or a CI log), so redirected output stays clean.
+// formatError does the reading part (server/formatError): an AggregateError — what a dead database
+// throws — has an EMPTY message, so `name: message` alone printed "AggregateError: " and no reason.
 function formatErrorRed(err: unknown): string {
-    const e = err as Error | undefined;
-    const name = e?.name ?? "Error";
-    const message = e?.message ?? String(err);
-    const stack = e?.stack ?? "(no stack trace)";
-    return chalk.bold.redBright(`[FAILED] ${name}: ${message}`) + "\n" + chalk.red(stack);
+    const [head, ...rest] = formatError(err).split("\n");
+    return chalk.bold.redBright(`[FAILED] ${head}`) + (rest.length > 0 ? "\n" + chalk.red(rest.join("\n")) : "");
 }
 
 // The interactive main menu (Southwind.Terminal's `new ConsoleSwitch<…>{…}.Choose()` loop). Runs until

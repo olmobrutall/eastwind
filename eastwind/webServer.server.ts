@@ -1,6 +1,7 @@
 import "@altea/altea/server/context.node"; // register server context storage first
 import { createWebServer } from "@altea/altea/server/webApi";
 import { Connector, ConsoleSqlLogger } from "@altea/altea/server/connection/connector";
+import { formatError } from "@altea/altea/server/formatError";
 import { Starter } from "./starter.server";
 
 // eastwind web host (Southwind.Server/Program.cs). Creates the WebBuilder and hands it to Starter.start;
@@ -29,7 +30,15 @@ async function main(): Promise<void> {
     ws.attachWebSockets(server);
     // Without this, a failed bind (e.g. EADDRINUSE from an orphaned prior run) never refs the event loop,
     // so the process just drains and exits code 0 — a phantom "clean" exit that reads as success. Surface it.
-    server.on("error", err => { console.error(`[FAILED] ${err instanceof Error ? err.message : err}`); process.exit(1); });
+    server.on("error", err => fail(err));
 }
 
-main().catch(err => { console.error(`[FAILED] ${err?.message ?? err}`); process.exit(1); });
+// Both exits print through formatError, never `err.message`: the message of the error a dead database
+// produces is EMPTY (an AggregateError — see server/formatError), so this used to print `[FAILED]` and
+// nothing else, which said neither what failed nor where.
+function fail(err: unknown): never {
+    console.error(`[FAILED] ${formatError(err)}`);
+    process.exit(1);
+}
+
+main().catch(fail);
