@@ -3,14 +3,15 @@ import * as path from "node:path";
 import * as url from "node:url";
 import chalk from "chalk";
 import { Connector } from "@altea/altea/server/connection/connector";
-import { Transaction } from "@altea/altea/server/connection/transaction";
 import { Schema } from "@altea/altea/server/schema";
 import { Replacements } from "@altea/altea/server/sync/synchronizer";
+import { openSqlFileRetry, syncFileName } from "@altea/altea/server/sync/openSqlFile";
 import { StartParameters } from "@altea/altea/data/utils/startParameters";
 import { table } from "@altea/altea/server/table";
 import { Decimal } from "@altea/altea/data/basics";
 import { Starter } from "../starter.server";
 import { ConsoleSwitch } from "./consoleSwitch";
+import { terminalFile } from "./terminalFile";
 import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic.server";
 import { SqlMigrationRunner } from "@altea/altea-migrations/server/SqlMigrationRunner.server";
 import { Northwind } from "./northwindSchema";
@@ -196,6 +197,13 @@ async function migrations(args: string[]): Promise<void> {
     await SqlMigrationRunner.sqlMigrations(/* autoRun */ args.includes("--auto") || !process.stdin.isTTY);
 }
 
+// eastwind/terminal/sync — where `sync` drops the script it asks you to review. Beside the terminal's own
+// data files rather than in the cwd (Signum writes to the working directory, so the script lands wherever
+// the terminal happened to be launched from), and gitignored as a whole: a synchronization script is a
+// throwaway artefact of ONE database's drift, never source. A migration you mean to KEEP is a different
+// thing and goes to eastwind/Migrations through the `sql` command.
+const syncDirectory = terminalFile("sync");
+
 // eastwind/Migrations — resolved off this module so the cwd does not matter (dist/terminal → ../../Migrations).
 function migrationsDir(): string {
     return path.resolve(url.fileURLToPath(new URL(".", import.meta.url)), "../../Migrations");
@@ -228,13 +236,15 @@ async function synchronize(): Promise<void> {
         console.log("[sync] database already in sync");
         return;
     }
-    console.log("[sync] synchronization script:\n" + script.plainSql());
-    // Apply the whole script atomically: a mid-script failure (e.g. a PK-type migration that fails partway)
-    // rolls back so the database is never left half-migrated. Postgres runs DDL transactionally; on SQL
-    // Server most DDL is transactional too (a few statements auto-commit — acceptable for a dev sync).
-    await Transaction.create(async () => {
-        await script.executeNonQuery();
-    });
+    // Signum's Administrator.SynchronizeSchema: SAVE the script, print it and its path, then ask
+    // run / open / exit — never apply it unasked. Applying it is ONE transaction, so a mid-script failure
+    // (a PK-type migration that fails partway) rolls back rather than leaving the database half-migrated.
+    const { fileName, executed } = await openSqlFileRetry(script, syncDirectory, syncFileName(new Date()));
+    if (!executed) {
+        console.log("[sync] not applied — the script is in " + fileName);
+        return;
+    }
+
     // A sync may have inserted/renamed/removed types — refresh the caches from the DB (outside the txn, so
     // it reads the committed state).
     await Schema.current.initialize();

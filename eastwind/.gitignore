@@ -2,3 +2,7 @@
 .env
 .env.*
 !.env.example
+
+# Synchronization scripts written by `terminal sync` — a throwaway artefact of one
+# database's drift, reviewed then applied. A migration you KEEP goes to eastwind/Migrations.
+terminal/sync/
