@@ -31,11 +31,11 @@ export namespace EastwindAgent {
         const search = new SearchSkill();
         // The queries worth spelling out in the prompt rather than making the model go looking (Southwind
         // names Order / Customer / Product / Employee / Category). eastwind's customer query is the
-        // `CustomerRowModel` union over Person + Company — an unknown key here is silently skipped, so it
+        // `CustomerModel` union over Person + Company — an unknown key here is silently skipped, so it
         // has to be the real one.
         search.inlineQueryName = new Set([
             "Order",
-            "CustomerRowModel",
+            "CustomerModel",
             "Product",
             "Employee",
             "Category",

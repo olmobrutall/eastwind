@@ -7,12 +7,12 @@ import { QueryLogic } from "@altea/altea/server/dynamicQuery/queryLogic";
 import { ManualDynamicQueryCore } from "@altea/altea/server/dynamicQuery/dynamicQueryCore";
 import "@altea/altea/server/dynamicQuery/dQueryable"; // augments Query with .toDQueryable()
 import "@altea/altea/server/fluentOperations"; // FluentInclude.withSave / withDelete
-import { CustomerEntity, PersonEntity, CompanyEntity, CustomerRowModel, CustomerOperation } from "./Customer.data";
+import { CustomerEntity, PersonEntity, CompanyEntity, CustomerModel, CustomerOperation } from "./Customer.data";
 import { Graph } from "@altea/altea/server/graph";
 
 // Port of Southwind's CustomersLogic.Start (Southwind/Customers/CustomersLogic.cs). The highlight is
 // the MANUAL union query (Signum's DynamicQueryCore.Manual): a single "Customer" query whose rows are
-// Person + Company projected to a common shape (CustomerRowModel) and concatenated in memory.
+// Person + Company projected to a common shape (CustomerModel) and concatenated in memory.
 export namespace CustomersLogic {
     export function start(sb: SchemaBuilder): void {
         // The two concrete customer tables (each a plain WithQuery). CustomerEntity itself is abstract.
@@ -40,20 +40,20 @@ export namespace CustomersLogic {
 
         // Signum: `QueryLogic.Queries.Register(CustomerQuery.Customer, () => DynamicQueryCore.Manual(...))`.
         // altea registers a ManualDynamicQueryCore under the row-shape model (its query name). The
-        // executor projects each source to CustomerRowModel, runs the request's filters/orders against
+        // executor projects each source to CustomerModel, runs the request's filters/orders against
         // each (SQL-side), materialises them, concatenates, then orders + paginates in memory — exactly
         // Signum's `persons.Concat(companies).OrderBy(request.Orders).TryPaginate(request.Pagination)`.
-        QueryLogic.queries.register(CustomerRowModel, () => new ManualDynamicQueryCore(CustomerRowModel, async (request) => {
+        QueryLogic.queries.register(CustomerModel, () => new ManualDynamicQueryCore(CustomerModel, async (request) => {
             const columns = request.columns.map(c => c.token);
 
-            // One source → a DEnumerable of CustomerRowModel rows: run the request's operations
+            // One source → a DEnumerable of CustomerModel rows: run the request's operations
             // (filter/order/select) SQL-side but WITHOUT pagination (forConcat), since we paginate the
             // combined result. Signum's `.ToDQueryable(descriptions).AllQueryOperationsAsync(request,
             // token, forConcat: true)`.
-            const source = (query: Query<CustomerRowModel>) =>
+            const source = (query: Query<CustomerModel>) =>
                 query.toDQueryable().allQueryOperationsAsync(request, /* forConcat */ true);
 
-            const persons = await source(table(PersonEntity).map(p => CustomerRowModel.create({
+            const persons = await source(table(PersonEntity).map(p => CustomerModel.create({
                 entity: p.toLite(),
                 id: "P " + p.id,
                 name: p.firstName + " " + p.lastName,
@@ -62,7 +62,7 @@ export namespace CustomersLogic {
                 fax: p.fax,
             })));
 
-            const companies = await source(table(CompanyEntity).map(c => CustomerRowModel.create({
+            const companies = await source(table(CompanyEntity).map(c => CustomerModel.create({
                 entity: c.toLite(),
                 id: "C " + c.id,
                 name: c.companyName,

@@ -61,18 +61,18 @@
     <Member Name="Fax" Description="Fax" />
     <Member Name="Phone" Description="Teléfono" />
   </Type>
-  <Type Name="CustomerOperation">
-    <Member Name="Save" Description="Guardar" />
-  </Type>
-  <Type Name="CustomerQuery">
-    <Member Name="Customer" Description="Cliente" />
-  </Type>
-<Type Name="CustomerRowModel" Description="Cliente" PluralDescription="Clientes" Gender="m">
+  <Type Name="CustomerModel" Description="Cliente" PluralDescription="Clientes" Gender="m">
     <Member Name="Address" Description="Dirección" />
     <Member Name="Entity" Description="Cliente" />
     <Member Name="Fax" Description="Fax" />
     <Member Name="Name" Description="Nombre" />
     <Member Name="Phone" Description="Teléfono" />
+  </Type>
+  <Type Name="CustomerOperation">
+    <Member Name="Save" Description="Guardar" />
+  </Type>
+  <Type Name="CustomerQuery">
+    <Member Name="Customer" Description="Cliente" />
   </Type>
   <Type Name="EmployeeEntity" Description="Empleado">
     <Member Name="Address" Description="Dirección" />
