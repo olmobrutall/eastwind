@@ -14,7 +14,7 @@ import { CultureInfoLogic } from "@altea/altea/server/cultureInfoLogic";
 import { EmailConfigurationEmbedded } from "@altea/altea-email/data/Email";
 import {
     EmailSenderConfigurationEntity, SmtpEmailServiceEntity, SmtpNetworkDeliveryEmbedded,
-    SmtpDeliveryFormatEnum, SmtpDeliveryMethodEnum,
+    SmtpDeliveryFormat, SmtpDeliveryMethod,
 } from "@altea/altea-email/data/EmailSenderConfiguration";
 import { ChatbotConfigurationEmbedded } from "@altea/altea-agent/data/LanguageModel";
 import { WorkflowConfigurationEmbedded } from "@altea/altea-workflow/data/Workflow";
@@ -116,8 +116,8 @@ export namespace EastwindMigrations {
         const sender = EmailSenderConfigurationEntity.create({
             name: "localhost",
             service: SmtpEmailServiceEntity.create({
-                deliveryFormat: SmtpDeliveryFormatEnum.SevenBit,
-                deliveryMethod: SmtpDeliveryMethodEnum.Network,
+                deliveryFormat: SmtpDeliveryFormat.SevenBit,
+                deliveryMethod: SmtpDeliveryMethod.Network,
                 network: SmtpNetworkDeliveryEmbedded.create({ host: "localhost" }),
             }),
         });

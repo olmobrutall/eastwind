@@ -1,4 +1,4 @@
-import { SkillActivationEnum } from "@altea/altea-agent/data/SkillCustomization";
+import { SkillActivation } from "@altea/altea-agent/data/SkillCustomization";
 import type { SkillCode } from "@altea/altea-agent/server/SkillCode";
 import { IntroductionSkill } from "@altea/altea-agent/server/Skills/IntroductionSkill";
 import { AutocompleteSkill } from "@altea/altea-agent/server/Skills/AutocompleteSkill";
@@ -43,15 +43,15 @@ export namespace EastwindAgent {
         ]);
 
         return new IntroductionSkill()
-            .withSubSkill(SkillActivationEnum.Eager, new AutocompleteSkill())
-            .withSubSkill(SkillActivationEnum.Eager, search)
-            .withSubSkill(SkillActivationEnum.Eager, new RetrieveSkill())
-            .withSubSkill(SkillActivationEnum.Eager, new OperationSkill())
-            .withSubSkill(SkillActivationEnum.Eager, new CurrentServerContextSkill())
-            .withSubSkill(SkillActivationEnum.Eager, new EntityUrlSkill())
-            .withSubSkill(SkillActivationEnum.Eager, new GetUIContextSkill())
-            .withSubSkill(SkillActivationEnum.Eager, new ConfirmUISkill())
-            .withSubSkill(SkillActivationEnum.Lazy, new ChartSkill());
+            .withSubSkill(SkillActivation.Eager, new AutocompleteSkill())
+            .withSubSkill(SkillActivation.Eager, search)
+            .withSubSkill(SkillActivation.Eager, new RetrieveSkill())
+            .withSubSkill(SkillActivation.Eager, new OperationSkill())
+            .withSubSkill(SkillActivation.Eager, new CurrentServerContextSkill())
+            .withSubSkill(SkillActivation.Eager, new EntityUrlSkill())
+            .withSubSkill(SkillActivation.Eager, new GetUIContextSkill())
+            .withSubSkill(SkillActivation.Eager, new ConfirmUISkill())
+            .withSubSkill(SkillActivation.Lazy, new ChartSkill());
     }
 
     /**
@@ -60,13 +60,13 @@ export namespace EastwindAgent {
      */
     export function mcpSkill(): SkillCode {
         return new IntroductionSkill()
-            .withSubSkill(SkillActivationEnum.Lazy, new AutocompleteSkill())
-            .withSubSkill(SkillActivationEnum.Lazy, new SearchSkill())
-            .withSubSkill(SkillActivationEnum.Lazy, new RetrieveSkill())
-            .withSubSkill(SkillActivationEnum.Lazy, new OperationSkill())
-            .withSubSkill(SkillActivationEnum.Lazy, new CurrentServerContextSkill())
-            .withSubSkill(SkillActivationEnum.Lazy, new EntityUrlSkill())
-            .withSubSkill(SkillActivationEnum.Lazy, new ChartSkill());
+            .withSubSkill(SkillActivation.Lazy, new AutocompleteSkill())
+            .withSubSkill(SkillActivation.Lazy, new SearchSkill())
+            .withSubSkill(SkillActivation.Lazy, new RetrieveSkill())
+            .withSubSkill(SkillActivation.Lazy, new OperationSkill())
+            .withSubSkill(SkillActivation.Lazy, new CurrentServerContextSkill())
+            .withSubSkill(SkillActivation.Lazy, new EntityUrlSkill())
+            .withSubSkill(SkillActivation.Lazy, new ChartSkill());
     }
 
 }
