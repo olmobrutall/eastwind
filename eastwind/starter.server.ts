@@ -128,6 +128,13 @@ export namespace Starter {
         Connector.default = connector;
         sb.settings.isPostgres = connector.isPostgres;
 
+        // Point eastwind at a database a SIGNUM application generated — a Southwind — and name things the
+        // way Signum names them, so `terminal sync` reads as a MIGRATION (the model differences) rather
+        // than a rebuild (every table renamed). See SchemaSettings.legacyMode for what it currently covers.
+        // Like the dialect above, this is decided while the schema is BUILT, before a row can be read, so
+        // it comes from the environment and not from the ApplicationConfiguration row.
+        sb.settings.legacyMode = isEnvTrue(process.env["LegacyMode"]);
+
         // Cache module (altea-cache) — FIRST of all the module starts, for two reasons: it swaps the
         // global-lazy invalidation strategy (which must happen before ANY `sb.globalLazy` registration),
         // and `.withCache()` on an include below needs it started. The broadcast is what tells SIBLING
@@ -640,4 +647,11 @@ export namespace Starter {
         if (sb.webBuilder)
             SignumServer.start(sb.webBuilder);
     }
+}
+
+// A boolean read off the environment. Accepts "true" / "1" in any casing, so a value typed into a .env
+// file by hand does what it looks like it does; anything else (including unset) is false.
+function isEnvTrue(value: string | undefined): boolean {
+    const v = value?.trim().toLowerCase();
+    return v === "true" || v === "1";
 }

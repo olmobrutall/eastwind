@@ -15,6 +15,7 @@
     "dev": "concurrently -n types,server,client -c blue,green,magenta \"pnpm run dev:types\" \"pnpm run dev:server\" \"pnpm run dev:client\"",
     "terminal:postgres": "tspc -b && node --enable-source-maps --import @altea/altea/register.mjs --env-file=.env.postgres dist/terminal/terminal.js",
     "terminal:sqlserver": "tspc -b && node --enable-source-maps --import @altea/altea/register.mjs --env-file=.env.sqlserver dist/terminal/terminal.js",
+    "terminal:swpostgres": "tspc -b && node --enable-source-maps --import @altea/altea/register.mjs --env-file=.env.swpostgres dist/terminal/terminal.js",
     "terminal:bundled:postgres": "node --enable-source-maps --env-file=.env.postgres dist/terminal-bundle/main.js",
     "terminal:bundled:sqlserver": "node --enable-source-maps --env-file=.env.sqlserver dist/terminal-bundle/main.js",
     "free:port": "node scripts/free-port.mjs",
