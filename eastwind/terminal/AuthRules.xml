@@ -10,7 +10,6 @@
    * Property rows carry `OnType` + a camelCase `Resource` path — altea keys a property rule by
      (rootType, propertyString) and has no PropertyRouteEntity, and altea entity members are camelCase.
      Signum wrote one attribute: Resource="Category|CategoryName".
-   * A few types are named differently here: ChartScript -> ChartScriptSymbol, FileType -> FileTypeSymbol.
    * SouthwindTypeCondition -> EastwindTypeCondition.
 -->
 <Auth>
@@ -116,8 +115,7 @@
       <Type Resource="CaseTag" Allowed="Read" />
       <Type Resource="CaseTagType" Allowed="Read" /> -->
       <Type Resource="Category" Allowed="Read" />
-      <!-- altea: the chart-type symbol table is ChartScriptSymbol (Signum: ChartScript). -->
-      <Type Resource="ChartScriptSymbol" Allowed="Read" />
+      <Type Resource="ChartScript" Allowed="Read" />
       <!-- altea: a dashboard PART inherits its owner's rules structurally (PartOwnership), so it carries no
            rules of its own and never appears in the Type-Auth grid — the `Dashboard` row below covers it.
            Signum had to mirror the dashboard's rules onto every part type by hand; these rows are what that
@@ -128,8 +126,7 @@
       <Type Resource="Dashboard" Allowed="Read" />
       <Type Resource="Employee" Allowed="Read" />
       <!-- <Type Resource="File" Allowed="Read" /> -->
-      <!-- altea: the file-type symbol table is FileTypeSymbol (Signum: FileType). -->
-      <Type Resource="FileTypeSymbol" Allowed="Read" />
+      <Type Resource="FileType" Allowed="Read" />
       <!-- altea: Signum.Notes is not ported.
       <Type Resource="Note" Allowed="Write" />
       <Type Resource="NoteType" Allowed="Read" /> -->
