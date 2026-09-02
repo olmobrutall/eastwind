@@ -34,6 +34,7 @@ import { ChartLogic } from "@altea/altea-chart/server/ChartLogic.server";
 import { ColorPaletteLogic } from "@altea/altea-chart/server/ColorPaletteLogic.server";
 import { UserChartLogic } from "@altea/altea-chart/server/UserChartLogic.server";
 import { DashboardLogic } from "@altea/altea-dashboard/server/DashboardLogic.server";
+import { CachedQueryLogic } from "@altea/altea-dashboard/server/CachedQueryLogic.server";
 import { FileLogic } from "@altea/altea-files/server/FileLogic.server";
 import { SchedulerLogic } from "@altea/altea-scheduler/server/SchedulerLogic.server";
 import { SimpleTaskLogic } from "@altea/altea-scheduler/server/SimpleTaskLogic.server";
@@ -328,6 +329,12 @@ export namespace Starter {
         // UserQueriesLogic / UserChartLogic so their part types are registered in the dashboard part registry
         // before a dashboard is imported, and before OperationLogic.start so its operation symbols get seeded.
         DashboardLogic.start(sb);
+
+        // The dashboard SNAPSHOT store (Signum passes `cachedQueryAlgorithm` into DashboardLogic.Start).
+        // A snapshot is a JSON result table the BROWSER evaluates each part's query against, so the file is
+        // read far more often than it is written — the reason it belongs in a store the app can point at
+        // object storage (see EastwindFileStores).
+        CachedQueryLogic.start(sb, { fileTypeAlgorithm: EastwindFileStores.store("cached-queries") });
         DashboardLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
         DashboardLogic.registerRoleTypeCondition(EastwindTypeCondition.RoleEntities);
 

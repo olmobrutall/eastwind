@@ -44,6 +44,7 @@ import { UserChartPartEntity, CombinedUserChartPartEntity } from "@altea/altea-c
 import { UserQueryEntity } from "@altea/altea-user-queries/data/UserQuery";
 import { UserChartEntity } from "@altea/altea-chart/data/UserChart";
 import { DashboardEntity } from "@altea/altea-dashboard/data/Dashboard";
+import { CachedQueryEntity_UserAsset } from "@altea/altea-dashboard/data/CachedQuery";
 import { QueryEntity } from "@altea/altea/data/queryEntity";
 import { PermissionSymbol } from "@altea/altea-auth/data/Rules";
 import { WorkflowEntity } from "@altea/altea-workflow/data/Workflow";
@@ -144,6 +145,11 @@ export namespace EntityOverrides {
         overrideImplementedBy(AlertEntity, "recipient", () => [UserEntity]);
         overrideImplementedBy(AlertEntity, "attendedBy", () => [UserEntity]);
         overrideImplementedBy(NoteEntity, "createdBy", () => [UserEntity]);
+
+        // Which user assets a dashboard SNAPSHOT can cover (Signum's `[ImplementedBy()]` empty list on
+        // CachedQueryEntity.UserAssets, widened by the app): @altea/altea-dashboard cannot name them,
+        // because altea-user-queries and altea-chart depend on IT.
+        overrideImplementedBy(CachedQueryEntity_UserAsset, "userAsset", () => [UserQueryEntity, UserChartEntity]);
 
         // The dashboard PART types this app offers (Southwind did exactly this in Starter.cs:
         // `FieldAttributes((DashboardEntity a) => a.Parts.First().Content).Replace(new ImplementedByAttribute(

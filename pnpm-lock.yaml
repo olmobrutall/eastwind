@@ -354,6 +354,9 @@ importers:
       '@altea/altea-auth':
         specifier: workspace:*
         version: link:../altea-auth
+      '@altea/altea-files':
+        specifier: workspace:*
+        version: link:../altea-files
       '@altea/altea-toolbar':
         specifier: workspace:*
         version: link:../altea-toolbar
