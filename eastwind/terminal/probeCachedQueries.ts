@@ -40,7 +40,7 @@ function check(name: string, ok: boolean, detail?: string): void {
  * `ordered` false compares them as SETS, which is what a GROUPED result needs: neither SQL nor the
  * executor promises an order for groups, so a row-by-row comparison there tests nothing real.
  */
-function sameTable(a: WireResultTable, b: WireResultTable, ordered = true): string | null {
+function sameTable(a: WireResultTable, b: WireResultTable, ordered = true, orderedBy: string[] = []): string | null {
     if (a.rows.length !== b.rows.length)
         return `row count ${a.rows.length} vs ${b.rows.length}`;
 
@@ -62,11 +62,29 @@ function sameTable(a: WireResultTable, b: WireResultTable, ordered = true): stri
 
     const linesA = a.rows.map(r => r.columns.map(cell).join("|"));
     const linesB = b.rows.map(r => r.columns.map(cell).join("|"));
-    if (!ordered) { linesA.sort(); linesB.sort(); }
 
-    for (let i = 0; i < linesA.length; i++)
-        if (linesA[i] !== linesB[i])
-            return `row ${i}: [${linesA[i]}] vs [${linesB[i]}]`;
+    // The MULTISET first: that is the answer. Only if the rows agree is their ORDER worth comparing, and
+    // only positions the request's own ORDER BY actually determines — a tie between rows with the same
+    // sort key has no defined order on either side (SQL does not promise one, and neither does a sort in
+    // the browser), so a positional difference inside a tie is not a disagreement about anything.
+    const sortedA = [...linesA].sort();
+    const sortedB = [...linesB].sort();
+    for (let i = 0; i < sortedA.length; i++)
+        if (sortedA[i] !== sortedB[i])
+            return `row ${i} (sorted): [${sortedA[i]}] vs [${sortedB[i]}]`;
+
+    if (ordered) {
+        // Compare the ORDER-BY key sequence, not the whole row: equal keys may legitimately swap.
+        const keys = (t: WireResultTable): string[] => {
+            const idx = orderedBy.map(o => t.columns.indexOf(o)).filter(i => i >= 0);
+            return t.rows.map(r => idx.map(i => cell(r.columns[i])).join("|"));
+        };
+        const ka = keys(a);
+        const kb = keys(b);
+        for (let i = 0; i < ka.length; i++)
+            if (ka[i] !== kb[i])
+                return `order key at row ${i}: [${ka[i]}] vs [${kb[i]}]`;
+    }
 
     return null;
 }
@@ -116,7 +134,7 @@ async function main(): Promise<void> {
             try {
                 const mine = getCachedResultTable(snapshot, wire, tokens);
                 const theirs = await fromServer(wire);
-                const diff = sameTable(theirs, mine, /*ordered*/ !wire.groupResults);
+                const diff = sameTable(theirs, mine, /*ordered*/ !wire.groupResults, wire.orders.map(o => o.token));
                 check(`${label} identity`, diff == null, diff ?? undefined);
             } catch (e) {
                 check(`${label} identity`, false, String((e as CachedQueryError)?.message ?? e));
@@ -137,7 +155,7 @@ async function main(): Promise<void> {
                     try {
                         const mine = getCachedResultTable(snapshot, narrowed, tokens);
                         const theirs = await fromServer(narrowed);
-                        const diff = sameTable(theirs, mine);
+                        const diff = sameTable(theirs, mine, true, narrowed.orders.map(o => o.token));
                         check(`${label} +filter ${filterable.token}=${value}`, diff == null, diff ?? undefined);
                     } catch (e) {
                         check(`${label} +filter`, false, String((e as CachedQueryError)?.message ?? e));
@@ -146,8 +164,14 @@ async function main(): Promise<void> {
             }
 
             // 3. a COUNT GROUPED BY the first key column — the path a cross-filtered chart takes.
+            // A snapshot answers at ITS OWN GRAIN. Once a column walks a collection
+            // (`details.Element.…`) the snapshot holds one row per ELEMENT, while the same grouped query
+            // run against the database — whose columns do not name the collection — holds one row per
+            // entity. Both are right; they are answers to different questions, so asking this one of such
+            // a snapshot tests nothing. (The real client never does: a part asks for its own columns.)
+            const widenedByCollection = wire.columns.some(c => tokens[c.token]?.hasElement());
             const keyCol = wire.columns.find(c => !tokens[c.token]?.isAggregate());
-            if (keyCol != null && !wire.groupResults) {
+            if (keyCol != null && !wire.groupResults && !widenedByCollection) {
                 const queryName = QueryLogic.queries.tryGetQueryNameByKey(wire.queryKey)!;
                 const countToken = QueryLogic.getToken(queryName, "Count", SubTokensOptionsAll);
                 const grouped: WireQueryRequest = {
@@ -161,13 +185,8 @@ async function main(): Promise<void> {
                     const mine = getCachedResultTable(snapshot, grouped, { ...tokens, Count: countToken });
                     const theirs = await fromServer(grouped);
                     // Grouping order is not defined on either side, so compare as SETS.
-                    const norm = (t: WireResultTable): string => t.rows
-                        .map(r => r.columns.map(v => v == null ? "∅"
-                            : typeof (v as { key?: () => string }).key === "function" ? (v as { key(): string }).key()
-                                : String(v)).join("|"))
-                        .sort().join("\n");
-                    check(`${label} group by ${keyCol.token}`, norm(mine) === norm(theirs),
-                        norm(mine) === norm(theirs) ? undefined : `${mine.rows.length} vs ${theirs.rows.length} groups`);
+                    const diff = sameTable(theirs, mine, /*ordered*/ false);
+                    check(`${label} group by ${keyCol.token}`, diff == null, diff ?? undefined);
                 } catch (e) {
                     check(`${label} group by ${keyCol.token}`, false, String((e as CachedQueryError)?.message ?? e));
                 }
