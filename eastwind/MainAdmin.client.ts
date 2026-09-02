@@ -34,6 +34,7 @@ import { OmniboxClient } from "@altea/altea-omnibox/client/OmniboxClient";
 import { MapClient } from "@altea/altea-map/client/MapClient";
 import { HelpClient } from "@altea/altea-help/client/HelpClient";
 import { MigrationsClient } from "@altea/altea-migrations/client/MigrationsClient";
+import { NotesClient } from "@altea/altea-notes/client/NotesClient";
 import { AlertsClient } from "@altea/altea-alert/client/AlertsClient";
 import { ToolbarClient } from "@altea/altea-toolbar/client/ToolbarClient";
 import { MailingClient } from "@altea/altea-email/client/MailingClient";
@@ -244,6 +245,7 @@ export function startFull(routes: RouteObject[]): void {
     // placeholders as links), the alert operations' buttons and the "alerts about this entity" quick link.
     // The navbar BELL is a component the app places itself — see Layout.tsx.
     AlertsClient.start(cb);
+    NotesClient.start(cb);
 
     // Migrations (altea-migrations): the query settings for the three history tables (SqlMigration /
     // CSharpMigration / LoadMethodLog). Signum has no client module for them — see MigrationsClient.

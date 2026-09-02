@@ -48,6 +48,7 @@ packages:
   - altea/altea-whats-new
   - altea/altea-tour
   - altea/altea-translations
+  - altea/altea-notes
   - altea/quote-transformer
   - altea/quote-transformer-test
   - eastwind

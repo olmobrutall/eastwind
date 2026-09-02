@@ -104,6 +104,7 @@ import { EastwindAuthAD } from "./eastwindAuthAD.server";
 import { CurrentServerContextSkill } from "@altea/altea-agent/server/Skills/CurrentServerContextSkill";
 import { IntroductionSkill } from "@altea/altea-agent/server/Skills/IntroductionSkill";
 import { AlertLogic } from "@altea/altea-alert/server/AlertLogic.server";
+import { NoteLogic } from "@altea/altea-notes/server/NoteLogic.server";
 import { AlertNotificationLogic } from "@altea/altea-alert/server/AlertNotificationLogic.server";
 import { CacheServer } from "@altea/altea-cache/server/CacheServer";
 
@@ -421,6 +422,10 @@ export namespace Starter {
         // seeded. `registerExpressionsFor` is Southwind's `AlertLogic.Start(sb, typeof(UserEntity),
         // typeof(OrderEntity))`: those two types grow the `Alerts` / `MyActiveAlerts` sub-tokens.
         AlertLogic.start(sb, { registerExpressionsFor: [UserEntity, OrderEntity as unknown as Type<Entity>] });
+
+        // Free-text notes on any entity (Signum.Notes). Southwind starts it with the same two types the
+        // alerts get, so a note is offered where an alert is.
+        NoteLogic.start(sb, { registerExpressionsFor: [UserEntity, OrderEntity as unknown as Type<Entity>] });
 
         // …and its OPT-IN notification half (Signum's RegisterAlertNotificationMail): the e-mail model and
         // the ScheduledTask that mails each user their pending alerts. AFTER EmailLogic.start (it registers an

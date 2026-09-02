@@ -3,6 +3,7 @@
   // never references CLIENT, so a server file can't pull browser code into the bundle.
   "extends": "../altea/altea/presets/server.json",
   "references": [
+    { "path": "../altea/altea-notes/tsconfig.server.json" },
     { "path": "./tsconfig.data.json" },
     { "path": "../altea/altea-auth/tsconfig.server.json" },
     { "path": "../altea/altea-files/tsconfig.server.json" },

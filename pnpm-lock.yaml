@@ -700,6 +700,18 @@ importers:
         specifier: workspace:*
         version: link:../quote-transformer
 
+  altea/altea-notes:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../altea
+      '@altea/altea-auth':
+        specifier: workspace:*
+        version: link:../altea-auth
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../quote-transformer
+
   altea/altea-office-template:
     dependencies:
       '@altea/altea':
@@ -1192,6 +1204,9 @@ importers:
       '@altea/altea-migrations':
         specifier: workspace:*
         version: link:../altea/altea-migrations
+      '@altea/altea-notes':
+        specifier: workspace:*
+        version: link:../altea/altea-notes
       '@altea/altea-office-template':
         specifier: workspace:*
         version: link:../altea/altea-office-template

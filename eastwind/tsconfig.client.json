@@ -6,6 +6,7 @@
   "extends": "../altea/altea/presets/client.json",
   "compilerOptions": { "types": ["react", "react-dom"] },
   "references": [
+    { "path": "../altea/altea-notes/tsconfig.client.json" },
     { "path": "./tsconfig.data.json" },
     { "path": "../altea/altea-auth/tsconfig.client.json" },
     { "path": "../altea/altea-files/tsconfig.client.json" },

@@ -2,6 +2,7 @@
   // DATA layer — isomorphic model (shared client + server). Boilerplate in ../altea/altea/presets/data.json.
   "extends": "../altea/altea/presets/data.json",
   "references": [
+    { "path": "../altea/altea-notes/tsconfig.data.json" },
     { "path": "../altea/altea/tsconfig.data.json" },
     { "path": "../altea/altea-auth/tsconfig.data.json" },
     { "path": "../altea/altea-files/tsconfig.data.json" },
