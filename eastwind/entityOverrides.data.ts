@@ -34,7 +34,7 @@ import { Pop3EmailReceptionServiceEntity } from "@altea/altea-mailing-pop3/data/
 import { ProcessSchedulerBridgeOverrides } from "@altea/altea-processes/data/ProcessSchedulerBridge";
 import { DashboardEntity_Part } from "@altea/altea-dashboard/data/Dashboard";
 import {
-    TextPartEntity, ImagePartEntity, SeparatorPartEntity, HealthCheckPartEntity, CustomPartEntity,
+    TextPartEntity, ImagePartEntity, SeparatorPartEntity, HealthCheckPartEntity, CustomPartEntity, ToolbarMenuPartEntity,
 } from "@altea/altea-dashboard/data/Parts";
 import {
     UserQueryPartEntity, ValueUserQueryListPartEntity, BigValuePartEntity,
@@ -147,6 +147,7 @@ export namespace EntityOverrides {
             BigValuePartEntity,
             UserChartPartEntity,
             CombinedUserChartPartEntity,
+            ToolbarMenuPartEntity,
         ]);
 
         // What a TOOLBAR ELEMENT may point at (Signum's `[ImplementedBy()]` empty list, widened by each
