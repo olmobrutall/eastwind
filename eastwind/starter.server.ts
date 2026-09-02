@@ -65,6 +65,7 @@ import { OrderWorkflow } from "./orders/OrderWorkflow.server";
 import { EastwindEval } from "./eastwindEval.server";
 import { DynamicLogic } from "@altea/altea-dynamic/server/DynamicLogic.server";
 import { EmailLogic } from "@altea/altea-email/server/EmailLogic.server";
+import { EmailPackageLogic } from "@altea/altea-email/server/EmailPackageLogic.server";
 import { FileTypeLogic } from "@altea/altea-files/server/FileTypeLogic.server";
 import { FileTypeAlgorithm } from "@altea/altea-files/server/FileTypeAlgorithm.server";
 import { EastwindFileStores } from "./eastwindFileStores.server";
@@ -376,6 +377,11 @@ export namespace Starter {
             // Signum's `(template, target, message) => Configuration.Value.EmailSender` — the row names it.
             getSenderConfiguration: async () => GlobalsLogic.configuration().emailSender,
         });
+
+        // The BATCH half of the mail module (Signum.Mailing/Package): the EmailPackage table, the two
+        // process algorithms and the ReSendEmails operation. After EmailLogic.start (it reads the same
+        // configuration) and after CacheLogic/ProcessLogic, whose registry it registers into.
+        EmailPackageLogic.start(sb);
 
         // The two extra SENDER services (@altea/altea-mailing-exchange, -microsoft-graph). Each contributes
         // one service TABLE and registers itself in EmailLogic's sender registry; which one a message actually

@@ -28,6 +28,7 @@ import {
 import {
     EmailReceptionConfigurationEntity, EmailReceptionMixin,
 } from "@altea/altea-email/data/EmailReception";
+import { EmailMessagePackageMixin } from "@altea/altea-email/data/EmailPackage";
 import { ExchangeWebServiceEmailServiceEntity } from "@altea/altea-mailing-exchange/data/MailingExchangeWS";
 import { MicrosoftGraphEmailServiceEntity } from "@altea/altea-mailing-microsoft-graph/data/MailingMicrosoftGraph";
 import { Pop3EmailReceptionServiceEntity } from "@altea/altea-mailing-pop3/data/MailingPop3";
@@ -61,6 +62,11 @@ export namespace EntityOverrides {
         // message carry its server uid, its raw MIME and its reception row. Declaring it adds those columns to
         // the EmailMessage table, so it belongs here — both tiers, before any (de)serialization.
         EmailReceptionMixin.declare();
+
+        // The package mixin on EmailMessageEntity (Signum's `MixinDeclarations.Register<EmailMessageEntity,
+        // EmailMessagePackageMixin>()`, asserted by EmailPackageLogic.start): which batch a message belongs to.
+        // Declaring it adds the `package_id` column to the EmailMessage table, so it belongs here too.
+        EmailMessagePackageMixin.declare();
 
         // The diff mixin on OperationLogEntity (Signum's MixinDeclarations.Register<OperationLogEntity,
         // DiffLogMixin>() in Southwind's Starter.cs, asserted by DiffLogLogic.start): the two dumps an

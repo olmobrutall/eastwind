@@ -427,6 +427,9 @@ importers:
       '@altea/altea-html-editor':
         specifier: workspace:*
         version: link:../altea-html-editor
+      '@altea/altea-processes':
+        specifier: workspace:*
+        version: link:../altea-processes
       '@altea/altea-scheduler':
         specifier: workspace:*
         version: link:../altea-scheduler
