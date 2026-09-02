@@ -21,7 +21,7 @@ import { UserEntity } from "@altea/altea-auth/data/User";
 import { MixinDeclarations } from "@altea/altea/data/mixinDeclarations";
 import { UserWithClaims } from "@altea/altea/data/security";
 import { SimpleTaskSymbol } from "@altea/altea-scheduler/data/Scheduler";
-import { SendNotificationEmailTaskEntity } from "@altea/altea-alert/data/Alert";
+import { AlertEntity, SendNotificationEmailTaskEntity } from "@altea/altea-alert/data/Alert";
 import {
     EmailSenderConfigurationEntity, SmtpEmailServiceEntity,
 } from "@altea/altea-email/data/EmailSenderConfiguration";
@@ -53,6 +53,7 @@ import {
 import { DiffLogMixin } from "@altea/altea-diff-log/data/DiffLog";
 import { CaseActivityMixin } from "@altea/altea-workflow/data/CaseActivity";
 import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
+import { NoteEntity } from "@altea/altea-notes/data/Notes";
 import { UserEmployeeMixin } from "./globals/UserEmployeeMixin.data";
 
 export namespace EntityOverrides {
@@ -137,6 +138,12 @@ export namespace EntityOverrides {
         overrideImplementedBy(OperationLogEntity, "user", () => [UserEntity]);
         overrideImplementedBy(RestLogEntity, "user", () => [UserEntity]);
         overrideImplementedBy(ViewLogEntity, "user", () => [UserEntity]);
+        // Same shape in the MODULES whose user references Signum also declares `Lite<IUserEntity>`:
+        // an alert names who raised it, who it is for and who attended it; a note names who wrote it.
+        overrideImplementedBy(AlertEntity, "createdBy", () => [UserEntity]);
+        overrideImplementedBy(AlertEntity, "recipient", () => [UserEntity]);
+        overrideImplementedBy(AlertEntity, "attendedBy", () => [UserEntity]);
+        overrideImplementedBy(NoteEntity, "createdBy", () => [UserEntity]);
 
         // The dashboard PART types this app offers (Southwind did exactly this in Starter.cs:
         // `FieldAttributes((DashboardEntity a) => a.Parts.First().Content).Replace(new ImplementedByAttribute(
