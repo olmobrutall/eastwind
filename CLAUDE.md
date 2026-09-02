@@ -160,6 +160,8 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   - the user's CHOICE lives in the BROWSER (`CultureClient`, localStorage) — Signum stores it server-side per user — and rides on every call as a bare `Accept-Language` tag, which `webApi` turns into a per-request `CultureInfo.withCultures` scope (Signum's ASP.NET request localization). Without that scope every SERVER-resolved label — a registered expression's niceName, validation and exception messages — answers in the process default no matter who asked, and a per-culture CACHE keyed on `currentCulture()` serves whichever language warmed it first to everyone.
   - switching culture RELOADS the page. Signum re-fetches its types and soft-resets, because all its labels are client-resolved; altea has server-resolved labels baked into already-fetched responses, which a soft `resetUI()` leaves stale.
   - Translation files live in EACH PACKAGE's own `translations/` directory (`altea/altea-workflow/translations/Altea.Workflow.es.xml`), not in one per-app folder as in Signum — a module's translations travel with the module, so any application that installs it gets them for free. At boot `loadAppTranslations` walks the app's dependency graph (through packages that depend on `@altea/altea`), loads each module's directory in package-name order, and loads the app's own `<appRoot>/translations` LAST so an app file wins a key collision. A Signum module renamed in altea (Word* → Office*) needs its ported XML's Type/Member NAMES remapped, or none of it lands.
+- **`SemiSymbol` EXISTS** (`data/semiSymbol` + `server/semiSymbolLogic`), as Signum's sibling of `Symbol`: a row that may be DECLARED in code (it gets a `key`, like a Symbol) or created by a USER at runtime (only a `name`). That is why its key is NULLABLE and why it derives from `Entity` rather than `Symbol` — a SemiSymbol table is user-writable (`@entity("String")`, its own Save operation), so it is not "seeded". The one rule that matters is in its synchronizer: only rows WITH a key take part in the diff (Signum's `current.Where(c => c.Key.HasText())`), so a row a user created is never deleted by a sync. `AlertTypeSymbol`, `AgentSymbol` and `NoteTypeSymbol` are SemiSymbols; everything else stays a `Symbol`. The quote-transformer recognises BOTH roots, so `init()` works on either.
+- **`@ticksColumn(false)`** (Signum's `[TicksColumn(false)]`): the table carries no concurrency stamp. A Ticks column earns its place where a row is edited by PEOPLE, one at a time, so it is OFF for a seeded table, for an explicitly marked one (logs and engine-written rows: Exception, OperationLog, Process, PackageLine, EmailPackage, the migration rows, SemiSymbol) and — the big one — for every `@part` ROW, because that is altea's MList and Signum's MList table has none either: the row is saved inside its owner's graph, whose own stamp guards the aggregate. Unlike every other class-level flag, this one is INHERITED (a SemiSymbol subclass gets it from the base, as in Signum). Between them these accounted for 60 columns a Signum-generated database does not have. **An existing altea database therefore needs a `sync` to drop them.**
 - **Enums**: a numeric `X` object + a string-union `type XKeys = keyof typeof X`; the **runtime/wire value is the STRING member name**, so compare with bare literals (`"Shipped"`), not `X.Shipped`. The enum takes the CLEAN name, because that name is reflection IDENTITY — the registered type name (`registerEnum(X)` is rewritten to `registerEnum(X, "X", …)`), hence the enum table, the `TypeEntity.cleanName` row, and the `<Type Name>` key of every translation file. The union is the derived thing, so it is what carries the suffix. It used to be the other way round (`XEnum` + `type X`), which put an `Enum` nobody wrote in the model into 36 table names — `basics.filter_operation_enum` where Signum has `queries.filter_operation` — and was followed inconsistently anyway (81 of 127 enums never took the suffix, eastwind's own entity enums included).
 - **`@field` typeNames are capitalized**: `String` / `Number` / `Decimal` / `Boolean` / `PlainDate` / `Guid` / `Duration`, etc.
 - **Reflection metadata is ONE global blob** (nice names + auth + queries + operations) shipped eagerly at boot.
@@ -227,9 +229,10 @@ Known structural divergences from Signum (this is what "fix" means — don't por
 - **Signum.Alerts → altea-alert: a notification is an entity, and the bell is a WebSocket consumer.** The
   module ports whole (entity + operations, the two endpoints the bell polls, the dropdown, the alert view,
   and the opt-in "mail me my pending alerts" task). Divergences:
-  - **AlertTypeSymbol is a plain Symbol, not a SemiSymbol** (altea has none — the same call altea-agent
-    makes for AgentSymbol), so an alert type is DECLARED in code via `AlertLogic.registerAlertType`; its
-    Save/Delete operations and its editor go with it.
+  - **AlertTypeSymbol is a SemiSymbol**, as in Signum — altea has one now (`data/semiSymbol` +
+    `server/semiSymbolLogic`). An alert type is normally DECLARED in code via
+    `AlertLogic.registerAlertType`, and its Save/Delete operations and its editor go with it; a user may
+    also create one (a name, no key), which the synchronizer then leaves alone.
   - **`Title` / `Text` are stored columns, not expressions.** Signum declares them `[AutoExpressionField]`
     and REPLACES them in the logic layer with bodies that call `AlertType.GetText()` — a dictionary lookup
     no SQL can evaluate. altea has neither ReplaceExpression nor a way to lower that, so a query sees
@@ -575,8 +578,8 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   - the MCP endpoint DOES use an SDK — `@modelcontextprotocol/sdk` is the same protocol's official JS
     implementation — but altea REFUSES an unauthenticated MCP request, where Signum leaves the policy to
     ASP.NET and Southwind adds none. These tools construct, execute and delete entities.
-  Also: `AgentSymbol` is a plain `Symbol` (altea has no SemiSymbol, and every reachable agent is
-  code-declared); `QueryDescription` is gone, so the `queryDescription` tool becomes `QueryTokens` over the
+  Also: `AgentSymbol` is a `SemiSymbol`, as in Signum (altea has one — see the Symbol/SemiSymbol bullet);
+  `QueryDescription` is gone, so the `queryDescription` tool becomes `QueryTokens` over the
   token tree and `qd.NextAlternatives` becomes a walk to the longest valid token prefix; the query grammar the
   instruction files teach is altea's (ROOTLESS, camelCase fields, PascalCase system tokens, case-sensitive);
   and a tool result is serialized with `Serializer.stringify`, NOT `JSON.stringify` — a plain stringify drops
