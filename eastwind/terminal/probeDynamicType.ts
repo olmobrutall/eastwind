@@ -21,7 +21,7 @@ import { UserWithClaims } from "@altea/altea/data/security";
 import { resolveType, getTypeInfo } from "@altea/altea/data/reflection";
 import type { Entity } from "@altea/altea/data/entity";
 import { Schema } from "@altea/altea/server/schema/schema";
-import { DynamicTypeEntity, DynamicTypeOperation, DynamicBaseType, IsNullable, DynamicUniqueIndex } from "@altea/altea-dynamic/data/DynamicType";
+import { DynamicTypeEntity, DynamicTypeOperation, DynamicBaseType } from "@altea/altea-dynamic/data/DynamicType";
 import { DynamicLogic } from "@altea/altea-dynamic/server/DynamicLogic.server";
 import { UserEntity } from "@altea/altea-auth/data/User";
 
@@ -35,16 +35,16 @@ function definition(): string {
         properties: [
             {
                 uid: "1", name: "Code", type: "string",
-                isNullable: IsNullable.No, uniqueIndex: DynamicUniqueIndex.Yes,
+                isNullable: "No", uniqueIndex: "Yes",
                 validators: [{ type: "StringLength", min: 2, max: 20 }],
             },
             {
                 uid: "2", name: "Quantity", type: "int",
-                isNullable: IsNullable.No, uniqueIndex: DynamicUniqueIndex.No,
+                isNullable: "No", uniqueIndex: "No",
             },
             {
                 uid: "3", name: "Comment", type: "string",
-                isNullable: IsNullable.Yes, uniqueIndex: DynamicUniqueIndex.No,
+                isNullable: "Yes", uniqueIndex: "No",
                 validators: [{ type: "StringLength", max: 100, multiLine: true }],
             },
         ],
