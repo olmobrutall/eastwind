@@ -978,6 +978,44 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   node's CONTEXTUAL menu items and reloaded them only when unset, so picking a second node and reopening the
   "Selected" dropdown ran the FIRST node's operations — which deletes the wrong subtree.
 
+- **UserTicket ("remember me") is in altea-auth, and its cookie is HttpOnly.** Signum keeps it in
+  `Signum.Authorization/UserTicket/`, and so does altea (`data/UserTicket` +
+  `server/UserTicket{Logic,Server}`): one row per remembered device holding a random secret, exchanged
+  for a normal auth token at boot. The app opts in — `UserTicketLogic.start(sb)` in the Starter, plus
+  `startPublic(routes, { userTicket: true })` and `registerUserTicketAuthenticator()` in MainPublic — which
+  is exactly Southwind's wiring, and what makes the "Remember me" checkbox appear at all. Divergences:
+  - **the cookie is `HttpOnly` + `SameSite=Lax` (+ `Secure` over https), where Signum's is script-readable.**
+    Signum leaves it readable only so its client can call `Cookies.get("sfUser")` and skip a pointless
+    `loginFromCookie` when there is no cookie; the price is a 60-day credential exposed to any XSS.
+    altea pays the one POST per anonymous boot instead, so Signum's `Options.getCookie` / `removeCookie`
+    pair has NO counterpart — the endpoint answers null for "no cookie" and for "dead cookie" alike, and
+    the SERVER clears it in that same response (which is where Signum's own `RemoveCookie` already was).
+  - **`device` stores the User-Agent, not an IP.** Signum records `RemoteIpAddress` on the way in but
+    `LocalIpAddress` on the way out — the SERVER's own address — so every ticket it issues on the login
+    path records the same string, which cannot be what a column called Device is for.
+  - `ref string ticket` → `updateTicket` RETURNS the rotated ticket beside the user; `PrimaryKey.Parse` →
+    `UserEntity.parseId` (so the user table's declared PK type is respected, not assumed int); the parse
+    regex is non-greedy on the id half, where Signum's greedy `(?<id>.*)|` would mis-split a secret
+    containing a `|`.
+  - **`UserGraph.OnDeactivated` becomes one slot, `AuthLogic.onRemoveUserTickets`.** Signum reaches
+    UserTicket two ways from the same graph — the event for `Deactivate`, a direct
+    `UserTicketLogic.RemoveTickets` inside `AutoDeactivate` — and altea's user state machine lives in
+    AuthLogic, so both operations call one slot the module fills. (Signum also resets its
+    `RecentlyUsersDisabled` GlobalLazy there; altea has no such cache — it is an auth-TOKEN concern.)
+  - the "too many tickets" sweep is Signum's `.OrderByDescending(…).Skip(Max).UnsafeDelete()`, i.e. a
+    DELETE whose row set is an ORDER BY + OFFSET. altea's bulk-DML terminal has no such form, so the ids
+    are selected first and deleted by id — over a set bounded by `maxTicketsPerUser`.
+  One Signum behaviour is MIRRORED rather than fixed, and is verified as such: `updateTicket` leaves the
+  SPENT row in place, so a presented ticket keeps working until a sweep removes it, and
+  `maxTicketsPerUser` caps remembered LOGINS rather than devices. True single-use rotation would buy
+  little — a thief who uses a stolen cookie is handed a fresh ticket either way, so the credential's real
+  lifetime is `expirationInterval` regardless — and would cost robustness: a response lost in flight
+  would leave the browser holding a dead cookie. Two gaps it filled on the way: the login form's
+  **"Remember me" checkbox was never rendered** (the ref existed, so `rememberMe` was always `undefined`),
+  and `/api/auth/loginFromCookie` did not exist. Pinned by `eastwind/terminal/probeUserTicket.ts` (21
+  checks) plus a seven-case HTTP round-trip; `auth.user_ticket` needs a `sync`, and matches Signum's
+  table column for column (a Southwind sync scripts nothing for it).
+
 - **Signum.Rest → altea-rest: an MVC action filter becomes EXPRESS MIDDLEWARE.** The module is two halves —
   an API KEY that authenticates a machine caller, and a replayable LOG of every request that reached the
   app's public REST surface — and only the second reshapes. Signum's `RestLogFilter` is an

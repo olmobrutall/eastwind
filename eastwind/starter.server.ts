@@ -25,6 +25,7 @@ import { PermissionAuthLogic } from "@altea/altea-auth/server/PermissionAuthLogi
 import { OperationAuthLogic } from "@altea/altea-auth/server/OperationAuthLogic";
 import { QueryAuthLogic } from "@altea/altea-auth/server/QueryAuthLogic";
 import { PropertyAuthLogic } from "@altea/altea-auth/server/PropertyAuthLogic";
+import { UserTicketLogic } from "@altea/altea-auth/server/UserTicketLogic";
 import { TypeConditionLogic } from "@altea/altea-auth/server/TypeConditionLogic";
 import { UserEntity } from "@altea/altea-auth/data/User";
 import { UserHolder } from "@altea/altea/server/userHolder";
@@ -187,6 +188,10 @@ export namespace Starter {
         OperationAuthLogic.start(sb);
         QueryAuthLogic.start(sb);
         PropertyAuthLogic.start(sb);
+        // Southwind's `UserTicketLogic.Start(sb)` (Starter.cs) — the "remember me" ticket table. Opt-in
+        // per app, as in Signum: without it a login ignores rememberMe, the checkbox is not rendered, and
+        // /api/auth/loginFromCookie answers null. Must follow AuthLogic.start, which owns UserEntity.
+        UserTicketLogic.start(sb);
         // Southwind's `TypeConditionLogic.RegisterCompile<UserEntity>(SouthwindTypeCondition.UserEntities,
         // u => u.Is(UserEntity.Current))` (Starter.cs): "the row IS the current user", so a role can be given
         // Read on User restricted to one's own row — which is exactly what terminal/AuthRules.xml does for

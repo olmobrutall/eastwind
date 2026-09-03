@@ -87,7 +87,15 @@ async function reload(): Promise<void> {
     routes.push({ path: "/publicCatalog", element: <PublicCatalog /> });
 
     // Public auth routes (login / change password) — always registered, so they work with no user.
-    AuthClient.startPublic(routes);
+    // `userTicket: true` is Southwind's MainPublic (`startPublic({ routes, userTicket: true, … })`): it
+    // renders the "Remember me" checkbox on the login form. The server half is opted into separately, by
+    // `UserTicketLogic.start` in the Starter — both are needed for the feature to do anything.
+    AuthClient.startPublic(routes, { userTicket: true });
+
+    // Southwind's `AuthClient.registerUserTicketAuthenticator()` — pushes the cookie login onto the
+    // authenticator chain, so a returning browser is logged in at boot without a password. MUST precede
+    // autoLogin (which is what consults the chain).
+    AuthClient.registerUserTicketAuthenticator();
 
     // Visual tips (framework): the session cache of "which tips has this user read". PUBLIC, because the
     // login screen renders SearchControls too, and because the reset it registers must be in place before
