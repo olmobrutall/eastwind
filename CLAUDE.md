@@ -33,8 +33,10 @@ altea/
   altea-codemirror/   # code editors, CLIENT-ONLY (Signum.CodeMirror); CodeMirror 6, not 5
   altea-concurrent-user/ # live presence + stale-entity detection on an open entity (Signum.ConcurrentUser)
   altea-diff-log/     # before/after entity dumps on each operation log + the diff view (Signum.DiffLog)
-  altea-dynamic/      # views defined in the DATABASE and interpreted, + CSS overrides and SQL migrations
-                      #   from the admin UI (the INTERPRETED half of Signum.Dynamic — see below)
+  altea-dynamic/      # define the app FROM the app: TYPES, expressions, validations, type conditions,
+                      #   mixin connections and api endpoints (generated as TypeScript, compiled with the
+                      #   quote-transformer and loaded), plus views interpreted from the DATABASE, CSS
+                      #   overrides and SQL migrations (Signum.Dynamic, both halves — see below)
   altea-eval/         # EvalEmbedded<F>: a TypeScript script stored in the DATABASE, type-checked and run
                       #   at runtime (Signum.Eval, whose Roslyn becomes the TypeScript compiler)
   altea-help/         # in-app documentation: a page per type / package / query / appendix, its prose
@@ -500,38 +502,90 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   LinkExtension makes it worse, since `@lexical/link` normalizes any href it does not recognise as a url and
   turns a `@[m:url]` token into `mailto:@[m:url]`. Links belong in `HtmlComplex`.
 
-- **Signum.Dynamic splits in two on one question: does the feature need a COMPILER?** `altea-dynamic` is
-  the INTERPRETED half — `DynamicView` / `DynamicViewOverride` / `DynamicViewSelector` (a view is a JSON
-  node TREE plus small JavaScript snippets, interpreted client-side), `DynamicCSSOverride` and
-  `DynamicSqlMigration` (both plain text). The COMPILED half — `DynamicType`, `DynamicExpression`,
-  `DynamicValidation`, `DynamicApi`, `DynamicTypeCondition`, `DynamicMixinConnection`, `DynamicIsolation` —
-  does NOT port: each generates C# into a `CodeGen` directory, compiles it with Roslyn (via Signum.Eval)
-  and restarts the app. The blocker is not the compiler (TypeScript has one and altea drives it) but that
-  altea's entity model is stamped at BUILD time by the quote-transformer, so a runtime-invented type needs
-  the transformer over generated source + a process restart + a schema sync — a design project, not a port.
-  Signum.Eval itself DOES port (see altea-eval above), so the blocker is only the runtime-invented TYPE. The
-  pieces re-homed here stay where they are: this package owns the admin pages, so it keeps its own
-  `DynamicPanelPermission` beside altea-eval's `EvalPanelPermission`, and `registerDynamicPanelSearch` lives
-  on `DynamicClient`; `TypeHelpComponent`'s one needed function becomes `client/View/FieldExpression.ts`.
-  Consequences worth knowing:
-  - it forced a CORE seam: `Navigator.ViewDispatcher` / `BasicViewDispatcher` / `setViewDispatcher` (altea
-    resolved views inline, with a `// TODO: real ViewDispatcher` where the seam belonged), and
-    `applyViewOverrides` now asks the DISPATCHER for overrides so a module can contribute them for a type it
-    does not own.
-  - the dispatcher's no-static-view FALLBACK deliberately differs from Signum's. In Signum a type with no
-    registered view cannot be shown, so it offers to design a dynamic one; altea AUTO-GENERATES from the
-    property routes, and many types rely on that — so it only ASKS when dynamic views actually exist.
-  - a node's stored `field` reaches `subCtx` AS A STRING (altea's string overload parses a field path).
-    It must NOT be turned into a runtime lambda: altea resolves a lambda through the `__quoted` tree the
-    transformer stamps, and an eval'd function carries none.
-  - suggested find options are ROOTLESS (`shipVia`, not Signum's `Entity.shipVia`), and they are computed
-    from the REFLECTION metadata rather than by walking built table columns — which handles an
-    `@implementedBy` field for free, where Signum needs a separate branch.
-  - a FileType picker cannot be reflected: altea symbols are declared, not enumerated (there is no
-    "SymbolContainer" TypeInfo kind), so the app registers them via `DynamicClient.registerFileTypes`.
-  - not registered as nodes: `EntityList` and `ColorLine` (no such altea Line); `IconTypeahead` and
-    `FileLine.dragAndDropMessage` have no counterpart either.
+- **Signum.Dynamic ports WHOLE, and the compiled half rests on running the quote-transformer at RUNTIME.**
+  `altea-dynamic` has both halves. The INTERPRETED one — `DynamicView` / `DynamicViewOverride` /
+  `DynamicViewSelector` (a view is a JSON node TREE plus small JavaScript snippets, interpreted
+  client-side), `DynamicCSSOverride` and `DynamicSqlMigration` (both plain text) — needs no compiler. The
+  COMPILED one — `DynamicType`, `DynamicExpression`, `DynamicValidation`, `DynamicApi`,
+  `DynamicTypeCondition`, `DynamicMixinConnection` — does what Signum does: GENERATE source into a
+  `CodeGen` directory, compile it, load it, and restart so the new types take part in the schema (then a
+  `sync` for their tables). Only `DynamicIsolation` is unported, because @altea/altea-isolation is not
+  wired into eastwind at all.
 
+  This bullet used to say the compiled half was "a design project, not a port", because altea's entity
+  model is stamped at BUILD time by the quote-transformer. That was the wrong conclusion from the right
+  fact: the transformer's factory takes a `ts.Program` and returns an ordinary `ts.TransformerFactory`, so
+  it composes into `program.emit` exactly as it does under `tspc` — which is what
+  `DynamicCodeCompiler` does. Putting it in the emit pipeline is not optional: the transformer is what
+  synthesises `@field({ typeName … })` from a type annotation, stamps `__fileInfo`, rewrites `init()` with
+  its key, and turns a `@quoted` lambda into the expression TREE the LINQ provider lowers. Generated code
+  that skipped it would compile and then be invisible to reflection and unquotable in a query.
+
+  Which pieces GENERATE and which merely EVALUATE is not a port decision — it follows from what each needs,
+  and Signum answers the same way: an expression and a type condition must reach the LINQ provider as
+  TREES, a mixin's fields must be COLUMNS before the schema is built, and a route must exist before a
+  request arrives, so those four are generated; a VALIDATION is asked about an entity in hand, so it is an
+  `EvalEmbedded` on @altea/altea-eval. (DynamicTypeCondition and DynamicApi carry an EvalEmbedded too, but
+  only so the editor can compile and test the script.)
+
+  Consequences and divergences worth knowing:
+  - **the emit is ESM and loading is `import()`.** Not interchangeable: TypeScript's CommonJS module
+    transform ELIDES an import a `before` transformer synthesised, so the module compiles and then dies on
+    `field is not defined`; and `import()` is what makes a generated module share module IDENTITY with the
+    process (Node keys its ESM cache by resolved URL), so a generated type registers into the reflection
+    registries the SERVER reads. Roslyn's `MetadataReference` list therefore becomes ordinary resolution,
+    with no allow-list to maintain.
+  - **an APP's own modules need `typesRoots`, pointing at its DIST.** Nothing depends on an app, so
+    TypeScript cannot resolve `eastwind/orders/Order.data`; `dist` carries the `.d.ts` beside the `.js`, so
+    one directory serves checking and loading exactly as a published package does (a source root
+    type-checks and then fails at load). The emitted specifier for such a package is RELATIVE —
+    `DynamicCodeCompiler.specifierFor` is the single place that decision lives — because Node cannot
+    resolve a bare `eastwind/…`.
+  - **reading the DynamicType rows must TOLERATE a type-cache mismatch** (`StartParameters
+    .withIgnoredDatabaseMismatches`): the read needs TypeLogic's type↔id caches, and building those
+    compares the database's `type` rows against the schema's types — but at that moment the schema
+    deliberately lacks the dynamic types, since generating them is what the read is FOR. The real check
+    still runs at `schema.initialize()`. Signum needs none of this: its type cache is built in
+    `Schema.Initialize`, after `Start`.
+  - **a compile failure is DATA, not a throw.** `DynamicLogic.codeGenError` is carried so the server still
+    BOOTS (otherwise a bad definition could only be fixed in the database by hand), every later step checks
+    it first as Signum's do, and `registerExceptionIfAny` warns — including that a `sync` would now script
+    the missing types as DROPs. `/api/dynamic/compilationStatus` + the `/dynamic/panel` page are how an
+    author sees it, since the diagnostics exist only in the process that tried.
+  - **an operation symbol is written `init()`** in generated code, and the transformer fills in the key.
+    Signum must spell out `OperationSymbol.Execute<XEntity>(typeof(XOperation), "Save")` because C# cannot
+    see the member name — the clearest illustration of why the transformer belongs in the emit.
+  - **`MList<T>` becomes a generated `@part` ROW type plus a `T[]`.** Signum's
+    `DynamicTypeBackMListDefinition` (TableName / PreserveOrder / OrderName / BackReferenceName) describes
+    that row table one for one.
+  - `isNullable` / `uniqueIndex` inside the JSON definition are the member NAMES, as Signum's
+    `JsonStringEnumConverter` writes them — so a definition round-trips between the two frameworks. Only
+    `DynamicBaseType`, which is a real column, is an altea enum.
+  - no `CodeGenExpressionMessage` enum and no `ColumnDisplayName`: altea takes a column's caption from the
+    member's own `@niceName`, and there is no QueryDescription to hang a display name on. `queryFields` are
+    CLIENT default columns, because the server's `withQuery()` takes no projection — so the designer's
+    query tab lists member NAMES, not `e.Id`-style projection lines.
+  - a DynamicApi script is a FUNCTION THAT REGISTERS ROUTES, not a controller-class body (altea has no
+    controllers), which retires `IDynamicApiEvaluator.DummyEvaluate` and the second controller assembly.
+  - `PropertyRouteEntity` and `DisabledMixin` do not exist, so a validation's `SubEntity` is a route STRING
+    (matched as a PREFIX) and `disabled` is a plain field keeping Signum's column name.
+  - **no RESTART button** on the panel: Signum's restarts the ASP.NET host in place behind a supervisor,
+    which Node has no convention for. `DynamicPanelPermission.RestartApplication` IS ported and the page
+    says a restart is needed.
+  - `TypeHelp` is not ported (the honest equivalent is editor IntelliSense over the same `.d.ts`), so the
+    type combo is a text box with a datalist and the "property template" modal is gone;
+    `TypeHelpComponent`'s one needed function is `client/View/FieldExpression.ts`.
+  - it forced a CORE seam: `globalValidators` (`data/reflection`), Signum's `Validator.GlobalValidation` —
+    the one thing a per-field decorator cannot express, a rule chosen at RUNTIME for a type the rule's
+    author does not own. It runs after the declared validators and before the field's own
+    `customValidation`, first message wins, and an async result is honoured on every server path and
+    skipped on the client's live pass (as `customValidation` already is).
+    `@altea/altea/data/reflection` also became an eval-visible framework module, since a validation script
+    is handed a FieldInfo.
+  - the interpreted half's own consequences, unchanged: it forced `Navigator.ViewDispatcher` /
+    `BasicViewDispatcher` / `setViewDispatcher` (altea resolved views inline, with a
+    `// TODO: real ViewDispatcher` where the seam belonged), and `applyViewOverrides` now asks the
+    DISPATCHER for overrides so a module can contribute them for a type it does not own.
 - **CodeMirror 5 → CodeMirror 6.** `altea-codemirror` keeps every wrapper's PROPS identical (`script` /
   `onChange` / `isReadOnly` / `errorLineNumber` / `innerRef`) and rewrites everything behind them: CM5 is
   end-of-life, ships no ESM entry points and no bundled types. So the options BAG becomes explicit props plus
