@@ -84,6 +84,7 @@ import { ToolbarLogic } from "@altea/altea-toolbar/server/ToolbarLogic.server";
 import { PlainExcelLogic } from "@altea/altea-office-template/server/excel/PlainExcelLogic.server";
 import { ExcelImportLogic } from "@altea/altea-office-template/server/excel/ExcelImportLogic.server";
 import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic.server";
+import { VisualTipLogic } from "@altea/altea/server/visualTipLogic";
 import { EastwindTypeCondition, EastwindAgentUseCases, EastwindFileType } from "./globals/ApplicationConfiguration.data";
 import { PrintingLogic } from "@altea/altea-printing/server/PrintingLogic.server";
 import { PrintingServer } from "@altea/altea-printing/server/PrintingServer.server";
@@ -463,6 +464,11 @@ export namespace Starter {
         // LoadMethodLog every terminal load step writes. Server-only (the runners live in the terminal), and
         // the tables must be part of the schema for `sync` / the load menu to log into them.
         MigrationLogic.start(sb);
+
+        // Visual tips (framework): the "?" icons the SearchControl itself carries, plus the per-user
+        // record of which have been read. Signum's Southwind starts this the same way; the four
+        // SearchVisualTip symbols are registered by the module itself.
+        VisualTipLogic.start(sb);
 
         // Dynamic module (altea-dynamic): the three VIEW tables (a view defined in the database, a
         // selector that picks between them, an override that rewrites an existing view), the CSS-override

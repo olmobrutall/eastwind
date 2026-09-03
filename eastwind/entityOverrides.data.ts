@@ -53,6 +53,7 @@ import {
 } from "@altea/altea-toolbar/data/Toolbar";
 import { DiffLogMixin } from "@altea/altea-diff-log/data/DiffLog";
 import { DynamicIsolationMixin } from "@altea/altea-dynamic/data/DynamicIsolation";
+import { VisualTipConsumedEntity } from "@altea/altea/data/visualTip";
 import { CaseActivityMixin } from "@altea/altea-workflow/data/CaseActivity";
 import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
 import { NoteEntity } from "@altea/altea-notes/data/Notes";
@@ -87,6 +88,10 @@ export namespace EntityOverrides {
         // declare a strategy"). Declaring the mixin adds one column to `dynamic_type`; marking a dynamic
         // type Isolated then adds an `isolation` column to THAT type's table.
         DynamicIsolationMixin.declare();
+
+        // VisualTipConsumedEntity.user — core declares no implementations so it needn't reference
+        // altea-auth (the same accommodation ExceptionEntity.user and OperationLogEntity.user make).
+        overrideImplementedBy(VisualTipConsumedEntity, "user", () => [UserEntity]);
 
         // The workflow mixin on EmailMessageEntity (Signum's
         // `MixinDeclarations.Register<EmailMessageEntity, CaseActivityMixin>()`): an email produced INSIDE a

@@ -12,6 +12,7 @@ import Notify from "@altea/altea/client/Frames/Notify";
 import * as AppContext from "@altea/altea/client/AppContext";
 import ErrorModal from "@altea/altea/client/Modals/ErrorModal";
 import { AuthClient } from "@altea/altea-auth/client/AuthClient";
+import { VisualTipClient } from "@altea/altea/client/Basics/VisualTipClient";
 import { ResetPasswordClient } from "@altea/altea-auth-reset-password/client/ResetPasswordClient";
 import { OpenIDClient } from "@altea/altea-auth-openid/client/OpenIDClient";
 import { OpenIDAuthenticator } from "@altea/altea-auth-openid/client/OpenIDAuthenticator";
@@ -87,6 +88,11 @@ async function reload(): Promise<void> {
 
     // Public auth routes (login / change password) — always registered, so they work with no user.
     AuthClient.startPublic(routes);
+
+    // Visual tips (framework): the session cache of "which tips has this user read". PUBLIC, because the
+    // login screen renders SearchControls too, and because the reset it registers must be in place before
+    // the first user change.
+    VisualTipClient.start();
 
     // Self-service password reset (@altea/altea-auth-reset-password): the /auth/forgotPasswordEmail and
     // /auth/resetPassword pages + the "I have forgotten my password" link under the login form. PUBLIC, for
