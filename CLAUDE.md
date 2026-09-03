@@ -850,6 +850,23 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     comment attached) disappears with MList: a `@part` row is an ordinary graph member.
   - eastwind marks `OrderEntity` `@systemVersioned`, as Southwind does — **so an existing database needs a
     `terminal sync` before the Time Machine has anything to read.**
+  - **a `@part` row INHERITS its owner's versioning**, the way it already inherits the owner's EntityData:
+    both facets ride the same channel (`SchemaBuilder.include`'s `InheritedByPart`, stamped on the first
+    entity that includes the part and therefore transitive down a chain of parts). This is Signum's
+    `SchemaBuilder.cs` `Settings.TypeAttribute<SystemVersionedAttribute>(table.Type) != null ? new
+    SystemVersionedAttribute() : null` — an MList table of a versioned entity is versioned too — and it
+    reaches further here for a structural reason: a `@part` row IS that MList table when reached through an
+    owner's ARRAY, and stands in for a Signum EMBEDDED when reached through a single reference, whose
+    columns live in the owner's own row and are versioned there by construction. Either way the part holds
+    part of the owner's state, so a part-only change (which for an order is most of what changes) must be
+    in the history. What is inherited is the FACT, not the config: every name on it (history table, period
+    column) is per-TABLE, so the part gets a FRESH default — which is exactly why Signum constructs a new
+    attribute rather than reusing the owner's. A part that declares its own `@systemVersioned` keeps it
+    (Signum's per-route `FieldAttribute` override).
+    Without it a sync against a Signum database did not merely show less — it **scripted the existing line
+    history away** (`DROP TABLE order_details_history`, `DROP COLUMN sys_period`, `DROP TRIGGER
+    versioning_trigger`). **An existing altea database needs a `sync`**: eastwind's `order_line` gains
+    `sys_period`, a history table and the trigger. Pinned by `eastwind/terminal/probePartVersioning.ts`.
 
 - **Signum.Tour → altea-tour: an assembly of core seams plus driver.js.** The engine ports whole (the
   trigger model, the CSS-step discriminator, the editor, the player). Three pieces went into CORE where
