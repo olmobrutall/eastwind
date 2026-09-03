@@ -18,6 +18,9 @@ import { ConsoleSwitch } from "./consoleSwitch";
 import { terminalFile } from "./terminalFile";
 import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic.server";
 import { SqlMigrationRunner } from "@altea/altea-migrations/server/SqlMigrationRunner.server";
+import * as Administrator from "@altea/altea/server/administrator";
+import { TokenMigrationLogic } from "@altea/altea-user-assets/server/TokenMigrationLogic.server";
+import { TokenMigrationRunner } from "@altea/altea-user-assets/server/TokenMigrationRunner.server";
 import { Northwind } from "./northwindSchema";
 import { NorthwindSeed } from "./northwindSeed";
 import { RegionEntity, TerritoryEntity, EmployeeEntity } from "../employees/Employee.data";
@@ -197,7 +200,30 @@ async function cSharpMigrations(args: string[]): Promise<void> {
 // from the synchronization script.
 async function migrations(args: string[]): Promise<void> {
     SqlMigrationRunner.migrationsDirectory = migrationsDir();
+    wireTokenMigrations();
     await SqlMigrationRunner.sqlMigrations(/* autoRun */ args.includes("--auto") || !process.stdin.isTTY);
+}
+
+/**
+ * The three hooks that make TOKEN migrations part of the ordinary schema workflow — Signum registers them
+ * inside `TokenMigrationLogic.Start`, but @altea/altea-user-assets must not depend on
+ * @altea/altea-migrations (a user-assets app need not have migrations at all), so the APP wires them.
+ * The terminal is the right place: it is what owns both, and both are console workflows.
+ *
+ * Idempotent, because `migrations` and `sync` can both run in one interactive session.
+ */
+function wireTokenMigrations(): void {
+    if (SqlMigrationRunner.afterMigrationsCompleted.includes(TokenMigrationRunner.tokenMigrations))
+        return;
+
+    // After the .sql migrations have run: apply any pending .tokens.json, or offer to record one.
+    SqlMigrationRunner.afterMigrationsCompleted.push(TokenMigrationRunner.tokenMigrations);
+    // When a new .sql migration is written: drain the QUERY renames it resolved into a sibling
+    // .query.json, so they are on disk before the old query names are gone from the schema.
+    SqlMigrationRunner.afterCreatingMigration.push(TokenMigrationLogic.afterMigrationCreated);
+    // After a schema `sync`: the renames it just resolved are exactly the ones that invalidate stored
+    // tokens, so offer to record them while they are still in hand.
+    Administrator.afterSynchronize.push(TokenMigrationRunner.afterSynchronize);
 }
 
 // eastwind/terminal/sync — where `sync` drops the script it asks you to review. Beside the terminal's own
@@ -237,9 +263,19 @@ async function synchronize(args: string[] = []): Promise<void> {
             console.log(`[sync] no-rename (drop+add): '${oldValue}' in ${replacementKey}`);
             return { oldValue, newValue: null };
         };
+    // Token migrations hang off `Administrator.afterSynchronize` — see wireTokenMigrations. Wired here
+    // too, because `sync` is reachable without ever running `migrations`.
+    SqlMigrationRunner.migrationsDirectory = migrationsDir();
+    wireTokenMigrations();
+
     const script = await Schema.current.synchronizationScript(replacements);
     if (script == null) {
         console.log("[sync] database already in sync");
+        // Signum fires the hook with (null, null) here: an already-synchronized SCHEMA can still have
+        // pending TOKEN work, so the pass must be offered rather than skipped. Only on a real console —
+        // it prompts, and a headless caller has nobody to answer.
+        if (replacements.interactive)
+            await Administrator.onAfterSynchronize(null, null);
         return;
     }
     // Signum's Administrator.SynchronizeSchema: SAVE the script, print it and its path, then ask
@@ -268,6 +304,11 @@ async function synchronize(args: string[] = []): Promise<void> {
     // it reads the committed state).
     await Schema.current.initialize();
     console.log("[sync] applied");
+
+    // Signum's `AfterSynchronize?.Invoke(fileName, rep)` — with the Replacements this sync collected,
+    // which is where the renames that invalidated stored tokens are. Interactive only (it prompts).
+    if (replacements.interactive)
+        await Administrator.onAfterSynchronize(fileName, replacements);
 }
 
 // The three file-based seeds as DIRECT commands (a deploy script calls these). The bodies live in

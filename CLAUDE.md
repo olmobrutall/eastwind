@@ -1017,6 +1017,62 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   `eastwind/terminal/probeFileEntity.ts` (17 checks) plus a three-case HTTP round-trip; `files.file` needs
   a `sync`, and matches Signum's table column for column.
 
+- **Token migrations: the renames a schema sync resolves are replayed against the query TOKENS stored
+  inside user assets.** A UserQuery / UserChart / template keeps its tokens as STRINGS, so renaming a
+  field or a query breaks every stored token that walked through it — and nothing in the schema sync
+  notices, because those tokens are DATA. Signum.UserAssets' TokenMigrations answers that by recording
+  each decision into a versioned `.tokens.json` beside the SQL migrations and replaying it;
+  `altea-user-assets/{data/TokenMigration, server/TokenMigration{File,Logic,Runner}, server/TokenSyncContext,
+  server/QueryTokenSynchronizer, server/TokenSyncWalker}` is that, with a subscriber in each of the four
+  modules that own stored tokens. Two MODES, asymmetric on purpose: **Record** is interactive and saves
+  nothing (it asks about each unresolvable token and writes the answers to a file), **Apply** is silent
+  and saves per entity (it replays them, and a miss is an ERROR rather than a question — it runs where
+  nobody is watching).
+  - **the JSON is a CONTRACT**, not an implementation detail: the bucket names, their shapes and the
+    string-or-array encoding (one candidate is a bare string, several an array) are Signum's exactly, so a
+    file written by either framework is read by both — which is the whole point for an app migrating
+    between them. Pinned by a round-trip check.
+  - **`QueryDescription` is gone**, so every entry point takes the `QueryName` and resolution goes through
+    the root token: `QueryUtils.SubToken(result, qd, options, part)` becomes
+    `(result ?? rootToken).subToken(part, options)`. `result == null` still means "at the query root", so
+    the algorithm's shape is unchanged.
+  - **staleness is DISCOVERED, not read off the entity.** Signum's retrieve fills
+    `QueryTokenEmbedded.ParseException` and short-circuits on it; in altea `token` / `parseException` are
+    `@column(false) @serialize(false)` and CLIENT-filled, so the server has no such flag and simply tries
+    to resolve the string — a throw IS the staleness signal. Strictly more reliable: the flag cannot be stale.
+  - **ONE walker where Signum has four.** `UserQueryLogic`, `UserChartLogic`, `EmailTemplateLogic` and
+    `WordTemplateLogic` each carry their own ~200-line copy of the same filter / column / order / value
+    walk, because in Signum those rows are EMBEDDED inside four unrelated MLists with no common handle. In
+    altea they are `@part` rows over a shared `QueryFilterBaseEntity`, so `TokenSyncWalker` is written
+    once and each subscriber keeps only what is its own. The columns/orders are passed as accessor SLOTS
+    rather than a shape, because a chart wraps its token one level down in `element`.
+  - **a chart column is CLEARED, not removed.** A chart's columns are POSITIONAL — the script binds column
+    0, 1, 2 — so dropping one would re-bind every column after it to the wrong role. Signum removes the
+    row; altea nulls the token and leaves the slot, which the chart editor already renders.
+  - **the interactive rename picker is the SYNCHRONIZER's own** (`Replacements.selectInteractive`), not a
+    second hand-rolled one: same numbered list ordered by Levenshtein distance, same paging, and the
+    global auto-replacement hook then works here for free. Signum re-implements it with its own
+    `Console.LargestWindowHeight - 11` arithmetic.
+  - the three hooks that put this in the ordinary workflow are wired by the APP, not the module
+    (`altea-user-assets` must not depend on `altea-migrations`): `afterMigrationsCompleted` →
+    `tokenMigrations`, `afterCreatingMigration` → `afterMigrationCreated` (drains a sync's QUERY renames
+    into a sibling `.query.json`, so they are on disk before the old names are gone), and the NEW core
+    seam `Administrator.afterSynchronize` → `afterSynchronize`. Core also gained four Colors
+    (magenta / darkYellow / blue / cyan) that Signum's pickers distinguish outcomes with.
+  - `PermissionLogic.RegisterPermissions` has no counterpart, `ExceptionLogic.DeleteLogs` is not ported,
+    and every prompt is ASYNC so the runner is async top to bottom.
+  **NOT ported, and it is a real limit:** the pass over a template's BODY TEXT, where `@[Customer.Name]`
+  lives — Signum's `TemplateSynchronizationContext` plus a `Synchronize` on every value provider, which
+  is what the `Member` / `Global` buckets are for. The two template subscribers repair a template's
+  stored QUERY tokens (filters, orders, the From token); a renamed token inside the body still surfaces as
+  a parse error when the template renders. altea-templating's header used to say that pass was impossible
+  because altea had no TokenMigrations; that premise is now false and its comment says so, so the follow-up
+  has its prerequisites in place. Pinned by `eastwind/terminal/probeTokenMigration.ts` (23 checks: the
+  file contract, a rename CHAIN across two files — and that half a chain does NOT resolve — the
+  multi-candidate branch, era-subkey unwinding, that Apply refuses to guess, and an end-to-end repair of
+  a stored UserQuery). `user_assets.token_migration` needs a `sync` and matches Signum's table column
+  for column.
+
 - **SystemEventLog is in CORE, and its "stop" hook is platform-shaped.** `altea/data/systemEventLog` +
   `server/systemEventLogLogic` + `server/systemEventServer`, where Signum keeps them (Signum/Basics): a
   line per PROCESS event, so the table answers "was the server even up then?". Two properties are the

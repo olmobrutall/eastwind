@@ -28,6 +28,7 @@ import { UserChartClient } from "@altea/altea-chart/client/UserChart/UserChartCl
 import { DashboardClient } from "@altea/altea-dashboard/client/DashboardClient";
 import { CultureInfoClient } from "@altea/altea/client/CultureInfoClient";
 import { SystemEventLogClient } from "@altea/altea/client/SystemEventLogClient";
+import { TokenMigrationClient } from "@altea/altea-user-assets/client/TokenMigrationClient";
 import { FilesClient } from "@altea/altea-files/client/FilesClient";
 import { SchedulerClient } from "@altea/altea-scheduler/client/SchedulerClient";
 import { ProcessClient } from "@altea/altea-processes/client/ProcessClient";
@@ -85,6 +86,10 @@ export function startFull(routes: RouteObject[]): void {
     // The process-event log's search columns (core — see @altea/altea/data/systemEventLog). Rows come from
     // the host's SystemEventServer.logStartStop; this is only what the search page shows.
     SystemEventLogClient.start(cb);
+
+    // The token-migration version table's search columns (@altea/altea-user-assets) — "which token
+    // migrations has this database run?", the counterpart of the SQL migration table for the schema.
+    TokenMigrationClient.start(cb);
 
     FilesClient.start(cb);
 

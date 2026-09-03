@@ -87,6 +87,8 @@ import { ToolbarLogic } from "@altea/altea-toolbar/server/ToolbarLogic.server";
 import { PlainExcelLogic } from "@altea/altea-office-template/server/excel/PlainExcelLogic.server";
 import { ExcelImportLogic } from "@altea/altea-office-template/server/excel/ExcelImportLogic.server";
 import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic.server";
+import { SqlMigrationRunner } from "@altea/altea-migrations/server/SqlMigrationRunner.server";
+import { TokenMigrationLogic } from "@altea/altea-user-assets/server/TokenMigrationLogic.server";
 import { VisualTipLogic } from "@altea/altea/server/visualTipLogic";
 import { EastwindTypeCondition, EastwindAgentUseCases, EastwindFileType } from "./globals/ApplicationConfiguration.data";
 import { PrintingLogic } from "@altea/altea-printing/server/PrintingLogic.server";
@@ -316,6 +318,18 @@ export namespace Starter {
             ChatbotServer.start(sb.webBuilder);
             AgentMcpServer.start(sb.webBuilder, EastwindAgentUseCases.MCP);
         }
+
+        // Token migrations (@altea/altea-user-assets): the version table for the `.tokens.json` files that
+        // repair stored query TOKENS after a schema rename. Southwind's `TokenMigrationLogic.Start(sb)`.
+        //
+        // It comes FIRST of the user-asset modules on purpose: each of them registers its own
+        // token-synchronizing subscriber only `if (TokenMigrationLogic.isStarted())`, so starting it later
+        // would leave every subscriber silently unregistered — the pass would run and find nothing.
+        //
+        // The directory is the SAME one the SQL migrations live in, which is the point: a `.tokens.json`
+        // sits beside the `.sql` migration whose renames caused it.
+        TokenMigrationLogic.migrationsDirectory = () => SqlMigrationRunner.migrationsDirectory;
+        TokenMigrationLogic.start(sb);
 
         // User queries module (altea-user-queries): the UserQuery entity + its Save/Delete operations,
         // caches, XML import/export, and lookup routes. Before OperationLogic.start so its operation symbols
