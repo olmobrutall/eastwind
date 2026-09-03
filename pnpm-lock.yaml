@@ -400,6 +400,9 @@ importers:
       '@altea/altea-codemirror':
         specifier: workspace:*
         version: link:../altea-codemirror
+      '@altea/altea-eval':
+        specifier: workspace:*
+        version: link:../altea-eval
       '@altea/altea-files':
         specifier: workspace:*
         version: link:../altea-files

@@ -472,7 +472,19 @@ export namespace Starter {
         //
         // `codeGenDirectory` is Signum's CodeGen folder, inside the app: the generated source is written
         // there (readable, git-ignored) and its `node_modules` is what generated imports resolve through.
-        DynamicCodeCompiler.configure({ codeGenDirectory: path.join(process.cwd(), "CodeGen") });
+        // `typesRoots` is what lets generated code import THIS app's own modules
+        // (`eastwind/shippers/Shipper.data`): nothing depends on an app, so there is no node_modules entry
+        // for TypeScript to follow — the same accommodation @altea/altea-eval needs. A `@altea/*`
+        // specifier resolves on its own and needs no entry.
+        DynamicCodeCompiler.configure({
+            codeGenDirectory: path.join(process.cwd(), "CodeGen"),
+            // The app's DIST, not its source: one directory serves both halves, exactly as a published
+            // package does. TypeScript reads the `.d.ts` there for checking, and Node loads the `.js` beside it —
+            // which is what the emitted relative import resolves to. Pointing at the SOURCE type-checks
+            // and then fails at load ("Cannot find module …/shippers/Shipper.data"), because a `.ts` is not
+            // what Node runs.
+            typesRoots: { eastwind: path.join(process.cwd(), "dist") },
+        });
         DynamicLogic.start(sb);
 
         // Workflow module (@altea/altea-workflow): the BPMN engine — workflows / pools / lanes / nodes /
@@ -631,7 +643,7 @@ export namespace Starter {
         // recorded rather than thrown (the server must boot so a bad definition can be fixed) and
         // `registerExceptionIfAny` says so loudly, including that a `sync` would now script DROPs.
         await DynamicLogic.compileDynamicCode();
-        DynamicLogic.beforeSchema();
+        DynamicLogic.beforeSchema(sb);
         DynamicLogic.startDynamicModules(sb);
         DynamicLogic.registerExceptionIfAny();
 
