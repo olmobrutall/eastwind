@@ -978,6 +978,45 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   node's CONTEXTUAL menu items and reloaded them only when unset, so picking a second node and reopening the
   "Selected" dropdown ran the FIRST node's operations — which deletes the wrong subtree.
 
+- **`FileEntity` — the shared, own-row file — completes altea's file model; `FilePathEntity` still does
+  not exist.** Signum offers four shapes along two axes (bytes in the row vs. in a store × embedded vs. its
+  own row); altea had the two embedded ones. `FileEntity` is `FileEmbedded`'s contents in a table of its
+  own, and that is its ONLY reason to exist: several owners may reference one file, and the file can outlive
+  any one of them (Signum's `EntityKind.SharedPart`). `FilePathEntity` — the store-backed sibling — is
+  still unported: nothing needs that combination, and it would want FilePathEmbeddedLogic's whole
+  save/delete cascade a second time, addressed by row rather than by owner. Divergences:
+  - **Signum's `ImmutableEntity` base is not ported, but its guarantee is.** That base works by overriding
+    the property `Set` interception, so a set on a saved row is silently SWALLOWED — altea entities are
+    plain field bags and have no such seam. What actually protects the data is Signum's other half,
+    `PreSaving` throwing when `Modified == ModifiedState.SelfModified`, and altea has that state exactly:
+    `isModifiedSelf()`. So `FileLogic` hangs `!file.isNew && file.isModifiedSelf()` on
+    `entityEvents(FileEntity).preSaving` — the same rule, reported LOUDLY instead of silently. Re-saving an
+    UNCHANGED file still works, which it must (the owner's save walks the whole reachable graph): the hash
+    handler runs first and recomputes the same value, and a value-equal write leaves the snapshot diff clean.
+  - the C# property setters become that pair of `preSaving` handlers: the hash follows the bytes ALWAYS
+    (computed server-side — the isomorphic layer has no crypto), and then the immutability check.
+  - **the download route is addressed by the file's OWN id** (`/api/files/downloadFile/:fileId`, Signum's
+    same route), not through an owner as both embedded shapes are: it IS a row, and it may have several
+    owners. The gate is therefore FileEntity's own type authorization, which `retrieve` applies like any
+    other read — an anonymous caller gets `403 Not authorized to retrieve FileEntity`, so ids cannot be
+    guessed into bytes. Its stored hash is the ETag, so revalidation costs nothing.
+  - the client's `kind` discriminator (threaded through FileLine / MultiFileLine / FileUploader /
+    FileDownloader) grows a third case, and `kind()` became a SWITCH on the bound member's type in both
+    lines — not a two-way default, which would send a FileEntity looking for a store it has no need of.
+    `FilesClient.fileUrl` accepts a `FileEntity` or a `Lite<FileEntity>` (Signum's `fileUrl` /
+    `fileLiteUrl` pair), which is what lets a search-result column offer a download without the bytes.
+  - `hash` is declared NON-nullable so the column is `NOT NULL` as Signum's is, with an explicit
+    `@notNullValidator({ disabled: env => env !== "Saving" })` replacing the implicit always-on one —
+    Signum's `DisabledInModelBinder`, and the shape altea-tree's engine-maintained columns use.
+  - NOT ported: the `FileEntity(string path)` constructor (`File.ReadAllBytes` is server-only, this layer
+    is isomorphic) and `ToXML` (its one Signum caller is WordTemplate's `SyncFromXml`, and
+    @altea/altea-office-template holds a `FileEmbedded` with XML of its own).
+  Note the two existing consumers are NOT changed back: eastwind's `EmployeeEntity.photo` and
+  altea-office-template's `template` stay `FileEmbedded`, which are deliberate simplifications recorded
+  elsewhere in this file — porting the type does not make sharing the right default. Pinned by
+  `eastwind/terminal/probeFileEntity.ts` (17 checks) plus a three-case HTTP round-trip; `files.file` needs
+  a `sync`, and matches Signum's table column for column.
+
 - **UserTicket ("remember me") is in altea-auth, and its cookie is HttpOnly.** Signum keeps it in
   `Signum.Authorization/UserTicket/`, and so does altea (`data/UserTicket` +
   `server/UserTicket{Logic,Server}`): one row per remembered device holding a random secret, exchanged
