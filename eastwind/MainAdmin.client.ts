@@ -62,6 +62,7 @@ import { RestApiKeyClient } from "@altea/altea-rest/client/RestApiKeyClient";
 import { ViewLogClient } from "@altea/altea-view-log/client/ViewLogClient";
 import { SMSClient } from "@altea/altea-sms/client/SMSClient";
 import { TourClient } from "@altea/altea-tour/client/TourClient";
+import { MachineLearningClient } from "@altea/altea-machine-learning/client/MachineLearningClient";
 import { TranslationClient } from "@altea/altea-translations/client/TranslationClient";
 import { TranslatedInstanceClient } from "@altea/altea-translations/client/TranslatedInstanceClient";
 import { DynamicViewClient } from "@altea/altea-dynamic/client/DynamicViewClient";
@@ -337,6 +338,12 @@ export function startFull(routes: RouteObject[]): void {
     // and hangs the tour button on entity frames, dashboard pages and user-query search controls. AFTER
     // DashboardClient / UserQueriesClient, whose extension points it pushes onto.
     TourClient.start(cb);
+
+    // Machine learning (altea-machine-learning): the predictor designer, the network settings editor, the
+    // epoch-progress grid with its four coloured loss formatters, and the interactive predict page.
+    // AFTER ChartClient.start — the `Full` result saver's view links to a Punchcard / Scatterplot chart,
+    // whose script keys must already be registered for the link to resolve.
+    MachineLearningClient.start(cb, routes);
 
     // Translations (altea-translations): the four code pages + the three instance pages, the two omnibox
     // "!TranslateCode" / "!TranslateInstances" actions, and the LINE TASK that puts a translate button on

@@ -55,6 +55,9 @@ altea/
   altea-markdown/     # a markdown editor line (text area + rendered preview + a syntax cheat sheet), the
                       #   "Markdown" query-column format rule, and markdown→text for the excel export
                       #   (Signum.Markdown)
+  altea-machine-learning/ # train a model over a registered QUERY and predict with it: the predictor
+                      #   definition, column codification, a TensorFlow.js neural network and the
+                      #   interactive predict page (Signum.MachineLearning)
   altea-map/          # the schema map (a d3 force graph of tables + FKs, colourable by package / kind /
                       #   size / per-role access) and the operation map (one type's state machine)
                       #   — Signum.Map
@@ -1498,6 +1501,87 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   Product. A throw from a canExecute body now PROPAGATES, named (Signum rethrows with `e.Data["entity"]`);
   swallowing only made sense while the loop was deliberately running operations that did not apply. Signum's
   `CreateMultiCanExecuteState` scratchpad is not ported — nothing in altea writes to it.
+
+- **Signum.MachineLearning → altea-machine-learning: a CODIFICATION is the unit, and CNTK becomes
+  TensorFlow.js.** A predictor names a registered QUERY, marks each column Input or Output, and trains a
+  model over the rows; a *codification* is ONE number in the model's input or output vector, which is why
+  the codifications are persisted rather than recomputed — a prediction made months later must land in the
+  same slots, with the same normalization statistics, as the training. `@tensorflow/tfjs-core` +
+  `-layers` + `-backend-cpu` are the substrate (`tfjs-node` is an OPTIONAL backend registration for the
+  same API — `useBackend("tensorflow")`, and `/api/predictor/backend` says which one is live, because a
+  pure-JS backend trains the same model far slower and that is worth knowing rather than guessing).
+  Divergences:
+  - **`MList` → `@part` rows, and the main query's filters/columns hang off the PREDICTOR.** Signum keeps
+    them inside `PredictorMainQueryEmbedded`; a `@part` collection needs a real owner TABLE, so
+    `PredictorEntity.filters` / `.columns` are the predictor's own and the embedded keeps only
+    `query` + `groupResults`. The designer still presents them as one "main query" block.
+  - **the ROOT entity token is `""`**, where Signum spells it `"Entity"` — altea has no storable root
+    token. It bit both tiers (the predict path's filter and the sub-query creator's ParentKey seed).
+  - **`isValue` and the split keys round-trip through the filter-value converter**
+    (`stringifyFilterValue` / `parseFilterValue`, altea's counterpart of Signum's
+    `FilterValueConverter`), and `objectArrayKey` keys a Lite by its KEY. Getting this wrong is silent:
+    a Lite's `toString()` is its DISPLAY text while the one-hot dictionary looks a value up by
+    `lite.key()`, so a stored "Margaret Peacock" never matched the incoming "Employee;4" — every one-hot
+    column over a reference matched nothing at PREDICT time and answered as if the value were unknown.
+    Training is unaffected (the values are still live objects there), which is exactly why it hides.
+  - **`inputsFromEntity` fills EVERY column, outputs included** (Signum's `FromFilters` does the same):
+    one dictionary is both the prediction's inputs and the record of what actually happened, which is what
+    lets the predict page show "the model says 98.53, the truth was 38.28". The outputs are ignored when
+    the vector is encoded, so carrying them cannot influence the answer.
+  - **the interactive prediction is a PAGE, not Signum's modal** —
+    `/machineLearning/predict/:predictorId?entity=<liteKey>` — so a prediction has a shareable URL; the
+    content is Signum's `PredictModal` (editable inputs, a re-prediction per edit through an
+    `AbortableRequest`, the original dimmed while one is in flight, the alternatives checkbox for a
+    classification). Its wire DTOs live in the DATA layer and carry a token as a STRING, which the page
+    resolves through `Finder.TokenCompleter` — altea has no QueryDescription, so a serialized token DTO
+    would be a second, weaker copy of a model the client already builds.
+  - **`PredictDictionary.options`** carries the decode options (Signum's same field), so a batch may mix
+    rows asking for alternatives with rows asking for the winner.
+  - **the loss chart is inline SVG**, not Signum's d3 `LineChart`: a fixed two-series line chart over a
+    few hundred points needs no scale abstraction, and it keeps the module off a charting dependency for
+    one view. The validation series is drawn with GAPS, because it is only recorded every
+    `saveValidationProgressEvery` epochs and joining across them would draw through points nobody
+    measured. The four grid formatters keep Signum's light/dark colour pairs for the same reason — the
+    two curves DIVERGING is what overfitting looks like.
+  - **`ProgressBar` is local** (altea's framework has none) and **`initializeColumn` is its own module**
+    (Signum imports it back out of `Templates/Predictor.tsx`, a cycle that survives only because a
+    function declaration is hoisted).
+  - **the four symbol tables need `SymbolLogic.start` AND `sb.include(X).withQuery()`**, the shape nine
+    other packages use: altea's `SymbolLogic.start` does not register a query, where Signum's
+    `SymbolLogic<T>.Start` does — and the designer's algorithm / encoding / result-saver combos load
+    their options by RUNNING the type's query. They come LAST in `start`, because the default
+    `getSymbols` is "every DECLARED symbol of this type" and a declaration happens when its container is
+    first touched — `registerAlgorithm` / `registerResultSaver` above are what touch them.
+  - **`IgnorePinned` is called by the MODULE**, not left to the app as in Southwind: altea's filter rows
+    share `QueryFilterBaseEntity`, so those seven pinned columns exist unless the module says otherwise,
+    and an app that forgot the call would silently get a schema Signum does not have.
+  - NOT ported: the CSV / TSV / TensorFlow-projector export links (a matrix serializer plus three
+    routes, and the projector link is a `window.open` of a public site — `PredictorMessage` keeps their
+    labels), `PredictorEntity.MainQuery.ParseData` (gone with QueryDescription — a stale token fails at
+    TRAIN time with the predictor named), and Signum's `getHelpBlock` (a switch that can only produce an
+    empty string or an exception) with its unused `LabelWithHelp`.
+  It found TWO core bugs, both older than this module and both app-wide:
+  - **`Navigator.hasAllowedConstructor` denied construction for every type with no plain Constructor
+    operation.** Signum's rule is "if a CONSTRUCTOR operation exists for the type but the role may not run
+    it, refuse" and it reads a server-computed `TypeInfo.hasConstructorOperation`; altea approximated that
+    as "does any operation exist that is neither Execute nor Delete", which a **ConstructFrom** satisfies
+    — so the moment altea-alert / altea-notes registered `CreateAlertFromEntity` /
+    `CreateNoteFromEntity` on `Entity` (inherited by every type), every `@part` row type answered false.
+    Visible symptom: no "Create" row on any EntityTable / EntityRepeater over a `@part` collection —
+    a UserQuery's columns and orders could not be added to — and no "Create new X" button on such a
+    type's search page. `TypeMetadata.hasConstructorOperation` now carries the flag, computed in
+    `ReflectionServer.buildMetadata` BEFORE the per-role filter (it is the one field there that is
+    deliberately role-independent).
+  - **`QueryTokenEmbeddedBuilder` never resolved a STORED token.** `QueryTokenEmbedded.token` is
+    `@serialize(false)` — the server only ever sees `tokenString` — and nothing revived it on load, so
+    every stored column / order / filter of every UserQuery, UserChart and template rendered the token
+    builder's "…" placeholder forever and could not be edited without re-picking. It resolves there now
+    (in local state, so an untouched form does not look modified), and a token that no longer resolves
+    shows its message instead of hanging.
+  Plus one smaller pair in the Lines, in the path of a JSX `label`: `isLabelVisible` was
+  `!(style === "SrOnly" || "visually-hidden")` — a precedence mistake whose bare string literal made it
+  ALWAYS false — and the accessible name was `String(p.label)`, which for a React element is the literal
+  text "[object Object]". Both now go through `client/Lines/ariaLabel.ts`.
 
 - **A download's file name is written in BOTH `Content-Disposition` forms, from one helper.** ASP.NET's
   `File(bytes, contentType, fileName)` emits `filename="…"; filename*=UTF-8''…` and Signum's
