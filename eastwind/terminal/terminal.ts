@@ -1,8 +1,11 @@
 import "@altea/altea/server/context.node"; // register server context storage first
 import * as path from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import * as url from "node:url";
 import chalk from "chalk";
 import { Connector } from "@altea/altea/server/connection/connector";
+import { Transaction } from "@altea/altea/server/connection/transaction";
 import { formatError } from "@altea/altea/server/formatError";
 import { Schema } from "@altea/altea/server/schema";
 import { Replacements } from "@altea/altea/server/sync/synchronizer";
@@ -68,7 +71,7 @@ async function main(): Promise<void> {
                 case "new":
                 case "create": await create(); break;
                 case "sync":
-                case "synchronize": await synchronize(); break;
+                case "synchronize": await synchronize(args); break;
                 case "load": await load(args.slice(1)); break;
                 case "csharp":
                 case "cs": await cSharpMigrations(args.slice(1)); break;
@@ -220,7 +223,10 @@ async function create(): Promise<void> {
     console.log("[new] schema generation complete");
 }
 
-async function synchronize(): Promise<void> {
+async function synchronize(args: string[] = []): Promise<void> {
+    // `--apply`: run the script without asking. For a DEV database and for CI, where there is no console to
+    // review it on — the script is still written to terminal/sync/ first, so what ran is on disk.
+    const apply = args.includes("--apply");
     const replacements = new Replacements();
     replacements.interactive = Boolean(process.stdin.isTTY); // prompt for renames only on a real console
     // Headless (no TTY): we can't prompt, so instead of ABORTING on an ambiguous column/table rename, treat
@@ -239,6 +245,19 @@ async function synchronize(): Promise<void> {
     // Signum's Administrator.SynchronizeSchema: SAVE the script, print it and its path, then ask
     // run / open / exit — never apply it unasked. Applying it is ONE transaction, so a mid-script failure
     // (a PK-type migration that fails partway) rolls back rather than leaving the database half-migrated.
+    if (apply) {
+        const fileName = join(resolve(syncDirectory), syncFileName(new Date()));
+        mkdirSync(dirname(fileName), { recursive: true });
+        writeFileSync(fileName, script.plainSql(), "utf8");
+        console.log("[sync] applying " + fileName);
+        await Transaction.create(async () => {
+            await Connector.current().executeNonQuery(script.plainSql());
+        });
+        await Schema.current.initialize();
+        console.log("[sync] applied");
+        return;
+    }
+
     const { fileName, executed } = await openSqlFileRetry(script, syncDirectory, syncFileName(new Date()));
     if (!executed) {
         console.log("[sync] not applied — the script is in " + fileName);

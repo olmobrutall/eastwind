@@ -65,6 +65,8 @@ import { WorkflowLogicStarter } from "@altea/altea-workflow/server/WorkflowLogic
 import { OrderWorkflow } from "./orders/OrderWorkflow.server";
 import { EastwindEval } from "./eastwindEval.server";
 import { DynamicLogic } from "@altea/altea-dynamic/server/DynamicLogic.server";
+import { DynamicCodeCompiler } from "@altea/altea-dynamic/server/DynamicCodeCompiler.server";
+import path from "node:path";
 import { EmailLogic } from "@altea/altea-email/server/EmailLogic.server";
 import { EmailPackageLogic } from "@altea/altea-email/server/EmailPackageLogic.server";
 import { SendEmailTaskLogic } from "@altea/altea-email/server/SendEmailTaskLogic.server";
@@ -464,9 +466,13 @@ export namespace Starter {
 
         // Dynamic module (altea-dynamic): the three VIEW tables (a view defined in the database, a
         // selector that picks between them, an override that rewrites an existing view), the CSS-override
-        // table + its anonymous endpoint, and the SQL-migration table. Before OperationLogic.start so its
-        // operation symbols get seeded. The COMPILED half of Signum.Dynamic (dynamic types / expressions /
-        // validations / api / type conditions) is not ported — see the module's DynamicLogic header.
+        // table + its anonymous endpoint, the SQL-migration table, and the COMPILED half — a DynamicType
+        // is generated as TypeScript, compiled with the quote-transformer and loaded, which is why the
+        // compiler is configured first. Before OperationLogic.start so its operation symbols get seeded.
+        //
+        // `codeGenDirectory` is Signum's CodeGen folder, inside the app: the generated source is written
+        // there (readable, git-ignored) and its `node_modules` is what generated imports resolve through.
+        DynamicCodeCompiler.configure({ codeGenDirectory: path.join(process.cwd(), "CodeGen") });
         DynamicLogic.start(sb);
 
         // Workflow module (@altea/altea-workflow): the BPMN engine — workflows / pools / lanes / nodes /
@@ -618,6 +624,16 @@ export namespace Starter {
         // schema core but never `.withQuery()`'d, so `/find/Type` reported "not allowed"; register it here.
         // (Scoped to eastwind rather than the framework to avoid re-seeding altea-test's query table.)
         sb.include(TypeEntity as unknown as Type<Entity>).withQuery();
+
+        // The COMPILED half of altea-dynamic, in Signum's own order: generate + compile + load the dynamic
+        // code, run each definition's before-schema block, then let the generated starters INCLUDE their
+        // types — all before `sb.complete()`, because a schema is built once. A compile failure is
+        // recorded rather than thrown (the server must boot so a bad definition can be fixed) and
+        // `registerExceptionIfAny` says so loudly, including that a `sync` would now script DROPs.
+        await DynamicLogic.compileDynamicCode();
+        DynamicLogic.beforeSchema();
+        DynamicLogic.startDynamicModules(sb);
+        DynamicLogic.registerExceptionIfAny();
 
         sb.complete();
 
