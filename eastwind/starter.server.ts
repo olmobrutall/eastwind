@@ -485,7 +485,9 @@ export namespace Starter {
             // what Node runs.
             typesRoots: { eastwind: path.join(process.cwd(), "dist") },
         });
-        DynamicLogic.start(sb);
+        // `isolations` is opt-in and OFF by default (see the flag): eastwind turns it on to exercise
+        // DynamicIsolation, and still never starts @altea/altea-isolation — so no app-wide commitment.
+        DynamicLogic.start(sb, { isolations: true });
 
         // Workflow module (@altea/altea-workflow): the BPMN engine — workflows / pools / lanes / nodes /
         // connections, cases, case activities + notifications, the scheduled-start tasks and the script

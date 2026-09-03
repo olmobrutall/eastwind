@@ -119,7 +119,13 @@ async function use(): Promise<void> {
         for (const old of existing)
             await old.delete();
 
-        const row = ctor.create({ Code: "ABC", Quantity: 7, Comment: "written through a generated type" });
+        // Every non-nullable property must be set — the IMPLICIT NotNull applies to a generated type
+        // exactly as to a declared one, which is worth knowing: adding a required property in the
+        // designer makes an existing caller fail validation, by design.
+        const row = ctor.create({
+            Code: "ABC", Quantity: 7, Name: "probe",
+            Comment: "written through a generated type",
+        });
         await Operations.execute(row, symbols["Save"] as never);
         console.log(`[use] saved id ${(row as Entity).id}, toString = "${row.toString()}"`);
 

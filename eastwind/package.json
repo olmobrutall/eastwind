@@ -85,6 +85,7 @@
     "@altea/altea-printing": "workspace:*",
     "@altea/altea-whats-new": "workspace:*",
     "@altea/altea-dynamic": "workspace:*",
+    "@altea/altea-isolation": "workspace:*",
     "@altea/altea-eval": "workspace:*",
     "@altea/altea-alert": "workspace:*",
     "@altea/altea-workflow": "workspace:*",

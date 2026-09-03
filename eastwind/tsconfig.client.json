@@ -51,6 +51,7 @@
     { "path": "../altea/altea-translations/tsconfig.client.json" },
     { "path": "../altea/altea-html-editor/tsconfig.client.json" },
     { "path": "../altea/altea-dynamic/tsconfig.client.json" },
+    { "path": "../altea/altea-isolation/tsconfig.client.json" },
     { "path": "../altea/altea-eval/tsconfig.client.json" },
     { "path": "../altea/altea-workflow/tsconfig.client.json" }
   ]

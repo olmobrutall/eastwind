@@ -52,6 +52,7 @@ import {
     ToolbarElementBaseEntity, ToolbarEntity, ToolbarMenuEntity, ToolbarSwitcherEntity,
 } from "@altea/altea-toolbar/data/Toolbar";
 import { DiffLogMixin } from "@altea/altea-diff-log/data/DiffLog";
+import { DynamicIsolationMixin } from "@altea/altea-dynamic/data/DynamicIsolation";
 import { CaseActivityMixin } from "@altea/altea-workflow/data/CaseActivity";
 import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
 import { NoteEntity } from "@altea/altea-notes/data/Notes";
@@ -75,6 +76,17 @@ export namespace EntityOverrides {
         // operation brackets. Declaring it adds those columns to the OperationLog table, so it belongs
         // here — both tiers, before any (de)serialization.
         DiffLogMixin.declare();
+
+        // The isolation mixin on DynamicTypeEntity (Signum's
+        // `MixinDeclarations.Register<DynamicTypeEntity, DynamicIsolationMixin>()`, which its APP calls
+        // too — nothing in Signum.Dynamic does): which isolation strategy a dynamically defined type uses,
+        // which @altea/altea-dynamic then generates an `Isolation.register` call from.
+        //
+        // eastwind declares it to EXERCISE the feature, not because eastwind is multi-tenant: it never
+        // calls `IsolationLogic.start`, and that is where the app-wide assertion lives ("every table must
+        // declare a strategy"). Declaring the mixin adds one column to `dynamic_type`; marking a dynamic
+        // type Isolated then adds an `isolation` column to THAT type's table.
+        DynamicIsolationMixin.declare();
 
         // The workflow mixin on EmailMessageEntity (Signum's
         // `MixinDeclarations.Register<EmailMessageEntity, CaseActivityMixin>()`): an email produced INSIDE a

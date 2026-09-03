@@ -406,6 +406,9 @@ importers:
       '@altea/altea-files':
         specifier: workspace:*
         version: link:../altea-files
+      '@altea/altea-isolation':
+        specifier: workspace:*
+        version: link:../altea-isolation
       '@altea/altea-migrations':
         specifier: workspace:*
         version: link:../altea-migrations
@@ -1192,6 +1195,9 @@ importers:
       '@altea/altea-html-editor':
         specifier: workspace:*
         version: link:../altea/altea-html-editor
+      '@altea/altea-isolation':
+        specifier: workspace:*
+        version: link:../altea/altea-isolation
       '@altea/altea-mailing-exchange':
         specifier: workspace:*
         version: link:../altea/altea-mailing-exchange
