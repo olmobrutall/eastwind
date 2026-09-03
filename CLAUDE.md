@@ -509,8 +509,10 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   COMPILED one — `DynamicType`, `DynamicExpression`, `DynamicValidation`, `DynamicApi`,
   `DynamicTypeCondition`, `DynamicMixinConnection` — does what Signum does: GENERATE source into a
   `CodeGen` directory, compile it, load it, and restart so the new types take part in the schema (then a
-  `sync` for their tables). Only `DynamicIsolation` is unported, because @altea/altea-isolation is not
-  wired into eastwind at all.
+  `sync` for their tables). `DynamicIsolation` is there too, and is the one that is OPT-IN (off by
+  default): @altea/altea-isolation refuses to start unless EVERY table declared a strategy, so
+  generating `Isolation.register` calls for an app that never started it would commit it to that
+  assertion by accident — Signum has the same hazard and the same answer.
 
   This bullet used to say the compiled half was "a design project, not a port", because altea's entity
   model is stamped at BUILD time by the quote-transformer. That was the wrong conclusion from the right
@@ -555,6 +557,15 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   - **an operation symbol is written `init()`** in generated code, and the transformer fills in the key.
     Signum must spell out `OperationSymbol.Execute<XEntity>(typeof(XOperation), "Save")` because C# cannot
     see the member name — the clearest illustration of why the transformer belongs in the emit.
+  - **the definition read PROJECTS, and a generator wanting a mixin's field reads it itself.** Reading the
+    whole `DynamicTypeEntity` makes the definitions unreadable the moment an optional MIXIN adds a column
+    to `dynamic_type` (DynamicIsolation's does) — raised at exactly the point the definitions are needed
+    to BUILD the schema, and a schema built without them scripts every dynamic table as a DROP. So
+    `getTypes()` selects the four columns that are always there, and `DynamicIsolationLogic.strategies`
+    does its own tolerant read (warn, treat everything as None) so the `sync` that adds the column can
+    run. That column also stores the strategy's NAME, where Signum stores its enum ordinal: altea's
+    `IsolationStrategy` is deliberately a string union, and giving that module a reflected enum for one
+    consumer would add an enum table and touch every comparison in it.
   - **`MList<T>` becomes a generated `@part` ROW type plus a `T[]`.** Signum's
     `DynamicTypeBackMListDefinition` (TableName / PreserveOrder / OrderName / BackReferenceName) describes
     that row table one for one.
