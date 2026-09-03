@@ -1017,6 +1017,42 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   `eastwind/terminal/probeFileEntity.ts` (17 checks) plus a three-case HTTP round-trip; `files.file` needs
   a `sync`, and matches Signum's table column for column.
 
+- **SessionLog: who logged in, from where, for how long — and the closing half is WIRED, where Signum's
+  is dead code.** `altea-auth/{data/SessionLog, server/SessionLogLogic}`, one row per login, opened on
+  `/api/auth/login` and closed on `/api/auth/logout`. The app starts it (Southwind's
+  `SessionLogLogic.Start(sb)`). Divergences:
+  - **`SessionLogLogic.SessionEnd` is never called in Signum** — not by the framework, not by Southwind —
+    so every row it writes keeps `sessionEnd` null, `sessionTimeOut` false and its `Duration` expression
+    null forever: three of the entity's six fields, its one expression and two of its five default query
+    columns are inert there. altea has the hook Signum lacks a call from, `AuthServer.userLoggingOut`, so
+    the port keeps the method and adds the missing call — the same decision altea-help made for Signum's
+    unreachable `HelpSearch`. Verified end to end over HTTP: a login opens the row, a logout closes it,
+    and `durationSeconds` comes back 13.
+  - **the "latest session" ordering gains a tie-break on `id`.** Signum narrows with
+    `.OrderByDescending(SessionStart).Take(1).Where(SessionEnd == null)` — "the latest row, and only if it
+    is still open", deliberately not "the latest open row", which is kept exactly. But `sessionStart` is
+    truncated to SECONDS, so two logins in the same second are indistinguishable by it and the single-key
+    ordering picks between them arbitrarily. Observed while probing: the second session was left
+    permanently open because the tie resolved to the first, already-closed row. Within one second the
+    higher id IS the later row.
+  - **which roles are recorded defaults the way round that is worth knowing.** The gate is an
+    authorization CHECK, not an explicit grant: a role with no rule for `SessionLogPermission.TrackSession`
+    inherits the role's own default (Signum's `GetAllowedBase`), so an unrestricted role IS tracked as
+    soon as the module starts, and it is a restricted role that must be granted the permission to appear.
+    To record nobody, deny the permission — or do not start the module.
+  - `PermissionLogic.RegisterPermissions` has no counterpart (a declared `init()` symbol is picked up by
+    the symbol synchronizer), which makes `isAuthorizedForRole` — and hence `sessionStart` /
+    `sessionEnd` — ASYNC; `[DateTimePrecisionValidator(Seconds)]` has none either, so both dates are
+    truncated where they are assigned (the call altea-sms already made); the ORDER BY + TOP `UnsafeUpdate`
+    becomes select-then-update-by-id (as UserTicketLogic's per-user sweep does); `ExceptionLogic.DeleteLogs`
+    is not ported, the note every log-owning module carries.
+  Pinned by `eastwind/terminal/probeSessionLog.ts` (23 checks, including that the nullable-ternary
+  `durationSeconds` really lowers to SQL both as a projection and as an ORDER BY). `auth.session_log`
+  needs a `sync` and matches Signum's table column for column. **A new declared symbol means each test
+  suite's own database needs regenerating** — the auth suite failed 27 of 30 with "Mismatches caching
+  PermissionSymbol: Missing SessionLogPermission.TrackSession" until `pnpm --filter @altea/altea-auth
+  gen:postgres`.
+
 - **UserTicket ("remember me") is in altea-auth, and its cookie is HttpOnly.** Signum keeps it in
   `Signum.Authorization/UserTicket/`, and so does altea (`data/UserTicket` +
   `server/UserTicket{Logic,Server}`): one row per remembered device holding a random secret, exchanged
