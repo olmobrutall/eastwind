@@ -39,6 +39,7 @@ packages:
   - altea/altea-map
   - altea/altea-help
   - altea/altea-tree
+  - altea/altea-machine-learning
   - altea/altea-rest
   - altea/altea-view-log
   - altea/altea-sms
@@ -61,6 +62,7 @@ packages:
 # node_modules on the next `pnpm install`.
 nodeLinker: hoisted
 allowBuilds:
+  core-js: set this to true or false
   esbuild: true
   unrs-resolver: true
 # The root package.json was removed on the test-tiers refactor, so shared build tooling /
