@@ -54,6 +54,7 @@ import {
 import { DiffLogMixin } from "@altea/altea-diff-log/data/DiffLog";
 import { DynamicIsolationMixin } from "@altea/altea-dynamic/data/DynamicIsolation";
 import { VisualTipConsumedEntity } from "@altea/altea/data/visualTip";
+import { SystemEventLogEntity } from "@altea/altea/data/systemEventLog";
 import { CaseActivityMixin } from "@altea/altea-workflow/data/CaseActivity";
 import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
 import { NoteEntity } from "@altea/altea-notes/data/Notes";
@@ -92,6 +93,7 @@ export namespace EntityOverrides {
         // VisualTipConsumedEntity.user — core declares no implementations so it needn't reference
         // altea-auth (the same accommodation ExceptionEntity.user and OperationLogEntity.user make).
         overrideImplementedBy(VisualTipConsumedEntity, "user", () => [UserEntity]);
+        overrideImplementedBy(SystemEventLogEntity, "user", () => [UserEntity]);
 
         // The workflow mixin on EmailMessageEntity (Signum's
         // `MixinDeclarations.Register<EmailMessageEntity, CaseActivityMixin>()`): an email produced INSIDE a

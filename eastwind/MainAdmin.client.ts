@@ -27,6 +27,7 @@ import { ColorPaletteClient } from "@altea/altea-chart/client/ColorPalette/Color
 import { UserChartClient } from "@altea/altea-chart/client/UserChart/UserChartClient";
 import { DashboardClient } from "@altea/altea-dashboard/client/DashboardClient";
 import { CultureInfoClient } from "@altea/altea/client/CultureInfoClient";
+import { SystemEventLogClient } from "@altea/altea/client/SystemEventLogClient";
 import { FilesClient } from "@altea/altea-files/client/FilesClient";
 import { SchedulerClient } from "@altea/altea-scheduler/client/SchedulerClient";
 import { ProcessClient } from "@altea/altea-processes/client/ProcessClient";
@@ -80,6 +81,10 @@ export function startFull(routes: RouteObject[]): void {
     // The culture table's query settings + the client half of the culture-name resolver. Before the
     // template modules, whose `culture` fields reference it.
     CultureInfoClient.start(cb);
+
+    // The process-event log's search columns (core — see @altea/altea/data/systemEventLog). Rows come from
+    // the host's SystemEventServer.logStartStop; this is only what the search page shows.
+    SystemEventLogClient.start(cb);
 
     FilesClient.start(cb);
 

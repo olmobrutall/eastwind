@@ -7,6 +7,7 @@ import type { Entity, Type } from "@altea/altea/data/entity";
 import { SignumServer } from "@altea/altea/server/signumServer";
 import type { WebBuilder } from "@altea/altea/server/webApi";
 import { ExceptionLogic } from "@altea/altea/server/exceptionLogic";
+import { SystemEventLogLogic } from "@altea/altea/server/systemEventLogLogic";
 import { CultureInfoLogic } from "@altea/altea/server/cultureInfoLogic";
 import { OperationLogic } from "@altea/altea/server/operationLogic";
 import { loadAppTranslations } from "@altea/altea/server/translations";
@@ -159,6 +160,11 @@ export namespace Starter {
 
         // Framework logic (Signum's part of Starter.Start): the exception log table.
         ExceptionLogic.start(sb);
+        // Southwind's `SystemEventLogLogic.Start(sb)` (Starter.cs) — one row per process event
+        // ("Application Start" / "Application Stop", written by webServer's SystemEventServer.logStartStop).
+        // It is the table that answers "was the server up then?", so it is worth having before anything
+        // that could go wrong does.
+        SystemEventLogLogic.start(sb);
 
         // The cultures the application supports (Signum's CultureInfoLogic.Start). Early, because an email
         // or Office template REFERENCES a culture row, so the table has to exist before those modules

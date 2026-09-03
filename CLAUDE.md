@@ -1017,6 +1017,41 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   `eastwind/terminal/probeFileEntity.ts` (17 checks) plus a three-case HTTP round-trip; `files.file` needs
   a `sync`, and matches Signum's table column for column.
 
+- **SystemEventLog is in CORE, and its "stop" hook is platform-shaped.** `altea/data/systemEventLog` +
+  `server/systemEventLogLogic` + `server/systemEventServer`, where Signum keeps them (Signum/Basics): a
+  line per PROCESS event, so the table answers "was the server even up then?". Two properties are the
+  whole design and both are Signum's — the row is written in its OWN transaction
+  (`Transaction.forceNew`), because the events worth recording happen while something else is going
+  wrong and a row that rolls back with the ambient transaction records nothing about exactly that moment;
+  and `log` NEVER throws, reporting a failure through ExceptionLogic and answering `false`, because
+  failing a boot because the boot could not be logged would be worse than not logging it. Divergences:
+  - **`IHostApplicationLifetime.ApplicationStopping` becomes process SIGNALS plus `beforeExit`, and the
+    coverage is per-PLATFORM rather than uniform.** Windows has no POSIX signals: Node emulates
+    SIGINT / SIGBREAK for a real console Ctrl+C / Ctrl+Break, and **SIGTERM does not exist there at all** —
+    a `taskkill`, a service stop, or another process's `process.kill(pid, "SIGTERM")` terminates the
+    target outright with no handler run. Found the hard way: the first version registered SIGTERM
+    everywhere, and a self-kill on Windows produced no handler and no row. So `stopSignals` is chosen by
+    `process.platform`, and a missing "Application Stop" means "this process did not shut down through a
+    route we can observe" — usable information, as long as the routes are written down, which is what the
+    module header does.
+  - **the handler exits with `128 + signal number`, it does not re-raise.** A self-`process.kill` is not
+    portable (same reason), and this yields the status a shell reports for a signal death on either
+    platform. Not `exit(0)`, which would file a `kill` as a clean shutdown.
+  - **the `stopping` guard is load-bearing against `beforeExit`, not just against a second signal.**
+    `beforeExit` fires whenever the loop drains, and scheduling async work inside it — which writing a row
+    is — keeps the loop alive, so it drains and fires AGAIN, forever. Verified: an async `beforeExit`
+    handler without the guard re-entered until killed.
+  - `Schema.Current.MachineName` → `node:os`'s `hostname()`, which ExceptionLogic already uses for the
+    same column; `ExceptionLogic.DeleteLogs` is not ported (the note every log-owning module carries),
+    and note Signum registers TWO limits there — plain rows and rows WITH an exception — so a port of that
+    machinery must keep both.
+  Pinned by `eastwind/terminal/probeSystemEventLog.ts` (15 checks, including that a row written inside a
+  DOOMED ambient transaction survives its rollback, and that an unsavable event answers false instead of
+  throwing). The signal / drain paths are verified out of process instead, since they turn on exit status:
+  a drained loop writes exactly one stop row and exits 0, and the SIGINT handler body writes its row and
+  exits 130. Windows OS DELIVERY of SIGINT needs a real console Ctrl+C and is not machine-verified here.
+  `basics.system_event_log` needs a `sync` and matches Signum's table column for column.
+
 - **SessionLog: who logged in, from where, for how long — and the closing half is WIRED, where Signum's
   is dead code.** `altea-auth/{data/SessionLog, server/SessionLogLogic}`, one row per login, opened on
   `/api/auth/login` and closed on `/api/auth/logout`. The app starts it (Southwind's

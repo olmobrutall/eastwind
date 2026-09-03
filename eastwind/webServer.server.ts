@@ -2,6 +2,7 @@ import "@altea/altea/server/context.node"; // register server context storage fi
 import { createWebServer } from "@altea/altea/server/webApi";
 import { Connector, ConsoleSqlLogger } from "@altea/altea/server/connection/connector";
 import { formatError } from "@altea/altea/server/formatError";
+import { SystemEventServer } from "@altea/altea/server/systemEventServer";
 import { Starter } from "./starter.server";
 
 // eastwind web host (Southwind.Server/Program.cs). Creates the WebBuilder and hands it to Starter.start;
@@ -31,6 +32,12 @@ async function main(): Promise<void> {
     // Without this, a failed bind (e.g. EADDRINUSE from an orphaned prior run) never refs the event loop,
     // so the process just drains and exits code 0 — a phantom "clean" exit that reads as success. Surface it.
     server.on("error", err => fail(err));
+
+    // Southwind.Server/Program.cs's `SystemEventServer.LogStartStop(app.Lifetime)` — record that this
+    // process came up, and arrange for it to record its own shutdown. AFTER listen, so a boot that cannot
+    // even bind its port is not filed as a successful start; and awaited, so the row exists before the
+    // host is considered up. See server/systemEventServer for what a MISSING stop row means.
+    await SystemEventServer.logStartStop();
 }
 
 // Both exits print through formatError, never `err.message`: the message of the error a dead database
