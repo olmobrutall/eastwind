@@ -55,6 +55,8 @@ import { DiffLogMixin } from "@altea/altea-diff-log/data/DiffLog";
 import { DynamicIsolationMixin } from "@altea/altea-dynamic/data/DynamicIsolation";
 import { VisualTipConsumedEntity } from "@altea/altea/data/visualTip";
 import { SystemEventLogEntity } from "@altea/altea/data/systemEventLog";
+import { PredictorEntity } from "@altea/altea-machine-learning/data/Predictor";
+import { NeuralNetworkSettingsEntity } from "@altea/altea-machine-learning/data/NeuralNetworkSettings";
 import { CaseActivityMixin } from "@altea/altea-workflow/data/CaseActivity";
 import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
 import { NoteEntity } from "@altea/altea-notes/data/Notes";
@@ -94,6 +96,18 @@ export namespace EntityOverrides {
         // altea-auth (the same accommodation ExceptionEntity.user and OperationLogEntity.user make).
         overrideImplementedBy(VisualTipConsumedEntity, "user", () => [UserEntity]);
         overrideImplementedBy(SystemEventLogEntity, "user", () => [UserEntity]);
+
+        // PredictorEntity.user — same accommodation as the log entities above.
+        overrideImplementedBy(PredictorEntity, "user", () => [UserEntity]);
+
+        // PredictorEntity.algorithmSettings — @altea/altea-machine-learning declares
+        // `IPredictorAlgorithmSettings` as an INTERFACE with an empty @implementedBy, so the app names the
+        // concrete settings types it installs. Exactly the shape the mail services use, and for the same
+        // reason: a module cannot know which algorithms an application ships.
+        //
+        // This is also what brings NeuralNetworkSettingsEntity (and its hidden-layer rows) into the
+        // schema — without it the module's own algorithm has no table for its settings.
+        overrideImplementedBy(PredictorEntity, "algorithmSettings", () => [NeuralNetworkSettingsEntity]);
 
         // The workflow mixin on EmailMessageEntity (Signum's
         // `MixinDeclarations.Register<EmailMessageEntity, CaseActivityMixin>()`): an email produced INSIDE a

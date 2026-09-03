@@ -89,6 +89,7 @@ import { ExcelImportLogic } from "@altea/altea-office-template/server/excel/Exce
 import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic.server";
 import { SqlMigrationRunner } from "@altea/altea-migrations/server/SqlMigrationRunner.server";
 import { TokenMigrationLogic } from "@altea/altea-user-assets/server/TokenMigrationLogic.server";
+import { PredictorLogic } from "@altea/altea-machine-learning/server/PredictorLogic.server";
 import { VisualTipLogic } from "@altea/altea/server/visualTipLogic";
 import { EastwindTypeCondition, EastwindAgentUseCases, EastwindFileType } from "./globals/ApplicationConfiguration.data";
 import { PrintingLogic } from "@altea/altea-printing/server/PrintingLogic.server";
@@ -318,6 +319,15 @@ export namespace Starter {
             ChatbotServer.start(sb.webBuilder);
             AgentMcpServer.start(sb.webBuilder, EastwindAgentUseCases.MCP);
         }
+
+        // Machine learning (@altea/altea-machine-learning): the predictor definition, its codification /
+        // progress / result rows, and the TensorFlow.js engine. Southwind starts the same module.
+        //
+        // AFTER ProcessLogic.start, because the Autoconfigure genetic search registers itself as a process
+        // algorithm; and its own file store is where a trained model's files go.
+        PredictorLogic.start(sb, {
+            predictorFile: EastwindFileStores.store("predictor-files"),
+        });
 
         // Token migrations (@altea/altea-user-assets): the version table for the `.tokens.json` files that
         // repair stored query TOKENS after a schema rename. Southwind's `TokenMigrationLogic.Start(sb)`.

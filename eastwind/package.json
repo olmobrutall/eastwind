@@ -90,7 +90,8 @@
     "@altea/altea-alert": "workspace:*",
     "@altea/altea-workflow": "workspace:*",
     "@altea/altea-playwright": "workspace:*",
-    "@altea/altea-notes": "workspace:*"
+    "@altea/altea-notes": "workspace:*",
+    "@altea/altea-machine-learning": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

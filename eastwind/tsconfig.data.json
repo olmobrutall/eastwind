@@ -10,6 +10,7 @@
     { "path": "../altea/altea-processes/tsconfig.data.json" },
     { "path": "../altea/altea-dashboard/tsconfig.data.json" },
     { "path": "../altea/altea-user-queries/tsconfig.data.json" },
+    { "path": "../altea/altea-machine-learning/tsconfig.data.json" },
     { "path": "../altea/altea-chart/tsconfig.data.json" },
     { "path": "../altea/altea-toolbar/tsconfig.data.json" },
     { "path": "../altea/altea-templating/tsconfig.data.json" },
