@@ -120,6 +120,7 @@ import { NoteLogic } from "@altea/altea-notes/server/NoteLogic.server";
 import { AlertNotificationLogic } from "@altea/altea-alert/server/AlertNotificationLogic.server";
 import { CacheServer } from "@altea/altea-cache/server/CacheServer";
 import type { Schema } from "@altea/altea/server/schema";
+import { EastwindModeServer } from "./eastwindMode.server";
 
 // Port of Southwind's Starter.Start (Southwind/Starter.cs): the single global entry that builds the
 // schema, binds the connector, registers each module's logic and completes. Extensions are excluded
@@ -175,9 +176,14 @@ export namespace Starter {
      */
     export async function start(connectionString: string, webBuilder?: WebBuilder,
         options?: { initialize?: boolean }): Promise<void> {
+        // Point eastwind at a database a SIGNUM application generated — a Southwind — and declare only what
+        // Southwind declares. Read FIRST because EntityOverrides needs it: an implementedBy list decides
+        // which TABLES the schema creates, so it is part of the model, not of module registration.
+        const southwindOnly = isEnvTrue(process.env["LegacyMode"]);
+
         // Shared entity-model declarations (mixins / lite models / implementedBy overrides), applied
         // identically on client and server. Runs before schema build so overrides take effect.
-        EntityOverrides.start();
+        EntityOverrides.start({ southwindOnly });
 
         var sb = new SchemaBuilder();
         sb.webBuilder = webBuilder;
@@ -199,7 +205,17 @@ export namespace Starter {
         // than a rebuild (every table renamed). See SchemaSettings.legacyMode for what it currently covers.
         // Like the dialect above, this is decided while the schema is BUILT, before a row can be read, so
         // it comes from the environment and not from the ApplicationConfiguration row.
-        sb.settings.legacyMode = isEnvTrue(process.env["LegacyMode"]);
+        sb.settings.legacyMode = southwindOnly;
+
+        // Southwind installs a SUBSET of the modules below, and legacy mode is pointed at a Southwind
+        // database — so start only what Southwind starts, and a `sync` reads as a migration of the tables
+        // both applications HAVE rather than also creating a dozen this one invented. Each gated module is
+        // marked "not in Southwind" at its call.
+        //
+        // It gates the module STARTS, not the app's own entity model: the AD configuration tables come from
+        // ApplicationConfiguration declaring those fields, and the mail SERVICE tables from the app widening
+        // `EmailServiceEntity`'s implementedBy — different levers, both app-model rather than module.
+
 
         // Cache module (altea-cache) — FIRST of all the module starts, for two reasons: it swaps the
         // global-lazy invalidation strategy (which must happen before ANY `sb.globalLazy` registration),
@@ -300,7 +316,10 @@ export namespace Starter {
         // Which BACKEND holds the bytes is one env var away (EASTWIND_FILE_STORE=folder|azure|s3), and the
         // store's NAME is where it writes — see eastwindFileStores.server.ts. `onlyImages` is what makes an
         // Azure / S3 store serve these INLINE.
-        CachedProfilePhotoLogic.start(sb, EastwindFileStores.store("profile-photos", { onlyImages: true }));
+        // Not in Southwind — see southwindOnly.
+        if (!southwindOnly) {
+            CachedProfilePhotoLogic.start(sb, EastwindFileStores.store("profile-photos", { onlyImages: true }));
+        }
 
         // OpenID contributes no tables, so it is started ALWAYS and only OWNS the login flow when it is the
         // selected provider. That keeps the client's boot probe (/api/auth/openIDConfig) a clean 200-null
@@ -451,7 +470,10 @@ export namespace Starter {
         // by-trigger lazy the tour button reads, and the XML (de)serializer. AFTER DashboardLogic and
         // UserQueriesLogic: a tour's trigger is @implementedBy(Type, TourTrigger, Dashboard, UserQuery),
         // and this module hangs its "drop stale steps" cascades off those two types' schema events.
-        TourLogic.start(sb);
+        // Not in Southwind — see southwindOnly.
+        if (!southwindOnly) {
+            TourLogic.start(sb);
+        }
 
         // Eval module (@altea/altea-eval): the ViewDynamicPanel permission, the eval-errors endpoint, and —
         // the part that matters — the COMPILER configuration plus the registry of what a stored script may
@@ -493,14 +515,20 @@ export namespace Starter {
         // The scheduled task that sends a template to nothing / one target / every row of a user query
         // (Signum.Mailing/Package/SendEmailTaskLogic). After EmailPackageLogic — its UserQuery branch
         // queues a package through it — and after SchedulerLogic, whose task registry it registers into.
-        SendEmailTaskLogic.start(sb);
+        // Not in Southwind — see southwindOnly.
+        if (!southwindOnly) {
+            SendEmailTaskLogic.start(sb);
+        }
 
         // The two extra SENDER services (@altea/altea-mailing-exchange, -microsoft-graph). Each contributes
         // one service TABLE and registers itself in EmailLogic's sender registry; which one a message actually
         // goes through is decided per EmailSenderConfiguration row, so starting both costs nothing until one
         // is configured. Both re-check that entityOverrides widened EmailSenderConfiguration.service, and fail
         // loudly here rather than at the first send.
-        MailingExchangeWSLogic.start(sb);
+        // Not in Southwind — see southwindOnly.
+        if (!southwindOnly) {
+            MailingExchangeWSLogic.start(sb);
+        }
         MailingMicrosoftGraphLogic.start(sb);
 
         // The INBOUND half (altea-email's reception module + @altea/altea-mailing-pop3): the
@@ -512,13 +540,17 @@ export namespace Starter {
         // Its sweep SimpleTask is registered here, AFTER SchedulerLogic.start — which is fine: SymbolLogic
         // reads the declared-symbol list through a THUNK, evaluated when the table is generated /
         // synchronized / loaded, all of which happen after every module's start() has run.
-        Pop3ConfigurationLogic.start(sb);
-        EmailReceptionLogic.start(sb);
+        // Not in Southwind — see southwindOnly.
+        if (!southwindOnly) {
+            Pop3ConfigurationLogic.start(sb);
+            EmailReceptionLogic.start(sb);
+        }
 
         // Browsing a user's real Outlook mailbox (@altea/altea-mailing-microsoft-graph's RemoteEmails half).
         // OPT-IN: it registers a search page whose every row is a live Microsoft Graph call, so without an
         // Entra tenant configured it would only ever show an error. EASTWIND_REMOTE_EMAILS=true enables it.
-        if (process.env["EASTWIND_REMOTE_EMAILS"] === "true")
+        // …and not in Southwind either — see southwindOnly.
+        if (!southwindOnly && process.env["EASTWIND_REMOTE_EMAILS"] === "true")
             RemoteEmailsLogic.start(sb);
 
         // Alerts module (@altea/altea-alert): the Alert table + the AlertTypeSymbol table, the two endpoints
@@ -535,7 +567,10 @@ export namespace Starter {
         // …and its OPT-IN notification half (Signum's RegisterAlertNotificationMail): the e-mail model and
         // the ScheduledTask that mails each user their pending alerts. AFTER EmailLogic.start (it registers an
         // email model) and after SchedulerLogic.start (it registers a task type).
-        AlertNotificationLogic.start(sb);
+        // Not in Southwind — see southwindOnly.
+        if (!southwindOnly) {
+            AlertNotificationLogic.start(sb);
+        }
 
         // Office-template module (altea-office-template): the OfficeTemplate / OfficeModel tables, the
         // OfficeTransformerSymbol / OfficeConverterSymbol symbol tables, the GenerateReport permission, and
@@ -637,8 +672,11 @@ export namespace Starter {
         // viewer reads, and the omnibox suggestion. Owns no tree TYPE — the app's is DepartmentEntity,
         // registered below. AFTER OmniboxLogic.start (it pushes a generator) and BEFORE
         // OperationLogic.start, so the seven operation symbols `withTree` registers get seeded.
-        TreeModuleLogic.start(sb);
-        DepartmentsLogic.start(sb);
+        // Not in Southwind — see southwindOnly.
+        if (!southwindOnly) {
+            TreeModuleLogic.start(sb);
+            DepartmentsLogic.start(sb);
+        }
 
         // Rest module (@altea/altea-rest): the API-key table + its authenticator, and the replayable log
         // of every request that reached the app's public REST surface. BEFORE OperationLogic.start so the
@@ -685,7 +723,9 @@ export namespace Starter {
         // SDK) is an app decision and eastwind has no printer. The same call the SMS `provider` gets above.
         // The TEST file type IS supplied, so `PrintLineOperation.CreateTest` has somewhere to upload:
         // Southwind passes none, which leaves that flow with nowhere to go.
-        PrintingLogic.start(sb, { testFileType: EastwindFileType.PrintTest });
+        // Not in Southwind — see southwindOnly.
+        if (!southwindOnly)
+            PrintingLogic.start(sb, { testFileType: EastwindFileType.PrintTest });
         FileTypeLogic.register(EastwindFileType.PrintTest,
             EastwindFileStores.store("print-test"));
         if (sb.webBuilder)
@@ -699,7 +739,10 @@ export namespace Starter {
         // for its own two. The PUBLISHED type condition is granted to ordinary users below, next to the
         // other type-condition rules: without it a non-admin sees no news at all, since the row filter is
         // what makes a Draft invisible.
-        WhatsNewLogic.start(sb);
+        // Not in Southwind — see southwindOnly.
+        if (!southwindOnly) {
+            WhatsNewLogic.start(sb);
+        }
         FileTypeLogic.register(WhatsNewFileType.WhatsNewPreviewFileType,
             EastwindFileStores.store("whats-new"));
         FileTypeLogic.register(WhatsNewFileType.WhatsNewAttachmentFileType,
@@ -780,6 +823,9 @@ export namespace Starter {
         // authenticates against and what @altea/altea-rest logs. After every module, so its RestLog
         // middleware sits behind the auth middleware AuthLogic.start installed.
         if (sb.webBuilder) {
+            // This deployment's MODE, for the app's own client — EntityOverrides runs on both tiers and
+            // needs the same answer (see eastwindMode.server.ts).
+            EastwindModeServer.start(sb.webBuilder, { southwindOnly });
             CatalogApi.start(sb.webBuilder);
             // The ANONYMOUS catalog the public landing page reads (Southwind's Public/CatalogController).
             // Its property routes resolve through the reflection metadata, so it must come after the

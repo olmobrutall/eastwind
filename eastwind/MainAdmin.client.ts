@@ -76,7 +76,7 @@ import { EvalClient } from "@altea/altea-eval/client/EvalClient";
 // threaded through every domain's `start(cb)`. eastwind has no extensions and (for now) no auth, so
 // MainPublic always calls this. Importing the *Client modules also registers every entity type on the
 // client (needed for token resolution + operation→type mapping).
-export function startFull(routes: RouteObject[]): void {
+export function startFull(routes: RouteObject[], southwindOnly = false): void {
     const cb = new ClientBuilder(routes);
     cb.startFramework();
 
@@ -109,16 +109,21 @@ export function startFull(routes: RouteObject[]): void {
 
     // Print queue (altea-printing): the PrintLine / PrintPackage views, the /printing/view panel and the
     // omnibox entry that reaches it.
-    PrintClient.start(cb);
+    // Not in Southwind — see EastwindMode. Gated in step with the server: a client that registered these
+    // pages against a server that never started the module would offer views whose every call 404s.
+    if (!southwindOnly)
+        PrintClient.start(cb);
 
     // Release notes (altea-whats-new): the news entity + read log views, the /news overview and
     // /newspage/:id pages, and the "Preview" quick link. The navbar bullhorn is in Layout.tsx.
-    WhatsNewClient.start(cb);
+    if (!southwindOnly)
+        WhatsNewClient.start(cb);
 
     EmployeesClient.start(cb);
     ProductsClient.start(cb);
     ShippersClient.start(cb);
-    DepartmentsClient.start(cb);
+    if (!southwindOnly)
+        DepartmentsClient.start(cb);
     CustomersClient.start(cb);
     OrdersClient.start(cb);
 
@@ -154,7 +159,7 @@ export function startFull(routes: RouteObject[]): void {
     // Microsoft Graph search pages and the profile-photo provider. `"cached"` serves avatars from the local
     // CachedProfilePhoto copy rather than calling Graph per render; the provider is inert for a user with no
     // `externalId`, which is every locally seeded eastwind user.
-    AzureADClient.start(cb, { adGroups: true, profilePhotos: "cached" });
+    AzureADClient.start(cb, { adGroups: true, profilePhotos: southwindOnly ? false : "cached" });
 
     // Self-service password reset (@altea/altea-auth-reset-password): the request table's query settings.
     // Its two PAGES are public and registered in MainPublic; this call is what registers the entity's client
@@ -237,18 +242,22 @@ export function startFull(routes: RouteObject[]): void {
     // The two extra SENDER service editors (@altea/altea-mailing-exchange, -microsoft-graph) and the POP3
     // reception service editor — each is one `cb.configure(T).withView(…)`, which is also what registers the
     // type on the client so the polymorphic `service` picker can offer it.
-    MailingExchangeWSClient.start(cb);
+    if (!southwindOnly)
+        MailingExchangeWSClient.start(cb);
     MailingMicrosoftGraphClient.start(cb);
-    MailingPop3Client.start(cb);
+    if (!southwindOnly)
+        MailingPop3Client.start(cb);
 
     // The inbound half's own editors + the extra tab a RECEIVED EmailMessage grows. AFTER MailingClient: the
     // tab is an `overrideView` on EmailMessage's EntitySettings, which MailingClient registers.
-    MailingReceptionClient.start(cb);
+    if (!southwindOnly)
+        MailingReceptionClient.start(cb);
 
     // Browsing a user's real Outlook mailbox (the RemoteEmails half). Registered unconditionally on the
     // client — the search page simply has no rows unless the server side is enabled
     // (EASTWIND_REMOTE_EMAILS) and an Entra tenant is configured.
-    RemoteEmailsClient.start(cb);
+    if (!southwindOnly)
+        RemoteEmailsClient.start(cb);
 
     // Office reports (altea-office-template): the template editor, the "create report" operation, the
     // contextual menu on a search's selected rows, the query-toolbar button and the entity-frame button.
@@ -323,7 +332,8 @@ export function startFull(routes: RouteObject[]): void {
     // tree type's search control, the omnibox suggestion and the UserTreePart dashboard renderer. AFTER
     // DashboardClient / UserQueriesClient, whose registries it writes into. The app's tree TYPE is
     // configured separately, by DepartmentsClient above — the two are independent.
-    TreeClient.start(cb);
+    if (!southwindOnly)
+        TreeClient.start(cb);
 
     // Rest (altea-rest): the API-key editor with its generate button, and the request log with its
     // replay-and-diff tabs. `registerAuthenticator` is what lets `?apiKey=…` in the address bar log a
@@ -345,7 +355,8 @@ export function startFull(routes: RouteObject[]): void {
     // Tour (altea-tour): implements core's TourButton extension point, registers the tour editor views,
     // and hangs the tour button on entity frames, dashboard pages and user-query search controls. AFTER
     // DashboardClient / UserQueriesClient, whose extension points it pushes onto.
-    TourClient.start(cb);
+    if (!southwindOnly)
+        TourClient.start(cb);
 
     // Machine learning (altea-machine-learning): the predictor designer, the network settings editor, the
     // epoch-progress grid with its four coloured loss formatters, and the interactive predict page.

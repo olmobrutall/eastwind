@@ -1,4 +1,6 @@
 import * as React from "react";
+import { ajaxGet } from "@altea/altea/client/Services";
+import { FULL_MODE, setCurrentMode, type EastwindMode } from "./eastwindMode.data";
 import { createRoot, type Root } from "react-dom/client";
 import { createBrowserRouter, RouterProvider, type RouteObject } from "react-router";
 import { library } from "@fortawesome/fontawesome-svg-core";
@@ -117,7 +119,7 @@ async function reload(): Promise<void> {
     const isFull = user != null && user.userName != ANONYMOUS_USER_NAME;
 
     if (isFull)
-        (await import("./MainAdmin.client")).startFull(routes);
+        (await import("./MainAdmin.client")).startFull(routes, mode.southwindOnly);
 
     // Boot straight into the remembered culture, so the first paint is already translated (loading the
     // default first and switching after would flash English). AFTER the route build — see the header.
@@ -168,8 +170,20 @@ function backUrl(loc: AppContext.RouterLocation | undefined): string | undefined
     return loc?.pathname == null ? undefined : loc.pathname + (loc.search ?? "") + (loc.hash ?? "");
 }
 
+// This deployment's mode, fetched once at boot (see there). Defaults to the full module set, which is what
+// an unreachable route or an older server means.
+let mode: EastwindMode = FULL_MODE;
+
 async function boot(): Promise<void> {
-    EntityOverrides.start();
+    // This deployment's MODE, from the server — the flag lives in ITS environment, and EntityOverrides runs
+    // on both tiers and must reach the same answer: an implementedBy list decides what the editor offers as
+    // well as which tables exist. Duplicating it as a VITE_ variable would let the two drift, and a client
+    // that thinks a module is installed when the server does not registers pages whose every call 404s.
+    // Anonymous and first, because everything below is downstream of it.
+    mode = await ajaxGet<EastwindMode>({ url: "/api/eastwind/appMode" }).catch(() => FULL_MODE);
+    setCurrentMode(mode);
+
+    EntityOverrides.start({ southwindOnly: mode.southwindOnly });
 
     // Route the ajax pending-request count to the Notify host (Signum's MainPublic wiring) so a "loading"
     // toast shows while requests are in flight. The <Notify/> host is mounted in Layout; operation success

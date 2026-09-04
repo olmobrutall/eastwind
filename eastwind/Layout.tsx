@@ -15,6 +15,7 @@ import OmniboxAutocomplete from "@altea/altea-omnibox/client/OmniboxAutocomplete
 import AlertDropdown from "@altea/altea-alert/client/AlertDropdown";
 import WhatsNewDropdown from "@altea/altea-whats-new/client/WhatsNewDropdown";
 import { ThemeSelector } from "./ThemeSelector";
+import { currentMode } from "./eastwindMode.data";
 const ChangeLogViewer = React.lazy(() => import("@altea/altea/client/Basics/ChangeLogViewer"));
 
 const ChatbotButton = React.lazy(() => import("@altea/altea-agent/client/ChatbotButton"));
@@ -122,7 +123,7 @@ export default function Layout(): React.JSX.Element {
                     {/* The release-notes BULLHORN (Signum puts <WhatsNewDropdown/> in the same place): the
                         unread count, and a toast per news item that marks it read when you close it. Renders
                         nothing for a user who may not view WhatsNewEntity. */}
-                    {AppContext.currentUser && <WhatsNewDropdown />}
+                    {AppContext.currentUser && !currentMode().southwindOnly && <WhatsNewDropdown />}
                     {/* The change log (Southwind puts <ChangeLogViewer/> in the same place): what changed in
                         each deployment, badged with how many the user has not read. Lazy, as Southwind loads
                         it, because opening it pulls in every module's Changelog dictionary. */}

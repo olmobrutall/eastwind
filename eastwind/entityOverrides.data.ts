@@ -64,12 +64,22 @@ import { NoteEntity } from "@altea/altea-notes/data/Notes";
 import { UserEmployeeMixin } from "./globals/UserEmployeeMixin.data";
 
 export namespace EntityOverrides {
-    export function start(): void {
-        // The reception mixin on EmailMessageEntity (Signum's `MixinDeclarations.Register<EmailMessageEntity,
-        // EmailReceptionMixin>()` in Starter.cs, asserted by EmailReceptionLogic.start): what makes a RECEIVED
-        // message carry its server uid, its raw MIME and its reception row. Declaring it adds those columns to
-        // the EmailMessage table, so it belongs here — both tiers, before any (de)serialization.
-        EmailReceptionMixin.declare();
+    /**
+     * @param options.southwindOnly  Declare only what SOUTHWIND declares. An `implementedBy` list decides both what
+     *   the editor offers and which TABLES the schema creates, so a few of these lists are the difference
+     *   between a Southwind-shaped database and this one — see the marked entries. Set from LegacyMode by
+     *   the Starter, and by the client from `/api/eastwind/appMode` (this runs on both tiers).
+     */
+    export function start(options?: { southwindOnly?: boolean }): void {
+        const southwindOnly = options?.southwindOnly === true;
+
+        // The reception mixin on EmailMessageEntity (asserted by EmailReceptionLogic.start): what makes a
+        // RECEIVED message carry its server uid, its raw MIME and its reception row. Declaring it adds those
+        // columns to the EmailMessage table — and, through that reference, pulls the whole reception schema
+        // in — so it belongs here, on both tiers, before any (de)serialization.
+        // NOT IN SOUTHWIND: its Starter.cs registers four mixins and this is not one of them.
+        if (!southwindOnly)
+            EmailReceptionMixin.declare();
 
         // The package mixin on EmailMessageEntity (Signum's `MixinDeclarations.Register<EmailMessageEntity,
         // EmailMessagePackageMixin>()`, asserted by EmailPackageLogic.start): which batch a message belongs to.
@@ -150,8 +160,12 @@ export namespace EntityOverrides {
         // AlertNotificationLogic.start re-checks and fails on if it is missing here.
         ProcessSchedulerBridgeOverrides.overrideTaskImplementations([
             SimpleTaskSymbol as unknown as Type<Entity>,
-            EmailReceptionConfigurationEntity as unknown as Type<Entity>,
-            SendNotificationEmailTaskEntity as unknown as Type<Entity>,
+            // NOT IN SOUTHWIND: it schedules neither a mailbox poll nor the alert-notification mail, and
+            // naming a type here is what CREATES its table.
+            ...(southwindOnly ? [] : [
+                EmailReceptionConfigurationEntity as unknown as Type<Entity>,
+                SendNotificationEmailTaskEntity as unknown as Type<Entity>,
+            ]),
         ]);
 
         // How this app SENDS mail. altea-email declares only its own SMTP service, so the two extra sender
@@ -160,15 +174,19 @@ export namespace EntityOverrides {
         // service types in the editor and which service TABLES the schema creates.
         overrideImplementedBy(EmailSenderConfigurationEntity, "service", () => [
             SmtpEmailServiceEntity,
-            ExchangeWebServiceEmailServiceEntity,
+            // NOT IN SOUTHWIND, whose list is exactly Smtp + MicrosoftGraph.
+            ...(southwindOnly ? [] : [ExchangeWebServiceEmailServiceEntity]),
             MicrosoftGraphEmailServiceEntity,
         ]);
 
         // …and how it RECEIVES: POP3 is the one protocol ported (altea-email's reception half declares an
         // EMPTY implementedBy on purpose — it ships no protocol of its own).
-        overrideImplementedBy(EmailReceptionConfigurationEntity, "service", () => [
-            Pop3EmailReceptionServiceEntity,
-        ]);
+        // NOT IN SOUTHWIND: it receives no mail, so it names no reception service (and the empty list
+        // altea-email declares then creates no service table).
+        if (!southwindOnly)
+            overrideImplementedBy(EmailReceptionConfigurationEntity, "service", () => [
+                Pop3EmailReceptionServiceEntity,
+            ]);
 
         overrideImplementedBy(ExceptionEntity, "user", () => [UserEntity]);
         overrideImplementedBy(OperationLogEntity, "user", () => [UserEntity]);
@@ -191,11 +209,14 @@ export namespace EntityOverrides {
         // …))`). The list decides both the pickable part types in the editor and which part TABLES the schema
         // creates — @altea/altea-dashboard declares only its own five, so the modules' parts are added here.
         overrideImplementedBy(DashboardEntity_Part, "content", () => [
-            TextPartEntity,
-            ImagePartEntity,
-            SeparatorPartEntity,
-            HealthCheckPartEntity,
-            CustomPartEntity,
+            // NOT IN SOUTHWIND, whose list is exactly the six user-asset parts below.
+            ...(southwindOnly ? [] : [
+                TextPartEntity,
+                ImagePartEntity,
+                SeparatorPartEntity,
+                HealthCheckPartEntity,
+                CustomPartEntity,
+            ]),
             UserQueryPartEntity,
             ValueUserQueryListPartEntity,
             BigValuePartEntity,
