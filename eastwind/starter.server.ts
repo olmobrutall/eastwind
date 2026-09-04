@@ -92,6 +92,7 @@ import { SqlMigrationRunner } from "@altea/altea-migrations/server/SqlMigrationR
 import { TokenMigrationLogic } from "@altea/altea-user-assets/server/TokenMigrationLogic.server";
 import { PredictorLogic } from "@altea/altea-machine-learning/server/PredictorLogic.server";
 import { VisualTipLogic } from "@altea/altea/server/visualTipLogic";
+import { ChangeLogLogic } from "@altea/altea/server/changeLogLogic";
 import { EastwindTypeCondition, EastwindAgentUseCases, EastwindFileType } from "./globals/ApplicationConfiguration.data";
 import { PrintingLogic } from "@altea/altea-printing/server/PrintingLogic.server";
 import { PrintingServer } from "@altea/altea-printing/server/PrintingServer.server";
@@ -140,6 +141,11 @@ export namespace Starter {
             : new (await import("@altea/altea/server/connection/sqlServerConnector")).SqlServerConnector(sb.schema, connectionString);
 
         Connector.default = connector;
+        // Signum detects the server version in its connector's CONSTRUCTOR; altea has no synchronous
+        // database access, so it is an explicit step here — and it must run BEFORE the schema is built,
+        // because that is where a generated GUID key's default generator is decided (guidKeyDefault).
+        await connector.detectServerCapabilities();
+
         sb.settings.isPostgres = connector.isPostgres;
 
         // Point eastwind at a database a SIGNUM application generated — a Southwind — and name things the
@@ -520,6 +526,11 @@ export namespace Starter {
         // record of which have been read. Signum's Southwind starts this the same way; the four
         // SearchVisualTip symbols are registered by the module itself.
         VisualTipLogic.start(sb);
+
+        // Change log (framework): the per-user "when did I last read it" row. The ENTRIES are source — a
+        // Changelog.ts per module, compiled into the client (see client/Basics/ChangeLogClient) — so this
+        // table is the whole stored part. Southwind starts it the same way.
+        ChangeLogLogic.start(sb);
 
         // Dynamic module (altea-dynamic): the three VIEW tables (a view defined in the database, a
         // selector that picks between them, an override that rewrites an existing view), the CSS-override

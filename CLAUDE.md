@@ -280,6 +280,41 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   Pinned by `eastwind/terminal/probeRowGuids.ts` (55 checks: the thirteen primary keys and their generator, the three dropped
   guid columns, each matching rule including the two refusals, and an end-to-end export + re-import of a
   real UserQuery that keeps every filter and column row id).
+- **The CHANGE LOG is source, not data — and it is per MODULE, which is what makes it interesting.**
+  Signum's Basics/ChangeLog.cs + ChangeLogLogic + the React ChangeLogClient/ChangeLogViewer: a navbar
+  button showing what changed in each deployment, badged with how many the user has not read. The
+  ENTRIES are a `Changelog.ts` per module — a date mapped to what changed on it, registered with one
+  line from that module's client `start` — so publishing one needs no migration and no row; the only
+  stored part is ONE row per user (`basics.change_log_view_log`) recording when they last looked.
+  - **not to be confused with @altea/altea-whats-new**, which looks similar and answers a different
+    question: WhatsNew is CONTENT an author writes in the app, per culture, published on a date, for END
+    USERS. The change log is the DEVELOPERS' list, compiled into the client.
+  - **the MERGE is the one non-trivial part, and the two `Update` forms differ.** A module dates its
+    entries by when they were IMPLEMENTED, not when the app carrying them shipped — so the app's own
+    changelog carries `Update <Module>` lines and each is REPLACED by that module's earlier entries. A
+    bare `Update <Module>` stamps them with the APP's deploy date; `Update <Module> to <date>` stamps
+    them with the date NAMED ("we took the module as of then", not "a user saw it then"). A module name
+    covers its sub-modules, so one line pulls in a family, and anything no line claimed falls to the
+    newest deployment rather than being dropped. That is Signum's behaviour exactly; it lives in its own
+    `client/Basics/changeLogMerge` module because ChangeLogClient imports the ajax layer (which touches
+    `document` at load) and the algorithm is worth unit-testing headless — Signum keeps them together
+    and tests neither. Pinned by `altea/test/client/changeLog.test.ts` (8 cases).
+  - **Signum's `VersionChangedAlert` is NOT ported**, so neither is the `VersionInfo` /
+    `VersionInfoTooltip` pair the viewer hangs off there — in Signum this component IS the version-info
+    navbar item. altea has no build/version surface, so the button stands alone and renders nothing
+    without a user (there is no per-user read state to badge then).
+  - luxon is unnecessary: every date use is a comparison or a group key and ISO dates compare correctly
+    as strings (Signum imports luxon here and then compares `implDate < date` as strings anyway); the
+    viewer's own comparison goes through `Temporal.PlainDateTime.compare`.
+  - **both routes tolerate an ANONYMOUS caller** — null, and a no-op — rather than throwing on a null
+    user. Signum reads `UserHolder.Current.User` unguarded, which is safe there only because its
+    controller sits behind global authentication; altea's login screen is served by the same client and
+    the navbar renders before anyone is logged in.
+  - `start` takes no `routes` (Signum's signature has one and never uses it), and
+    `ChangeLogViewLogEntity.user` declares no implementations so core needn't reference altea-auth — the
+    app widens it, the accommodation `VisualTipConsumedEntity.user` already makes. `basics.change_log_view_log`
+    needs a `sync` and matches Signum's table column for column, bar the app-wide nullable-implementedBy
+    divergence (seven tables share it). Pinned by `eastwind/terminal/probeChangeLog.ts` (19 checks).
 - **`SemiSymbol` EXISTS** (`data/semiSymbol` + `server/semiSymbolLogic`), as Signum's sibling of `Symbol`: a row that may be DECLARED in code (it gets a `key`, like a Symbol) or created by a USER at runtime (only a `name`). That is why its key is NULLABLE and why it derives from `Entity` rather than `Symbol` — a SemiSymbol table is user-writable (`@entity("String")`, its own Save operation), so it is not "seeded". The one rule that matters is in its synchronizer: only rows WITH a key take part in the diff (Signum's `current.Where(c => c.Key.HasText())`), so a row a user created is never deleted by a sync. `AlertTypeSymbol`, `AgentSymbol` and `NoteTypeSymbol` are SemiSymbols; everything else stays a `Symbol`. The quote-transformer recognises BOTH roots, so `init()` works on either.
 - **`@ticksColumn(true|false)`** (Signum's `[TicksColumn]`): whether the table carries a concurrency stamp. A Ticks column earns its place where a row is edited by PEOPLE, one at a time, so the DEFAULTS are: a **`@part` row has NONE** — it is reached and saved through its owner, whose own stamp guards the aggregate, and it is never edited alone — a SEEDED table has none, and everything else has one. The decorator overrides either default: `false` for logs and engine-written rows (Exception, OperationLog, Process, PackageLine, EmailPackage, the migration rows, SemiSymbol), `true` for a part that really is edited on its own. Unlike every other class-level flag it is INHERITED (a SemiSymbol subclass gets it from the base, as in Signum).
   **legacyMode gives the stamp BACK to the parts Signum models as real ENTITIES** (a dashboard part's content, an email service, a scheduler rule, a virtual-MList child), because their tables have one there — and which those are is DERIVED, never declared: a part reached through an owner's ARRAY is Signum's MList table (not an entity there at all), any other part stands in for a type with its own table. `mlistRowOwner` is that predicate — unless `@legacyTableName({ wasVirtualMList: true })` says otherwise — and legacyMode reuses it to give an MList table Signum's whole column shape: no ToStr, a `ParentID` back reference, and an element column named from the element TYPE (`EntityID_User`, `TypeConditionID`) rather than from the field altea invented for the row. **An existing altea database needs a `sync`**: ~97 part tables drop their Ticks.

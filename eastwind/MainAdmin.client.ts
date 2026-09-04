@@ -9,6 +9,7 @@ import { CustomersClient } from "./customers/CustomerClient.client";
 import { OrdersClient } from "./orders/OrderClient.client";
 import { GlobalsClient } from "./globals/GlobalsClient.client";
 import { AuthAdminClient } from "@altea/altea-auth/client/admin/AuthAdminClient";
+import { ChangeLogClient } from "@altea/altea/client/Basics/ChangeLogClient";
 import { ActiveDirectoryClient } from "@altea/altea-auth/client/admin/ActiveDirectoryClient";
 import { AzureADClient } from "@altea/altea-auth-azuread/client/AzureADClient";
 import { OpenIDAdminClient } from "@altea/altea-auth-openid/client/OpenIDAdminClient";
@@ -141,6 +142,13 @@ export function startFull(routes: RouteObject[]): void {
     // it costs nothing until a role is granted it and a directory is actually configured.
     // (Southwind passes `inviteUsers: false` because it uses no directory at all.)
     ActiveDirectoryClient.start({ inviteUsers: true });
+
+    // The change log (framework): the navbar button and its unread badge. Southwind's
+    // `ChangeLogClient.start({ routes, applicationName, mainChangeLog })` — minus `routes`, which altea
+    // does not need (the log opens in a modal, and Signum registers no route for it either).
+    // `mainChangeLog` is the APP's own timeline; every module registers its own with one line, and the
+    // framework's is registered by `start` itself.
+    ChangeLogClient.start({ applicationName: "Eastwind", mainChangeLog: () => import("./Changelog.client") });
 
     // Azure AD / Entra ID (@altea/altea-auth-azuread): the configuration editor, the AD-group view, the two
     // Microsoft Graph search pages and the profile-photo provider. `"cached"` serves avatars from the local

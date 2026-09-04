@@ -54,6 +54,7 @@ import {
 import { DiffLogMixin } from "@altea/altea-diff-log/data/DiffLog";
 import { DynamicIsolationMixin } from "@altea/altea-dynamic/data/DynamicIsolation";
 import { VisualTipConsumedEntity } from "@altea/altea/data/visualTip";
+import { ChangeLogViewLogEntity } from "@altea/altea/data/changeLog";
 import { SystemEventLogEntity } from "@altea/altea/data/systemEventLog";
 import { PredictorEntity } from "@altea/altea-machine-learning/data/Predictor";
 import { NeuralNetworkSettingsEntity } from "@altea/altea-machine-learning/data/NeuralNetworkSettings";
@@ -96,6 +97,7 @@ export namespace EntityOverrides {
         // altea-auth (the same accommodation ExceptionEntity.user and OperationLogEntity.user make).
         overrideImplementedBy(VisualTipConsumedEntity, "user", () => [UserEntity]);
         overrideImplementedBy(SystemEventLogEntity, "user", () => [UserEntity]);
+        overrideImplementedBy(ChangeLogViewLogEntity, "user", () => [UserEntity]);
 
         // PredictorEntity.user — same accommodation as the log entities above.
         overrideImplementedBy(PredictorEntity, "user", () => [UserEntity]);
