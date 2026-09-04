@@ -129,6 +129,17 @@ export namespace EastwindFileType {
     export const PrintTest: FileTypeSymbol = init();
 }
 
+// Southwind's `BigStringFileType` — one store per log table whose BigString text lives in a FILE
+// rather than in the row (see Starter.configureBigString). Separate symbols because they are
+// separate stores: a deployment can put the exception dumps somewhere different from the e-mails.
+export namespace BigStringFileType {
+    export const Exceptions: FileTypeSymbol = init();
+    export const OperationLog: FileTypeSymbol = init();
+    export const ViewLog: FileTypeSymbol = init();
+    export const EmailMessage: FileTypeSymbol = init();
+    export const RestLog: FileTypeSymbol = init();
+}
+
 // Port of Southwind's `SouthwindAgentUseCases` — the app's own agents, beyond the three
 // @altea/altea-agent declares itself (Chatbot / QuestionSummarizer / ConversationSumarizer).
 export namespace EastwindAgentUseCases {

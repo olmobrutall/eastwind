@@ -74,8 +74,20 @@ import { EmailLogic } from "@altea/altea-email/server/EmailLogic";
 import { EmailPackageLogic } from "@altea/altea-email/server/EmailPackageLogic";
 import { SendEmailTaskLogic } from "@altea/altea-email/server/SendEmailTaskLogic";
 import { FileTypeLogic } from "@altea/altea-files/server/FileTypeLogic";
+import type { FileTypeSymbol } from "@altea/altea-files/data/Files";
+// The five types whose BigString text moves to a file — see configureBigString.
+import { ExceptionEntity } from "@altea/altea/data/exception";
+import { OperationLogEntity } from "@altea/altea/data/operationLog";
+import { ViewLogEntity } from "@altea/altea-view-log/data/ViewLog";
+import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
+import { RestLogEntity } from "@altea/altea-rest/data/Rest";
+// …and the five whose text stays in its column (altea models them as BigString, Signum as a string).
+import { PackageEntity, PackageOperationEntity } from "@altea/altea-processes/data/Package";
+import { ProcessExceptionLineEntity } from "@altea/altea-processes/data/Processes";
+import { ScheduledTaskLogEntity, SchedulerTaskExceptionLineEntity } from "@altea/altea-scheduler/data/Scheduler";
 import { FileTypeAlgorithm } from "@altea/altea-files/server/FileTypeAlgorithm";
 import { EastwindFileStores } from "./eastwindFileStores.server";
+import { BigStringLogic, BigStringConfiguration, type BigStringMode } from "@altea/altea-files/server/BigStringLogic";
 import { EmailReceptionLogic } from "@altea/altea-email/server/EmailReceptionLogic";
 import { MailingExchangeWSLogic } from "@altea/altea-mailing-exchange/server/MailingExchangeWSLogic";
 import { MailingMicrosoftGraphLogic } from "@altea/altea-mailing-microsoft-graph/server/MailingMicrosoftGraphLogic";
@@ -93,7 +105,7 @@ import { TokenMigrationLogic } from "@altea/altea-user-assets/server/TokenMigrat
 import { PredictorLogic } from "@altea/altea-machine-learning/server/PredictorLogic";
 import { VisualTipLogic } from "@altea/altea/server/visualTipLogic";
 import { ChangeLogLogic } from "@altea/altea/server/changeLogLogic";
-import { EastwindTypeCondition, EastwindAgentUseCases, EastwindFileType } from "./globals/ApplicationConfiguration.data";
+import { EastwindTypeCondition, EastwindAgentUseCases, EastwindFileType, BigStringFileType } from "./globals/ApplicationConfiguration.data";
 import { PrintingLogic } from "@altea/altea-printing/server/PrintingLogic";
 import { PrintingServer } from "@altea/altea-printing/server/PrintingServer";
 import { WhatsNewLogic } from "@altea/altea-whats-new/server/WhatsNewLogic";
@@ -217,6 +229,11 @@ export namespace Starter {
         // `EmailServiceEntity`'s implementedBy — different levers, both app-model rather than module.
 
 
+        // Southwind's ConfigureBigString — WHERE each log table's big text lives. Must run before any of
+        // those types is included, because registering a route is what drops the column its mode does not
+        // use; hence here rather than beside the module starts below.
+        configureBigString(sb);
+
         // Cache module (altea-cache) — FIRST of all the module starts, for two reasons: it swaps the
         // global-lazy invalidation strategy (which must happen before ANY `sb.globalLazy` registration),
         // and `.withCache()` on an include below needs it started. The broadcast is what tells SIBLING
@@ -292,6 +309,11 @@ export namespace Starter {
         // logged"). The field scan itself runs on `schema.initializing`, so it still covers every module's
         // file fields regardless of where this sits.
         FileLogic.start(sb);
+        // Southwind's `BigStringLogic.Start(sb)` — installs the save / retrieve hooks for the routes
+        // configureBigString registered above (and, through them, FilePathEmbeddedLogic). It also
+        // ASSERTS at schema.initialize() that every BigString route in the schema has a configuration,
+        // naming the missing ones; Signum only finds out on the first save.
+        BigStringLogic.start(sb);
 
         // Directory login modules (@altea/altea-auth-azuread / -openid / -windowsad). HERE because:
         //  - AFTER AuthLogic.start, so their routes are mounted behind the auth middleware (express matches
@@ -857,4 +879,50 @@ export namespace Starter {
 function isEnvTrue(value: string | undefined): boolean {
     const v = value?.trim().toLowerCase();
     return v === "true" || v === "1";
+}
+
+// Port of Southwind's `Starter.ConfigureBigString` — for each log table whose text can be large, whether
+// that text lives in its own column or in a FILE, decided PER PROPERTY ROUTE.
+//
+// A `BigStringEmbedded` is a wrapper around one unbounded text column; the BigStringMixin hangs a
+// FilePathEmbedded off it, and `BigStringLogic` writes the text out on save and reads it back on retrieve,
+// so nothing that reads `.text` changes. Registering a route is what DROPS the column the chosen mode does
+// not use, which is why this runs before any of these types is included in the schema.
+//
+// Southwind picks `File` for all five and one store each — separate stores because a deployment may want
+// the exception dumps somewhere different from the e-mail bodies. `registerAll` configures every
+// BigStringEmbedded route of the type, which is Southwind's call too (ExceptionEntity has three).
+//
+// Switching an EXISTING database from Database to File is not just a `sync`: the sync would drop the text
+// column and the rows would lose their text. Signum's answer, which altea ports, is to deploy once with
+// `Migrating_FromDatabase_ToFile` (both columns exist, every save moves the text across), run
+// `BigStringLogic.migrateBigStrings(T)`, then switch to `File`.
+function configureBigString(sb: SchemaBuilder): void {
+    const mode: BigStringMode = "File";
+
+    const stores: [FileTypeSymbol, Type<Entity>, string][] = [
+        [BigStringFileType.Exceptions, ExceptionEntity, "exceptions"],
+        [BigStringFileType.OperationLog, OperationLogEntity, "operation-log"],
+        [BigStringFileType.ViewLog, ViewLogEntity, "view-log"],
+        [BigStringFileType.EmailMessage, EmailMessageEntity, "email-message"],
+        [BigStringFileType.RestLog, RestLogEntity, "rest-log"],
+    ];
+
+    for (const [fileType, type, storeName] of stores) {
+        FileTypeLogic.register(fileType, EastwindFileStores.store(storeName));
+        BigStringLogic.registerAll(sb, type, new BigStringConfiguration(mode, fileType));
+    }
+
+    // Every OTHER BigString route stays in its column. Registering them is not optional: altea
+    // requires a configuration per route and says which are missing at schema.initialize() (Signum
+    // throws later, on the first save). And it is not free to skip — declaring the mixin gives EVERY
+    // BigString route the file columns unless a `Database` registration ignores them, which is what
+    // these five do. They are altea routes Signum models as a plain string, so Southwind has no
+    // counterpart to copy.
+    const inRow = new BigStringConfiguration("Database", null);
+    BigStringLogic.registerAll(sb, PackageEntity, inRow);
+    BigStringLogic.registerAll(sb, PackageOperationEntity, inRow);
+    BigStringLogic.registerAll(sb, ProcessExceptionLineEntity, inRow);
+    BigStringLogic.registerAll(sb, ScheduledTaskLogEntity, inRow);
+    BigStringLogic.registerAll(sb, SchedulerTaskExceptionLineEntity, inRow);
 }

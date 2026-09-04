@@ -12,6 +12,7 @@
 // Today: four mixins (three of them a module's, plus the app's own UserEmployeeMixin), every lite model
 // is the default, and implementedBy is declared inline via @implementedBy on OrderEntity.customer.
 import { overrideImplementedBy } from "@altea/altea/data/decorators";
+import { BigStringMixin } from "@altea/altea-files/data/BigString";
 import { ApplicationConfigurationEntity } from "./globals/ApplicationConfiguration.data";
 import { AzureADRoleMappingEntity } from "@altea/altea-auth-azuread/data/AzureAD";
 import { OpenIDRoleMappingEntity } from "@altea/altea-auth-openid/data/OpenID";
@@ -95,6 +96,13 @@ export namespace EntityOverrides {
         // operation brackets. Declaring it adds those columns to the OperationLog table, so it belongs
         // here — both tiers, before any (de)serialization.
         DiffLogMixin.declare();
+
+        // The file mixin on BigStringEmbedded (Signum's
+        // `MixinDeclarations.Register<BigStringEmbedded, BigStringMixin>()`, which Southwind also calls
+        // from its Starter): it is what lets a BigString route keep its text in a file instead of the
+        // row. Which routes do, and where, is Starter.configureBigString. Both tiers, because the
+        // declaration is what tells the serializer the `file` member exists.
+        BigStringMixin.declare();
 
         // The isolation mixin on DynamicTypeEntity (Signum's
         // `MixinDeclarations.Register<DynamicTypeEntity, DynamicIsolationMixin>()`, which its APP calls

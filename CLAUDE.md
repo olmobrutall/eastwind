@@ -1264,6 +1264,33 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   `eastwind/terminal/probeFileEntity.ts` (17 checks) plus a three-case HTTP round-trip; `files.file` needs
   a `sync`, and matches Signum's table column for column.
 
+- **A BigString's text lives in a column or in a FILE, decided per PROPERTY ROUTE — and eastwind now
+  decides, where it never used to.** `BigStringEmbedded` is a wrapper around one unbounded text column;
+  declaring @altea/altea-files' `BigStringMixin` on it hangs a `FilePathEmbedded` alongside, and
+  `BigStringLogic` writes the text out on save and reads it back on retrieve, so nothing that reads
+  `.text` changes. The machinery was ported with the files module and had simply never been CONFIGURED:
+  every route stayed in its column, so `basics.exception` had `stack_trace_text` where a Signum database
+  has `stack_trace_file_hash`. `Starter.configureBigString` is Southwind's `ConfigureBigString` —
+  `File` for the five log types (Exception / OperationLog / ViewLog / EmailMessage / RestLog), one store
+  each — plus something Southwind has no counterpart for: the five routes altea models as a BigString and
+  Signum as a plain `string` (`PackageEntity.configString`, `ProcessExceptionLineEntity.elementInfo`, …)
+  are registered `Database`, which is what stops the mixin from giving them file columns nothing wanted.
+  - **altea REQUIRES a configuration per route**, listing the missing ones at `schema.initialize()`;
+    Signum's `Configurations.GetOrThrow(pr)` only finds out on the first save of that route.
+  - **switching an existing database from `Database` to `File` is not just a `sync`** — the sync drops
+    the text column. Signum's answer, which altea ports, is to deploy once with
+    `Migrating_FromDatabase_ToFile` (both columns exist, every save moves the text across), run
+    `BigStringLogic.migrateBigStrings(T)`, then switch. eastwind's dev database was simply re-synced:
+    what it lost was its own log text.
+  - it found TWO defects in code that had never been exercised, both of which silently LOST text:
+    `File` mode wrote nothing on an INSERT (Signum tests `bs.Modified == SelfModified` and a freshly
+    constructed ModifiableEntity IS SelfModified there; altea reads an embedded with no baseline as CLEAN,
+    so `entity.isNew` is the other half of that question), and `registerAll` skipped every MIXIN
+    route — OperationLog's DiffLog dumps, EmailMessage's reception raw content — where Signum's
+    `PropertyRoute.GenerateRoutes` walks mixins.
+  Pinned by `eastwind/terminal/probeBigString.ts` (11 checks: the column set in both modes, that
+  registerAll reaches a mixin's routes, and an INSERT / retrieve / UPDATE round trip through the store).
+
 - **Token migrations: the renames a schema sync resolves are replayed against the query TOKENS stored
   inside user assets.** A UserQuery / UserChart / template keeps its tokens as STRINGS, so renaming a
   field or a query breaks every stored token that walked through it — and nothing in the schema sync
