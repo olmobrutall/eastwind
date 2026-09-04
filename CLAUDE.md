@@ -260,13 +260,24 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     The two are now the same value. `partContentKey` also yields UNDEFINED for an unsaved part instead of
     the string `"undefined"` (Signum's `rowId?.toString()`), so the attribute is omitted while there is
     nothing to target.
-  - **in LEGACY MODE a uuid primary key defaults to Signum's `uuid_generate_v1()`**, not
-    `gen_random_uuid()`. Signum's needs the uuid-ossp EXTENSION, which is why altea generates the built-in
-    (PostgreSQL 13+) for its own databases; but pointed at a Signum database the difference showed up as a
-    `SET DEFAULT` on every uuid table on every sync, and running the two side by side would have altea
-    rewrite the defaults out from under the Signum app. Both mean "the database generates the key" — v1 is
-    time-ordered, which is also why the SQL Server side offers NEWSEQUENTIALID as `uuid7`.
-  Pinned by `eastwind/terminal/probeRowGuids.ts` (39 checks: the thirteen primary keys, the three dropped
+  - **a generated uuid key is TIME-ORDERED, and which generator says so follows the SERVER.** Signum
+    moved its Guid PK default to `uuidv7()` and altea follows: a v7 uuid carries its timestamp in the
+    high bits, so inserts land at the end of the index instead of scattering across it the way a random
+    v4 (`gen_random_uuid()`, what altea emitted before) does. `guidKeyDefault` is Signum's
+    `PrimaryKeyAttribute.IdentityBehaviour` setter plus the fallback in `DbTypeAttribute.GetDefault`:
+    `uuidv7()` is NATIVE from PostgreSQL 18, and an older server drops back to `uuid_generate_v1()` —
+    Signum's previous default, from the uuid-ossp EXTENSION, which is why it is not the first choice. The
+    gate is `Connector.supportsUuidV7` (Signum's same member), false on the base — the SQL Server answer,
+    which keeps Signum's `NEWID()` and reaches `NEWSEQUENTIALID()` through altea's own `uuid7` key type.
+    An UNKNOWN version reads as modern, exactly as Signum's null version does.
+  - **that detection is an explicit async step**, `Connector.detectServerCapabilities()`, which the host
+    awaits right after building the connector and BEFORE the schema is built: Signum detects the version
+    in its connector's CONSTRUCTOR and altea has no synchronous database access. A no-op on the base, so
+    no caller needs an instanceof or a static import of a connector it may not be using, and skipping it
+    is safe (an unprobed capability reads as modern). An existing PostgreSQL 18 database is upgraded by
+    the next sync — one `SET DEFAULT` per uuid table, changing no stored value; one on an older server
+    keeps v1 because the model asks for v1 there, so neither churns.
+  Pinned by `eastwind/terminal/probeRowGuids.ts` (55 checks: the thirteen primary keys and their generator, the three dropped
   guid columns, each matching rule including the two refusals, and an end-to-end export + re-import of a
   real UserQuery that keeps every filter and column row id).
 - **`SemiSymbol` EXISTS** (`data/semiSymbol` + `server/semiSymbolLogic`), as Signum's sibling of `Symbol`: a row that may be DECLARED in code (it gets a `key`, like a Symbol) or created by a USER at runtime (only a `name`). That is why its key is NULLABLE and why it derives from `Entity` rather than `Symbol` — a SemiSymbol table is user-writable (`@entity("String")`, its own Save operation), so it is not "seeded". The one rule that matters is in its synchronizer: only rows WITH a key take part in the diff (Signum's `current.Where(c => c.Key.HasText())`), so a row a user created is never deleted by a sync. `AlertTypeSymbol`, `AgentSymbol` and `NoteTypeSymbol` are SemiSymbols; everything else stays a `Symbol`. The quote-transformer recognises BOTH roots, so `init()` works on either.
