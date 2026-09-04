@@ -119,6 +119,7 @@ import { AlertLogic } from "@altea/altea-alert/server/AlertLogic.server";
 import { NoteLogic } from "@altea/altea-notes/server/NoteLogic.server";
 import { AlertNotificationLogic } from "@altea/altea-alert/server/AlertNotificationLogic.server";
 import { CacheServer } from "@altea/altea-cache/server/CacheServer";
+import type { Schema } from "@altea/altea/server/schema";
 
 // Port of Southwind's Starter.Start (Southwind/Starter.cs): the single global entry that builds the
 // schema, binds the connector, registers each module's logic and completes. Extensions are excluded
@@ -128,7 +129,52 @@ export namespace Starter {
     // `webBuilder` mirrors Signum's `sb.WebServerBuilder`: the web host passes the WebBuilder it created,
     // Starter sets it on the SchemaBuilder, and each module's `XxxLogic.start(sb)` mounts its own HTTP
     // surface via `if (sb.webBuilder) XxxServer.start(sb.webBuilder)`. A terminal / test omits it (no HTTP).
-    export async function start(connectionString: string, webBuilder?: WebBuilder): Promise<void> {
+    /**
+     * The built schema, kept so a host that DEFERRED initialization can run it later (see `initialize`).
+     */
+    let built: Schema | undefined;
+
+    /**
+     * Signum's `Schema.Current.Initialize()` — read the persisted ids and warm the caches that need the
+     * database. Separate from `start` because WHEN it happens differs by host, exactly as in Signum: the web
+     * host initializes at boot (Southwind.Server/Program.cs), while the TERMINAL does not — its menu appears
+     * first and only the commands that read data initialize (Southwind.Terminal's `Load` and
+     * `CSharpMigrations` call it; `Synchronize` and `NewDatabase` never do).
+     *
+     * That ordering is not cosmetic: every one of these caches reads a schema that `sync` exists to repair,
+     * so initializing before the command is chosen means a wall of mismatch warnings and a pile of pointless
+     * queries in front of the very command that would fix them.
+     *
+     * Idempotent — `schema.initialize()` is, and the two warm-ups simply re-read.
+     */
+    export async function initialize(): Promise<void> {
+        if (built == null)
+            throw new Error("Starter.initialize: call Starter.start first.");
+
+        // Read the persisted TypeEntity ids back into the type↔id caches (internally TypeLogic.load).
+        // Tolerant of a not-yet-generated database (the `new`/`create` terminal command runs against an
+        // empty DB); the deterministic bootstrap then covers reads until generation seeds the table.
+        await built.initialize();
+
+        // Warm the culture cache into its sync snapshot: the reflection endpoint answers the culture
+        // catalogue on every client boot and cannot await a query there. Tolerant of a not-yet-generated
+        // database, like the initialize above.
+        try { await CultureInfoLogic.warmUp(); } catch { /* table not created yet — the seeder fills it */ }
+
+        // Load THIS environment's ApplicationConfiguration into its sync snapshot (Signum reads its
+        // `Starter.Configuration` lazy on first use; altea's ResetLazy is async and every module's
+        // configuration getter is not — see GlobalsLogic). Tolerant of a not-yet-generated or not-yet-seeded
+        // database: a module that then asks for its configuration fails with GlobalsLogic's message naming
+        // the migration, rather than silently running on defaults.
+        try { await GlobalsLogic.warmUp(); } catch (e) { console.warn(`[globals] ${(e as Error).message}`); }
+    }
+
+    /**
+     * @param options.initialize  Run {@link initialize} as part of starting (the default). A TERMINAL passes
+     *   false and initializes per command — see that method.
+     */
+    export async function start(connectionString: string, webBuilder?: WebBuilder,
+        options?: { initialize?: boolean }): Promise<void> {
         // Shared entity-model declarations (mixins / lite models / implementedBy overrides), applied
         // identically on client and server. Runs before schema build so overrides take effect.
         EntityOverrides.start();
@@ -719,27 +765,16 @@ export namespace Starter {
 
         sb.complete();
 
-        // Signum's Schema.Initialize(): read the persisted TypeEntity ids back into the type↔id caches
-        // (internally TypeLogic.load). Tolerant of a not-yet-generated database (the `new`/`create`
-        // terminal command runs against an empty DB); the deterministic bootstrap then covers reads until
-        // generation seeds the table. `create`/`sync` re-initialize afterwards (see terminal.ts).
-        await sb.schema.initialize();
+        built = sb.schema;
 
         // Load translations: each installed module's own `translations/` directory (walked from this
         // app's dependency graph), then the app's own `<cwd>/translations` last so it wins a collision.
         loadAppTranslations();
 
-        // Warm the culture cache into its sync snapshot: the reflection endpoint answers the culture
-        // catalogue on every client boot and cannot await a query there. Tolerant of a not-yet-generated
-        // database, like schema.initialize above.
-        try { await CultureInfoLogic.warmUp(); } catch { /* table not created yet — the seeder fills it */ }
 
-        // Load THIS environment's ApplicationConfiguration into its sync snapshot (Signum reads its
-        // `Starter.Configuration` lazy on first use; altea's ResetLazy is async and every module's
-        // configuration getter is not — see GlobalsLogic). Tolerant of a not-yet-generated or not-yet-seeded
-        // database, like the culture warm-up above: a module that then asks for its configuration fails with
-        // GlobalsLogic's message naming the migration, rather than silently running on defaults.
-        try { await GlobalsLogic.warmUp(); } catch (e) { console.warn(`[globals] ${(e as Error).message}`); }
+        // Everything that READS the database is deferred to `initialize` (see there for why).
+        if (options?.initialize !== false)
+            await initialize();
 
         // The app's own PUBLIC REST surface (Southwind's Public/CatalogAPIController) — what an API key
         // authenticates against and what @altea/altea-rest logs. After every module, so its RestLog

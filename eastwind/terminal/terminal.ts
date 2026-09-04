@@ -49,20 +49,11 @@ async function main(): Promise<void> {
 
     const connStr = requireConnStr();
 
-    // The terminal is the tool that BRINGS the schema up to date (`create` / `sync` / `load`), so it must be
-    // able to start against a database that trails the code — otherwise the mismatch that `sync` exists to
-    // fix would stop `sync` from running. Signum's StartParameters.IgnoredDatabaseMismatches does exactly
-    // this: the startup caches (TypeLogic / SymbolLogic / EmailModelLogic, all built with `joinRelaxed`)
-    // COLLECT their mismatches instead of throwing, and we report them once, here. The WEB HOST keeps the
-    // strict default, so a stale schema there fails loudly with "Consider Synchronize".
-    const { mismatches } = await StartParameters.withIgnoredDatabaseMismatches(
-        () => Starter.start(connStr)); // binds Connector.default; reach the schema via Schema.current
-
-    if (mismatches.length > 0) {
-        console.log(chalk.yellow(`[start] ${mismatches.length} database mismatch(es) — the schema trails the code, run 'sync':`));
-        for (const m of mismatches)
-            console.log(chalk.gray(indentLines(m.message)));
-    }
+    // Build the schema WITHOUT touching the database — Signum's terminal does the same: `Starter.Start`
+    // then the menu, and only the commands that read data call `Schema.Current.Initialize()`. Initializing
+    // here instead would run every startup cache against the schema that `sync` exists to repair, printing
+    // a wall of mismatch warnings and a pile of queries in FRONT of the command that would fix them.
+    await Starter.start(connStr, undefined, { initialize: false }); // binds Connector.default
 
     try {
         await connectBanner(connStr);
@@ -92,6 +83,31 @@ async function main(): Promise<void> {
         await Northwind.close();
         await Connector.current().closeConnection();
     }
+}
+
+/**
+ * Initialize the schema for a command that READS data — Signum's `Schema.Current.Initialize()`, called from
+ * `Load` and `CSharpMigrations` and from nowhere else.
+ *
+ * The terminal is the tool that BRINGS the schema up to date, so it must survive a database that trails the
+ * code — otherwise the mismatch `sync` exists to fix would stop `sync` from running. Signum's
+ * StartParameters.IgnoredDatabaseMismatches does exactly this: the startup caches (TypeLogic / SymbolLogic
+ * / EmailModelLogic, all built with `joinRelaxed`) COLLECT their mismatches instead of throwing, and they
+ * are reported once, here. The WEB HOST keeps the strict default, so a stale schema there fails loudly.
+ *
+ * Runs at most once per process.
+ */
+let initialized: Promise<void> | undefined;
+function ensureInitialized(): Promise<void> {
+    return initialized ??= (async () => {
+        const { mismatches } = await StartParameters.withIgnoredDatabaseMismatches(() => Starter.initialize());
+
+        if (mismatches.length > 0) {
+            console.log(chalk.yellow(`[start] ${mismatches.length} database mismatch(es) — the schema trails the code, run 'sync':`));
+            for (const m of mismatches)
+                console.log(chalk.gray(indentLines(m.message)));
+        }
+    })();
 }
 
 main()
@@ -146,6 +162,7 @@ async function interactive(): Promise<void> {
  * is already installed, eastwind ships the vendor script for both dialects and seeds it.
  */
 async function load(args: string[]): Promise<void> {
+    await ensureInitialized(); // Signum's `Load` opens with Schema.Current.Initialize()
     for (; ;) {
         const selected = await new ConsoleSwitch<() => Promise<void>>("Load processes (e.g. SN,EA,IA):")
             .add("SN", "Seed Northwind (the demo-data SOURCE database)", () => NorthwindSeed.seed())
@@ -192,6 +209,7 @@ async function showOrder(): Promise<void> {
  * ordered, once-per-database code steps (roles, users, the Northwind loaders, the XML seeds).
  */
 async function cSharpMigrations(args: string[]): Promise<void> {
+    await ensureInitialized(); // Signum's `SouthwindMigrations.CSharpMigrations` opens with it too
     await EastwindMigrations.cSharpMigrations(/* autoRun */ args.includes("--auto") || !process.stdin.isTTY);
 }
 
@@ -199,6 +217,9 @@ async function cSharpMigrations(args: string[]): Promise<void> {
 // eastwind/Migrations are the schema's source of truth — apply what is pending, or write the next migration
 // from the synchronization script.
 async function migrations(args: string[]): Promise<void> {
+    // Signum's SqlMigrationRunner does not initialize, but its TokenMigrationRunner does — and altea wires
+    // the token migrations onto `afterMigrationsCompleted` below, so this command may reach them.
+    await ensureInitialized();
     SqlMigrationRunner.migrationsDirectory = migrationsDir();
     wireTokenMigrations();
     await SqlMigrationRunner.sqlMigrations(/* autoRun */ args.includes("--auto") || !process.stdin.isTTY);
@@ -314,19 +335,23 @@ async function synchronize(args: string[] = []): Promise<void> {
 // The three file-based seeds as DIRECT commands (a deploy script calls these). The bodies live in
 // EastwindMigrations — the Load menu and the C# migration list call exactly the same functions.
 async function exportAuth(args: string[]): Promise<void> {
+    await ensureInitialized();
     await EastwindMigrations.exportAuthRules(args[0]);
 }
 
 async function importAuth(args: string[]): Promise<void> {
+    await ensureInitialized();
     await EastwindMigrations.importAuthRules(args[0]);
 }
 
 async function importAssets(args: string[]): Promise<void> {
+    await ensureInitialized();
     await EastwindMigrations.importUserAssets(args.find(a => !a.startsWith("--")), args.includes("--keep-existing"));
 }
 
 // Read-back health check: row counts of every table via altea's LINQ.
 async function check(): Promise<void> {
+    await ensureInitialized();
     const count = async (label: string, rows: Promise<unknown[]>): Promise<string> => `${label}=${(await rows).length}`;
     const parts = [
         await count("Regions", table(RegionEntity).toArray()),
