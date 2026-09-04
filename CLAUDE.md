@@ -229,6 +229,46 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   emits. Pinned by `eastwind/terminal/probePropertyRoute.ts` (31 checks: the six tables' shape, that
   resolution is idempotent rather than duplicating, that the serializer hook snaps a client-built route onto
   the persisted row and leaves an unknown one new, and that every consumer's delete cascade is registered).
+- **A user-asset COLLECTION row is identified by a uuid, and that id is what the XML matches on.** Signum
+  declares nine of those collections `[PrimaryKey(typeof(Guid))]` and says why in a comment — *"the row id
+  identifies the element in the XML"* — writes it per row on export (`SelectWithRowId`) and matches rows BY
+  it on import rather than by POSITION (`SynchronizeRowIds`). Both halves are
+  `altea-user-assets/server/UserAssetsImportExport`'s `syncRows` / `rowGuid`; the SelectWithRowId half is
+  trivial here, because altea's collection element IS an entity with its own primary key. The nine:
+  UserQuery filters + columns, UserChart filters + columns, Dashboard parts, both Toolbar element tables,
+  and the EmailTemplate / OfficeTemplate filters — plus four scheduler ENTITIES Signum also gives a Guid PK
+  (HolidayCalendar and the three ScheduleRule types).
+  - **matching by position is not a smaller version of this, it is wrong**: re-importing an UNCHANGED asset
+    rewrote every row, REORDERING one rewrote every row after the first move, and anything keyed to a row
+    (a per-instance translation, whose key includes the row's own lite) was orphaned by the re-import.
+  - Signum's back-compat is kept: a file with NO Guid on any element still imports by position, so an older
+    export is not reported as a change; a file where only SOME rows carry one is refused rather than
+    half-applied. The sync callback also receives the element's INDEX, for state that depends on position
+    rather than on the XML.
+  - **three of the nine carried a redundant `guid varchar` column** — a dashboard's parts and both toolbar
+    element tables — altea's workaround for the row id being an int, which their own comments said so. It is
+    gone, the primary key IS that guid, and Signum's tables have no such column either. **An existing altea
+    database must promote the guid INTO the primary key before the sync**
+    (`eastwind/terminal/migrateRowGuids.ts`), or the ordinary int→uuid migration assigns fresh ids and then
+    drops the column, silently breaking every reference: an exported dashboard/toolbar XML names a
+    part/element by it, and a tour's "DashboardPart" css step stores it as a plain string with no FK to
+    cascade. The other six had an int id and nothing to preserve, so they get fresh uuids — safe only
+    because nothing outside the row names those ids, which is worth re-checking on a database that has
+    TranslatedInstance rows.
+  - it retired a latent bug: the tour editor offered `String(part.id)` — the INT pk — as the DashboardPart
+    key, while the DOM attribute a step has to match is the part's guid, so such a step could never resolve.
+    The two are now the same value. `partContentKey` also yields UNDEFINED for an unsaved part instead of
+    the string `"undefined"` (Signum's `rowId?.toString()`), so the attribute is omitted while there is
+    nothing to target.
+  - **in LEGACY MODE a uuid primary key defaults to Signum's `uuid_generate_v1()`**, not
+    `gen_random_uuid()`. Signum's needs the uuid-ossp EXTENSION, which is why altea generates the built-in
+    (PostgreSQL 13+) for its own databases; but pointed at a Signum database the difference showed up as a
+    `SET DEFAULT` on every uuid table on every sync, and running the two side by side would have altea
+    rewrite the defaults out from under the Signum app. Both mean "the database generates the key" — v1 is
+    time-ordered, which is also why the SQL Server side offers NEWSEQUENTIALID as `uuid7`.
+  Pinned by `eastwind/terminal/probeRowGuids.ts` (39 checks: the thirteen primary keys, the three dropped
+  guid columns, each matching rule including the two refusals, and an end-to-end export + re-import of a
+  real UserQuery that keeps every filter and column row id).
 - **`SemiSymbol` EXISTS** (`data/semiSymbol` + `server/semiSymbolLogic`), as Signum's sibling of `Symbol`: a row that may be DECLARED in code (it gets a `key`, like a Symbol) or created by a USER at runtime (only a `name`). That is why its key is NULLABLE and why it derives from `Entity` rather than `Symbol` — a SemiSymbol table is user-writable (`@entity("String")`, its own Save operation), so it is not "seeded". The one rule that matters is in its synchronizer: only rows WITH a key take part in the diff (Signum's `current.Where(c => c.Key.HasText())`), so a row a user created is never deleted by a sync. `AlertTypeSymbol`, `AgentSymbol` and `NoteTypeSymbol` are SemiSymbols; everything else stays a `Symbol`. The quote-transformer recognises BOTH roots, so `init()` works on either.
 - **`@ticksColumn(true|false)`** (Signum's `[TicksColumn]`): whether the table carries a concurrency stamp. A Ticks column earns its place where a row is edited by PEOPLE, one at a time, so the DEFAULTS are: a **`@part` row has NONE** — it is reached and saved through its owner, whose own stamp guards the aggregate, and it is never edited alone — a SEEDED table has none, and everything else has one. The decorator overrides either default: `false` for logs and engine-written rows (Exception, OperationLog, Process, PackageLine, EmailPackage, the migration rows, SemiSymbol), `true` for a part that really is edited on its own. Unlike every other class-level flag it is INHERITED (a SemiSymbol subclass gets it from the base, as in Signum).
   **legacyMode gives the stamp BACK to the parts Signum models as real ENTITIES** (a dashboard part's content, an email service, a scheduler rule, a virtual-MList child), because their tables have one there — and which those are is DERIVED, never declared: a part reached through an owner's ARRAY is Signum's MList table (not an entity there at all), any other part stands in for a type with its own table. `mlistRowOwner` is that predicate — unless `@legacyTableName({ wasVirtualMList: true })` says otherwise — and legacyMode reuses it to give an MList table Signum's whole column shape: no ToStr, a `ParentID` back reference, and an element column named from the element TYPE (`EntityID_User`, `TypeConditionID`) rather than from the field altea invented for the row. **An existing altea database needs a `sync`**: ~97 part tables drop their Ticks.
