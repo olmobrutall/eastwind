@@ -28,6 +28,7 @@ import { DynamicExpressionEntity, DynamicExpressionOperation } from "@altea/alte
 import { DynamicValidationEntity, DynamicValidationOperation } from "@altea/altea-dynamic/data/DynamicValidation";
 import { DynamicValidationEval } from "@altea/altea-dynamic/data/DynamicValidation";
 import { DynamicLogic } from "@altea/altea-dynamic/server/DynamicLogic.server";
+import { PropertyRouteLogic } from "@altea/altea/server/propertyRouteLogic";
 import { TypeLogic } from "@altea/altea/server/typeLogic";
 import { UserEntity } from "@altea/altea-auth/data/User";
 import { ShipperEntity } from "../shippers/Shipper.data";
@@ -68,7 +69,10 @@ async function define(): Promise<void> {
             name: "PhoneIsNotBad",
             // The TypeEntity ROW for the ctor — TypeLogic caches both directions.
             entityType: TypeLogic.idToEntity(TypeLogic.typeToId(ShipperEntity))!,
-            subEntity: "phone",
+            // The route the validation applies to is a ROW now (see PropertyRouteLogic); it is created on
+            // demand and saved with the validation.
+            subEntity: PropertyRouteLogic.propertyRouteEntitySync(
+                TypeLogic.idToEntity(TypeLogic.typeToId(ShipperEntity))!, "phone"),
         });
         val.eval = DynamicValidationEval.create({
             script: `return e.phone === "BAD" ? "The phone must not be BAD" : null;`,

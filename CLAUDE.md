@@ -167,6 +167,68 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   - the user's CHOICE lives in the BROWSER (`CultureClient`, localStorage) — Signum stores it server-side per user — and rides on every call as a bare `Accept-Language` tag, which `webApi` turns into a per-request `CultureInfo.withCultures` scope (Signum's ASP.NET request localization). Without that scope every SERVER-resolved label — a registered expression's niceName, validation and exception messages — answers in the process default no matter who asked, and a per-culture CACHE keyed on `currentCulture()` serves whichever language warmed it first to everyone.
   - switching culture RELOADS the page. Signum re-fetches its types and soft-resets, because all its labels are client-resolved; altea has server-resolved labels baked into already-fetched responses, which a soft `resetUI()` leaves stale.
   - Translation files live in EACH PACKAGE's own `translations/` directory (`altea/altea-workflow/translations/Altea.Workflow.es.xml`), not in one per-app folder as in Signum — a module's translations travel with the module, so any application that installs it gets them for free. At boot `loadAppTranslations` walks the app's dependency graph (through packages that depend on `@altea/altea`), loads each module's directory in package-name order, and loads the app's own `<appRoot>/translations` LAST so an app file wins a key collision. A Signum module renamed in altea (Word* → Office*) needs its ported XML's Type/Member NAMES remapped, or none of it lands.
+- **`PropertyRouteEntity` EXISTS — the routes table five modules point at.** Signum's
+  `basics.PropertyRoute` (Signum/Basics/PropertyRouteEntity.cs + PropertyRouteLogic.cs) is one row per
+  property route, `(rootType, path)` where the path is a `propertyString()`; it is a NORMALIZATION, because
+  five things need to name a route and each stores an FK here rather than repeating the pair — a property
+  authorization rule (`auth.rule_property.resource_id`), a property's help
+  (`help.type_help__property.property_id`), a tour's css step (`tour.css_step.property_id`), a dynamic
+  validation's sub-entity (`dynamic.dynamic_validation.sub_entity_id`) and a translated instance
+  (`translation.translated_instance.property_route_id`). altea originally declined the table and had each of
+  those five store the route INLINE. That reads as the simpler model right up to the moment a database has
+  to line up with a Signum one: `basics.property_route` then has no counterpart, so a sync offers to RENAME
+  it into whatever unmatched table sorts nearest by string distance (a real run offered
+  `basics.tour_trigger`), and all five consumer tables diverge by a column. All six now match Signum column
+  for column — a Southwind sync scripts NOTHING for any of them.
+  - **the rows are NOT seeded**, exactly as in Signum: no `schema.generating` hook, and `createNew` is
+    undefined on BOTH levels of the sync. A row is created lazily by `toPropertyRouteEntity` when something
+    first needs to point at that route, and saved as part of that consumer's graph — so a fresh database has
+    an empty table and a Signum database keeps every row it has. Seeding instead would mean a row for every
+    property of every type, tens of thousands of them, almost none ever referenced. The sync only REMOVES
+    routes that no longer exist and REWRITES paths that were renamed (which is what keeps every stored FK
+    pointing at the right route through a member rename), and a type's removal takes its routes with it
+    through `EntityEvents<TypeEntity>.preDeleteSqlSync`.
+  - **it forced a core seam: `registerAfterDeserialization`** (`data/serializer`), Signum's
+    `WebEntityJsonConverterFactory.AfterDeserilization`. A route is built CLIENT-side (the tour editor, the
+    validation designer), where the row's id is unknowable, so it arrives id-less and would INSERT a
+    duplicate; the handler points it at the row that already exists and leaves it new when there is none,
+    which is what makes the table demand-populated. It runs on the NEW-entity branch only, where Signum runs
+    it for every entity — an id-carrying payload has nothing to resolve. Because the serializer is
+    SYNCHRONOUS while a ResetLazy is not, the lazy is mirrored into a sync snapshot (the `GlobalsLogic.warmUp`
+    pattern), and the refresh on save is AWAITED — fire-and-forget there lets a second POST of the same route
+    hit the unique index.
+  - **the caches key by STRING, never by an entity.** Signum keys `Properties` by `TypeEntity` and
+    `PropertiesFromLite` by `Lite<PropertyRouteEntity>`, which works because an ambient EntityCache hands
+    back one instance per row; altea gives each query its own Retriever (the accommodation altea-workflow's
+    `keyOf` documents), so it is `cleanName` and the lite's `key()`. Same reason `PropertyAuthLogic`'s
+    runtime caches stay keyed by (rootType id, path) even though the STORAGE is now a row.
+  - **`should` is built from the MODEL**, not from Signum's `TypeLogic.TryEntityToType(rep)`: nothing is
+    ever inserted, so the diff needs only (cleanName, path) pairs and never a TypeEntity id — which makes it
+    tolerant of a type with no persisted row yet by construction rather than by a tolerant lookup.
+  - `propertyRouteEntitySync` is the sync counterpart the XML importers need (`fromXml` cannot await), and
+    it VALIDATES the path where Signum's `IFromXmlContext.GetPropertyRoute` scans generated routes — so a
+    file naming a route that does not exist says which file is wrong.
+  - `PropertyRouteProductionCleanup` is not ported: it exists for databases whose migrations only fixed the
+    routes known in dev, and altea's answer to an unparseable row is the synchronizer that removes it.
+  - **altea-dynamic gains a cascade Signum lacks.** Signum registers the PropertyRouteEntity
+    `PreDeleteSqlSync` for Tour, Help and TranslatedInstance but not for DynamicValidation, so a sync that
+    removes a route a validation points at fails on `sub_entity_id`'s foreign key. Fixed rather than mirrored.
+  - `PropertyRouteCombo` moved out of altea-tour into `altea/client/Components`, where Signum keeps it, once
+    the validation designer wanted it too — and it gained Signum's `routes` prop (which restricts the
+    designer to mixins and non-collection embeddeds).
+  - **an existing ALTEA database needs a DATA migration, not just a `sync`.** The sync would add each new FK
+    column with a default of 0 and drop the old ones in the same script, losing every row's route and then
+    failing on the new foreign key. `eastwind/terminal/migratePropertyRoutes.ts` does the conversion first
+    (idempotent, one transaction): it creates the table, inserts a route per distinct (rootType, path) each
+    consumer names — deriving the root type from the owner where the table did not store one — and points
+    each row at its route; then the ordinary `sync` has only the old columns left to drop. A SIGNUM database
+    needs none of it, which is the whole reason the type was ported. Verified on eastwind's dev database:
+    16 property rules and 1 dynamic validation converted with nothing lost.
+  Also aligned while in these tables: the four auth rule unique indexes now use Signum's member order
+  `(resource, role)` instead of `(role, resource)` — eight lines of DDL churn a Southwind sync no longer
+  emits. Pinned by `eastwind/terminal/probePropertyRoute.ts` (31 checks: the six tables' shape, that
+  resolution is idempotent rather than duplicating, that the serializer hook snaps a client-built route onto
+  the persisted row and leaves an unknown one new, and that every consumer's delete cascade is registered).
 - **`SemiSymbol` EXISTS** (`data/semiSymbol` + `server/semiSymbolLogic`), as Signum's sibling of `Symbol`: a row that may be DECLARED in code (it gets a `key`, like a Symbol) or created by a USER at runtime (only a `name`). That is why its key is NULLABLE and why it derives from `Entity` rather than `Symbol` — a SemiSymbol table is user-writable (`@entity("String")`, its own Save operation), so it is not "seeded". The one rule that matters is in its synchronizer: only rows WITH a key take part in the diff (Signum's `current.Where(c => c.Key.HasText())`), so a row a user created is never deleted by a sync. `AlertTypeSymbol`, `AgentSymbol` and `NoteTypeSymbol` are SemiSymbols; everything else stays a `Symbol`. The quote-transformer recognises BOTH roots, so `init()` works on either.
 - **`@ticksColumn(true|false)`** (Signum's `[TicksColumn]`): whether the table carries a concurrency stamp. A Ticks column earns its place where a row is edited by PEOPLE, one at a time, so the DEFAULTS are: a **`@part` row has NONE** — it is reached and saved through its owner, whose own stamp guards the aggregate, and it is never edited alone — a SEEDED table has none, and everything else has one. The decorator overrides either default: `false` for logs and engine-written rows (Exception, OperationLog, Process, PackageLine, EmailPackage, the migration rows, SemiSymbol), `true` for a part that really is edited on its own. Unlike every other class-level flag it is INHERITED (a SemiSymbol subclass gets it from the base, as in Signum).
   **legacyMode gives the stamp BACK to the parts Signum models as real ENTITIES** (a dashboard part's content, an email service, a scheduler rule, a virtual-MList child), because their tables have one there — and which those are is DERIVED, never declared: a part reached through an owner's ARRAY is Signum's MList table (not an entity there at all), any other part stands in for a type with its own table. `mlistRowOwner` is that predicate — unless `@legacyTableName({ wasVirtualMList: true })` says otherwise — and legacyMode reuses it to give an MList table Signum's whole column shape: no ToStr, a `ParentID` back reference, and an element column named from the element TYPE (`EntityID_User`, `TypeConditionID`) rather than from the field altea invented for the row. **An existing altea database needs a `sync`**: ~97 part tables drop their Ticks.
@@ -583,8 +645,10 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     query tab lists member NAMES, not `e.Id`-style projection lines.
   - a DynamicApi script is a FUNCTION THAT REGISTERS ROUTES, not a controller-class body (altea has no
     controllers), which retires `IDynamicApiEvaluator.DummyEvaluate` and the second controller assembly.
-  - `PropertyRouteEntity` and `DisabledMixin` do not exist, so a validation's `SubEntity` is a route STRING
-    (matched as a PREFIX) and `disabled` is a plain field keeping Signum's column name.
+  - `DisabledMixin` does not exist, so `disabled` is a plain field keeping Signum's column name. A
+    validation's `SubEntity` IS a `PropertyRouteEntity` (see that bullet), but its APPLICABILITY test stays a
+    route PREFIX rather than Signum's `PropertyRoute.MatchesEntity(mod)`, because altea re-roots a route at
+    each embedded.
   - **no RESTART button** on the panel: Signum's restarts the ASP.NET host in place behind a supervisor,
     which Node has no convention for. `DynamicPanelPermission.RestartApplication` IS ported and the page
     says a restart is needed.
@@ -741,10 +805,10 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   page shows one sentence per type / property / operation / query / query column, assembled from
   reflection by `HelpGenerator` (free, per request, never stored) with any human-written description
   layered over it — which is why a page is never empty and why the four tables stay small. Divergences:
-  - **`PropertyRouteEntity` does not exist**, so a property's help is keyed by the route STRING
-    (`propertyString()`), the same key altea-auth's `RulePropertyEntity.path` uses. Signum's
-    PropertyRouteEntity delete cascade goes with the table; a route that no longer exists is dropped when
-    the XML is read (and by the synchronizer).
+  - a property's help points at a **`PropertyRouteEntity`** row, as in Signum (see that bullet), so its
+    column is `property_id` and Signum's delete cascade from PropertyRouteEntity is registered here. A route
+    that no longer exists is ALSO dropped when the XML is read — the routes table's own sync repairs a
+    renamed path in place, so the two do not overlap.
   - **`NamespaceHelpEntity.name` holds a PACKAGE + FOLDER** — the same grouping string @altea/altea-map's
     schema map colours by (`getLocation` off the transformer's `__fileInfo`), so the map and the help index
     agree on what a module is. The INDEX page's first level is the package; the `(in …)` sub-label is shown
@@ -882,11 +946,10 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   how the frame widget knows whether a tour exists without a round-trip. Divergences:
   - **`MList` → `@part` rows twice over** (steps, and each step's css steps), keeping Signum's
     `CssStepEmbedded` NAME as the AD configurations did; Signum's `WithVirtualMList` needs no counterpart.
-  - **altea has no `PropertyRouteEntity`** (altea-auth keys a property rule by its route STRING), so a
-    "Property" css step stores the `propertyString()` — and the SELECTOR it builds uses the route's LAST
-    SEGMENT, because altea re-roots the PropertyRoute at each embedded and a Line's `data-property-path` is
-    its own member (the divergence altea-playwright documents). Signum's PropertyRouteEntity delete cascade
-    goes with the table.
+  - a "Property" css step points at a **`PropertyRouteEntity`** row, as in Signum (see that bullet), and
+    Signum's delete cascade from PropertyRouteEntity is registered here. The SELECTOR it builds still uses
+    the route's LAST SEGMENT, because altea re-roots the PropertyRoute at each embedded and a Line's
+    `data-property-path` is its own member (the divergence altea-playwright documents).
   - **`cssSelector` lives in the DATA layer**, computed once, so the editor's live preview and the DTO the
     player consumes cannot drift (Signum computes it twice).
   - `EntityAccordion` is not ported, so the steps use `EntityTabRepeater`; `MarkdownLine` (Signum.Markdown,
