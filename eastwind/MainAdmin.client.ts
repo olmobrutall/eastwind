@@ -250,7 +250,7 @@ export function startFull(routes: RouteObject[]): void {
     // button on every SearchControl toolbar — and on the chart page — plus "Import from Excel" beside it,
     // each gated by its own permission. Southwind also passes `excelReport: true`; that half is not ported
     // (an .xlsx OfficeTemplate supersedes it — see ExcelClient's header).
-    ExcelClient.start(cb, { plainExcel: true, importFromExcel: true });
+    ExcelClient.start(cb, { plainExcel: true, importFromExcel: true, excelReport: true });
 
     // Alerts (@altea/altea-alert): the Alert view + its search settings (the Text column renders its
     // placeholders as links), the alert operations' buttons and the "alerts about this entity" quick link.

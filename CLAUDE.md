@@ -61,7 +61,9 @@ altea/
   altea-map/          # the schema map (a d3 force graph of tables + FKs, colourable by package / kind /
                       #   size / per-role access) and the operation map (one type's state machine)
                       #   — Signum.Map
-  altea-office-template/ # docx/pptx/xlsx templating (Signum.Word); hand-built OOXML substrate
+  altea-office-template/ # docx/pptx/xlsx templating (Signum.Word) + the whole of Signum.Excel: the
+                      #   plain export, the importer and the stored ExcelReport templates; hand-built
+                      #   OOXML substrate
   altea-time-machine/ # browse / compare / restore the versions of a @systemVersioned row
                       #   (Signum.TimeMachine)
   altea-tour/         # guided in-app tours over driver.js, anchored to a type / dashboard / user query /
@@ -1501,6 +1503,47 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   Product. A throw from a canExecute body now PROPAGATES, named (Signum rethrows with `e.Data["entity"]`);
   swallowing only made sense while the loop was deliberately running operations that did not apply. Signum's
   `CreateMultiCanExecuteState` scratchpad is not ported — nothing in altea writes to it.
+
+- **Signum.Excel's ExcelReport half → altea-office-template: a stored WORKBOOK, refilled.** The package's
+  header used to record this as a deliberate decline ("an .xlsx OfficeTemplate is strictly more capable"),
+  which was the wrong conclusion from a true premise. A token template IS more capable at COMPOSING a
+  document; an ExcelReport does something else entirely — it takes a workbook an analyst already built in
+  Excel (pivot tables, charts, sheets whose formulas read the data), replaces the contents of its one
+  "Data" sheet with a query's rows, and repoints every pivot cache at the new range. Nothing in it is
+  authored in tokens: a column is matched by its DISPLAY NAME against the query's columns, and each
+  column's formatting comes from the sample row under the header. And it is what lets an application READ
+  the `excel.excel_report` rows a Signum database already has, which a more capable substitute does not.
+  Divergences:
+  - **`ExcelReportEntity` lives in its own `data/excel/` directory**, because the schema scope is per
+    PACKAGE + DIRECTORY: `data/OfficeTemplate.ts` already claims `data/` for the `word` schema, and a
+    second `setDefaultDatabaseSchema` for the same directory REPLACES the first rather than adding to it.
+    The longest-prefix rule then puts this one table in Signum's `excel` schema and leaves the rest alone.
+  - **the "Data" worksheet is looked up more forgivingly.** Signum reads
+    `GetWorksheetPartBySheetName(ExcelMessage.Data.NiceToString())` — the LOCALIZED name — so a template
+    authored in one culture cannot be run in another. The port tries the localized name first (a Signum
+    template keeps working exactly as it did), then the invariant "Data", and finally accepts a workbook
+    that has only ONE worksheet; only a multi-sheet workbook with no recognisable data sheet fails.
+  - **the output column ORDER is built explicitly** — template columns in template order, then any query
+    column the template does not mention. Signum gets the same order out of a `HashSet<K>` it unions the
+    two key sets into, which is true of .NET's HashSet in practice but is not a documented guarantee, and
+    a file's column order is not something to leave to one.
+  - **the calculation chain is DROPPED, not just flagged.** Signum sets `ForceFullCalculation` /
+    `FullCalculationOnLoad` and leaves the chain, which names cells that no longer exist — the thing that
+    makes Excel offer to "repair" the file. `SpreadsheetUtils.removeCalcChain` / `forceFullCalcOnLoad`
+    (already written for the template renderer) do both.
+  - **the `.xlsx` extension is a field VALIDATION as well as Signum's run-time assert**, so a template
+    saved with the wrong extension is refused when it is saved rather than the first time someone runs
+    the report. Both call one shared rule.
+  - `GetColumnWidth` is not ported: it is dead code in Signum (nothing calls it), and an ExcelReport takes
+    its widths from the template, which is the point of having one.
+  - still NOT ported: `ExcelAttachmentEntity` (a UserQuery exported to .xlsx as an email attachment) —
+    that one really is what altea-office-template's own attachment already does.
+  It needed one CORE addition, which is Signum's own placement: **`GET /api/query/queryEntity/:queryKey`**
+  plus `Finder.API.fetchQueryEntity`, whose client stub had been sitting commented out with that exact
+  url. A client needs the QueryEntity ROW whenever it builds an entity that references a query (a new
+  UserQuery, a new ExcelReport), because the FK is the row and not the key; altea-user-queries had been
+  carrying a private copy of the route gated on its own permission. The core one is gated on the QUERY's
+  authorization, which is the right question.
 
 - **Signum.MachineLearning → altea-machine-learning: a CODIFICATION is the unit, and CNTK becomes
   TensorFlow.js.** A predictor names a registered QUERY, marks each column Input or Output, and trains a

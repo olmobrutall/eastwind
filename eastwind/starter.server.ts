@@ -86,6 +86,7 @@ import { OfficeTemplateLogic } from "@altea/altea-office-template/server/OfficeT
 import { ToolbarLogic } from "@altea/altea-toolbar/server/ToolbarLogic.server";
 import { PlainExcelLogic } from "@altea/altea-office-template/server/excel/PlainExcelLogic.server";
 import { ExcelImportLogic } from "@altea/altea-office-template/server/excel/ExcelImportLogic.server";
+import { ExcelReportLogic } from "@altea/altea-office-template/server/excel/ExcelReportLogic.server";
 import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic.server";
 import { SqlMigrationRunner } from "@altea/altea-migrations/server/SqlMigrationRunner.server";
 import { TokenMigrationLogic } from "@altea/altea-user-assets/server/TokenMigrationLogic.server";
@@ -501,6 +502,14 @@ export namespace Starter {
         // /api/excel/validateForImport/:queryKey + /api/excel/import/:queryKey, which read an .xlsx back
         // into entities through a chosen operation. Its ImportFromExcel permission rides the same seed.
         ExcelImportLogic.start(sb);
+
+        // Excel REPORTS (the third Signum.Excel half): the excel.excel_report table — a stored .xlsx
+        // workbook attached to a query, whose "Data" sheet a report run refills from the search. Its own
+        // starter again; Southwind starts all three with one `ExcelLogic.Start(sb, excelReport: true)`.
+        //
+        // AFTER QueryLogic is running (the entity has a QueryEntity FK) and BEFORE OperationLogic.start,
+        // so its Save / Delete symbols are in the registry when the OperationSymbol table is seeded.
+        ExcelReportLogic.start(sb);
 
         // Migrations module (altea-migrations): the SqlMigration / CSharpMigration history tables + the
         // LoadMethodLog every terminal load step writes. Server-only (the runners live in the terminal), and
