@@ -12,6 +12,10 @@
 // Today: four mixins (three of them a module's, plus the app's own UserEmployeeMixin), every lite model
 // is the default, and implementedBy is declared inline via @implementedBy on OrderEntity.customer.
 import { overrideImplementedBy } from "@altea/altea/data/decorators";
+import { ApplicationConfigurationEntity } from "./globals/ApplicationConfiguration.data";
+import { AzureADConfigurationEmbedded_RoleMapping } from "@altea/altea-auth-azuread/data/AzureAD";
+import { OpenIDConfigurationEmbedded_RoleMapping } from "@altea/altea-auth-openid/data/OpenID";
+import { WindowsADConfigurationEmbedded_RoleMapping } from "@altea/altea-auth-windowsad/data/WindowsAD";
 import type { Entity, Type } from "@altea/altea/data/entity";
 import { ExceptionEntity } from "@altea/altea/data/exception";
 import { RestLogEntity } from "@altea/altea-rest/data/Rest";
@@ -108,6 +112,16 @@ export namespace EntityOverrides {
         overrideImplementedBy(VisualTipConsumedEntity, "user", () => [UserEntity]);
         overrideImplementedBy(SystemEventLogEntity, "user", () => [UserEntity]);
         overrideImplementedBy(ChangeLogViewLogEntity, "user", () => [UserEntity]);
+
+        // The three directory configurations are EMBEDDEDs on ApplicationConfigurationEntity (as in
+        // Signum), so each one's roleMapping rows belong to THIS entity — an embedded is flattened onto
+        // its owner's row and has no id to point at. The row types live in framework packages, which must
+        // not name an app type, so each declares an empty @implementedBy the app widens here. It must
+        // resolve to exactly one owner, which SchemaBuilder verifies; in legacy mode the column is
+        // Signum's ParentID.
+        overrideImplementedBy(AzureADConfigurationEmbedded_RoleMapping, "configuration", () => [ApplicationConfigurationEntity]);
+        overrideImplementedBy(OpenIDConfigurationEmbedded_RoleMapping, "configuration", () => [ApplicationConfigurationEntity]);
+        overrideImplementedBy(WindowsADConfigurationEmbedded_RoleMapping, "configuration", () => [ApplicationConfigurationEntity]);
 
         // PredictorEntity.user — same accommodation as the log entities above.
         overrideImplementedBy(PredictorEntity, "user", () => [UserEntity]);

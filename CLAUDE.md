@@ -188,19 +188,42 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     - **the LINQ binder correlates on the same owner id.** An embedded's sub-fields are bound off the
       owner's alias, so passing `ownerId` on is all an embedded's collection needs to be eager-loaded
       like any other (it was explicitly given up before — the comment said so).
-    - **STILL NOT POSSIBLE, and the two are the same limit:** one row type backing TWO collections of
-      the same type on one entity (`PersonEntity.maleFriends` / `.femaleFriends` → one
-      `Person_Friendship`), inside embeddeds or not. A `@part` row is one TABLE keyed by one back
-      reference, so two collections sharing it would read each other's rows — hence one row type per
-      collection, which is also what Signum's per-route MList table gives. By the same argument a row
-      type declared in a FRAMEWORK package cannot name an APP entity as its owner, so the three AD
-      configurations are not converted yet — see the note in `altea-auth/data/BaseAD.ts`.
-    Pinned by `altea/test/server/schema/embeddedCollection.test.ts` (8 DB-free cases: the naming in
-    both modes incl. a nested route, the refusal, the legacy MList facets, and the save-cascade wiring)
-    and `altea/test/server/orm/embeddedCollection.test.ts` (5 DB cases + the serializer round-trip).
-    The framework's own fixture was moved BACK to Signum's shape — `ConfigEntity.awards` returned
-    into `EmbeddedConfigEmbedded` — so **that suite's database needs regenerating**
-    (`pnpm --filter @altea/altea gen:postgres`).
+    - **the delete cascade had the SAME shallow walk**, so an embedded's rows were left behind and the
+      DELETE then failed on their foreign key. Fixed with the mixin gap beside it, as the orphan sweep was.
+    - **a row type in a FRAMEWORK package names its owner through an `@implementedBy(() => [])` the
+      app widens**, because it must not name an app type — the `ChangeLogViewLogEntity.user`
+      accommodation. That is how the three DIRECTORY configurations reach eastwind's
+      `ApplicationConfigurationEntity`. It resolves to exactly ONE implementation (a `@part` row is one
+      table keyed by one back reference), which `validateEntityArray` enforces, and because there is
+      then only one column it carries the FIELD's nullability rather than the polymorphic
+      always-nullable default — so it comes out `NOT NULL`, as Signum's `ParentID` is. In legacy mode
+      it IS `ParentID`: an MList table has no polymorphic parent in Signum, so the `_<Impl>` suffix
+      that disambiguates an ordinary `@implementedBy` has nothing to disambiguate. Both the collection
+      correlation and the delete cascade read that single column through one helper.
+    - **STILL NOT POSSIBLE:** one row type backing TWO collections of the same type on one entity
+      (`PersonEntity.maleFriends` / `.femaleFriends` → one `Person_Friendship`), inside embeddeds or
+      not. A `@part` row is one TABLE keyed by one back reference, so two collections sharing it would
+      read each other's rows — hence one row type per collection, which is also what Signum's per-route
+      MList table gives.
+    Pinned by `altea/test/server/schema/embeddedCollection.test.ts` (10 DB-free cases: the naming in
+    both modes incl. a nested route, the refusal, the legacy MList facets, the save-cascade wiring, and
+    the widened back reference in both modes) and `altea/test/server/orm/embeddedCollection.test.ts`
+    (6 DB cases + the serializer round-trip). The framework's own fixture was moved BACK to Signum's
+    shape — `ConfigEntity.awards` returned into `EmbeddedConfigEmbedded` — so **that suite's database
+    needs regenerating** (`pnpm --filter @altea/altea gen:postgres`).
+  - **It let the three DIRECTORY configurations become EMBEDDEDs, as they are in Signum.**
+    `BaseADConfigurationEmbedded` and its three subclasses were `Entity` (a table each) purely to give
+    `roleMapping` an owner to point at; they are now flattened onto the app's settings row, so
+    `azure_ad_*` / `open_id_*` / `windows_ad_*` are columns on `application_configuration` and the
+    rows live in `application_configuration_<directory>_role_mapping` — Signum's names, matched by a
+    Southwind sync rather than offered as a rename of an unrelated table. Signum's `[PreserveOrder]` on
+    the MList is mirrored too (it was declined before, and the column is part of the table a Signum
+    database already has). What remains on the AzureAD half of a Southwind diff is three lines, all
+    older decisions: the `auth` schema every altea-auth table lives in, and `applicationID` /
+    `directoryID` being `string` rather than `Guid`. **An existing altea database needs a `sync`**
+    (three tables drop, ~30 columns move onto `application_configuration`); eastwind's dev database
+    held no rows in any of them. Pinned end to end by `eastwind/terminal/probeEmbeddedCollection.ts`
+    (21 checks), which is where the cross-package back reference is exercised against a real database.
 - **Do NOT initialize entity fields to a type's default.** `strictPropertyInitialization` is **off** (`altea/altea/presets/base.json`), so a field needs no initializer to compile — and adding one just to silence an imagined warning is noise. Write `@rowOrder order: int;`, `token: QueryTokenEmbedded | null;`, `orderType: OrderTypeEnum;`, `parts: DashboardEntity_Part[];` — **not** `= toInt(0)` / `= null` / `= OrderTypeEnum.Ascending` / `= []`. Specifically:
   - a reflected `T[]` collection is seeded with `[]` by the quote-transformer, so `= []` is always redundant;
   - `@rowOrder` / `@backReference` are filled by the save cascade (and exempt from the implicit NotNull);
