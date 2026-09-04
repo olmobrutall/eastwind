@@ -1275,6 +1275,13 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   each — plus something Southwind has no counterpart for: the five routes altea models as a BigString and
   Signum as a plain `string` (`PackageEntity.configString`, `ProcessExceptionLineEntity.elementInfo`, …)
   are registered `Database`, which is what stops the mixin from giving them file columns nothing wanted.
+  - **a route is named by a SELECTOR, never a string** — `BigStringLogic.register(sb, ExceptionEntity,
+    e => e.stackTrace, config)`, which is what Signum's `Expression<Func<T, BigStringEmbedded>>` is.
+    The lambda goes through the quote-transformer (`memberPath`, the single-member counterpart of
+    `accessedFields`), so it is compiler-checked, follows a rename, and may walk embeddeds. Same
+    reasoning made **`overrideImplementedBy`** take one: `overrideImplementedBy(ExceptionEntity,
+    e => e.user, () => [UserEntity])`. Both must be written INLINE at the call — that is where the
+    transformer stamps the AST.
   - **altea REQUIRES a configuration per route**, listing the missing ones at `schema.initialize()`;
     Signum's `Configurations.GetOrThrow(pr)` only finds out on the first save of that route.
   - **switching an existing database from `Database` to `File` is not just a `sync`** — the sync drops

@@ -920,9 +920,9 @@ function configureBigString(sb: SchemaBuilder): void {
     // these five do. They are altea routes Signum models as a plain string, so Southwind has no
     // counterpart to copy.
     const inRow = new BigStringConfiguration("Database", null);
-    BigStringLogic.registerAll(sb, PackageEntity, inRow);
-    BigStringLogic.registerAll(sb, PackageOperationEntity, inRow);
-    BigStringLogic.registerAll(sb, ProcessExceptionLineEntity, inRow);
-    BigStringLogic.registerAll(sb, ScheduledTaskLogEntity, inRow);
-    BigStringLogic.registerAll(sb, SchedulerTaskExceptionLineEntity, inRow);
+    BigStringLogic.register(sb, PackageEntity, p => p.configString, inRow);
+    BigStringLogic.register(sb, PackageOperationEntity, p => p.configString, inRow);
+    BigStringLogic.register(sb, ProcessExceptionLineEntity, l => l.elementInfo, inRow);
+    BigStringLogic.register(sb, ScheduledTaskLogEntity, l => l.remarks, inRow);
+    BigStringLogic.register(sb, SchedulerTaskExceptionLineEntity, l => l.elementInfo, inRow);
 }

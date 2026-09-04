@@ -117,9 +117,9 @@ export namespace EntityOverrides {
 
         // VisualTipConsumedEntity.user — core declares no implementations so it needn't reference
         // altea-auth (the same accommodation ExceptionEntity.user and OperationLogEntity.user make).
-        overrideImplementedBy(VisualTipConsumedEntity, "user", () => [UserEntity]);
-        overrideImplementedBy(SystemEventLogEntity, "user", () => [UserEntity]);
-        overrideImplementedBy(ChangeLogViewLogEntity, "user", () => [UserEntity]);
+        overrideImplementedBy(VisualTipConsumedEntity, v => v.user, () => [UserEntity]);
+        overrideImplementedBy(SystemEventLogEntity, s => s.user, () => [UserEntity]);
+        overrideImplementedBy(ChangeLogViewLogEntity, c => c.user, () => [UserEntity]);
 
         // The three directory configurations are EMBEDDEDs on ApplicationConfigurationEntity (as in
         // Signum), so each one's roleMapping rows belong to THIS entity — an embedded is flattened onto
@@ -127,12 +127,12 @@ export namespace EntityOverrides {
         // not name an app type, so each declares an empty @implementedBy the app widens here. It must
         // resolve to exactly one owner, which SchemaBuilder verifies; in legacy mode the column is
         // Signum's ParentID.
-        overrideImplementedBy(AzureADRoleMappingEntity, "configuration", () => [ApplicationConfigurationEntity]);
-        overrideImplementedBy(OpenIDRoleMappingEntity, "configuration", () => [ApplicationConfigurationEntity]);
-        overrideImplementedBy(WindowsADRoleMappingEntity, "configuration", () => [ApplicationConfigurationEntity]);
+        overrideImplementedBy(AzureADRoleMappingEntity, a => a.configuration, () => [ApplicationConfigurationEntity]);
+        overrideImplementedBy(OpenIDRoleMappingEntity, o => o.configuration, () => [ApplicationConfigurationEntity]);
+        overrideImplementedBy(WindowsADRoleMappingEntity, w => w.configuration, () => [ApplicationConfigurationEntity]);
 
         // PredictorEntity.user — same accommodation as the log entities above.
-        overrideImplementedBy(PredictorEntity, "user", () => [UserEntity]);
+        overrideImplementedBy(PredictorEntity, p => p.user, () => [UserEntity]);
 
         // PredictorEntity.algorithmSettings — @altea/altea-machine-learning declares
         // `IPredictorAlgorithmSettings` as an INTERFACE with an empty @implementedBy, so the app names the
@@ -141,7 +141,7 @@ export namespace EntityOverrides {
         //
         // This is also what brings NeuralNetworkSettingsEntity (and its hidden-layer rows) into the
         // schema — without it the module's own algorithm has no table for its settings.
-        overrideImplementedBy(PredictorEntity, "algorithmSettings", () => [NeuralNetworkSettingsEntity]);
+        overrideImplementedBy(PredictorEntity, p => p.algorithmSettings, () => [NeuralNetworkSettingsEntity]);
 
         // The workflow mixin on EmailMessageEntity (Signum's
         // `MixinDeclarations.Register<EmailMessageEntity, CaseActivityMixin>()`): an email produced INSIDE a
@@ -194,7 +194,7 @@ export namespace EntityOverrides {
         // packages are added here (Signum's per-module `AssertImplementedBy`, which each module's
         // `Logic.start` re-checks and fails on if this list is missing it). The list decides both the pickable
         // service types in the editor and which service TABLES the schema creates.
-        overrideImplementedBy(EmailSenderConfigurationEntity, "service", () => [
+        overrideImplementedBy(EmailSenderConfigurationEntity, e => e.service, () => [
             SmtpEmailServiceEntity,
             // NOT IN SOUTHWIND, whose list is exactly Smtp + MicrosoftGraph.
             ...(southwindOnly ? [] : [ExchangeWebServiceEmailServiceEntity]),
@@ -206,31 +206,31 @@ export namespace EntityOverrides {
         // NOT IN SOUTHWIND: it receives no mail, so it names no reception service (and the empty list
         // altea-email declares then creates no service table).
         if (!southwindOnly)
-            overrideImplementedBy(EmailReceptionConfigurationEntity, "service", () => [
+            overrideImplementedBy(EmailReceptionConfigurationEntity, e => e.service, () => [
                 Pop3EmailReceptionServiceEntity,
             ]);
 
-        overrideImplementedBy(ExceptionEntity, "user", () => [UserEntity]);
-        overrideImplementedBy(OperationLogEntity, "user", () => [UserEntity]);
-        overrideImplementedBy(RestLogEntity, "user", () => [UserEntity]);
-        overrideImplementedBy(ViewLogEntity, "user", () => [UserEntity]);
+        overrideImplementedBy(ExceptionEntity, e => e.user, () => [UserEntity]);
+        overrideImplementedBy(OperationLogEntity, o => o.user, () => [UserEntity]);
+        overrideImplementedBy(RestLogEntity, r => r.user, () => [UserEntity]);
+        overrideImplementedBy(ViewLogEntity, v => v.user, () => [UserEntity]);
         // Same shape in the MODULES whose user references Signum also declares `Lite<IUserEntity>`:
         // an alert names who raised it, who it is for and who attended it; a note names who wrote it.
-        overrideImplementedBy(AlertEntity, "createdBy", () => [UserEntity]);
-        overrideImplementedBy(AlertEntity, "recipient", () => [UserEntity]);
-        overrideImplementedBy(AlertEntity, "attendedBy", () => [UserEntity]);
-        overrideImplementedBy(NoteEntity, "createdBy", () => [UserEntity]);
+        overrideImplementedBy(AlertEntity, a => a.createdBy, () => [UserEntity]);
+        overrideImplementedBy(AlertEntity, a => a.recipient, () => [UserEntity]);
+        overrideImplementedBy(AlertEntity, a => a.attendedBy, () => [UserEntity]);
+        overrideImplementedBy(NoteEntity, n => n.createdBy, () => [UserEntity]);
 
         // Which user assets a dashboard SNAPSHOT can cover (Signum's `[ImplementedBy()]` empty list on
         // CachedQueryEntity.UserAssets, widened by the app): @altea/altea-dashboard cannot name them,
         // because altea-user-queries and altea-chart depend on IT.
-        overrideImplementedBy(CachedQueryEntity_UserAsset, "userAsset", () => [UserQueryEntity, UserChartEntity]);
+        overrideImplementedBy(CachedQueryEntity_UserAsset, c => c.userAsset, () => [UserQueryEntity, UserChartEntity]);
 
         // The dashboard PART types this app offers (Southwind did exactly this in Starter.cs:
         // `FieldAttributes((DashboardEntity a) => a.Parts.First().Content).Replace(new ImplementedByAttribute(
         // …))`). The list decides both the pickable part types in the editor and which part TABLES the schema
         // creates — @altea/altea-dashboard declares only its own five, so the modules' parts are added here.
-        overrideImplementedBy(DashboardEntity_Part, "content", () => [
+        overrideImplementedBy(DashboardEntity_Part, d => d.content, () => [
             // NOT IN SOUTHWIND, whose list is exactly the six user-asset parts below.
             ...(southwindOnly ? [] : [
                 TextPartEntity,
@@ -255,7 +255,7 @@ export namespace EntityOverrides {
         // and ToolbarMenuEntity_Element.
         // (`overrideImplementedBy` asks for a concrete Type<T>; the base is abstract, which matters only to
         // the type-checker — the FieldInfo it mutates is the very one both element rows inherit.)
-        overrideImplementedBy(ToolbarElementBaseEntity as unknown as Type<ToolbarElementBaseEntity>, "content", () => [
+        overrideImplementedBy(ToolbarElementBaseEntity as unknown as Type<ToolbarElementBaseEntity>, t => t.content, () => [
             QueryEntity,
             PermissionSymbol,
             ToolbarEntity,
