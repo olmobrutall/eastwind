@@ -107,7 +107,9 @@ glob each layer **both** ways: a `data/` / `client/` / `server/` **directory**, 
 `*.client.ts[x]` / `*.server.ts` **suffix** files (plus any `*.tsx` — a `.tsx` is always client). Use the
 **suffixes** for simple modules, where co-locating a domain (`eastwind/orders/`) matters more than separating it;
 use **directories** once a module carries substantial UI or server code, as every framework package does
-(`altea-auth/{data,client,server}/`). Either way the layer boundary holds: client never references server, and
+(`altea-auth/{data,client,server}/`). Pick ONE: a file inside a layer directory does not also take the suffix
+— `server/EmailLogic.ts`, never `server/EmailLogic.server.ts`, which states it twice.
+Either way the layer boundary holds: client never references server, and
 data references neither.
 
 **Registration file names.** An app domain folder names its two registration modules after their role:
