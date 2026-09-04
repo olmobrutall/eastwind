@@ -154,6 +154,53 @@ Port faithfully: **mirror Signum's class / method names and member order**, copy
 Known structural divergences from Signum (this is what "fix" means — don't port these 1:1):
 
 - **MLists are gone.** No `MList<T>` / `MListElement` wrapper. A collection is a **plain array** of `@part` row entities (or scalars on a row's `@valueField`). `@id` / `@order` / `@backReference` are markers, **not columns**.
+  - **A collection may be declared INSIDE AN EMBEDDED, and its rows belong to the entity that holds it.**
+    Signum does this freely (its own test model's `EmbeddedConfigEmbedded.Awards` is an `MList` on an
+    `EmbeddedEntity`); altea used to refuse it, so every such collection was HOISTED onto the owning
+    entity — which changes the table's name, and for a configuration held on an app's settings row
+    changes its shape entirely: three `BaseADConfigurationEmbedded` subclasses had to become `Entity`
+    (each with a table of its own) purely to have somewhere for `roleMapping` to point. An embedded is
+    FLATTENED onto its owner's row, so it has no id and no `toLite()`; the row type's
+    `@backReference` therefore names the ENTITY that holds the embedded, never the embedded — which
+    `SchemaBuilder.complete()` now VERIFIES, walking each table's embedded fields and naming the route
+    (`settings.tags`) when it refuses.
+    - **the table is named from the ROUTE in legacy mode only.** Signum composes an MList table's name
+      from the NameSequence accumulated down the property route (`GenerateTableNameCollection` is
+      `table.Name.Name + "_" + name`), so a collection two members deep is
+      `application_configuration_azure_ad_role_mapping`. Normal mode keeps altea's own rule — a
+      `@part` row table is named after the ROW ENTITY — so no existing table moves;
+      `mlistRowOwner` finds the collection through embeddeds and returns the whole member path,
+      which also gives such a row Signum's other MList facets in legacy mode (no Ticks, a `ParentID`
+      back reference, an element column named from the element TYPE).
+    - **the walkers that were shallow are now one member deeper.** `forEachField` is deliberately
+      shallow (own fields + mixins), so the saver's `wireOwnedChildren` and `deleteCollectionOrphans`
+      both walked past an embedded's collection: nothing wired the back reference or the `@rowOrder`,
+      and no orphan was ever swept. The orphan sweep is schema-driven now, which also fixed a latent
+      gap — a MIXIN's collection was never swept either (`table.fields` has no mixin entry).
+    - **clearing the embedded deletes the rows it held.** The embedded and its collection are one unit,
+      as an owner and its MList table are in Signum, so `x.config = null` sweeps them (the snapshot
+      still holds the id-list, which is what the sweep reads).
+    - **the serializer recovers the nearest ENTITY ancestor.** A collection element omits its
+      `@backReference` on the wire; the codec passed the IMMEDIATE container as the owner, so an
+      element inside an embedded died on `slot.owner.toLite is not a function` — the failure
+      altea-help's header already records for a `ModelEntity`. `applyFields` threads the entity down
+      through each embedded instead.
+    - **the LINQ binder correlates on the same owner id.** An embedded's sub-fields are bound off the
+      owner's alias, so passing `ownerId` on is all an embedded's collection needs to be eager-loaded
+      like any other (it was explicitly given up before — the comment said so).
+    - **STILL NOT POSSIBLE, and the two are the same limit:** one row type backing TWO collections of
+      the same type on one entity (`PersonEntity.maleFriends` / `.femaleFriends` → one
+      `Person_Friendship`), inside embeddeds or not. A `@part` row is one TABLE keyed by one back
+      reference, so two collections sharing it would read each other's rows — hence one row type per
+      collection, which is also what Signum's per-route MList table gives. By the same argument a row
+      type declared in a FRAMEWORK package cannot name an APP entity as its owner, so the three AD
+      configurations are not converted yet — see the note in `altea-auth/data/BaseAD.ts`.
+    Pinned by `altea/test/server/schema/embeddedCollection.test.ts` (8 DB-free cases: the naming in
+    both modes incl. a nested route, the refusal, the legacy MList facets, and the save-cascade wiring)
+    and `altea/test/server/orm/embeddedCollection.test.ts` (5 DB cases + the serializer round-trip).
+    The framework's own fixture was moved BACK to Signum's shape — `ConfigEntity.awards` returned
+    into `EmbeddedConfigEmbedded` — so **that suite's database needs regenerating**
+    (`pnpm --filter @altea/altea gen:postgres`).
 - **Do NOT initialize entity fields to a type's default.** `strictPropertyInitialization` is **off** (`altea/altea/presets/base.json`), so a field needs no initializer to compile — and adding one just to silence an imagined warning is noise. Write `@rowOrder order: int;`, `token: QueryTokenEmbedded | null;`, `orderType: OrderTypeEnum;`, `parts: DashboardEntity_Part[];` — **not** `= toInt(0)` / `= null` / `= OrderTypeEnum.Ascending` / `= []`. Specifically:
   - a reflected `T[]` collection is seeded with `[]` by the quote-transformer, so `= []` is always redundant;
   - `@rowOrder` / `@backReference` are filled by the save cascade (and exempt from the implicit NotNull);
