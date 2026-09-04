@@ -81,10 +81,6 @@ import { OperationLogEntity } from "@altea/altea/data/operationLog";
 import { ViewLogEntity } from "@altea/altea-view-log/data/ViewLog";
 import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
 import { RestLogEntity } from "@altea/altea-rest/data/Rest";
-// …and the five whose text stays in its column (altea models them as BigString, Signum as a string).
-import { PackageEntity, PackageOperationEntity } from "@altea/altea-processes/data/Package";
-import { ProcessExceptionLineEntity } from "@altea/altea-processes/data/Processes";
-import { ScheduledTaskLogEntity, SchedulerTaskExceptionLineEntity } from "@altea/altea-scheduler/data/Scheduler";
 import { FileTypeAlgorithm } from "@altea/altea-files/server/FileTypeAlgorithm";
 import { EastwindFileStores } from "./eastwindFileStores.server";
 import { BigStringLogic, BigStringConfiguration, type BigStringMode } from "@altea/altea-files/server/BigStringLogic";
@@ -913,16 +909,9 @@ function configureBigString(sb: SchemaBuilder): void {
         BigStringLogic.registerAll(sb, type, new BigStringConfiguration(mode, fileType));
     }
 
-    // Every OTHER BigString route stays in its column. Registering them is not optional: altea
-    // requires a configuration per route and says which are missing at schema.initialize() (Signum
-    // throws later, on the first save). And it is not free to skip — declaring the mixin gives EVERY
-    // BigString route the file columns unless a `Database` registration ignores them, which is what
-    // these five do. They are altea routes Signum models as a plain string, so Southwind has no
-    // counterpart to copy.
-    const inRow = new BigStringConfiguration("Database", null);
-    BigStringLogic.register(sb, PackageEntity, p => p.configString, inRow);
-    BigStringLogic.register(sb, PackageOperationEntity, p => p.configString, inRow);
-    BigStringLogic.register(sb, ProcessExceptionLineEntity, l => l.elementInfo, inRow);
-    BigStringLogic.register(sb, ScheduledTaskLogEntity, l => l.remarks, inRow);
-    BigStringLogic.register(sb, SchedulerTaskExceptionLineEntity, l => l.elementInfo, inRow);
+    // Nothing else to register: every BigString route in the schema is one of the five above. There
+    // used to be five more — a package's config string, a process / scheduler exception line's element
+    // info, a scheduled task log's remarks — registered `Database` purely to stop the mixin giving them
+    // file columns nothing wanted. Signum declares all five a plain `string?`, so they are plain strings
+    // here now and the question does not arise.
 }

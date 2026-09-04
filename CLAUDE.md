@@ -1279,9 +1279,13 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   every route stayed in its column, so `basics.exception` had `stack_trace_text` where a Signum database
   has `stack_trace_file_hash`. `Starter.configureBigString` is Southwind's `ConfigureBigString` —
   `File` for the five log types (Exception / OperationLog / ViewLog / EmailMessage / RestLog), one store
-  each — plus something Southwind has no counterpart for: the five routes altea models as a BigString and
-  Signum as a plain `string` (`PackageEntity.configString`, `ProcessExceptionLineEntity.elementInfo`, …)
-  are registered `Database`, which is what stops the mixin from giving them file columns nothing wanted.
+  each. Nothing is registered `Database`, and the reason is worth recording: five routes were, purely to
+  stop the mixin giving file columns to fields that had no business being BigStrings at all —
+  `PackageEntity` / `PackageOperationEntity.configString`, `ProcessExceptionLineEntity` /
+  `SchedulerTaskExceptionLineEntity.elementInfo`, `ScheduledTaskLogEntity.remarks`. Signum declares all
+  five a plain `string?`, so they are plain strings here now: five columns lose their `_text` suffix, the
+  five registrations go, and a sync's answer to "`remarks` has been renamed?" stops being yes. `Database`
+  mode is still what an app picks for a route it wants kept in the row.
   - **a route is named by a SELECTOR, never a string** — `BigStringLogic.register(sb, ExceptionEntity,
     e => e.stackTrace, config)`, which is what Signum's `Expression<Func<T, BigStringEmbedded>>` is.
     The lambda goes through the quote-transformer (`memberPath`, the single-member counterpart of

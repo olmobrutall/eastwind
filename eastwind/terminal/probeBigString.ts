@@ -59,10 +59,13 @@ async function main(): Promise<void> {
     check("so the mixin's text column is dropped too", !opColumns.includes("initial_state_text"),
         opColumns.filter(c => c.startsWith("initial_state")).join(", "));
 
-    // A route left in the row costs nothing: no file columns at all (this is what `Database` mode is for,
-    // and every BigString route altea has that Signum models as a plain string is registered that way).
-    const inRow = [...BigStringLogic.configurations.entries()].filter(([, v]) => v.config.mode === "Database");
-    check("the routes that stay in the row are registered Database", inRow.length > 0, String(inRow.length));
+    // EVERY route is File. There used to be five registered `Database` — a package's config string, a
+    // process / scheduler exception line's element info, a scheduled task log's remarks — which existed
+    // only to stop the mixin giving them file columns nothing wanted; Signum declares all five a plain
+    // `string?`, so they are plain strings here now. `Database` mode is still what an app picks for a
+    // route it wants in the row; nothing in eastwind wants one.
+    const modes = new Set([...BigStringLogic.configurations.values()].map(v => v.config.mode));
+    check("every configured route is File", modes.size === 1 && modes.has("File"), [...modes].join(", "));
 
     // ---- the round trip, which is the part only a database shows -------------------------------------
     await ExecutionMode.global(async () => {
