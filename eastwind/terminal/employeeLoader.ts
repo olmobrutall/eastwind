@@ -14,6 +14,7 @@ import { UserEntity, UserState } from "@altea/altea-auth/data/User";
 import { UserEmployeeMixin } from "../globals/UserEmployeeMixin.data";
 import { Northwind, NwRegion, NwTerritory, NwEmployee, NwEmployeeTerritory } from "./northwindSchema";
 import { NorthwindImages } from "./northwindImages";
+import { FileEntity } from "@altea/altea-files/data/Files";
 import { terminalFile } from "./terminalFile";
 
 // Port of Southwind.Terminal/EmployeeLoader.cs. Reads Northwind through IView classes under a second
@@ -60,6 +61,18 @@ export namespace EmployeeLoader {
             terrByEmp.set(et.EmployeeID, list);
         }
 
+        // The photos are ROWS (files.file), and bulkInsert cascades owned COLLECTIONS but not
+        // references — so they are saved first and the employees carry the saved entities. Southwind
+        // gets away with a fat lite of an unsaved FileEntity because its BulkInsert walks the graph.
+        const photoByEmployee = new Map<number, FileEntity>();
+        for (const e of nwEmployees) {
+            const photo = NorthwindImages.employeePhoto(e.FirstName, e.LastName);
+            if (photo != null) {
+                await photo.save();
+                photoByEmployee.set(e.EmployeeID, photo);
+            }
+        }
+
         const employees = nwEmployees.map(e => {
             const emp = EmployeeEntity.create({
                 lastName: e.LastName,
@@ -80,7 +93,7 @@ export namespace EmployeeLoader {
                 photoPath: e.PhotoPath,
                 // Southwind reads Northwind's own Employees.Photo (an OLE-wrapped bitmap) — the column the
                 // seed drops, so the photo comes off disk instead (northwindImages.ts).
-                photo: NorthwindImages.employeePhoto(e.FirstName, e.LastName),
+                photo: photoByEmployee.get(e.EmployeeID) ?? null,
                 territories: terrByEmp.get(e.EmployeeID) ?? [],
             });
             emp.id = e.EmployeeID;

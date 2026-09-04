@@ -1258,9 +1258,16 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   - NOT ported: the `FileEntity(string path)` constructor (`File.ReadAllBytes` is server-only, this layer
     is isomorphic) and `ToXML` (its one Signum caller is WordTemplate's `SyncFromXml`, and
     @altea/altea-office-template holds a `FileEmbedded` with XML of its own).
-  Note the two existing consumers are NOT changed back: eastwind's `EmployeeEntity.photo` and
-  altea-office-template's `template` stay `FileEmbedded`, which are deliberate simplifications recorded
-  elsewhere in this file — porting the type does not make sharing the right default. Pinned by
+  **`EmployeeEntity.photo` uses it**, as Southwind does (`Lite<FileEntity>`), so the column is
+  `employee.photo_id` → `files.file(id)` instead of the bytes inline. altea keeps a full reference
+  rather than a lite: the column is the same either way, the view renders the photo (so a lite would
+  only force the second fetch Southwind makes by hand with `Navigator.useFetchInState`), and altea's
+  file LINES do not bind a lite. `CategoryEntity.picture` stays a `FileEmbedded` — so does Southwind's
+  `Picture` — and altea-office-template's `template` too. It surfaced one more declared-but-unreachable
+  case: `FileImageLine.kind()` was a two-way default, so the `FileEntity` its own props accept was
+  handed to the uploader as a `FilePathEmbedded`, looking for a store a row-held file has no need of
+  (FileLine's switch already said why). **An existing eastwind database needs a `sync`**, and the
+  employee photos are re-loaded from `terminal/image_photos` rather than migrated. Pinned by
   `eastwind/terminal/probeFileEntity.ts` (17 checks) plus a three-case HTTP round-trip; `files.file` needs
   a `sync`, and matches Signum's table column for column.
 

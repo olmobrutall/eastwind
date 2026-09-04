@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { FileEmbedded } from "@altea/altea-files/data/Files";
+import { FileEmbedded, FileEntity } from "@altea/altea-files/data/Files";
 import { terminalFile } from "./terminalFile";
 
 // The Northwind demo IMAGES, as files on disk beside this module.
@@ -22,9 +22,12 @@ export namespace NorthwindImages {
         return read("image_categories", sanitize(categoryName));
     }
 
-    /** `image_photos/<FirstName> <LastName>.<ext>` — Northwind's own employee names, verbatim. */
-    export function employeePhoto(firstName: string, lastName: string): FileEmbedded | null {
-        return read("image_photos", sanitize(`${firstName} ${lastName}`));
+    /** `image_photos/<FirstName> <LastName>.<ext>` — Northwind's own employee names, verbatim. A
+     *  FileEntity (a row), because that is what EmployeeEntity.photo references; a category picture is
+     *  a FileEmbedded, which is what Southwind holds there too. */
+    export function employeePhoto(firstName: string, lastName: string): FileEntity | null {
+        const bytes = readBytes("image_photos", sanitize(`${firstName} ${lastName}`));
+        return bytes == null ? null : FileEntity.create({ fileName: bytes.fileName, binaryFile: bytes.binaryFile });
     }
 
     // A category name may hold a slash ("Grains/Cereals", "Meat/Poultry"), which no file system accepts.
@@ -52,11 +55,17 @@ export namespace NorthwindImages {
     }
 
     function read(folder: string, baseName: string): FileEmbedded | null {
+        const bytes = readBytes(folder, baseName);
+        return bytes == null ? null : FileEmbedded.create(bytes);
+    }
+
+    /** The bytes and the name, before either file shape wraps them. */
+    function readBytes(folder: string, baseName: string): { fileName: string; binaryFile: Uint8Array } | null {
         const file = index(folder).get(baseName.toLowerCase());
         if (file == null) {
             console.log(`  [images] no ${folder}/${baseName}.* — leaving it empty`);
             return null;
         }
-        return FileEmbedded.create({ fileName: path.basename(file), binaryFile: fs.readFileSync(file) });
+        return { fileName: path.basename(file), binaryFile: fs.readFileSync(file) };
     }
 }

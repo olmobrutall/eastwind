@@ -7,7 +7,7 @@ import { customValidators } from "@altea/altea/data/validators";
 import { Temporal, type int, toInt } from "@altea/altea/data/basics";
 import { Vector } from "@altea/altea/data/vector";
 import type { ExecuteSymbol } from "@altea/altea/data/operations";
-import { FileEmbedded } from "@altea/altea-files/data/Files";
+import { FileEntity } from "@altea/altea-files/data/Files";
 import { AddressEmbedded } from "../customers/Customer.data";
 
 // Port of Southwind's Employees domain (Southwind/Employees/*.cs). Extension-free: EmployeeEntity's
@@ -63,10 +63,16 @@ export class EmployeeEntity extends Entity {
     notes: string | null;
     reportsTo: Lite<EmployeeEntity> | null;
     photoPath: string | null;
-    // Southwind's `Lite<FileEntity>? Photo` (Employees/EmployeeEntity.cs). A FileEmbedded here — the bytes
-    // in the row, the shape CategoryEntity.picture already uses — so the demo needs no FileEntity table and
-    // no FileType of its own. Loaded from terminal/image_photos (see northwindImages.ts).
-    photo: FileEmbedded | null;
+    // Southwind's `Lite<FileEntity>? Photo` (Employees/EmployeeEntity.cs) — a row in `files.file`, so
+    // the column is `photo_id`. It was a FileEmbedded here (bytes inline, the shape
+    // CategoryEntity.picture keeps — Southwind's `Picture` is a FileEmbedded too) while altea had no
+    // FileEntity; it has one now.
+    //
+    // DIVERGENCE: a full reference, not a `Lite`. The COLUMN is the same either way, and the view
+    // renders the photo — so a lite would only force the second fetch Southwind makes by hand
+    // (`Navigator.useFetchInState`). altea's file LINES do not bind a lite either.
+    // Loaded from terminal/image_photos (see northwindImages.ts).
+    photo: FileEntity | null;
     // Signum's MList<TerritoryEntity> Territories → owned junction rows.
     territories: EmployeeEntity_Territory[];
 
