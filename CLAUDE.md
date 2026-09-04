@@ -231,9 +231,9 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     scripts NOTHING for the whole SMTP sender configuration. Signum does NOT mark that MList
     `[PreserveOrder]`, so the `@rowOrder` altea had added is gone with it. **An existing altea database
     needs `eastwind/terminal/migrateSmtpNetwork.ts` BEFORE the sync**: the sync would add the `network_*`
-    columns and drop the table in one script, losing every configured host and credential. (The identical
-    workaround survives in @altea/altea-mailing-pop3, whose `ClientCertificationFiles` also carries an
-    `@rowOrder` Signum lacks — untouched, since nothing in a Southwind diff points at it.)
+    columns and drop the table in one script, losing every configured host and credential.
+    @altea/altea-mailing-pop3's `ClientCertificationFiles` carried the same spurious `@rowOrder` and
+    lost it too — its collection hangs off an ENTITY, so it needed nothing else.
   - **A collection ELEMENT is an entity, so it is not called `*Embedded`.** Nine row types were named for
     the Signum EMBEDDED they port (`RoleMappingEmbedded`, `CssStepEmbedded`, `QueryStringValueEmbedded`,
     `WhatsNewMessageEmbedded`, `ClientCertificationFileEmbedded`) or for the embedded that used to own
