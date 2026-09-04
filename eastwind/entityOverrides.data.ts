@@ -13,9 +13,9 @@
 // is the default, and implementedBy is declared inline via @implementedBy on OrderEntity.customer.
 import { overrideImplementedBy } from "@altea/altea/data/decorators";
 import { ApplicationConfigurationEntity } from "./globals/ApplicationConfiguration.data";
-import { AzureADConfigurationEmbedded_RoleMapping } from "@altea/altea-auth-azuread/data/AzureAD";
-import { OpenIDConfigurationEmbedded_RoleMapping } from "@altea/altea-auth-openid/data/OpenID";
-import { WindowsADConfigurationEmbedded_RoleMapping } from "@altea/altea-auth-windowsad/data/WindowsAD";
+import { AzureADRoleMappingEntity } from "@altea/altea-auth-azuread/data/AzureAD";
+import { OpenIDRoleMappingEntity } from "@altea/altea-auth-openid/data/OpenID";
+import { WindowsADRoleMappingEntity } from "@altea/altea-auth-windowsad/data/WindowsAD";
 import type { Entity, Type } from "@altea/altea/data/entity";
 import { ExceptionEntity } from "@altea/altea/data/exception";
 import { RestLogEntity } from "@altea/altea-rest/data/Rest";
@@ -119,9 +119,9 @@ export namespace EntityOverrides {
         // not name an app type, so each declares an empty @implementedBy the app widens here. It must
         // resolve to exactly one owner, which SchemaBuilder verifies; in legacy mode the column is
         // Signum's ParentID.
-        overrideImplementedBy(AzureADConfigurationEmbedded_RoleMapping, "configuration", () => [ApplicationConfigurationEntity]);
-        overrideImplementedBy(OpenIDConfigurationEmbedded_RoleMapping, "configuration", () => [ApplicationConfigurationEntity]);
-        overrideImplementedBy(WindowsADConfigurationEmbedded_RoleMapping, "configuration", () => [ApplicationConfigurationEntity]);
+        overrideImplementedBy(AzureADRoleMappingEntity, "configuration", () => [ApplicationConfigurationEntity]);
+        overrideImplementedBy(OpenIDRoleMappingEntity, "configuration", () => [ApplicationConfigurationEntity]);
+        overrideImplementedBy(WindowsADRoleMappingEntity, "configuration", () => [ApplicationConfigurationEntity]);
 
         // PredictorEntity.user — same accommodation as the log entities above.
         overrideImplementedBy(PredictorEntity, "user", () => [UserEntity]);

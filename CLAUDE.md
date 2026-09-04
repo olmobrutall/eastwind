@@ -223,7 +223,28 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     `directoryID` being `string` rather than `Guid`. **An existing altea database needs a `sync`**
     (three tables drop, ~30 columns move onto `application_configuration`); eastwind's dev database
     held no rows in any of them. Pinned end to end by `eastwind/terminal/probeEmbeddedCollection.ts`
-    (21 checks), which is where the cross-package back reference is exercised against a real database.
+    (25 checks), which is where the cross-package back reference is exercised against a real database.
+  - **`SmtpNetworkDeliveryEmbedded` went back too, and it needed no widening** — its owner
+    (`SmtpEmailServiceEntity`) is in the same package, so the row type names it directly. Its columns are
+    `network_*` on `mailing.smtp_email_service` and its rows are
+    `smtp_email_service_network_client_certification_files`, both Signum's exactly: a Southwind sync now
+    scripts NOTHING for the whole SMTP sender configuration. Signum does NOT mark that MList
+    `[PreserveOrder]`, so the `@rowOrder` altea had added is gone with it. **An existing altea database
+    needs `eastwind/terminal/migrateSmtpNetwork.ts` BEFORE the sync**: the sync would add the `network_*`
+    columns and drop the table in one script, losing every configured host and credential. (The identical
+    workaround survives in @altea/altea-mailing-pop3, whose `ClientCertificationFiles` also carries an
+    `@rowOrder` Signum lacks — untouched, since nothing in a Southwind diff points at it.)
+  - **A collection ELEMENT is an entity, so it is not called `*Embedded`.** Nine row types were named for
+    the Signum EMBEDDED they port (`RoleMappingEmbedded`, `CssStepEmbedded`, `QueryStringValueEmbedded`,
+    `WhatsNewMessageEmbedded`, `ClientCertificationFileEmbedded`) or for the embedded that used to own
+    them (`AzureADConfigurationEmbedded_RoleMapping`); they are `RoleMappingEntity`, `CssStepEntity`,
+    `AzureADRoleMappingEntity` and so on. The name is reflection IDENTITY, so this moves each table in
+    NORMAL mode (`tour.css_step_embedded` → `tour.css_step`) and requires a `sync`; legacy mode names an
+    MList table from the route, so a Signum database sees nothing. It also repairs translations: a
+    package's XML keys a type by its CLASS name, and three files carried Signum's
+    `ClientCertificationFileEmbedded` for a class altea had called
+    `SmtpNetworkDeliveryEmbedded_ClientCertificationFile` — so those entries had never landed. Comments
+    that CITE the C# source keep Signum's spelling.
 - **Do NOT initialize entity fields to a type's default.** `strictPropertyInitialization` is **off** (`altea/altea/presets/base.json`), so a field needs no initializer to compile — and adding one just to silence an imagined warning is noise. Write `@rowOrder order: int;`, `token: QueryTokenEmbedded | null;`, `orderType: OrderTypeEnum;`, `parts: DashboardEntity_Part[];` — **not** `= toInt(0)` / `= null` / `= OrderTypeEnum.Ascending` / `= []`. Specifically:
   - a reflected `T[]` collection is seeded with `[]` by the quote-transformer, so `= []` is always redundant;
   - `@rowOrder` / `@backReference` are filled by the save cascade (and exempt from the implicit NotNull);

@@ -21,8 +21,10 @@ import { Serializer } from "@altea/altea/data/serializer";
 import { FieldEmbedded, FieldEntityArray, FieldImplementedBy } from "@altea/altea/server/schema/field";
 import { IsNullable } from "@altea/altea/server/schema/dbType";
 import { ApplicationConfigurationEntity } from "../globals/ApplicationConfiguration.data";
-import { AzureADConfigurationEmbedded, AzureADConfigurationEmbedded_RoleMapping, AzureADType } from "@altea/altea-auth-azuread/data/AzureAD";
+import { ClientCertificationFileEntity } from "@altea/altea-email/data/EmailSenderConfiguration";
+import { AzureADConfigurationEmbedded, AzureADRoleMappingEntity, AzureADType } from "@altea/altea-auth-azuread/data/AzureAD";
 import { RoleEntity } from "@altea/altea-auth/data/Role";
+import { SmtpEmailServiceEntity, EmailSenderConfigurationEntity } from "@altea/altea-email/data/EmailSenderConfiguration";
 import { EmailConfigurationEmbedded } from "@altea/altea-email/data/Email";
 import { ChatbotConfigurationEmbedded } from "@altea/altea-agent/data/LanguageModel";
 import { WorkflowConfigurationEmbedded } from "@altea/altea-workflow/data/Workflow";
@@ -61,7 +63,7 @@ async function main(): Promise<void> {
     check("its roleMapping is a FieldEntityArray", collection instanceof FieldEntityArray);
 
     // The back reference: one column, pointing at the ENTITY that holds the embedded, NOT NULL.
-    const rows = Schema.current.table(AzureADConfigurationEmbedded_RoleMapping);
+    const rows = Schema.current.table(AzureADRoleMappingEntity);
     const back = rows.fields["configuration"]?.field;
     check("the row's back reference is a widened @implementedBy", back instanceof FieldImplementedBy);
     const backColumns = back?.columns() ?? [];
@@ -73,6 +75,19 @@ async function main(): Promise<void> {
     check("the row keeps Signum's [PreserveOrder] column",
         Object.keys(rows.columns).map(c => c.toLowerCase()).includes("order"),
         Object.keys(rows.columns).join(", "));
+
+    // ---- the SAME-PACKAGE case: SmtpNetworkDeliveryEmbedded ----------------------------------------
+    // Its owner (SmtpEmailServiceEntity) is in the module itself, so the back reference names it directly
+    // — no widening needed. Signum flattens it onto smtp_email_service as network_*.
+    const smtp = Schema.current.table(SmtpEmailServiceEntity);
+    const smtpColumns = Object.keys(smtp.columns).map(c => c.toLowerCase());
+    check("the SMTP network delivery is flattened onto smtp_email_service",
+        ["network_has_value", "network_host", "network_port"].every(c => smtpColumns.includes(c)),
+        smtpColumns.join(", "));
+    check("it has no reference column of its own", !smtpColumns.includes("network_id"), smtpColumns.join(", "));
+    check("its certification rows point back at the SERVICE",
+        Schema.current.table(ClientCertificationFileEntity).fields["service"]?.field.columns()[0]?.referenceTable?.type
+            === (SmtpEmailServiceEntity as unknown));
 
     // ---- save / retrieve / delete, all through the embedded -----------------------------------------
     await ExecutionMode.global(async () => {
@@ -90,8 +105,8 @@ async function main(): Promise<void> {
             applicationID: "00000000-0000-0000-0000-000000000001",
             directoryID: "00000000-0000-0000-0000-000000000002",
             roleMapping: [
-                AzureADConfigurationEmbedded_RoleMapping.create({ adNameOrGuid: "Group A", role: role.toLite() }),
-                AzureADConfigurationEmbedded_RoleMapping.create({ adNameOrGuid: "Group B", role: role.toLite() }),
+                AzureADRoleMappingEntity.create({ adNameOrGuid: "Group A", role: role.toLite() }),
+                AzureADRoleMappingEntity.create({ adNameOrGuid: "Group B", role: role.toLite() }),
             ],
         });
         await app.save();
@@ -122,7 +137,7 @@ async function main(): Promise<void> {
         back1.azureAD!.roleMapping = [back1.azureAD!.roleMapping[0]];
         await back1.save();
         check("removing an element deletes its row",
-            await table(AzureADConfigurationEmbedded_RoleMapping).count(r => r.id == droppedId) === 0);
+            await table(AzureADRoleMappingEntity).count(r => r.id == droppedId) === 0);
 
         // Clearing the embedded takes the rest with it.
         const keptId = back1.azureAD!.roleMapping[0].id;
@@ -131,7 +146,7 @@ async function main(): Promise<void> {
         const cleared = await retrieve(ApplicationConfigurationEntity, app.id);
         check("clearing the embedded clears the row's columns", cleared.azureAD == null);
         check("and deletes the rows it held",
-            await table(AzureADConfigurationEmbedded_RoleMapping).count(r => r.id == keptId) === 0);
+            await table(AzureADRoleMappingEntity).count(r => r.id == keptId) === 0);
 
         // Finally, the DELETE cascade finds the rows through the embedded (a flat walk left them behind,
         // then failed on their foreign key).
@@ -139,14 +154,23 @@ async function main(): Promise<void> {
             type: AzureADType.AzureAD,
             applicationID: "00000000-0000-0000-0000-000000000001",
             directoryID: "00000000-0000-0000-0000-000000000002",
-            roleMapping: [AzureADConfigurationEmbedded_RoleMapping.create({ adNameOrGuid: "Group C", role: role.toLite() })],
+            roleMapping: [AzureADRoleMappingEntity.create({ adNameOrGuid: "Group C", role: role.toLite() })],
         });
         await app2.save();
         const cascadeId = app2.azureAD!.roleMapping[0].id;
 
         await table(ApplicationConfigurationEntity).filter(a => a.id == app2.id).executeDelete();
         check("deleting the owner cascades to the embedded's rows",
-            await table(AzureADConfigurationEmbedded_RoleMapping).count(r => r.id == cascadeId) === 0);
+            await table(AzureADRoleMappingEntity).count(r => r.id == cascadeId) === 0);
+
+        // The dev seed's SMTP sender survived the flattening (migrateSmtpNetwork.ts).
+        const sender = await table(EmailSenderConfigurationEntity).firstOrNull();
+        if (sender != null) {
+            const service = sender.service as SmtpEmailServiceEntity;
+            check("a stored SMTP service still reads its network settings back",
+                service.network != null && service.network.host.length > 0,
+                JSON.stringify(service.network));
+        }
 
         // Leave nothing behind.
         await table(ApplicationConfigurationEntity).filter(a => a.id == app.id).executeDelete();

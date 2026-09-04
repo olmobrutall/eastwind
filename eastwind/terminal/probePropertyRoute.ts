@@ -23,7 +23,7 @@ import { Serializer } from "@altea/altea/data/serializer";
 import { TypeEntity } from "@altea/altea/data/typeEntity";
 import { RulePropertyEntity } from "@altea/altea-auth/data/Rules";
 import { TypeHelpEntity_Property } from "@altea/altea-help/data/Help";
-import { CssStepEmbedded } from "@altea/altea-tour/data/Tour";
+import { CssStepEntity } from "@altea/altea-tour/data/Tour";
 import { DynamicValidationEntity } from "@altea/altea-dynamic/data/DynamicValidation";
 import { TranslatedInstanceEntity } from "@altea/altea-translations/data/Translation";
 import { OrderEntity } from "../orders/Order.data";
@@ -53,7 +53,7 @@ async function main(): Promise<void> {
     // ---- the five consumers point at it, by Signum's own column names -----------------------------
     checkFk("auth.rule_property", RulePropertyEntity, "resource", "resource_id");
     checkFk("help.type_help_properties", TypeHelpEntity_Property, "property", "property_id");
-    checkFk("tour css_step", CssStepEmbedded, "property", "property_id");
+    checkFk("tour css_step", CssStepEntity, "property", "property_id");
     checkFk("dynamic.dynamic_validation", DynamicValidationEntity, "subEntity", "sub_entity_id");
     checkFk("translation.translated_instance", TranslatedInstanceEntity, "propertyRoute", "property_route_id");
 
