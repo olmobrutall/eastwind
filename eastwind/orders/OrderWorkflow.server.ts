@@ -4,7 +4,7 @@ import type { SchemaBuilder } from "@altea/altea/server/schema";
 // A side-effect import, for the FluentInclude augmentation (`withWorkflow` / `withCaseActivityMixin`): a
 // `declare module` only reaches a program that loads the declaring file, and nothing else here imports it.
 // Signum's C# equivalent is the `using Signum.Workflow;` an extension method needs.
-import "@altea/altea-workflow/server/CaseActivityLogic.server";
+import "@altea/altea-workflow/server/CaseActivityLogic";
 import { Operations } from "@altea/altea/server/operationLogic";
 import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
 import { OrderEntity, OrderOperation, OrderState } from "./Order.data";

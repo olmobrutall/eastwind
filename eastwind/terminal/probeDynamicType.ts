@@ -22,7 +22,7 @@ import { resolveType, getTypeInfo } from "@altea/altea/data/reflection";
 import type { Entity } from "@altea/altea/data/entity";
 import { Schema } from "@altea/altea/server/schema/schema";
 import { DynamicTypeEntity, DynamicTypeOperation, DynamicBaseType } from "@altea/altea-dynamic/data/DynamicType";
-import { DynamicLogic } from "@altea/altea-dynamic/server/DynamicLogic.server";
+import { DynamicLogic } from "@altea/altea-dynamic/server/DynamicLogic";
 import { UserEntity } from "@altea/altea-auth/data/User";
 
 const TYPE_NAME = "ProbeDynamic";

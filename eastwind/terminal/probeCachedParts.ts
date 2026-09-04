@@ -23,10 +23,10 @@ import type { QueryRequest as WireQueryRequest, ResultTable as WireResultTable }
 import { getCachedResultTable, CachedQueryError } from "@altea/altea-dashboard/client/CachedQueryExecutor";
 import type { CachedQueryJS } from "@altea/altea-dashboard/data/CachedQuery";
 import { DashboardEntity, type DashboardEntity_Part } from "@altea/altea-dashboard/data/Dashboard";
-import { partConfigs } from "@altea/altea-dashboard/server/DashboardLogic.server";
-import { CachedQueryLogic } from "@altea/altea-dashboard/server/CachedQueryLogic.server";
-import type { CachedQueryDefinition } from "@altea/altea-dashboard/server/CachedQueryDefinitions.server";
-import { FilePathEmbeddedLogic } from "@altea/altea-files/server/FilePathEmbeddedLogic.server";
+import { partConfigs } from "@altea/altea-dashboard/server/DashboardLogic";
+import { CachedQueryLogic } from "@altea/altea-dashboard/server/CachedQueryLogic";
+import type { CachedQueryDefinition } from "@altea/altea-dashboard/server/CachedQueryDefinitions";
+import { FilePathEmbeddedLogic } from "@altea/altea-files/server/FilePathEmbeddedLogic";
 import { UserEntity } from "@altea/altea-auth/data/User";
 
 function definitionsOfPart(part: DashboardEntity_Part): CachedQueryDefinition[] {

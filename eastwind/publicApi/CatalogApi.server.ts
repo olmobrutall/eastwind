@@ -1,7 +1,7 @@
 import "@altea/altea/server";
 import { table } from "@altea/altea/server/table";
 import { WebBuilder, CustomType } from "@altea/altea/server/webApi";
-import { RestLogFilter } from "@altea/altea-rest/server/RestLogFilter.server";
+import { RestLogFilter } from "@altea/altea-rest/server/RestLogFilter";
 import { CategoryEntity } from "../products/Product.data";
 
 // Port of Southwind's `Public/CatalogAPIController.cs` — the app's PUBLIC REST surface: the one place a

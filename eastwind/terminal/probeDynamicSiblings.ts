@@ -27,7 +27,7 @@ import { entityIntegrityCheckAsync } from "@altea/altea/data/validation";
 import { DynamicExpressionEntity, DynamicExpressionOperation } from "@altea/altea-dynamic/data/DynamicExpression";
 import { DynamicValidationEntity, DynamicValidationOperation } from "@altea/altea-dynamic/data/DynamicValidation";
 import { DynamicValidationEval } from "@altea/altea-dynamic/data/DynamicValidation";
-import { DynamicLogic } from "@altea/altea-dynamic/server/DynamicLogic.server";
+import { DynamicLogic } from "@altea/altea-dynamic/server/DynamicLogic";
 import { PropertyRouteLogic } from "@altea/altea/server/propertyRouteLogic";
 import { TypeLogic } from "@altea/altea/server/typeLogic";
 import { UserEntity } from "@altea/altea-auth/data/User";

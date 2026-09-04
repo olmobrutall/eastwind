@@ -7,9 +7,9 @@ import { Enum } from "@altea/altea/data/enum";
 import { RoleEntity, RoleEntity_InheritsFrom, MergeStrategy } from "@altea/altea-auth/data/Role";
 import { UserEntity, UserState } from "@altea/altea-auth/data/User";
 import { AuthImportExport } from "@altea/altea-auth/server/AuthImportExport";
-import { UserAssetsImporter, warmUserAssetCaches } from "@altea/altea-user-assets/server/UserAssetsImportExport.server";
+import { UserAssetsImporter, warmUserAssetCaches } from "@altea/altea-user-assets/server/UserAssetsImportExport";
 import { EntityAction } from "@altea/altea-user-assets/data/UserAssets";
-import { CSharpMigrationRunner } from "@altea/altea-migrations/server/CSharpMigrationRunner.server";
+import { CSharpMigrationRunner } from "@altea/altea-migrations/server/CSharpMigrationRunner";
 import { CultureInfoLogic } from "@altea/altea/server/cultureInfoLogic";
 import { EmailConfigurationEmbedded } from "@altea/altea-email/data/Email";
 import {

@@ -1,7 +1,7 @@
 import path from "node:path";
 import url from "node:url";
 import type { SchemaBuilder } from "@altea/altea/server/schema";
-import { EvalLogic } from "@altea/altea-eval/server/EvalLogic.server";
+import { EvalLogic } from "@altea/altea-eval/server/EvalLogic";
 import * as user from "@altea/altea-auth/data/User";
 import * as role from "@altea/altea-auth/data/Role";
 import * as authLogic from "@altea/altea-auth/server/AuthLogic";

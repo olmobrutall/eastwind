@@ -1,5 +1,5 @@
 import * as path from "node:path";
-import { FileTypeAlgorithm, type IFileTypeAlgorithm } from "@altea/altea-files/server/FileTypeAlgorithm.server";
+import { FileTypeAlgorithm, type IFileTypeAlgorithm } from "@altea/altea-files/server/FileTypeAlgorithm";
 import {
     AzureBlobStorageFileTypeAlgorithm, AzureWebDownload,
 } from "@altea/altea-files-azure/server/AzureBlobStorageFileTypeAlgorithm";

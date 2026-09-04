@@ -1,6 +1,6 @@
 import "@altea/altea/server"; // installs save()/toLite()
 import { table } from "@altea/altea/server/table";
-import { TreeLogic } from "@altea/altea-tree/server/TreeLogic.server";
+import { TreeLogic } from "@altea/altea-tree/server/TreeLogic";
 import { DepartmentEntity } from "../departments/Department.data";
 
 // Seeds the tree demo. There is no Southwind counterpart (Southwind does not use Signum.Tree) and no

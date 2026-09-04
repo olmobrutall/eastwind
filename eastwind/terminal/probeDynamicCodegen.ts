@@ -12,7 +12,7 @@
 import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
-import { DynamicCodeCompiler } from "@altea/altea-dynamic/server/DynamicCodeCompiler.server";
+import { DynamicCodeCompiler } from "@altea/altea-dynamic/server/DynamicCodeCompiler";
 import { resolveType, getTypeInfo } from "@altea/altea/data/reflection";
 import { PropertyRoute } from "@altea/altea/data/propertyRoute";
 import { Entity } from "@altea/altea/data/entity";

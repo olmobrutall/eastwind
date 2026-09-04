@@ -21,7 +21,7 @@ import { MixinDeclarations } from "@altea/altea/data/mixinDeclarations";
 import { Schema } from "@altea/altea/server/schema/schema";
 import { DynamicTypeEntity, DynamicTypeOperation } from "@altea/altea-dynamic/data/DynamicType";
 import { DynamicIsolationMixin } from "@altea/altea-dynamic/data/DynamicIsolation";
-import { DynamicLogic } from "@altea/altea-dynamic/server/DynamicLogic.server";
+import { DynamicLogic } from "@altea/altea-dynamic/server/DynamicLogic";
 import { IsolationMixin } from "@altea/altea-isolation/data/Isolation";
 import { Isolation } from "@altea/altea-isolation/data/Isolation";
 import { UserEntity } from "@altea/altea-auth/data/User";

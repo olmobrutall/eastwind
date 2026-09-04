@@ -1,7 +1,7 @@
 import "@altea/altea/server";
 import "@altea/altea/server/dynamicQuery/fluentIncludeQuery";
 import { SchemaBuilder } from "@altea/altea/server/schema";
-import { TreeLogic } from "@altea/altea-tree/server/TreeLogic.server";
+import { TreeLogic } from "@altea/altea-tree/server/TreeLogic";
 import { DepartmentEntity } from "./Department.data";
 
 // The app half of the tree demo: one include, and `withTree` supplies the four query expressions

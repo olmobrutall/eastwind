@@ -8,8 +8,8 @@ import type { PrimaryKey } from "@altea/altea/data/entity";
 import { table } from "@altea/altea/server/table";
 import { Clock } from "@altea/altea/data/utils/clock";
 import type { Entity } from "@altea/altea/data/entity";
-import { SimpleTaskLogic } from "@altea/altea-scheduler/server/SimpleTaskLogic.server";
-import { ProcessLogic } from "@altea/altea-processes/server/ProcessLogic.server";
+import { SimpleTaskLogic } from "@altea/altea-scheduler/server/SimpleTaskLogic";
+import { ProcessLogic } from "@altea/altea-processes/server/ProcessLogic";
 import {
     OrderEntity, OrderLineEntity, OrderState, OrderOperation, OrderMessage, OrderTask, OrderProcess,
 } from "./Order.data";

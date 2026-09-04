@@ -18,7 +18,7 @@ import { Starter } from "../starter.server";
 import { Connector } from "@altea/altea/server/connection/connector";
 import { Schema } from "@altea/altea/server/schema/schema";
 import { guidKeyDefault } from "@altea/altea/server/schema/schemaBuilder";
-import { syncRows, rowGuid, UserAssetsImporter, warmUserAssetCaches } from "@altea/altea-user-assets/server/UserAssetsImportExport.server";
+import { syncRows, rowGuid, UserAssetsImporter, warmUserAssetCaches } from "@altea/altea-user-assets/server/UserAssetsImportExport";
 import { ExecutionMode } from "@altea/altea/server/executionMode";
 import { table } from "@altea/altea/server/table";
 import { toInt } from "@altea/altea/data/basics";

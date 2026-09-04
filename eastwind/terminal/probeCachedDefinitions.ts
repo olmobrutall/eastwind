@@ -13,12 +13,12 @@ import { UserHolder } from "@altea/altea/server/userHolder";
 import { UserWithClaims } from "@altea/altea/data/security";
 import { getKey as getQueryKey } from "@altea/altea/data/dynamicQuery/queryUtils";
 import { DashboardEntity } from "@altea/altea-dashboard/data/Dashboard";
-import { partConfigs } from "@altea/altea-dashboard/server/DashboardLogic.server";
+import { partConfigs } from "@altea/altea-dashboard/server/DashboardLogic";
 import {
     getCachedQueryDefinitions, combineCachedQueryDefinitions,
-} from "@altea/altea-dashboard/server/CachedQueryDefinitions.server";
+} from "@altea/altea-dashboard/server/CachedQueryDefinitions";
 import type { DashboardEntity_Part } from "@altea/altea-dashboard/data/Dashboard";
-import type { CachedQueryDefinition } from "@altea/altea-dashboard/server/CachedQueryDefinitions.server";
+import type { CachedQueryDefinition } from "@altea/altea-dashboard/server/CachedQueryDefinitions";
 import { UserEntity } from "@altea/altea-auth/data/User";
 
 function definitionsOfPart(part: DashboardEntity_Part): CachedQueryDefinition[] {
