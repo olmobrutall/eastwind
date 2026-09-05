@@ -256,6 +256,14 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     one script, so every template loses who it is sent FROM, leaving templates that look configured and
     cannot send. The recipients need nothing: their row keeps its column names, and only drops an `Order`
     column nothing reads.
+  - **A per-culture MESSAGE row names its culture `cultureInfo`, and only the MASTER template's is
+    ordered.** Signum calls the member `CultureInfo` on all three message embeddeds (EmailTemplate,
+    EmailMasterTemplate, SMSTemplate) — the member IS the column, so `CultureInfo_ID` — where altea had
+    shortened it to `culture`. And `[PreserveOrder]` is on the MASTER template's MList ALONE: the other
+    two are `[BindParent]` only, so their tables have no Order column and altea's `@rowOrder` invented
+    one. All three tables now script NOTHING: 347 → 322 statements. **An existing altea database needs a
+    `sync`, answering the rename prompt** (`culture_id` → `culture_info_id`) — it is a pure rename, so
+    that keeps every message's culture; a headless run would drop and re-add the column instead.
   - **A collection ELEMENT is an entity, so it is not called `*Embedded`.** Nine row types were named for
     the Signum EMBEDDED they port (`RoleMappingEmbedded`, `CssStepEmbedded`, `QueryStringValueEmbedded`,
     `WhatsNewMessageEmbedded`, `ClientCertificationFileEmbedded`) or for the embedded that used to own
