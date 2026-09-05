@@ -14,3 +14,5 @@ CodeGen/
 # predictor, holding the tfjs topology + weights. Runtime OUTPUT of a training run, reproduced by
 # retraining, and the predictor row that names it is what belongs in the database.
 TensorFlowModels/
+
+/eastwind/files/**
