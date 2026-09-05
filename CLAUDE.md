@@ -1341,6 +1341,29 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   spelling: all three `Rule*ConditionEntity_Condition` rows gained the `@rowOrder` Signum's
   `[PreserveOrder]` gives them.
 
+- **An `@implementedByAll` is a LAST resort, and its id columns are the APP's choice.** Signum types a
+  polymorphic reference against an INTERFACE (`IProcessDataEntity`, `Lite<IEntity>`) and its schema builder
+  gives one column per implementor IN THE SCHEMA — `Data_ID_Package`, `Data_ID_EmailPackage`, … altea has
+  no runtime interface, so three references had reached for `@implementedByAll` instead, which is not the
+  same thing at all: it costs one id column PER CONFIGURED PK TYPE plus a type discriminator, and it lets
+  the row point at anything rather than at the types that implement the contract. They are
+  `@implementedBy(() => [])` now, widened by the app — the `ChangeLogViewLogEntity.user` accommodation:
+  `ProcessEntity.data` (five implementors, exactly Southwind's) and `ProcessExceptionLineEntity.line`
+  (one). A third was not polymorphic at all: `PackageLineEntity.package` was a plain
+  `Lite<PackageEntity>`, one FK to `processes.package` — so a line of a `PackageOperationEntity`, which is
+  a SUBCLASS with a table of its own, could not be stored. Signum gives a reference to a type with concrete
+  subclasses one column per table; those two are declared in the module, since both types are its own.
+  - **`implementedByAllPrimaryKeyTypes` defaults to Signum's `{int}`**, and an app ADDS what its model
+    needs (`sb.settings.implementedByAllPkType("uuid")` — Southwind's
+    `ImplementedByAllPrimaryKeyTypes.Add(typeof(Guid))`; eastwind needs it for the thirteen uuid-keyed
+    user-asset rows, and the framework's own test schema asks for `long` and `uuid` because the music model
+    exercises all three). It used to default to all three, which put a dead `_Int64` column on every one of
+    ~150 `@implementedByAll` fields in a workspace where nothing declares a `long` key — the cost of an
+    unused entry is a column per field, so the list belongs to whoever knows the model.
+  Together: a Southwind sync went 590 → 557 statements. **An existing altea database needs a `sync`** (the
+  `_Int64` columns everywhere, and the three references reshaped); eastwind's three process tables were
+  empty.
+
 - **Token migrations: the renames a schema sync resolves are replayed against the query TOKENS stored
   inside user assets.** A UserQuery / UserChart / template keeps its tokens as STRINGS, so renaming a
   field or a query breaks every stored token that walked through it — and nothing in the schema sync

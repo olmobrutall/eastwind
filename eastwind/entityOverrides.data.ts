@@ -14,6 +14,10 @@
 import { overrideImplementedBy } from "@altea/altea/data/decorators";
 import { BigStringMixin } from "@altea/altea-files/data/BigString";
 import { ApplicationConfigurationEntity } from "./globals/ApplicationConfiguration.data";
+import { ProcessEntity, ProcessExceptionLineEntity } from "@altea/altea-processes/data/Processes";
+import { PackageEntity, PackageOperationEntity, PackageLineEntity } from "@altea/altea-processes/data/Package";
+import { EmailPackageEntity } from "@altea/altea-email/data/EmailPackage";
+import { AutoconfigureNeuralNetworkEntity } from "@altea/altea-machine-learning/data/NeuralNetworkSettings";
 import { AzureADRoleMappingEntity } from "@altea/altea-auth-azuread/data/AzureAD";
 import { OpenIDRoleMappingEntity } from "@altea/altea-auth-openid/data/OpenID";
 import { WindowsADRoleMappingEntity } from "@altea/altea-auth-windowsad/data/WindowsAD";
@@ -130,6 +134,20 @@ export namespace EntityOverrides {
         overrideImplementedBy(AzureADRoleMappingEntity, a => a.configuration, () => [ApplicationConfigurationEntity]);
         overrideImplementedBy(OpenIDRoleMappingEntity, o => o.configuration, () => [ApplicationConfigurationEntity]);
         overrideImplementedBy(WindowsADRoleMappingEntity, w => w.configuration, () => [ApplicationConfigurationEntity]);
+
+        // ProcessEntity.data / ProcessExceptionLineEntity.line — Signum types both against an INTERFACE
+        // (IProcessDataEntity / IEntity) and its schema builder gives one column per implementor in the
+        // schema; altea has no runtime interface, so the app names the implementors its modules install.
+        // Exactly Southwind's five, because altea-printing (whose PrintPackage is NOT process data here)
+        // is the only extra process module eastwind starts.
+        overrideImplementedBy(ProcessEntity, p => p.data, () => [
+            PackageEntity,
+            PackageOperationEntity,
+            EmailPackageEntity,
+            AutoconfigureNeuralNetworkEntity,
+            PredictorEntity,
+        ]);
+        overrideImplementedBy(ProcessExceptionLineEntity, l => l.line, () => [PackageLineEntity]);
 
         // PredictorEntity.user — same accommodation as the log entities above.
         overrideImplementedBy(PredictorEntity, p => p.user, () => [UserEntity]);

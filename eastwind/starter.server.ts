@@ -208,6 +208,11 @@ export namespace Starter {
 
         sb.settings.isPostgres = connector.isPostgres;
 
+        // Southwind's `ImplementedByAllPrimaryKeyTypes.Add(typeof(Guid))`: the thirteen user-asset row
+        // types have uuid keys, so an @implementedByAll reference may point at one. The default is
+        // Signum's {int}; nothing here declares a `long` key, so that column is not asked for.
+        sb.settings.implementedByAllPkType("uuid");
+
         // Point eastwind at a database a SIGNUM application generated — a Southwind — and name things the
         // way Signum names them, so `terminal sync` reads as a MIGRATION (the model differences) rather
         // than a rebuild (every table renamed). See SchemaSettings.legacyMode for what it currently covers.
