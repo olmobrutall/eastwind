@@ -188,6 +188,7 @@ function newConfiguration(environment: string, template: ApplicationConfiguratio
     azureAD: Partial<AzureADConfigurationEmbedded>): ApplicationConfigurationEntity {
     return ApplicationConfigurationEntity.create({
         environment,
+        databaseName: template.databaseName,
         email: EmailConfigurationEmbedded.create({ defaultCulture: template.email.defaultCulture, urlLeft: "http://localhost:5173", sendEmails: false, reciveEmails: false, avoidSendingEmailsOlderThan: null }),
         emailSender: template.emailSender,
         chatbot: ChatbotConfigurationEmbedded.create({}),

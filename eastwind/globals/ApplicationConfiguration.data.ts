@@ -29,7 +29,9 @@ import { WindowsADConfigurationEmbedded } from "@altea/altea-auth-windowsad/data
 // from then on the row is the only source of truth, and no setting here is read from the environment.
 //
 // Divergences from Southwind's entity:
-//  - `Sms` and `Translation` have no members here: neither Signum.SMS nor Signum.Translation is ported.
+//  - `Translation` has no member: @altea/altea-translations reads its keys from each package's own
+//    `translations/` directory and its two translator credentials from the environment, so there is
+//    nothing per-environment to store.
 //  - `AuthTokens` neither: altea's counterpart (`AuthTokenServer.configuration`) is a server-side interface
 //    with one field, not an embedded entity, so there is nothing to store — `AuthServer.start` still takes
 //    it eagerly from the host.
@@ -39,8 +41,8 @@ import { WindowsADConfigurationEmbedded } from "@altea/altea-auth-windowsad/data
 //    store's folder is derived from the store's own NAME (`./files/<name>`, see eastwindFileStores.store),
 //    so the paths cannot drift from the code that names the stores. WHICH backend holds the bytes is still
 //    a deployment choice, and stays in the environment as EASTWIND_FILE_STORE.
-//  - there is no `DatabaseName`: the row is selected by `environment`, through the `DB_ENVIRONMENT`
-//    environment variable — see the field.
+//  - `DatabaseName` is STORED but never read: the row is selected by `environment` instead — see both
+//    fields.
 /**
  * WHICH row this process runs as — `DB_ENVIRONMENT`, defaulting to "Development". Signum instead matches
  * `DatabaseName` against `Connector.Current.DatabaseName()`; an explicit environment variable is what a
@@ -69,6 +71,17 @@ export class ApplicationConfigurationEntity extends Entity {
      */
     @stringLengthValidator({ min: 3, max: 100 })
     environment: string;
+
+    /**
+     * Signum's `DatabaseName` — the database this row describes, and there the row's IDENTITY: its
+     * GlobalsLogic matches it against `Connector.Current.DatabaseName()`. altea selects by
+     * `environment` (above), and its Connector exposes no database name at all, so NOTHING reads this.
+     * It is declared anyway, because a Southwind database HAS the column and dropping it would lose
+     * what every Signum deployment put there — a difference a database can only see as data loss.
+     * The seed fills it from the connection string, which is what Signum's value means.
+     */
+    @stringLengthValidator({ min: 3, max: 100 })
+    databaseName: string;
 
     /*Email*/
     email: EmailConfigurationEmbedded;

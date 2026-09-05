@@ -623,7 +623,13 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   Divergences:
   - **which row is `DB_ENVIRONMENT`**, matched against `environment`, where Signum matches `DatabaseName`
     against `Connector.Current.DatabaseName()` (altea's Connector exposes no such name, and a deployment
-    controls an env var anyway). The entity carries a `@quoted isActive()` so the search page can say which
+    controls an env var anyway). `databaseName` is declared and SEEDED all the same — a Southwind database
+    has the column with a value in it, and dropping it is data loss over a difference in which field is
+    the key — but nothing reads it. The seed derives it from the connection string (a URL's last segment,
+    or the `Database=` key), which is what Signum's value means. Unlike Southwind's view, eastwind's
+    RENDERS it: nothing else writes it, so a row that predates the column (the sync defaults it to `''`)
+    would otherwise fail its min-length validator on the next save of ANY setting, with no field to fix.
+    The entity carries a `@quoted isActive()` so the search page can say which
     row is live; the value it compares against is a module CONST in the DATA layer, read off `globalThis`
     (that layer is isomorphic and ships no node types) — the transformer captures a free identifier by
     value, so a `process.env` read inside the quoted body would have no SQL translation.

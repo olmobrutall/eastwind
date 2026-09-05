@@ -126,6 +126,7 @@ export namespace EastwindMigrations {
 
         await ApplicationConfigurationEntity.create({
             environment: currentEnvironment,
+            databaseName: databaseNameOf(process.env["EASTWIND_DB"]),
             email: EmailConfigurationEmbedded.create({
                 defaultCulture: english,
                 urlLeft: "http://localhost:5173",
@@ -262,4 +263,19 @@ export namespace EastwindMigrations {
             passwordHash: PasswordEncoding.hashPassword(userName, userName),
         }).save();
     }
+}
+
+/**
+ * The database a connection string points at — Signum's `Connector.Current.DatabaseName()`, which altea's
+ * Connector has no counterpart for. Only the seed needs it, and only to fill
+ * `ApplicationConfigurationEntity.databaseName`, which nothing reads (see that field): a URL's last path
+ * segment for PostgreSQL, the `Database=` / `Initial Catalog=` key for SQL Server. Falls back to the
+ * environment name, so a string neither shape matches still satisfies the column's min length.
+ */
+function databaseNameOf(connectionString: string | undefined): string {
+    const url = /^[a-z+]+:\/\//i.test(connectionString ?? "")
+        ? connectionString!.split("?")[0]!.split("/").pop()
+        : /(?:database|initial catalog)\s*=\s*([^;]+)/i.exec(connectionString ?? "")?.[1]?.trim();
+
+    return url != null && url.length >= 3 ? url : currentEnvironment;
 }
