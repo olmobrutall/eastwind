@@ -1379,8 +1379,14 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   `@notNullValidator({ disabled: env => env !== "Saving" })`, the one `FileEntity.hash` already uses (six
   tables) — and **UserChart's `parameters` lost its `@rowOrder`**, because Signum marks that MList
   `[NoRepeatValidator]` and NOT `[PreserveOrder]`: a parameter is found by name, where a COLUMN is
-  positional and keeps its order. Together: 557 → 516 statements. **An existing altea database needs a
-  `sync`.**
+  positional and keeps its order. Together: 557 → 516 statements.
+  The rule then caught one going the OTHER way: `SkillCustomizationEntity_SubSkill.skill` was marked
+  although the row flattens BOTH members of Signum's `SubSkillEmbedded` (Skill + Activation), so its
+  columns came out `EntityID_SkillCustomization` / `EntityID_SkillCode` — named from the declared type of a
+  polymorphic element — where Signum inlines the member under its own name, `Skill_ID_SkillCustomization`.
+  Beside it, neither of SkillCustomization's two MLists is `[PreserveOrder]` (only ChatMessage's ToolCalls
+  is, in that whole module), so both rows lost the `@rowOrder` altea had given them and the two tables now
+  script NOTHING: 516 → 500. **An existing altea database needs a `sync`.**
 
 - **Token migrations: the renames a schema sync resolves are replayed against the query TOKENS stored
   inside user assets.** A UserQuery / UserChart / template keeps its tokens as STRINGS, so renaming a
