@@ -1360,10 +1360,7 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   client DTO already said `connectionID` — but a Signum database cannot see that reasoning, only a
   column it is asked to rename. `@legacyColumnName("SignalRConnectionID")` keeps both: altea's name in
   the model and in normal mode, Signum's in the database. The plain index follows the column, so it
-  matches too (492 → 487 statements). What is left on that table is the app-wide
-  `@implementedByAll` divergence, and it has a SHAPE half worth knowing: Signum indexes such a
-  reference once per ID COLUMN — `(typeId, guid)` and `(typeId, int32)`, plus a partial UNIQUE index
-  per pair filtered `IS NOT NULL` — where altea builds ONE flat index over every id column at once.
+  matches too (492 → 487 statements).
 
 - **An `@implementedByAll` is a LAST resort, and its id columns are the APP's choice.** Signum types a
   polymorphic reference against an INTERFACE (`IProcessDataEntity`, `Lite<IEntity>`) and its schema builder
@@ -1387,6 +1384,34 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   Together: a Southwind sync went 590 → 557 statements. **An existing altea database needs a `sync`** (the
   `_Int64` columns everywhere, and the three references reshaped); eastwind's three process tables were
   empty.
+  - **An `@implementedByAll` is INDEXED PER ID COLUMN, and a UNIQUE index over one is EXPANDED.** A
+    polymorphic reference is several columns with exactly ONE filled per row, so a single index over all
+    of them is the wrong index twice over: a lookup by (type, id) cannot use a composite whose leading
+    columns belong to the other pk types, and a UNIQUE constraint over the lot compares every row equal on
+    the columns it leaves NULL — which on SQL Server, where NULLs compare EQUAL in a unique index,
+    constrains something nobody asked for. Signum answers with two rules altea now ports one for one:
+    `FieldImplementedByAll.GenerateIndexes` emits one `(TypeID, ID_<pkType>)` index per id column, and
+    `SchemaBuilder.AddMultiUniqueIndex` expands a composite UNIQUE index into the CARTESIAN PRODUCT of
+    each polymorphic block's alternatives — one PARTIAL index per combination, filtered to the rows that
+    use it. The filter rule applies to ordinary columns too: a nullable one contributes
+    `IS NOT NULL` (a string also excludes `''`), so a row with a NULL in a covered column takes no part
+    in the uniqueness. `multiUniqueIndexes` (server/schema/tableIndex) is that recursion, shared by the
+    class-level `@uniqueIndex` and the fluent `withUniqueIndex`; a NON-unique composite index stays
+    flat, as Signum's `AddIndex` is. The names come out identical to a Signum database's, hash and all
+    (`ix_concurrent_user_target_entity_id_type_targetnrdwyxz`,
+    `uix_..._usernxz1qn0__v17s7ez`), which is the check that the WHERE text matches too.
+    **An existing altea database needs a `sync`** — eastwind's dev database gained 44 indexes.
+    Two things it does NOT fix, both on the same columns: the discriminator is `NOT NULL` in Signum and
+    nullable here, and it carries an FK to `basics.type` there and none here (altea's comment claimed
+    Signum avoids it; a Southwind database has `fk_concurrent_user_target_entity_id_type`, so it does
+    not — but adding it needs the `EntityEvents<TypeEntity>.PreDeleteSqlSync` cascades altea-view-log
+    records as unported, or a sync that removes a type row fails on the constraint). Until the
+    nullability matches, those columns are still ALTERed on every one of the seven tables, and that
+    ALTER is what makes the sync drop and recreate the very indexes this now gets right.
+  - the framework suite's schema asks for all three pk types in `MusicLogic.start`, with the MODEL, not
+    in `MusicStarter` — which the suites' own `setup.ts` does not go through, so the two extra id
+    columns were never built and no test had ever seen a multi-column `@implementedByAll`.
+    **That suite's database needs regenerating** (`pnpm --filter @altea/altea gen:postgres`).
 
 - **`@valueField` marks an EMBEDDED element too, and that is what inlines its members unprefixed.** An
   MList element has no property in Signum, so a legacy-mode MList table names its columns without reference
