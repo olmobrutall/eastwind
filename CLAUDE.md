@@ -666,6 +666,19 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     their own tables), and Signum's sibling `IgnoreTable` needs no counterpart: a handler can delete a
     key from the map. NORMAL mode is untouched — there the database is one altea generated, so it has no
     such columns.
+  - **a renamed symbol CONTAINER is re-keyed, not ignored** — `renameSymbolContainer` (`data/reflection`),
+    the symbol-key sibling of `@legacyTableName` / `@legacyColumnName` and NEW here. A symbol's key is
+    `<Container>.<Member>` and it IS the `key` column of that symbol's table, so this app's
+    `EastwindTypeCondition.UserEntities` reads against a Southwind database as a symbol that does not
+    exist plus one that is gone. Ignoring the difference is not enough here (unlike the enum members
+    above): the ROWS are FK targets, so the model must end up on the database's spelling, not merely
+    leave it alone. In legacy mode eastwind re-keys `EastwindTypeCondition` → `SouthwindTypeCondition`
+    and `EastwindAgentUseCases` → `SouthwindAgentUseCases`.
+    It is called from the app's shared entity-overrides module, NOT the Starter, because BOTH TIERS
+    must agree — the key is model identity, and a client still saying `Eastwind*` could not be handed
+    the symbol's id by the metadata blob, so every `toLite()` on it would throw. That module is also
+    the one place that runs before anything reads a symbol by key. It THROWS when the container matched
+    nothing, since a typo and a call made too early are the same silent no-op otherwise.
   - **`simplifyDiffEnums` is its sibling for an enum table's ROWS**, and NEW — Signum has no such seam,
     having no second framework to line its enum tables up with. A handler gets one table with BOTH sides
     of the row diff and may delete from either; it runs before the RENAME question, which is what makes

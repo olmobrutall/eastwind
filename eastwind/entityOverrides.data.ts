@@ -12,6 +12,7 @@
 // Today: four mixins (three of them a module's, plus the app's own UserEmployeeMixin), every lite model
 // is the default, and implementedBy is declared inline via @implementedBy on OrderEntity.customer.
 import { overrideImplementedBy } from "@altea/altea/data/decorators";
+import { renameSymbolContainer } from "@altea/altea/data/reflection";
 import { BigStringMixin } from "@altea/altea-files/data/BigString";
 import { ApplicationConfigurationEntity } from "./globals/ApplicationConfiguration.data";
 import { ProcessEntity, ProcessExceptionLineEntity } from "@altea/altea-processes/data/Processes";
@@ -81,6 +82,22 @@ export namespace EntityOverrides {
      */
     export function start(options?: { southwindOnly?: boolean }): void {
         const southwindOnly = options?.southwindOnly === true;
+
+        // The two symbol containers this app renamed when it was ported. A symbol's KEY is
+        // `<Container>.<Member>` and it is the `key` column of that symbol's table, so against a
+        // Southwind database `EastwindTypeCondition.UserEntities` reads as a symbol that does not
+        // exist and `SouthwindTypeCondition.UserEntities` as one that is gone — a rename the sync
+        // offers per symbol, whose wrong answer DELETEs the row and re-inserts it with a new id,
+        // orphaning every auth rule that points at it.
+        //
+        // Here rather than in the Starter because BOTH TIERS must agree: the key is model identity,
+        // and a client still saying Eastwind* could not be handed the symbol's id by the metadata
+        // blob, so every `toLite()` on it would throw. This module is the one place that runs first
+        // on both, which is the same reason the mixins below live here.
+        if (southwindOnly) {
+            renameSymbolContainer("EastwindTypeCondition", "SouthwindTypeCondition");
+            renameSymbolContainer("EastwindAgentUseCases", "SouthwindAgentUseCases");
+        }
 
         // The reception mixin on EmailMessageEntity (asserted by EmailReceptionLogic.start): what makes a
         // RECEIVED message carry its server uid, its raw MIME and its reception row. Declaring it adds those
