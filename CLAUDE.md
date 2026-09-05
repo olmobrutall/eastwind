@@ -1364,6 +1364,24 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   `_Int64` columns everywhere, and the three references reshaped); eastwind's three process tables were
   empty.
 
+- **`@valueField` marks an EMBEDDED element too, and that is what inlines its members unprefixed.** An
+  MList element has no property in Signum, so a legacy-mode MList table names its columns without reference
+  to one — and for an EMBEDDED element that means NO prefix at all (`file_name`, not `element_file_name`).
+  `legacyMListColumnBase` already had that branch and it was unreachable: `@valueField`'s own contract said
+  "non-embedded", so the four rows whose field IS the whole element were never marked. They are now —
+  UserChart's columns and parameters (`MList<ChartColumnEmbedded>` / `<ChartParameterEmbedded>`),
+  `PredictorEntity.files` and WhatsNew's attachments (both `MList<FilePathEmbedded>`). The test is whether
+  the field IS the element: a row that flattens a RICHER embedded's members has no single element field
+  (`EmailMessageEntity_Attachment.file` is one member of `EmailAttachmentEmbedded`, and every
+  `token: QueryTokenEmbedded` row is one member of a QueryColumn/OrderEmbedded), so those stay unmarked.
+  Two more differences fell out of the same tables: **`FilePathEmbedded.suffix` is NOT NULL**, as Signum
+  declares it — it is filled by `prepareSuffix` before the row is inserted, so the shape is
+  `@notNullValidator({ disabled: env => env !== "Saving" })`, the one `FileEntity.hash` already uses (six
+  tables) — and **UserChart's `parameters` lost its `@rowOrder`**, because Signum marks that MList
+  `[NoRepeatValidator]` and NOT `[PreserveOrder]`: a parameter is found by name, where a COLUMN is
+  positional and keeps its order. Together: 557 → 516 statements. **An existing altea database needs a
+  `sync`.**
+
 - **Token migrations: the renames a schema sync resolves are replayed against the query TOKENS stored
   inside user assets.** A UserQuery / UserChart / template keeps its tokens as STRINGS, so renaming a
   field or a query breaks every stored token that walked through it — and nothing in the schema sync
