@@ -650,6 +650,22 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     The paths were never a
     deployment choice (every one read `./files/<the store name>`), and as data they were five more rows to
     keep in step with the code that names the stores.
+  - **the three configuration members Southwind has and eastwind does not are IGNORED by a legacy sync,**
+    rather than renamed or dropped: `Folders_*` (above), `Translation_*` (@altea/altea-translations reads
+    its two translator credentials from the environment) and `AuthTokens_*` (altea's counterpart is a
+    server-side interface taken eagerly from the host). Left alone the synchronizer offers each as a
+    RENAME of whatever model column sorts nearest by string distance — `folders_view_log_folder` →
+    `open_id_scopes` was a real offer — and DROPs the ones the developer declines, which deletes what a
+    Signum deployment configured over a difference of MODEL. So they are removed from the database
+    description before it is diffed, through a NEW core seam: **`simplifyDiffTables`**
+    (`server/sync/schemaSynchronizer`), Signum's `SchemaSynchronizer.SimplifyDiffTables`. It runs after
+    the history tables are lifted out and before the first question is asked of the diff — one step
+    earlier than Signum's literal position, ahead of altea's own schema-move pairing, since that pairing
+    is a matching decision too — so a removed table or column takes no part in any prompt, DDL, index or
+    foreign-key follow-up. An ARRAY where Signum has a single Action (several modules may each know about
+    their own tables), and Signum's sibling `IgnoreTable` needs no counterpart: a handler can delete a
+    key from the map. NORMAL mode is untouched — there the database is one altea generated, so it has no
+    such columns.
   - **the AD configurations became `@part` ENTITIES** (`BaseADConfigurationEmbedded extends Entity`), because
     persisting them means persisting `roleMapping`, and a collection is `@part` child rows whose back
     reference needs a real owner TABLE — which a flattened embedded is not. Same reshaping altea-email

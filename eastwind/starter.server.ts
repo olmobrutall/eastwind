@@ -11,6 +11,7 @@ import { SystemEventLogLogic } from "@altea/altea/server/systemEventLogLogic";
 import { CultureInfoLogic } from "@altea/altea/server/cultureInfoLogic";
 import { OperationLogic } from "@altea/altea/server/operationLogic";
 import { loadAppTranslations } from "@altea/altea/server/translations";
+import { simplifyDiffTables } from "@altea/altea/server/sync/schemaSynchronizer";
 import { EntityOverrides } from "./entityOverrides.data";
 import { EmployeesLogic } from "./employees/EmployeeLogic.server";
 import { ProductsLogic } from "./products/ProductLogic.server";
@@ -219,6 +220,9 @@ export namespace Starter {
         // Like the dialect above, this is decided while the schema is BUILT, before a row can be read, so
         // it comes from the environment and not from the ApplicationConfiguration row.
         sb.settings.legacyMode = southwindOnly;
+
+        if (southwindOnly)
+            ignoreSouthwindOnlyConfiguration();
 
         // Southwind installs a SUBSET of the modules below, and legacy mode is pointed at a Southwind
         // database — so start only what Southwind starts, and a `sync` reads as a migration of the tables
@@ -919,4 +923,38 @@ function configureBigString(sb: SchemaBuilder): void {
     // info, a scheduled task log's remarks — registered `Database` purely to stop the mixin giving them
     // file columns nothing wanted. Signum declares all five a plain `string?`, so they are plain strings
     // here now and the question does not arise.
+}
+
+// The columns Southwind's `ApplicationConfigurationEntity` stores and eastwind's deliberately does not —
+// see that entity's divergence list for why each one is absent:
+//
+//   Folders_*      one editable path per local file store; here a store's folder is derived from the
+//                  store's own NAME, so the paths cannot drift from the code that names the stores.
+//   Translation_*  the two translator credentials; @altea/altea-translations reads them from the
+//                  environment, and its keys live in each package's own `translations/` directory.
+//   AuthTokens_*   altea's counterpart is a server-side interface with one field, taken eagerly from the
+//                  host — there is nothing per-environment to store.
+//
+// Left to itself the synchronizer would offer each of them as a RENAME of some model column, sorted by
+// string distance — `folders_view_log_folder` → `open_id_scopes` was a real offer — and DROP whatever the
+// developer declined. Both answers are wrong: the columns are not misnamed, and they hold what a Signum
+// deployment configured. So in LEGACY MODE they are removed from the database description before it is
+// diffed (altea's `simplifyDiffTables`, Signum's SimplifyDiffTables), which leaves them exactly as they
+// are — no prompt, no DDL, no data lost — and lets the rest of the table sync as a migration.
+//
+// NORMAL mode is untouched: there the database is one altea generated, so it has no such columns.
+function ignoreSouthwindOnlyConfiguration(): void {
+    const prefixes = ["folders_", "translation_", "auth_tokens_"];
+
+    simplifyDiffTables.push(databaseTables => {
+        // Found by BARE name: whether the key carries the default schema is a dialect / catalog-reader
+        // detail, and this table is in the default schema on both.
+        const dif = [...databaseTables.values()].find(t => t.name.name === "application_configuration");
+        if (dif == null)
+            return;
+
+        for (const name of Object.keys(dif.columns))
+            if (prefixes.some(p => name.startsWith(p)))
+                delete dif.columns[name];
+    });
 }
