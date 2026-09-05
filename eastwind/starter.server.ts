@@ -581,11 +581,11 @@ export namespace Starter {
         // (an alert is addressed to a USER) and BEFORE OperationLogic.start so its six operation symbols get
         // seeded. `registerExpressionsFor` is Southwind's `AlertLogic.Start(sb, typeof(UserEntity),
         // typeof(OrderEntity))`: those two types grow the `Alerts` / `MyActiveAlerts` sub-tokens.
-        AlertLogic.start(sb, { registerExpressionsFor: [UserEntity, OrderEntity as unknown as Type<Entity>] });
+        AlertLogic.start(sb, { registerExpressionsFor: [UserEntity, OrderEntity] });
 
         // Free-text notes on any entity (Signum.Notes). Southwind starts it with the same two types the
         // alerts get, so a note is offered where an alert is.
-        NoteLogic.start(sb, { registerExpressionsFor: [UserEntity, OrderEntity as unknown as Type<Entity>] });
+        NoteLogic.start(sb, { registerExpressionsFor: [UserEntity, OrderEntity] });
 
         // …and its OPT-IN notification half (Signum's RegisterAlertNotificationMail): the e-mail model and
         // the ScheduledTask that mails each user their pending alerts. AFTER EmailLogic.start (it registers an
@@ -776,9 +776,9 @@ export namespace Starter {
 
         ViewLogLogic.start(sb, {
             registerExpressionsFor: [
-                UserQueryEntity as unknown as Type<Entity>,
-                UserChartEntity as unknown as Type<Entity>,
-                DashboardEntity as unknown as Type<Entity>,
+                UserQueryEntity,
+                UserChartEntity,
+                DashboardEntity,
             ],
         });
         // Translations module (altea-translations): both halves — the pages that edit each PACKAGE's own
@@ -817,7 +817,7 @@ export namespace Starter {
         // Expose a search query for the TypeEntity system table (Signum ships one). It's included by the
         // schema core but never `.withQuery()`'d, so `/find/Type` reported "not allowed"; register it here.
         // (Scoped to eastwind rather than the framework to avoid re-seeding altea-test's query table.)
-        sb.include(TypeEntity as unknown as Type<Entity>).withQuery();
+        sb.include(TypeEntity).withQuery();
 
         // The COMPILED half of altea-dynamic, in Signum's own order: generate + compile + load the dynamic
         // code, run each definition's before-schema block, then let the generated starters INCLUDE their

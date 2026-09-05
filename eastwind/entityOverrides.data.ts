@@ -171,7 +171,7 @@ export namespace EntityOverrides {
 
         // The employee behind a login — Southwind writes exactly this in its Starter.cs. Declaring it adds
         // `employee_id` to the User table, so it belongs here: both tiers, before any (de)serialization.
-        MixinDeclarations.register(UserEntity, UserEmployeeMixin as unknown as Type<UserEmployeeMixin>);
+        MixinDeclarations.register(UserEntity, UserEmployeeMixin);
 
         // …and the CLAIM that goes with it (Southwind fills it in EmployeesLogic, i.e. server-only). Here it
         // is one data-layer filler for both tiers — the server runs it when a request's user is resolved,
@@ -199,12 +199,12 @@ export namespace EntityOverrides {
         // …or at altea-alert's SendNotificationEmailTask ("mail everyone their pending alerts"), which
         // AlertNotificationLogic.start re-checks and fails on if it is missing here.
         ProcessSchedulerBridgeOverrides.overrideTaskImplementations([
-            SimpleTaskSymbol as unknown as Type<Entity>,
+            SimpleTaskSymbol,
             // NOT IN SOUTHWIND: it schedules neither a mailbox poll nor the alert-notification mail, and
             // naming a type here is what CREATES its table.
             ...(southwindOnly ? [] : [
-                EmailReceptionConfigurationEntity as unknown as Type<Entity>,
-                SendNotificationEmailTaskEntity as unknown as Type<Entity>,
+                EmailReceptionConfigurationEntity,
+                SendNotificationEmailTaskEntity,
             ]),
         ]);
 
@@ -273,7 +273,7 @@ export namespace EntityOverrides {
         // and ToolbarMenuEntity_Element.
         // (`overrideImplementedBy` asks for a concrete Type<T>; the base is abstract, which matters only to
         // the type-checker — the FieldInfo it mutates is the very one both element rows inherit.)
-        overrideImplementedBy(ToolbarElementBaseEntity as unknown as Type<ToolbarElementBaseEntity>, t => t.content, () => [
+        overrideImplementedBy(ToolbarElementBaseEntity, t => t.content, () => [
             QueryEntity,
             PermissionSymbol,
             ToolbarEntity,

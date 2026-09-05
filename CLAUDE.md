@@ -1401,13 +1401,31 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     (`ix_concurrent_user_target_entity_id_type_targetnrdwyxz`,
     `uix_..._usernxz1qn0__v17s7ez`), which is the check that the WHERE text matches too.
     **An existing altea database needs a `sync`** — eastwind's dev database gained 44 indexes.
-    Two things it does NOT fix, both on the same columns: the discriminator is `NOT NULL` in Signum and
-    nullable here, and it carries an FK to `basics.type` there and none here (altea's comment claimed
-    Signum avoids it; a Southwind database has `fk_concurrent_user_target_entity_id_type`, so it does
-    not — but adding it needs the `EntityEvents<TypeEntity>.PreDeleteSqlSync` cascades altea-view-log
-    records as unported, or a sync that removes a type row fails on the constraint). Until the
-    nullability matches, those columns are still ALTERed on every one of the seven tables, and that
-    ALTER is what makes the sync drop and recreate the very indexes this now gets right.
+    What it does NOT fix is the FK: the discriminator carries one to `basics.type` in Signum and none
+    here (altea's comment claimed Signum avoids it; a Southwind database has
+    `fk_concurrent_user_target_entity_id_type`, so it does not — but adding it needs the
+    `EntityEvents<TypeEntity>.PreDeleteSqlSync` cascades altea-view-log records as unported, or a sync
+    that removes a type row fails on the constraint). 17 tables still script that FK drop.
+  - **A POLYMORPHIC reference's nullability is the FIELD's, unless there is more than one column.** This
+    was the "app-wide nullable-implementedBy divergence" seven tables shared, and it was never a decision
+    — just an incomplete rule: altea hardcoded every `@implementedBy` column and both halves of an
+    `@implementedByAll` to nullable, with one special case for a `@backReference`. Signum's two
+    generators say it in one line each. `GenerateFieldImplementedBy`:
+    `if (types.Count() > 1 && nullable == No) nullable = Forced` — several columns of which ONE is
+    filled must be nullable in the database while the field stays required in the model, but a SINGLE
+    implementation owns one column and takes the field's own nullability. That generalises altea's
+    back-reference case to every accommodation where a framework type declares
+    `@implementedBy(() => [])` for the app to widen (`VisualTipConsumedEntity.user` and six
+    siblings, `NOT NULL` in Signum too). `GenerateFieldImplementedByAll`: the DISCRIMINATOR carries the
+    field's own nullability — exactly one is written per row — while an id column is nullable as soon as
+    the schema configures SEVERAL pk types. **A Southwind sync went 485 → 391 statements**, because the
+    discriminator ALTER was also what forced the sync to drop and recreate the per-id indexes above;
+    `concurrent_user` now scripts ONE line, the FK. **An existing altea database needs a `sync`**, and
+    it contains `SET NOT NULL` — check those columns hold no NULLs first (eastwind's dev database:
+    20 columns, none). Signum's `[ForceNullable]` is `@forceNullable` for a field that must be
+    required in the model and nullable in the row — the framework fixture's
+    `NoteWithDateEntity.target` needs it, as Signum's does, or the UnsafeUpdate suite cannot set it to
+    null.
   - the framework suite's schema asks for all three pk types in `MusicLogic.start`, with the MODEL, not
     in `MusicStarter` — which the suites' own `setup.ts` does not go through, so the two extra id
     columns were never built and no test had ever seen a multi-column `@implementedByAll`.
