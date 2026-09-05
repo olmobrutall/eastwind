@@ -1394,10 +1394,22 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   The **Word → Office** rename is the same case one layer down. altea-office-template already declared
   `@legacyTableName("WordTemplate")` and friends, but the rename reaches the COLUMNS too —
   `officeTransformer` / `officeConverter` on the template, `officeTemplate` on the attachment — and a
-  database can only see those as renames. Three `@legacyColumnName`s (322 → 310 statements). What is
-  left on `word.word_template` is a real MODEL difference, not a spelling: `template` is a
-  `FileEmbedded` (bytes in the row) where Signum keeps a `Lite<FileEntity>` FK — once forced, now a
-  choice, since FileEntity is ported.
+  database can only see those as renames. Three `@legacyColumnName`s (322 → 310 statements). And the
+  last difference on that table was a real MODEL one rather than a spelling: `template` was a
+  `FileEmbedded` (bytes in the row) where Signum keeps a `Template_ID` FK. That had been forced while
+  altea-files had only the embedded forms; FileEntity is ported now, so it is a REFERENCE and
+  `word.word_template` matches column for column (310 → 303). altea keeps a FULL reference where Signum
+  declares a LITE, the call `EmployeeEntity.photo` already makes: the column is the same, every reader
+  needs the bytes, and altea's file LINES cannot bind a lite. It brings Signum's **superseded-file dance**
+  with it — a FileEntity is IMMUTABLE, so replacing a template's document makes a NEW row and the Save
+  operation schedules the old one's delete on `Transaction.preRealCommit` (deferred, because the template
+  still points at it until the save commits); the read projects the ID alone, since selecting a full
+  reference would drag the whole document back. **An existing altea database needs
+  `eastwind/terminal/migrateOfficeTemplateFile.ts` BEFORE the sync** — otherwise it adds `template_id`
+  and drops `template_binary_file` in one script, and every template keeps its name, filters and tokens
+  while losing the DOCUMENT. The migration computes the file's hash the way `calculateMD5Hash` does
+  (base64 of the MD5, via Postgres' own `md5()` and a decode/encode pair — no pgcrypto), because that
+  hash is the file's cache identity: it rides the download url and becomes the ETag.
 
 - **An `@implementedByAll` is a LAST resort, and its id columns are the APP's choice.** Signum types a
   polymorphic reference against an INTERFACE (`IProcessDataEntity`, `Lite<IEntity>`) and its schema builder
