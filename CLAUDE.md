@@ -1354,6 +1354,16 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   implementation, which is refused outright). Aligned beside it, and a real model fix rather than a
   spelling: all three `Rule*ConditionEntity_Condition` rows gained the `@rowOrder` Signum's
   `[PreserveOrder]` gives them.
+  It is also what lets a justified FIELD rename stop being a database difference.
+  `ConcurrentUserEntity.SignalRConnectionID` is `connectionID` here for a good reason — altea has no
+  SignalR, so naming a column after a transport it does not use would be actively misleading, and the
+  client DTO already said `connectionID` — but a Signum database cannot see that reasoning, only a
+  column it is asked to rename. `@legacyColumnName("SignalRConnectionID")` keeps both: altea's name in
+  the model and in normal mode, Signum's in the database. The plain index follows the column, so it
+  matches too (492 → 487 statements). What is left on that table is the app-wide
+  `@implementedByAll` divergence, and it has a SHAPE half worth knowing: Signum indexes such a
+  reference once per ID COLUMN — `(typeId, guid)` and `(typeId, int32)`, plus a partial UNIQUE index
+  per pair filtered `IS NOT NULL` — where altea builds ONE flat index over every id column at once.
 
 - **An `@implementedByAll` is a LAST resort, and its id columns are the APP's choice.** Signum types a
   polymorphic reference against an INTERFACE (`IProcessDataEntity`, `Lite<IEntity>`) and its schema builder
