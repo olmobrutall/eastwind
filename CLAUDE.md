@@ -234,21 +234,28 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     columns and drop the table in one script, losing every configured host and credential.
     @altea/altea-mailing-pop3's `ClientCertificationFiles` carried the same spurious `@rowOrder` and
     lost it too — its collection hangs off an ENTITY, so it needed nothing else.
-  - **An EmailTemplate's `From` and `Recipients` went back to EMBEDDEDs too, and the shared BASE is
-    what forced the shape.** Signum declares an abstract `EmailTemplateAddressEmbedded` and derives
-    `EmailTemplateFromEmbedded` (a single nullable embedded, FLATTENED onto `email_template` as
-    `From_WhenNone_ID`, …) and `EmailTemplateRecipientEmbedded` (the ELEMENT of an MList, so its table
-    inlines the members with no prefix). altea had made both `@part` ENTITY rows, which gave the template
-    a `FromID` foreign key to a side table Signum has no counterpart for. An Entity cannot derive from an
-    EmbeddedEntity, so keeping Signum's hierarchy means the RECIPIENT ROW wraps the element rather than
-    being it — `EmailTemplateEntity_Recipient.element`, the `@valueField` shape UserChart's columns
-    already use, which is exactly what inlines the members unprefixed. It also loses a `@rowOrder`
-    altea had invented: Signum marks that MList `[NoRepeatValidator, BindParent]` and NOT
-    `[PreserveOrder]`. Both tables now script NOTHING against a Signum database: 373 → 347 statements.
+  - **An EmailTemplate's `From` is an EMBEDDED, its Recipients stay rows, and the shared BASE is what
+    gives way.** Signum declares an abstract `EmailTemplateAddressEmbedded` — the four members saying
+    WHERE an address comes from — and derives `EmailTemplateFromEmbedded` (a single nullable embedded,
+    FLATTENED onto `email_template` as `From_WhenNone_ID`, …) and `EmailTemplateRecipientEmbedded`
+    (the ELEMENT of an MList, whose table inlines the members with no prefix). altea had made both
+    `@part` ENTITY rows, which gave the template a `FromID` foreign key to a side table Signum has no
+    counterpart for.
+    The From is an embedded now; the RECIPIENT stays an entity row, because a collection here is `@part`
+    rows and its columns are then named from the row's own fields — which is the same unprefixed set. So
+    the two land on opposite sides of the entity/embedded divide and **the base cannot be shared**: an
+    Entity cannot derive from an EmbeddedEntity. Keeping it would mean making the row a WRAPPER around an
+    element embedded (`row.element.emailAddress`) — the `@valueField` shape UserChart's columns use —
+    which buys the shared declaration at the price of an indirection in every reader. The four members are
+    written out on each instead: **the duplication is the cheaper half of that trade**, and the database is
+    identical either way. The row also loses a `@rowOrder` altea had invented: Signum marks that MList
+    `[NoRepeatValidator, BindParent]` and NOT `[PreserveOrder]`. Both tables now script NOTHING against
+    a Signum database: 373 → 347 statements.
     **An existing altea database needs `eastwind/terminal/migrateEmailTemplateAddress.ts` BEFORE the
-    sync** — otherwise the sync adds the new columns, drops the old ones and DROPS the From table in one
-    script, so every template loses who it is sent FROM and every recipient loses its address, kind and
-    behaviours, leaving templates that look configured and cannot send.
+    sync** — otherwise the sync adds the flattened columns, drops `from_id` and DROPS the From table in
+    one script, so every template loses who it is sent FROM, leaving templates that look configured and
+    cannot send. The recipients need nothing: their row keeps its column names, and only drops an `Order`
+    column nothing reads.
   - **A collection ELEMENT is an entity, so it is not called `*Embedded`.** Nine row types were named for
     the Signum EMBEDDED they port (`RoleMappingEmbedded`, `CssStepEmbedded`, `QueryStringValueEmbedded`,
     `WhatsNewMessageEmbedded`, `ClientCertificationFileEmbedded`) or for the embedded that used to own

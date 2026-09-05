@@ -1,19 +1,18 @@
-// DATA migration for an existing ALTEA database: an EmailTemplate's `From` and its `Recipients` stop being
-// `@part` ENTITY rows and become the EMBEDDEDs Signum declares (`EmailTemplateAddressEmbedded` and its two
-// subclasses). Two shapes move:
+// DATA migration for an existing ALTEA database: an EmailTemplate's `From` stops being a `@part` ENTITY
+// row in its own table — reached by `email_template.from_id` — and becomes the EMBEDDED Signum declares,
+// FLATTENED onto the template (`from_address_source_id`, `from_when_none_id`, … plus the
+// `from_has_value` indicator).
 //
-//   - `From` was a side table reached by `email_template.from_id`; it is now FLATTENED onto the template
-//     (`from_address_source_id`, `from_when_none_id`, … plus the `from_has_value` indicator).
-//   - a Recipient row now WRAPS the embedded in its `element` field, so the row's own columns become
-//     `element_*` — which is what makes legacy mode inline them unprefixed, as Signum's
-//     `email_template_recipients` does.
+// The ordinary `sync` would add each new column, drop `from_id` and DROP the side table in one script,
+// so every template loses who it is sent FROM — leaving templates that look configured and cannot send.
+// This runs FIRST (idempotent, one transaction): it creates the new columns and copies the values across,
+// and leaves the old ones for the sync.
 //
-// The ordinary `sync` would add each new column, drop the old ones and DROP the from table in one script,
-// so every template loses who it is sent FROM and every recipient loses its address, kind and behaviours —
-// leaving templates that look configured and cannot send. This runs FIRST (idempotent, one transaction):
-// it creates the new columns and copies the values across, and leaves the old ones for the sync.
+// The RECIPIENTS need nothing: their row stays an entity, so its columns keep their names. All it loses is
+// the `Order` column, which Signum's MList never had (`[NoRepeatValidator, BindParent]`, not
+// `[PreserveOrder]`) and nothing reads.
 //
-// A SIGNUM database needs none of it — there both have always been embeddeds, which is the whole point.
+// A SIGNUM database needs none of it — there the From has always been an embedded, which is the point.
 //
 // Run: node --import @altea/altea/register.mjs --env-file=.env.postgres dist/terminal/migrateEmailTemplateAddress.js
 import { Starter } from "../starter.server";
@@ -64,30 +63,9 @@ async function main(): Promise<void> {
         await Connector.current().executeNonQuery(
             `UPDATE mailing.email_template SET from_has_value = false WHERE from_has_value IS NULL`);
 
-        // ---- Recipients: the row's own members become the element's ------------------------------------
-        for (const [col, type] of [
-            ["element_address_source_id", "int4"], ["element_email_address", "varchar"],
-            ["element_display_name", "varchar"], ["element_token_has_value", "bool"],
-            ["element_token_token_string", "varchar"], ["element_kind_id", "int4"],
-            ["element_when_none_id", "int4"], ["element_when_many_id", "int4"],
-        ] as const)
-            await Connector.current().executeNonQuery(
-                `ALTER TABLE mailing.email_template__recipient ADD COLUMN IF NOT EXISTS ${col} ${type} NULL`);
-
-        await Connector.current().executeNonQuery(`UPDATE mailing.email_template__recipient SET
-                element_address_source_id = address_source_id,
-                element_email_address = email_address,
-                element_display_name = display_name,
-                element_token_has_value = token_has_value,
-                element_token_token_string = token_token_string,
-                element_kind_id = kind_id,
-                element_when_none_id = when_none_id,
-                element_when_many_id = when_many_id`);
-
         const froms = await count(`SELECT COUNT(*)::int AS n FROM mailing.email_template WHERE from_has_value`);
-        const recipients = await count(`SELECT COUNT(*)::int AS n FROM mailing.email_template__recipient`);
-        console.log(`[email-address] ${froms} From address(es) flattened, ${recipients} recipient(s) re-shaped.`);
-        console.log("[email-address] now run 'sync' — it has only the old columns and the From table left to drop.");
+        console.log(`[email-address] ${froms} From address(es) flattened.`);
+        console.log("[email-address] now run 'sync' — it has only from_id and the From table left to drop.");
     });
 
     return done();
