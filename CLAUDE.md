@@ -1453,7 +1453,15 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   polymorphic element — where Signum inlines the member under its own name, `Skill_ID_SkillCustomization`.
   Beside it, neither of SkillCustomization's two MLists is `[PreserveOrder]` (only ChatMessage's ToolCalls
   is, in that whole module), so both rows lost the `@rowOrder` altea had given them and the two tables now
-  script NOTHING: 516 → 500. **An existing altea database needs a `sync`.**
+  script NOTHING: 516 → 500.
+  The same naming rule reads the DECLARED type of a polymorphic element, so narrowing one is a database
+  difference: both `CustomDrilldowns` rows declared `drilldown: Lite<UserQueryEntity>` where Signum
+  declares `[ImplementedBy(typeof(UserQueryEntity))] MList<Lite<Entity>>` — the implementation supplies
+  only the column's SUFFIX, so Signum's is `Entity_ID_UserQuery` and altea's came out
+  `UserQueryID_UserQuery`. They are `Lite<Entity>` now, which is also the truer contract (a drilldown
+  target is open; the implementations list is the only thing narrowing it), and both tables script
+  nothing: 391 → 377. Signum's `[NoRepeatValidator]` on those two collections was missing too — a
+  validator, so no column moves. **An existing altea database needs a `sync`.**
 
 - **Token migrations: the renames a schema sync resolves are replayed against the query TOKENS stored
   inside user assets.** A UserQuery / UserChart / template keeps its tokens as STRINGS, so renaming a
