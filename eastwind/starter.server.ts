@@ -11,7 +11,7 @@ import { SystemEventLogLogic } from "@altea/altea/server/systemEventLogLogic";
 import { CultureInfoLogic } from "@altea/altea/server/cultureInfoLogic";
 import { OperationLogic } from "@altea/altea/server/operationLogic";
 import { loadAppTranslations } from "@altea/altea/server/translations";
-import { simplifyDiffTables } from "@altea/altea/server/sync/schemaSynchronizer";
+import { simplifyDiffTables, simplifyDiffEnums } from "@altea/altea/server/sync/schemaSynchronizer";
 import { EntityOverrides } from "./entityOverrides.data";
 import { EmployeesLogic } from "./employees/EmployeeLogic.server";
 import { ProductsLogic } from "./products/ProductLogic.server";
@@ -221,8 +221,11 @@ export namespace Starter {
         // it comes from the environment and not from the ApplicationConfiguration row.
         sb.settings.legacyMode = southwindOnly;
 
-        if (southwindOnly)
+        // Two differences a legacy sync must not act on — see each function.
+        if (southwindOnly) {
             ignoreSouthwindOnlyConfiguration();
+            ignoreRenamedEnumMembers();
+        }
 
         // Southwind installs a SUBSET of the modules below, and legacy mode is pointed at a Southwind
         // database — so start only what Southwind starts, and a `sync` reads as a migration of the tables
@@ -956,5 +959,30 @@ function ignoreSouthwindOnlyConfiguration(): void {
         for (const name of Object.keys(dif.columns))
             if (prefixes.some(p => name.startsWith(p)))
                 delete dif.columns[name];
+    });
+}
+
+// Enum members altea named better than Signum did, whose TABLE a Southwind database therefore spells
+// differently — `basics.exception_origin` holds `Backend_DotNet` / `Frontend_React` where the model says
+// `Backend` / `Frontend` (see data/exception.ts for why).
+//
+// A rename here is not wrong the way the configuration columns above were — it is one UPDATE per row and
+// loses nothing — but it is not eastwind's to make: Signum is taking the same two names, so the table
+// converges on its own, and a legacy sync that renamed them would be a Southwind database's rows moving
+// under it because a second application happened to look. So in LEGACY MODE the table is left alone
+// (altea's `simplifyDiffEnums`), which is also the only answer while the two frameworks disagree: the ids
+// are the same, so the wrong half of "rename or delete" would orphan every logged exception's origin.
+//
+// BOTH sides are cleared, never one: a model member left behind with its database row hidden is an INSERT,
+// and it collides on the id that row still occupies.
+function ignoreRenamedEnumMembers(): void {
+    const tables = ["exception_origin"];
+
+    simplifyDiffEnums.push((table, should, current) => {
+        if (!tables.includes(table.name.name))
+            return;
+
+        should.clear();
+        current.clear();
     });
 }

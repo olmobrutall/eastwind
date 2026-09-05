@@ -666,6 +666,15 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     their own tables), and Signum's sibling `IgnoreTable` needs no counterpart: a handler can delete a
     key from the map. NORMAL mode is untouched — there the database is one altea generated, so it has no
     such columns.
+  - **`simplifyDiffEnums` is its sibling for an enum table's ROWS**, and NEW — Signum has no such seam,
+    having no second framework to line its enum tables up with. A handler gets one table with BOTH sides
+    of the row diff and may delete from either; it runs before the RENAME question, which is what makes
+    it useful. `ExceptionOrigin` is the case: altea calls the members `Backend` / `Frontend` where Signum
+    writes `Backend_DotNet` / `Frontend_React` (naming a member after the TECHNOLOGY dates it, and the
+    plain word says as much). Signum is taking the same two names, so the table converges on its own —
+    until it does, a legacy sync leaves those rows alone rather than renaming a Southwind database's data
+    because a second application looked at it. Clear BOTH sides, never one: a model member whose database
+    row is hidden becomes an INSERT, colliding on the id that row still occupies.
   - **the AD configurations became `@part` ENTITIES** (`BaseADConfigurationEmbedded extends Entity`), because
     persisting them means persisting `roleMapping`, and a collection is `@part` child rows whose back
     reference needs a real owner TABLE — which a flattened embedded is not. Same reshaping altea-email
