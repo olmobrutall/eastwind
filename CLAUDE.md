@@ -812,6 +812,20 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     run. That column also stores the strategy's NAME, where Signum stores its enum ordinal: altea's
     `IsolationStrategy` is deliberately a string union, and giving that module a reflected enum for one
     consumer would add an enum table and touch every comparison in it.
+  - **`DynamicMixinConnectionEntity.entityType` is a PLAIN reference**, as every other `Lite<TypeEntity>`
+    in the workspace is. It carried a single-implementation `@implementedBy(() => [TypeEntity])` that
+    nothing recorded a reason for, and that costs two things a Signum database sees: the column takes the
+    implementation suffix (`EntityTypeID_Type`) and the polymorphic always-nullable default, where Signum
+    has a NOT NULL `EntityTypeID`. The visible symptom was the read above FAILING against a Signum
+    database — `Could not read the dynamic definitions: column dmc.entity_type_id_type does not exist` —
+    so every Southwind sync was built from a schema with NO dynamic types, exactly the state that scripts
+    every dynamic table as a DROP. `dynamic.dynamic_mixin_connection` now matches Signum column for
+    column and a Southwind sync scripts nothing for it (500 → 492 statements).
+    **An existing altea database needs a `sync`, and this is the case the "run it TWICE" rule is for**:
+    the first sync cannot read the definitions (the model wants the new column, the database has the old
+    one), so its script carries the column change AND a DROP of every dynamic table. Apply the column
+    change alone — answering the rename prompt makes it a `RENAME COLUMN`, so no row loses its type —
+    then re-run the sync and apply that one.
   - **`MList<T>` becomes a generated `@part` ROW type plus a `T[]`.** Signum's
     `DynamicTypeBackMListDefinition` (TableName / PreserveOrder / OrderName / BackReferenceName) describes
     that row table one for one.
