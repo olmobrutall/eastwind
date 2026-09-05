@@ -868,9 +868,10 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     query tab lists member NAMES, not `e.Id`-style projection lines.
   - a DynamicApi script is a FUNCTION THAT REGISTERS ROUTES, not a controller-class body (altea has no
     controllers), which retires `IDynamicApiEvaluator.DummyEvaluate` and the second controller assembly.
-  - `DisabledMixin` does not exist, so `disabled` is a plain field keeping Signum's column name. A
-    validation's `SubEntity` IS a `PropertyRouteEntity` (see that bullet), but its APPLICABILITY test stays a
-    route PREFIX rather than Signum's `PropertyRoute.MatchesEntity(mod)`, because altea re-roots a route at
+  - `DisabledMixin` does not exist, so `isDisabled` is a plain field keeping the mixin MEMBER's name —
+    hence Signum's own `IsDisabled` column, on DynamicApi and DynamicValidation alike. A validation's
+    `SubEntity` IS a `PropertyRouteEntity` (see that bullet), but its APPLICABILITY test stays a route
+    PREFIX rather than Signum's `PropertyRoute.MatchesEntity(mod)`, because altea re-roots a route at
     each embedded.
   - **no RESTART button** on the panel: Signum's restarts the ASP.NET host in place behind a supervisor,
     which Node has no convention for. `DynamicPanelPermission.RestartApplication` IS ported and the page
