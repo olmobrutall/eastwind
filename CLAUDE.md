@@ -675,6 +675,15 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     until it does, a legacy sync leaves those rows alone rather than renaming a Southwind database's data
     because a second application looked at it. Clear BOTH sides, never one: a model member whose database
     row is hidden becomes an INSERT, colliding on the id that row still occupies.
+  - **the enum ROW sync emits Signum's three phases, and its temp-id pass.** Both were missing and both
+    produced scripts that fail on the primary key. altea had ONE flat loop over the union of the names,
+    which put the creates FIRST (the union is built model-side first) — so a member removed at id N and
+    another added at the same id inserted before deleting; Signum's `SyncEnums` emits every DELETE, then
+    every merge, then every INSERT. And a member whose id CHANGED was re-inserted at that id even while
+    another row still held it; Signum first moves such members aside to `id + 1_000_000`, runs the
+    ordinary diff over everything else, then brings them back — three passes, which is what a SWAP of two
+    members' ids needs. Both are ported now (`syncEnums`), so an id swap scripts nine statements that
+    each hold: every incoming reference is moved before the row it points at is deleted.
   - **the AD configurations became `@part` ENTITIES** (`BaseADConfigurationEmbedded extends Entity`), because
     persisting them means persisting `roleMapping`, and a collection is `@part` child rows whose back
     reference needs a real owner TABLE — which a flattened embedded is not. Same reshaping altea-email
