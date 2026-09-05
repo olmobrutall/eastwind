@@ -1391,6 +1391,13 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   column it is asked to rename. `@legacyColumnName("SignalRConnectionID")` keeps both: altea's name in
   the model and in normal mode, Signum's in the database. The plain index follows the column, so it
   matches too (492 → 487 statements).
+  The **Word → Office** rename is the same case one layer down. altea-office-template already declared
+  `@legacyTableName("WordTemplate")` and friends, but the rename reaches the COLUMNS too —
+  `officeTransformer` / `officeConverter` on the template, `officeTemplate` on the attachment — and a
+  database can only see those as renames. Three `@legacyColumnName`s (322 → 310 statements). What is
+  left on `word.word_template` is a real MODEL difference, not a spelling: `template` is a
+  `FileEmbedded` (bytes in the row) where Signum keeps a `Lite<FileEntity>` FK — once forced, now a
+  choice, since FileEntity is ported.
 
 - **An `@implementedByAll` is a LAST resort, and its id columns are the APP's choice.** Signum types a
   polymorphic reference against an INTERFACE (`IProcessDataEntity`, `Lite<IEntity>`) and its schema builder
