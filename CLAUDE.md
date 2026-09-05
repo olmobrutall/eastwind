@@ -1462,6 +1462,16 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   target is open; the implementations list is the only thing narrowing it), and both tables script
   nothing: 391 → 377. Signum's `[NoRepeatValidator]` on those two collections was missing too — a
   validator, so no column moves. **An existing altea database needs a `sync`.**
+  One field had been typed with the string UNION rather than the enum, which the transformer sees as a
+  plain string: `ChartColumnEmbedded.orderByType` was `OrderTypeKeys | null`, so its column was a
+  varchar `OrderByType` where Signum's `OrderType? OrderByType` is an FK to the enum table,
+  `OrderByTypeID`. It is `OrderType | null` now (373 statements), which moves the field's runtime
+  value from the NAME to the ORDINAL — so every comparison goes through `OrderType.Ascending` and every
+  crossing into a DTO (a ChartColumnOption, the url's `A`/`D`, the XML attribute, an OrderRequest)
+  through `Enum.toName` / `toEnum`. **An existing altea database needs
+  `eastwind/terminal/migrateChartOrderByType.ts` BEFORE the sync**: the sync adds the FK column and
+  drops the varchar in one script, so every SORTED chart column silently loses its direction and the
+  chart then renders in the query's own order with no error anywhere.
 
 - **Token migrations: the renames a schema sync resolves are replayed against the query TOKENS stored
   inside user assets.** A UserQuery / UserChart / template keeps its tokens as STRINGS, so renaming a
