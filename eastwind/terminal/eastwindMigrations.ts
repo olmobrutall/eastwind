@@ -103,6 +103,7 @@ export namespace EastwindMigrations {
      */
     export async function createCulturesAndConfiguration(): Promise<void> {
         await CultureInfoLogic.ensureCultures(["en", "es", "de"]);
+        const english = CultureInfoLogic.getCulture("en");
 
         const existing = await table(ApplicationConfigurationEntity)
             .filter(a => a.environment == currentEnvironment).singleOrNull();
@@ -126,7 +127,7 @@ export namespace EastwindMigrations {
         await ApplicationConfigurationEntity.create({
             environment: currentEnvironment,
             email: EmailConfigurationEmbedded.create({
-                defaultCulture: "en",
+                defaultCulture: english,
                 urlLeft: "http://localhost:5173",
                 sendEmails: false,
                 // The inbound half. Off for the same reason as `sendEmails`: a dev database should not touch
@@ -142,9 +143,9 @@ export namespace EastwindMigrations {
                 avoidExecutingScriptsOlderThan: null,
             }),
             sms: SMSConfigurationEmbedded.create({
-                // One of the cultures CreateCulturesAndConfiguration seeds just above (en / es / de);
-                // Southwind uses en-GB, which is not in eastwind's set.
-                defaultCulture: "en",
+                // One of the cultures seeded just above (en / es / de); Southwind uses en-GB, which is
+                // not in eastwind's set.
+                defaultCulture: english,
             }),
             azureAD: null,
             openID: null,

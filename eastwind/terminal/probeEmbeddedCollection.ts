@@ -182,17 +182,17 @@ async function main(): Promise<void> {
 }
 
 // A throwaway settings row carrying `azureAD`. The other modules' configurations are required members,
-// so they are filled the way the dev seed fills them, and the email sender is borrowed from the row that
-// already exists rather than created — none of it is what this probe is about.
+// so they are filled the way the dev seed fills them, and the email sender and the cultures are borrowed
+// from the row that already exists rather than created — none of it is what this probe is about.
 function newConfiguration(environment: string, template: ApplicationConfigurationEntity,
     azureAD: Partial<AzureADConfigurationEmbedded>): ApplicationConfigurationEntity {
     return ApplicationConfigurationEntity.create({
         environment,
-        email: EmailConfigurationEmbedded.create({ defaultCulture: "en", urlLeft: "http://localhost:5173", sendEmails: false, reciveEmails: false, avoidSendingEmailsOlderThan: null }),
+        email: EmailConfigurationEmbedded.create({ defaultCulture: template.email.defaultCulture, urlLeft: "http://localhost:5173", sendEmails: false, reciveEmails: false, avoidSendingEmailsOlderThan: null }),
         emailSender: template.emailSender,
         chatbot: ChatbotConfigurationEmbedded.create({}),
         workflow: WorkflowConfigurationEmbedded.create({ avoidExecutingScriptsOlderThan: null }),
-        sms: SMSConfigurationEmbedded.create({ defaultCulture: "en" }),
+        sms: SMSConfigurationEmbedded.create({ defaultCulture: template.sms.defaultCulture }),
         azureAD: AzureADConfigurationEmbedded.create(azureAD),
         openID: null,
         windowsAD: null,
