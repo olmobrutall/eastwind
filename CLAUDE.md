@@ -1400,6 +1400,26 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   is now declared NULLABLE and altea never writes one; `synchronizeTypes` copies the persisted value onto
   the model row before the merge, because `copyRowFields` copies wholesale and would otherwise null out
   every row on the first sync. Signum is gaining `package` from the other side, so the two tables converge.
+  - **`tableName` is the SCHEMA-QUALIFIED, escaped name**, as Signum's
+    `SimplifyTableName(tab.Name).ToString()` is — `sms.sms_message`, `public."order"`, with the DEFAULT
+    schema spelled out (`public` / `dbo`). altea stored the bare name, so every one of a Southwind
+    database's ~220 rows read as a different table and the sync offered a rename it would otherwise
+    resolve by DELETE + INSERT, which re-ids the type and breaks every @implementedByAll discriminator,
+    auth rule and stored Lite pointing at it. Two things had to follow:
+    - **the TypeTableName bucket is SEEDED from the table renames**, which is Signum's own
+      (`replacements.Add(TypeTableName, replacements.TryGetC(KeyTables).SelectDictionary(...))`) and was
+      not ported. A table that MOVED — altea groups tables into per-package schemas, so Signum's
+      `queries.filter_operation` is `basics.filter_operation` here — is an already-answered question by
+      the time the type step runs; without the seed it is asked a second time, per type. Both sides go
+      through the column's own spelling, since `keyTables` holds `ObjectName.toString()`, which omits
+      the default schema and escapes nothing.
+    - **the reserved-word list SPLIT in two**, Signum's `KeywordsSqlServer` / `KeywordsPostgres` ported
+      verbatim. altea had ONE "common" list, which is wrong in both directions: `PUBLIC` is reserved in
+      SQL Server and NOT in PostgreSQL, so the default schema came out `"public".employee` where Signum
+      writes `public.employee`. Invisible until a qualified name was written into a column and compared
+      with a Signum database's.
+    Together a Southwind sync went from ~220 type-row DELETE + INSERT pairs to ZERO deletes and 65
+    inserts — the types eastwind has and Southwind does not.
   - **a first sync after adding a TypeEntity column cannot read that column**, so `synchronizeTypes` /
     `synchronizeProperties` are commented out of that one script and everything downstream of the type
     cache — the DYNAMIC definitions included — reads as absent. **Do not apply such a script blind**: with
