@@ -13,8 +13,9 @@
 // is the default, and implementedBy is declared inline via @implementedBy on OrderEntity.customer.
 import { overrideImplementedBy } from "@altea/altea/data/decorators";
 import { renameSymbolContainer } from "@altea/altea/data/reflection";
+import { useLegacyWordSymbolNames } from "@altea/altea-office-template/data/OfficeTemplate";
 import { BigStringMixin } from "@altea/altea-files/data/BigString";
-import { ApplicationConfigurationEntity } from "./globals/ApplicationConfiguration.data";
+import { ApplicationConfigurationEntity, EastwindTypeCondition, EastwindAgentUseCases } from "./globals/ApplicationConfiguration.data";
 import { ProcessEntity, ProcessExceptionLineEntity } from "@altea/altea-processes/data/Processes";
 import { PackageEntity, PackageOperationEntity, PackageLineEntity } from "@altea/altea-processes/data/Package";
 import { EmailPackageEntity } from "@altea/altea-email/data/EmailPackage";
@@ -95,8 +96,13 @@ export namespace EntityOverrides {
         // blob, so every `toLite()` on it would throw. This module is the one place that runs first
         // on both, which is the same reason the mixins below live here.
         if (southwindOnly) {
-            renameSymbolContainer("EastwindTypeCondition", "SouthwindTypeCondition");
-            renameSymbolContainer("EastwindAgentUseCases", "SouthwindAgentUseCases");
+            renameSymbolContainer(EastwindTypeCondition, "SouthwindTypeCondition");
+            renameSymbolContainer(EastwindAgentUseCases, "SouthwindAgentUseCases");
+
+            // @altea/altea-office-template renamed Signum.Word's Word* to Office*, containers and
+            // members alike. That mapping is the MODULE's own knowledge, so it owns the call; this app
+            // only knows which database it is pointed at.
+            useLegacyWordSymbolNames();
         }
 
         // The reception mixin on EmailMessageEntity (asserted by EmailReceptionLogic.start): what makes a

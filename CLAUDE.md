@@ -666,7 +666,8 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     their own tables), and Signum's sibling `IgnoreTable` needs no counterpart: a handler can delete a
     key from the map. NORMAL mode is untouched — there the database is one altea generated, so it has no
     such columns.
-  - **a renamed symbol CONTAINER is re-keyed, not ignored** — `renameSymbolContainer` (`data/reflection`),
+  - **a renamed symbol CONTAINER is re-keyed, not ignored** — `renameSymbolContainer(container, to, members?)`
+    (`data/reflection`),
     the symbol-key sibling of `@legacyTableName` / `@legacyColumnName` and NEW here. A symbol's key is
     `<Container>.<Member>` and it IS the `key` column of that symbol's table, so this app's
     `EastwindTypeCondition.UserEntities` reads against a Southwind database as a symbol that does not
@@ -674,6 +675,17 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     above): the ROWS are FK targets, so the model must end up on the database's spelling, not merely
     leave it alone. In legacy mode eastwind re-keys `EastwindTypeCondition` → `SouthwindTypeCondition`
     and `EastwindAgentUseCases` → `SouthwindAgentUseCases`.
+    The container is the NAMESPACE OBJECT, not its name: a string would be a second spelling of what the
+    compiler already knows, stale after a rename and silently wrong after a typo — and passing the object
+    finds the symbols by IDENTITY rather than by a key prefix. An optional third argument renames the
+    MEMBERS, its keys `keyof` the container so they are checked the same way. That is what the Word →
+    Office rename needs (`CreateOfficeReport` was `CreateWordReport`), and the mapping lives in
+    @altea/altea-office-template's own `useLegacyWordSymbolNames()` beside the `@legacyTableName`s it
+    already declares — the module owns what it used to be called, the app owns knowing which database it
+    is pointed at. Registering it surfaced that
+    `OfficeTemplateOperation.CreateOfficeTemplateFromOfficeModel` was DECLARED and never registered, so
+    the operation did not exist at runtime (both helpers it needs were already there — Signum's
+    WordModelLogic registers it on the template's graph from the model).
     In legacy mode a condition eastwind ADDS is inserted under that container too
     (`SouthwindTypeCondition.PublishedNews`) — one container name per mode is what makes the rename work.
     It is called from the app's shared entity-overrides module, NOT the Starter, because BOTH TIERS
