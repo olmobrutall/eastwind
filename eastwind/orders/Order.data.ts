@@ -147,3 +147,19 @@ export namespace OrderOperation {
     export const Cancel: ExecuteSymbol<OrderEntity> = init();
     export const Delete: DeleteSymbol<OrderEntity> = init();
 }
+
+// Southwind's `OrderQuery.OrderLines` — one row per LINE, but the row's entity is the ORDER, so the
+// search page navigates to the order a line belongs to. Signum flattens with `from od in o.Details`;
+// here the source is the line table and the order is reached through the line's back reference, which
+// is the same join. Named by its row model, whose clean name is the query key `OrderLines`.
+@reflect
+export class OrderLinesRowModel extends ModelEntity {
+    /** Signum's `Entity = o` — the ORDER, not the line. */
+    entity: Lite<OrderEntity>;
+    id: int;
+    product: Lite<ProductEntity>;
+    quantity: int;
+    @unit("€") unitPrice: Decimal;
+    @format("p") discount: Decimal;
+    @unit("€") subTotalPrice: Decimal;
+}

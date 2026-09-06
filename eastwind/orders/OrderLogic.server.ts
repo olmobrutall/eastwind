@@ -2,7 +2,7 @@ import "@altea/altea/server"; // installs Entity.save()/delete() (used by the or
 import "@altea/altea/server/dynamicQuery/fluentIncludeQuery"; // FluentInclude.withQuery
 import { SchemaBuilder } from "@altea/altea/server/schema";
 import { Lite } from "@altea/altea/data/lite";
-import { Temporal, toInt, Decimal } from "@altea/altea/data/basics";
+import { Temporal, toInt, Decimal, type int } from "@altea/altea/data/basics";
 import { retrieveFromListOfLite } from "@altea/altea/server/Database";
 import type { PrimaryKey } from "@altea/altea/data/entity";
 import { table } from "@altea/altea/server/table";
@@ -11,12 +11,13 @@ import type { Entity } from "@altea/altea/data/entity";
 import { SimpleTaskLogic } from "@altea/altea-scheduler/server/SimpleTaskLogic";
 import { ProcessLogic } from "@altea/altea-processes/server/ProcessLogic";
 import {
-    OrderEntity, OrderLineEntity, OrderState, OrderOperation, OrderMessage, OrderTask, OrderProcess,
+    OrderEntity, OrderLineEntity, OrderState, OrderOperation, OrderMessage, OrderTask, OrderProcess, OrderLinesRowModel,
 } from "./Order.data";
 import { EmployeeEntity } from "../employees/Employee.data";
 import { ProductEntity } from "../products/Product.data";
 import { CustomerEntity } from "../customers/Customer.data";
 import { QueryLogic } from "@altea/altea/server/dynamicQuery/queryLogic";
+import { AutoDynamicQueryCore } from "@altea/altea/server/dynamicQuery/dynamicQueryCore";
 import { type FluentStateMachine } from "@altea/altea/server/fluentOperations";
 
 // ---- OrdersLogic.Start — port of Southwind's OrdersLogic.Start --------
@@ -25,6 +26,22 @@ import { type FluentStateMachine } from "@altea/altea/server/fluentOperations";
 // included by their own *Logic modules.
 export namespace OrdersLogic {
     export function start(sb: SchemaBuilder): void {
+        // Southwind's `QueryLogic.Queries.Register(OrderQuery.OrderLines, …)` — one row per LINE whose
+        // ENTITY is the order. Signum flattens the order's Details; the source here is the line table and
+        // the order comes through the line's back reference, which is the same join. A projection, so it
+        // is an AutoDynamicQueryCore rather than `withQuery()` (which takes none), named by its row model.
+        QueryLogic.queries.register(OrderLinesRowModel, () => new AutoDynamicQueryCore(() =>
+            table(OrderLineEntity)
+                .map(od => OrderLinesRowModel.create({
+                    entity: od.order,
+                    id: od.order.id as int,
+                    product: od.product,
+                    quantity: od.quantity,
+                    unitPrice: od.unitPrice,
+                    discount: od.discount,
+                    subTotalPrice: od.subTotalPrice(),
+                }))));
+
         sb.include(OrderEntity)
             .withStateMachine(o => o.state, registerOrderOperations)
             .withQuery();

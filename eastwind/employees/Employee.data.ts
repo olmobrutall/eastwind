@@ -1,5 +1,5 @@
 import { reflect, init } from "@altea/altea/data/reflection";
-import { Entity } from "@altea/altea/data/entity";
+import { Entity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
 import { CurrentUser } from "@altea/altea/data/security";
 import { entity, quoted, backReference, valueField, fullTextIndex, vectorIndex, column } from "@altea/altea/data/decorators";
@@ -117,4 +117,23 @@ export class EmployeePassageEntity extends Entity {
     @column({ pgDbType: "vector", sqlDbType: "vector", size: 768, nullable: true })
     embedding: Vector | null;
     index: int = toInt(0);
+}
+
+// Southwind's `EmployeeQuery.EmployeesByTerritory` — one row per employee/territory pair, so an employee
+// covering three territories appears three times. Signum flattens with `from t in e.Territories`; the
+// source here is the junction row and the employee is reached through its back reference, which is the
+// same join. Named by its row model, whose clean name is the query key `EmployeesByTerritory`.
+//
+// `photo` is a LITE, where the entity holds a full FileEntity: a search result is a list, and a full
+// reference would fetch every row's bytes to render a column that only needs a link.
+@reflect
+export class EmployeesByTerritoryRowModel extends ModelEntity {
+    /** Signum's `Entity = e`. */
+    entity: Lite<EmployeeEntity>;
+    id: int;
+    firstName: string;
+    lastName: string;
+    birthDate: Temporal.PlainDate | null;
+    photo: Lite<FileEntity> | null;
+    territory: Lite<TerritoryEntity>;
 }

@@ -5,9 +5,12 @@ import "@altea/altea-cache/server/CacheLogic"; // FluentInclude.withCache
 import { Query } from "@altea/altea/server/query";
 import { withQuoted } from "@altea/altea/data/decorators";
 import { table } from "@altea/altea/server/table";
+import type { int } from "@altea/altea/data/basics";
+import { QueryLogic } from "@altea/altea/server/dynamicQuery/queryLogic";
+import { AutoDynamicQueryCore } from "@altea/altea/server/dynamicQuery/dynamicQueryCore";
 import { SchemaBuilder } from "@altea/altea/server/schema";
 import type { ResetLazy } from "@altea/altea/data/resetLazy";
-import { SupplierEntity, CategoryEntity, ProductEntity, SupplierOperation, CategoryOperation, ProductOperation } from "./Product.data";
+import { SupplierEntity, CategoryEntity, ProductEntity, SupplierOperation, CategoryOperation, ProductOperation, CurrentProductsRowModel } from "./Product.data";
 import { OrderLineEntity } from "../orders/Order.data";
 
 /** One category and the non-discontinued products in it — a row of {@link ProductsLogic.activeProducts}. */
@@ -56,6 +59,23 @@ export namespace ProductsLogic {
             // queryable expression token (`ProductEntity.lines` → the OrderLines whose product is this one).
             .withExpressionTo(p => p.lines())
             .withQuery();
+
+        // Southwind's `QueryLogic.Queries.Register(ProductQuery.CurrentProducts, …)`. A projection, so
+        // it is an AutoDynamicQueryCore over the projected Query rather than a `withQuery()` — which
+        // takes no projection — and its NAME is the row model (see CurrentProductsRowModel).
+        QueryLogic.queries.register(CurrentProductsRowModel, () => new AutoDynamicQueryCore(() =>
+            table(ProductEntity)
+                .filter(p => !p.discontinued)
+                .map(p => CurrentProductsRowModel.create({
+                    entity: p.toLite(),
+                    id: p.id as int,
+                    productName: p.productName,
+                    supplier: p.supplier,
+                    category: p.category,
+                    quantityPerUnit: p.quantityPerUnit,
+                    unitPrice: p.unitPrice,
+                    unitsInStock: p.unitsInStock,
+                }))));
 
         activeProducts = sb.globalLazy(async () => {
             const products = await table(ProductEntity).filter(p => !p.discontinued).toArray() as ProductEntity[];

@@ -1,7 +1,7 @@
 import { reflect, init } from "@altea/altea/data/reflection";
-import { Entity } from "@altea/altea/data/entity";
+import { Entity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
-import { entity, quoted, backReference, rowOrder, translatable, uniqueIndex } from "@altea/altea/data/decorators";
+import { entity, quoted, backReference, rowOrder, translatable, uniqueIndex, unit } from "@altea/altea/data/decorators";
 import { type int, Decimal } from "@altea/altea/data/basics";
 import { msg } from "@altea/altea/data/utils/localization";
 import type { IQuery } from "@altea/altea/data/iquery";
@@ -106,3 +106,20 @@ export const CatalogMessage = {
     quantityPerUnit: msg(),
     unitsInStock: msg(),
 };
+
+// Southwind's `ProductQuery.CurrentProducts` — the products still on sale. Signum names a query by an
+// ENUM MEMBER and projects an anonymous type; altea names one by its ROW MODEL, whose clean name IS the
+// query key (`CurrentProductsRowModel` → `CurrentProducts`, see data/registration's cleanTypeName), so
+// the anonymous projection becomes this model's members — the same columns, in Signum's order.
+@reflect
+export class CurrentProductsRowModel extends ModelEntity {
+    /** The row identity: what the SearchControl navigates to and selects (Signum's `Entity = p`). */
+    entity: Lite<ProductEntity>;
+    id: int;
+    productName: string;
+    supplier: Lite<SupplierEntity>;
+    category: Lite<CategoryEntity>;
+    quantityPerUnit: string;
+    @unit("€") unitPrice: Decimal;
+    unitsInStock: int;
+}
