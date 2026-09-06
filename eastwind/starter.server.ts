@@ -20,6 +20,7 @@ import { DepartmentsLogic } from "./departments/DepartmentLogic.server";
 import { CustomersLogic } from "./customers/CustomerLogic.server";
 import { OrdersLogic } from "./orders/OrderLogic.server";
 import { OrderEntity } from "./orders/Order.data";
+import { EmployeeEntity } from "./employees/Employee.data";
 import { CustomerEntity, PersonEntity, CompanyEntity } from "./customers/Customer.data";
 import { AuthLogic } from "@altea/altea-auth/server/AuthLogic";
 import { TypeAuthLogic } from "@altea/altea-auth/server/TypeAuthLogic";
@@ -309,6 +310,18 @@ export namespace Starter {
         // registered per type, so both registrations are needed.
         TypeConditionLogic.registerCompile(UserEntity, EastwindTypeCondition.UserEntities,
             u => u.is(UserHolder.currentUserLite()));
+
+        // Southwind's `TypeConditionLogic.Register<OrderEntity>(SouthwindTypeCondition.CurrentEmployee,
+        // o => o.Employee.Is(EmployeeEntity.Current))` — "the orders I handled". `EmployeeEntity.current()`
+        // reads the "Employee" claim the UserEmployeeMixin fills (see entityOverrides), so the whole chain
+        // was already here and only the condition was missing.
+        //
+        // Declaring it grants nothing by itself: a condition only bites once a role has a RULE using it, and
+        // neither eastwind's AuthRules.xml nor Southwind's own database has one. It is registered so the
+        // symbol EXISTS — a Southwind database holds the row, and without the declaration a sync offers to
+        // rename it into an unrelated condition and DELETEs it when that is declined.
+        TypeConditionLogic.registerCompile(OrderEntity, EastwindTypeCondition.CurrentEmployee,
+            o => o.employee.is(EmployeeEntity.current()));
 
         // Files module (altea-files): the FileTypeSymbol table, the save / delete hooks for every entity that
         // holds a FilePathEmbedded, and the download routes (Southwind's FilePathEmbeddedLogic.Start +

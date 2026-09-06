@@ -125,12 +125,15 @@ export namespace ApplicationConfigurationOperation {
 //
 // `UserEntities`  — the row belongs to the current USER (a personal dashboard / user query / user chart).
 // `RoleEntities`  — the row is global (no owner) or owned by one of the current user's ROLES (shared).
+// `CurrentEmployee` — the ORDER is handled by the employee behind the current login.
 //
 // A symbol only bites once a role has a condition RULE using it (seeded in terminal/eastwindMigrations.ts for
 // "Standard user", editable in the Role → Type rules UI).
 export namespace EastwindTypeCondition {
     export const UserEntities: TypeConditionSymbol = init();
     export const RoleEntities: TypeConditionSymbol = init();
+    /** The order is handled by the employee behind the current login (Southwind's same condition). */
+    export const CurrentEmployee: TypeConditionSymbol = init();
     /** A @altea/altea-whats-new item that is PUBLISHED — what an ordinary user may see of the news. */
     export const PublishedNews: TypeConditionSymbol = init();
 }

@@ -674,11 +674,20 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     above): the ROWS are FK targets, so the model must end up on the database's spelling, not merely
     leave it alone. In legacy mode eastwind re-keys `EastwindTypeCondition` → `SouthwindTypeCondition`
     and `EastwindAgentUseCases` → `SouthwindAgentUseCases`.
+    In legacy mode a condition eastwind ADDS is inserted under that container too
+    (`SouthwindTypeCondition.PublishedNews`) — one container name per mode is what makes the rename work.
     It is called from the app's shared entity-overrides module, NOT the Starter, because BOTH TIERS
     must agree — the key is model identity, and a client still saying `Eastwind*` could not be handed
     the symbol's id by the metadata blob, so every `toLite()` on it would throw. That module is also
     the one place that runs before anything reads a symbol by key. It THROWS when the container matched
     nothing, since a typo and a call made too early are the same silent no-op otherwise.
+  - **`CurrentEmployee` is registered**, Southwind's third condition (`TypeConditionLogic
+    .Register<OrderEntity>(…, o => o.Employee.Is(EmployeeEntity.Current))` — "the orders I handled").
+    Every ingredient was already here — the `UserEmployeeMixin`, the "Employee" claim it fills, and
+    `EmployeeEntity.current()` reading it — and only the condition was missing, so a Southwind database's
+    row had nothing to match and the sync offered to rename it into an unrelated condition. Declaring it
+    grants nothing by itself (a condition only bites once a role has a RULE using it, and neither
+    eastwind's AuthRules.xml nor Southwind's own database has one); it exists so the symbol does.
   - **`simplifyDiffEnums` is its sibling for an enum table's ROWS**, and NEW — Signum has no such seam,
     having no second framework to line its enum tables up with. A handler gets one table with BOTH sides
     of the row diff and may delete from either; it runs before the RENAME question, which is what makes
