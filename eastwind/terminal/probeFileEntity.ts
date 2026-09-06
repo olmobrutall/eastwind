@@ -12,6 +12,7 @@ import { table } from "@altea/altea/server/table";
 import { retrieve, deleteList } from "@altea/altea/server/Database";
 import { Schema } from "@altea/altea/server/schema/schema";
 import { ExecutionMode } from "@altea/altea/server/executionMode";
+import { PropertyRoute } from "@altea/altea/data/propertyRoute";
 import { FileEntity } from "@altea/altea-files/data/Files";
 
 let pass = 0;
@@ -113,6 +114,57 @@ async function main(): Promise<void> {
         check("a second file gets its own hash", other.hash !== after.hash, `${other.hash}`);
         check("the query sees both", (await ExecutionMode.global(() =>
             table(FileEntity).filter(f => f.id == file.id || f.id == other.id).toArray())).length === 2);
+
+        // ---- ImmutableEntity: the ESCAPE HATCH ---------------------------------------------------
+        // Signum's `AllowChange` / `AllowChanges()`, which is how WordTemplateLogic rewrites a template's
+        // document in place. Exercised on `other`, so `file` stays the pristine subject of the checks above.
+        //
+        // The member is a real PROPERTY ROUTE — `File.AllowChange`, which a Signum database has a
+        // property-authorization rule for — and NOT a column, which is the pair that makes it worth having:
+        // the route is what a Southwind sync matches, and @column(false) keeps it out of both the table and
+        // the change diff.
+        check("allowChange is a property route", PropertyRoute.generateRoutes(FileEntity)
+            .some(r => r.propertyString() === "allowChange"));
+        check("allowChange is NOT a column", t.columns["allowChange"] == null && t.columns["AllowChange"] == null,
+            Object.keys(t.columns).join(", "));
+
+        // Setting it is not itself a change, because the field is outside change tracking — otherwise
+        // ALLOWING a change would be one, and the guard could never be lifted without tripping itself.
+        const flagged = await ExecutionMode.global(() => retrieve(FileEntity, other.id!)) as FileEntity;
+        flagged.allowChange = true;
+        check("setting allowChange does not make the row modified", !flagged.isModifiedSelf());
+
+        // With it set, the change goes through — and reaches the database.
+        flagged.fileName = "renamed-by-allowChange.txt";
+        let allowedFailed: string | null = null;
+        try {
+            await ExecutionMode.global(async () => { await flagged.save(); });
+        } catch (e) { allowedFailed = (e as Error).message; }
+        check("allowChange lets a saved file be changed", allowedFailed == null, allowedFailed ?? "");
+        check("and the change reached the database",
+            ((await ExecutionMode.global(() => retrieve(FileEntity, other.id!)) as FileEntity)).fileName
+            === "renamed-by-allowChange.txt");
+
+        // `allowChanges()` is the SCOPED form (Signum's IDisposable): it restores the previous value, so
+        // the file is immutable again on the way out.
+        const scoped = await ExecutionMode.global(() => retrieve(FileEntity, other.id!)) as FileEntity;
+        {
+            using _ = scoped.allowChanges();
+            check("allowChanges() sets the flag", scoped.allowChange);
+            scoped.binaryFile = new Uint8Array([7, 7]);
+            await ExecutionMode.global(async () => { await scoped.save(); });
+        }
+        check("allowChanges() restores the flag on exit", !scoped.allowChange);
+        check("the hash followed the bytes written inside the scope",
+            scoped.hash === md5(new Uint8Array([7, 7])), String(scoped.hash));
+
+        // ...and the guard is back: the same instance, outside the scope, is refused again.
+        scoped.fileName = "should-not-land.txt";
+        let refusedAgain = false;
+        try {
+            await ExecutionMode.global(async () => { await scoped.save(); });
+        } catch { refusedAgain = true; }
+        check("outside the scope the file is immutable again", refusedAgain);
     } finally {
         await ExecutionMode.global(async () => {
             const rows = await table(FileEntity).toArray() as FileEntity[];
