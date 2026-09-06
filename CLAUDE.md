@@ -1352,16 +1352,37 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   any one of them (Signum's `EntityKind.SharedPart`). `FilePathEntity` — the store-backed sibling — is
   still unported: nothing needs that combination, and it would want FilePathEmbeddedLogic's whole
   save/delete cascade a second time, addressed by row rather than by owner. Divergences:
-  - **Signum's `ImmutableEntity` base is not ported, but its guarantee is.** That base works by overriding
-    the property `Set` interception, so a set on a saved row is silently SWALLOWED — altea entities are
-    plain field bags and have no such seam. What actually protects the data is Signum's other half,
-    `PreSaving` throwing when `Modified == ModifiedState.SelfModified`, and altea has that state exactly:
-    `isModifiedSelf()`. So `FileLogic` hangs `!file.isNew && file.isModifiedSelf()` on
-    `entityEvents(FileEntity).preSaving` — the same rule, reported LOUDLY instead of silently. Re-saving an
-    UNCHANGED file still works, which it must (the owner's save walks the whole reachable graph): the hash
-    handler runs first and recomputes the same value, and a value-equal write leaves the snapshot diff clean.
-  - the C# property setters become that pair of `preSaving` handlers: the hash follows the bytes ALWAYS
-    (computed server-side — the isomorphic layer has no crypto), and then the immutability check.
+  - **`ImmutableEntity` IS the base, as in Signum, and only its SETTER half is missing.**
+    `altea/data/immutableEntity` is Signum's `Entities/Patterns/ImmutableEntity.cs`, in the layer Signum
+    keeps it in. Of its two halves only one is a rule: `PreSaving` throwing when `Modified ==
+    ModifiedState.SelfModified`, and altea has that state exactly (`isModifiedSelf()`), so it ports one for
+    one. The other — the property `Set` interception, which SILENTLY SWALLOWS a write to a saved row — has
+    no seam here (altea entities are plain field bags) and is the worse half anyway: the caller believes it
+    changed something and finds out somewhere else. Re-saving an UNCHANGED file still works, which it must
+    (the owner's save walks the whole reachable graph): the hash handler recomputes the same value, and a
+    value-equal write leaves the snapshot diff clean.
+    This bullet used to record the base as declined "but its guarantee is ported" — `FileLogic` hung the
+    rule on `preSaving` by hand. The guarantee was right; declining the base was not, and it cost a
+    PROPERTY ROUTE a Signum database has: `AllowChange` is a public property of that base, so a legacy sync
+    offered to remove `File.AllowChange` and, through the PropertyRouteEntity cascade, the property rule
+    pointing at it.
+    - **`SchemaBuilder.include` registers the check for every included subclass**, so a type gets it by
+      DERIVING as it does in Signum rather than by remembering to hang a handler — the one place that sees
+      every included type, and altea's answer to an entity-level `PreSaving` (the accommodation
+      altea-workflow's header records). It runs BEFORE whatever the type's own module pushes, which
+      changes nothing: it reads the change DIFF, and a handler recomputing a derived value from unchanged
+      inputs (FileEntity's hash) writes the same value back either way.
+    - **`allowChange` is a FIELD where Signum's is a computed property** over an `[Ignore]` backing field —
+      altea has no property getters in the entity model, so Signum's `IsNew` term is written at the single
+      place that asks. It is `@column(false)`: a route, not a column, and outside change tracking, so
+      ALLOWING a change is not itself one. Being a route means being serialized (route generation skips
+      `@serialize(false)` members), so it rides the wire exactly as Signum's `AllowChange` does.
+    - **the process-wide `Disable()` is NOT ported** — a `Statics.ThreadVariable`, and this layer is
+      isomorphic while a module-level flag on a server would be shared by every concurrent request (the
+      race `Connector.CurrentLogger` documents). Nothing is given up: all three of Signum's own callers are
+      per-INSTANCE, and the per-instance `AllowChanges()` scope IS ported.
+  - the C# `BinaryFile` setter becomes a `preSaving` handler: the hash follows the bytes ALWAYS (computed
+    server-side — the isomorphic layer has no crypto). The immutability check is the base's, above.
   - **the download route is addressed by the file's OWN id** (`/api/files/downloadFile/:fileId`, Signum's
     same route), not through an owner as both embedded shapes are: it IS a row, and it may have several
     owners. The gate is therefore FileEntity's own type authorization, which `retrieve` applies like any
@@ -1388,7 +1409,7 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   handed to the uploader as a `FilePathEmbedded`, looking for a store a row-held file has no need of
   (FileLine's switch already said why). **An existing eastwind database needs a `sync`**, and the
   employee photos are re-loaded from `terminal/image_photos` rather than migrated. Pinned by
-  `eastwind/terminal/probeFileEntity.ts` (17 checks) plus a three-case HTTP round-trip; `files.file` needs
+  `eastwind/terminal/probeFileEntity.ts` (26 checks) plus a three-case HTTP round-trip; `files.file` needs
   a `sync`, and matches Signum's table column for column.
 
 - **A BigString's text lives in a column or in a FILE, decided per PROPERTY ROUTE — and eastwind now
