@@ -1,6 +1,6 @@
 import { Entity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
-import { entity, backReference, rowOrder, quoted, implementedBy, unit, format, systemVersioned } from "@altea/altea/data/decorators";
+import { entity, backReference, rowOrder, quoted, implementedBy, unit, format, systemVersioned, legacyPropertyRoute } from "@altea/altea/data/decorators";
 import { Temporal, type int, Decimal } from "@altea/altea/data/basics";
 import { reflect, init } from "@altea/altea/data/reflection";
 import type { ConstructSymbol, From, FromMany, ExecuteSymbol, DeleteSymbol } from "@altea/altea/data/operations";
@@ -67,6 +67,7 @@ export class OrderEntity extends Entity {
     // loaded detail rows — the Decimal-aware Array.sum returns a Decimal) AND translates to a scalar
     // SUM subquery over the owned OrderLine rows — the latter is what makes the `totalPrice` extension
     // token (registered in OrderLogic.server.ts) a real, sortable/filterable Decimal column on the Order query.
+    @legacyPropertyRoute
     @quoted
     totalPrice(): Decimal {
         return this.details.sum(d => d.subTotalPrice());
@@ -102,6 +103,7 @@ export class OrderLineEntity extends Entity {
     // Signum's [AutoExpressionField] SubTotalPrice => Quantity * UnitPrice * (1 - Discount).
     // Decimal arithmetic via the Decimal.* static methods: exact in-memory AND SQL-translatable
     // (the nominator lowers Decimal.mul/sub → the numeric operators — see server/decimalFunctions.ts).
+    @legacyPropertyRoute
     @quoted
     subTotalPrice(): Decimal {
         return Decimal.mul(Decimal.mul(this.quantity, this.unitPrice), Decimal.sub(1, this.discount));

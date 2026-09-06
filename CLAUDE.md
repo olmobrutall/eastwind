@@ -328,6 +328,46 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   - **`should` is built from the MODEL**, not from Signum's `TypeLogic.TryEntityToType(rep)`: nothing is
     ever inserted, so the diff needs only (cleanName, path) pairs and never a TypeEntity id — which makes it
     tolerant of a type with no persisted row yet by construction rather than by a tolerant lookup.
+  - **`extraSyncRoutes` FAKES the routes altea's model cannot name, and NEW here** (Signum needs no
+    counterpart, having no second framework to line its routes up with). This table is the one place a
+    MODELLING difference turns into DATA LOSS: a route altea cannot generate is offered as a rename of
+    whatever sorts nearest by string distance and then DROPPED, taking every consumer row with it through
+    the cascade above. Because nothing is ever inserted, an entry here can only ever PRESERVE a row — it
+    can never create one, which is what makes the seam safe to over-supply. An ARRAY, as
+    `simplifyDiffTables` is, asked per mapped ENTITY type; it feeds `PropertyRouteLogic.modelPaths`, which
+    is what both the synchronizer and `generateProperties` now go through. NORMAL mode registers nothing:
+    there the database is one altea generated, so it holds no route the model cannot name, and faking one
+    could only hide a genuine removal.
+    - **the built-in handler reads `@legacyPropertyRoute`**, the third member of the `@legacyTableName` /
+      `@legacyColumnName` family and the one about a ROUTE rather than a physical name: *this method was
+      ported from a C# property*. Signum writes such a member as a computed PROPERTY
+      (`[AutoExpressionField] public decimal ValueInStock => As.Expression(() => unitPrice * unitsInStock)`)
+      and `GenerateRoutes` walks `PublicInstancePropertiesInOrder`, so it is an ordinary route with an
+      ordinary row — a Southwind database has an `auth.rule_property` on `Product.ValueInStock`. altea's
+      entity model has no property getters, so the same member is a METHOD and route generation walks
+      reflected FIELDS: `@quoted` stamps only `__quoted` onto the function and registers nothing on the
+      TypeInfo, so the route is invisible. `reflectionServer.ts` records the same gap for the LABEL half
+      and works around it from the translation file.
+    - **DECLARED, never derived.** Whether the C# original was a property or an EXTENSION METHOD is a fact
+      about the PORT, and Signum has no route for an extension method (altea-tree's `descendants`,
+      altea-printing's `lines`, `entityNotes`) — so inferring it from the shape of the TypeScript would be
+      guessing at the C# from its translation. A first attempt did exactly that, deriving the set from
+      "`@quoted`, zero-arg, non-enumerable, not `toString`"; it happened to land on the right members here,
+      but it also invented `Customer.SMSOwnerData` and `ApplicationConfiguration.IsActive`, which Southwind
+      has no property for. A member that needs a route says so, and one that says nothing gets nothing.
+    - **the path is spelled by `storedMemberName`** — the `PropertyRoute.storedMember` rule made public, so
+      a faked path and a real one cannot disagree about PascalCasing — unless the declaration names the
+      Signum spelling outright: `@legacyPropertyRoute("Duration")`, for a member altea deliberately renamed
+      (`durationSeconds` / `durationMilliseconds` say what the unit is; only the database still cares that
+      Signum called the property `Duration`). Inherited, because a property on an abstract base is a route
+      of every type deriving from it, as in Signum. 17 routes over 10 types, each verified against its C#
+      declaration: `Product.ValueInStock`, `Order.TotalPrice`, `OrderLine.SubTotalPrice`, Alert's four,
+      CaseActivity's four, `CultureInfo.IsNeutral`, ResetPasswordRequest's two, and the three `Duration`s.
+    - what this does NOT do is give altea the route: it is not in `PropertyRoute.generateRoutes`, so the
+      property-auth grid does not list it and a rule on it gates nothing here — the member is not
+      serialized, so there is nothing to gate. The row is preserved for the DATABASE's sake, and for the
+      Signum deployment that may still be reading it. Only the type's OWN members: an expression on an
+      EMBEDDED would be a dotted route, which no case needs yet.
   - `propertyRouteEntitySync` is the sync counterpart the XML importers need (`fromXml` cannot await), and
     it VALIDATES the path where Signum's `IFromXmlContext.GetPropertyRoute` scans generated routes — so a
     file naming a route that does not exist says which file is wrong.
@@ -349,9 +389,10 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     16 property rules and 1 dynamic validation converted with nothing lost.
   Also aligned while in these tables: the four auth rule unique indexes now use Signum's member order
   `(resource, role)` instead of `(role, resource)` — eight lines of DDL churn a Southwind sync no longer
-  emits. Pinned by `eastwind/terminal/probePropertyRoute.ts` (31 checks: the six tables' shape, that
+  emits. Pinned by `eastwind/terminal/probePropertyRoute.ts` (42 checks: the six tables' shape, that
   resolution is idempotent rather than duplicating, that the serializer hook snaps a client-built route onto
-  the persisted row and leaves an unknown one new, and that every consumer's delete cascade is registered).
+  the persisted row and leaves an unknown one new, that every consumer's delete cascade is registered, and
+  each rule the expression-route seam turns on — including that normal mode adds nothing).
 - **A user-asset COLLECTION row is identified by a uuid, and that id is what the XML matches on.** Signum
   declares nine of those collections `[PrimaryKey(typeof(Guid))]` and says why in a comment — *"the row id
   identifies the element in the XML"* — writes it per row on export (`SelectWithRowId`) and matches rows BY

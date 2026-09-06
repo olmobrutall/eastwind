@@ -16,9 +16,12 @@ import { Connector } from "@altea/altea/server/connection/connector";
 import { Schema } from "@altea/altea/server/schema/schema";
 import { ExecutionMode } from "@altea/altea/server/executionMode";
 import { table } from "@altea/altea/server/table";
-import { PropertyRoute } from "@altea/altea/data/propertyRoute";
+import { PropertyRoute, storedMemberName } from "@altea/altea/data/propertyRoute";
 import { PropertyRouteEntity } from "@altea/altea/data/propertyRouteEntity";
-import { PropertyRouteLogic } from "@altea/altea/server/propertyRouteLogic";
+import { PropertyRouteLogic, declaredLegacyRoutes } from "@altea/altea/server/propertyRouteLogic";
+import { TimeSpanEmbedded } from "@altea/altea-workflow/data/WorkflowNodes";
+import { SessionLogEntity } from "@altea/altea-auth/data/SessionLog";
+import { ProductEntity, CategoryEntity } from "../products/Product.data";
 import { Serializer } from "@altea/altea/data/serializer";
 import { TypeEntity } from "@altea/altea/data/typeEntity";
 import { RulePropertyEntity } from "@altea/altea-auth/data/Rules";
@@ -141,6 +144,62 @@ async function main(): Promise<void> {
     // A TYPE being removed takes its routes with it (Signum's PropertyRouteLogic_PreDeleteSqlSync).
     check("a TypeEntity delete cascades to its routes",
         Schema.current.entityEvents(TypeEntity).preDeleteSqlSync.length >= 1);
+
+    // ---- the expression-route seam (legacy mode) -------------------------------------------------
+    // Signum writes `ValueInStock` as a computed PROPERTY, so it is an ordinary route with an ordinary
+    // row — and a Southwind database has an auth rule on it. altea's is a `@quoted` METHOD, invisible to
+    // route generation, so without this the sync offered it as a rename of `Ticks` and then dropped it,
+    // taking the rule with it. See PropertyRouteLogic.extraSyncRoutes / quotedExpressionRoutes.
+    check("the model alone does NOT name an expression member",
+        !PropertyRoute.generateRoutes(ProductEntity, true).some(pr => pr.propertyString() === "valueInStock"));
+
+    const declared = declaredLegacyRoutes(ProductEntity);
+    check("a @legacyPropertyRoute member is one", declared.includes(storedMemberName("valueInStock")),
+        declared.join(", "));
+    check("...and nothing else on that type", declared.length === 1, declared.join(", "));
+
+    // DECLARED, never derived: an undeclared @quoted member gets NOTHING. `TimeSpanEmbedded.add` /
+    // `subtract` and `Category.toString` are all @quoted and none is a C# property, which is a fact about
+    // the PORT — Signum has no route for an extension method or for a ToString override, and reading that
+    // off the shape of the TypeScript would be guessing at the C# from its translation.
+    check("an undeclared @quoted member is NOT a route", declaredLegacyRoutes(TimeSpanEmbedded).length === 0,
+        declaredLegacyRoutes(TimeSpanEmbedded).join(", "));
+    check("a @quoted toString is NOT a route", !declaredLegacyRoutes(CategoryEntity).includes("ToString"),
+        declaredLegacyRoutes(CategoryEntity).join(", "));
+
+    // The path is spelled by the SAME function a real route uses, so the two cannot drift...
+    check("a declared route is spelled like a real one",
+        declaredLegacyRoutes(ProductEntity)[0] === storedMemberName("valueInStock"));
+    // ...unless the declaration names Signum's own spelling, for a member altea deliberately RENAMED
+    // (Signum's property is `Duration`; naming it `durationSeconds` says what the unit is).
+    check("an explicit Signum name is used verbatim",
+        declaredLegacyRoutes(SessionLogEntity).includes("Duration"),
+        declaredLegacyRoutes(SessionLogEntity).join(", "));
+    // A property on an abstract base is a route of every type deriving from it, as in Signum.
+    check("a declaration is inherited by a subclass",
+        declaredLegacyRoutes(OrderEntity).includes(storedMemberName("totalPrice")),
+        declaredLegacyRoutes(OrderEntity).join(", "));
+
+    // NORMAL mode registers no handler at all: there the database is one altea generated, so it holds no
+    // route the model cannot name, and faking one could only ever hide a genuine removal.
+    check("normal mode adds no expression route",
+        !PropertyRouteLogic.modelPaths(ProductEntity, true).has("valueInStock"));
+
+    // What the synchronizer diffs against the stored rows, once legacy mode has registered the handler.
+    PropertyRouteLogic.extraSyncRoutes.push(declaredLegacyRoutes);
+    try {
+        const paths = PropertyRouteLogic.modelPaths(ProductEntity, true);
+        check("the seam adds it to what the sync diffs",
+            paths.has(storedMemberName("valueInStock")) && paths.has(storedMemberName("unitPrice")),
+            [...paths].join(", "));
+        // A handler naming a route the model already has must collapse, not duplicate.
+        PropertyRouteLogic.extraSyncRoutes.push(() => ["unitPrice", "valueInStock"]);
+        check("naming an existing route is a no-op",
+            PropertyRouteLogic.modelPaths(ProductEntity, true).size === paths.size);
+        PropertyRouteLogic.extraSyncRoutes.pop();
+    } finally {
+        PropertyRouteLogic.extraSyncRoutes.pop();
+    }
 
     // ---- report ----------------------------------------------------------------------------------
     console.log(`\n${pass} checks passed, ${failures.length} failed`);

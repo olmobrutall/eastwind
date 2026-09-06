@@ -1,7 +1,7 @@
 import { reflect, init } from "@altea/altea/data/reflection";
 import { Entity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
-import { entity, quoted, backReference, rowOrder, translatable, uniqueIndex, unit } from "@altea/altea/data/decorators";
+import { entity, quoted, backReference, rowOrder, translatable, uniqueIndex, unit, legacyPropertyRoute } from "@altea/altea/data/decorators";
 import { type int, Decimal } from "@altea/altea/data/basics";
 import { msg } from "@altea/altea/data/utils/localization";
 import type { IQuery } from "@altea/altea/data/iquery";
@@ -65,7 +65,10 @@ export class ProductEntity extends Entity {
     // Signum's [PreserveOrder] MList<AdditionalInformationEmbedded> → owned part rows.
     additionalInformation: ProductEntity_AdditionalInformation[];
 
-    // Signum's [AutoExpressionField] ValueInStock => UnitPrice * UnitsInStock.
+    // Signum's [AutoExpressionField] ValueInStock => UnitPrice * UnitsInStock. A PROPERTY there, so it is
+    // a route with a row — Southwind's database has a property rule on it. @legacyPropertyRoute is what
+    // keeps a legacy sync from removing both.
+    @legacyPropertyRoute
     @quoted valueInStock(): Decimal { return Decimal.mul(this.unitPrice, this.unitsInStock); }
 
     @quoted toString(): string { return this.productName; }
