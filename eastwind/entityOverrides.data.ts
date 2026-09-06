@@ -13,6 +13,7 @@
 // is the default, and implementedBy is declared inline via @implementedBy on OrderEntity.customer.
 import { overrideImplementedBy } from "@altea/altea/data/decorators";
 import { renameSymbolContainer } from "@altea/altea/data/reflection";
+import { setLegacyPropertyPaths } from "@altea/altea/data/propertyRoute";
 import { useLegacyWordNames } from "@altea/altea-office-template/data/OfficeTemplate";
 import { BigStringMixin } from "@altea/altea-files/data/BigString";
 import { ApplicationConfigurationEntity, EastwindTypeCondition, EastwindAgentUseCases } from "./globals/ApplicationConfiguration.data";
@@ -103,6 +104,11 @@ export namespace EntityOverrides {
             // is a query key and a basics.type row) and the symbol containers alike. That mapping is the
             // MODULE's own knowledge, so it owns the call; this app only knows which database it is on.
             useLegacyWordNames();
+
+            // And a stored PROPERTY ROUTE is spelled Signum's way — PascalCase members. altea's member
+            // is the TypeScript field name, so `basics.property_route.path` held `id` where a Signum
+            // database holds `Id`, and every stored route read as a different one.
+            setLegacyPropertyPaths(true);
         }
 
         // The reception mixin on EmailMessageEntity (asserted by EmailReceptionLogic.start): what makes a
