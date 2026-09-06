@@ -87,7 +87,7 @@ export namespace CustomerOperation {
 // The row shape of the manual union query (Signum's anonymous Select projection over Person+Company).
 // A ModelEntity, so it's a reflected-but-not-persisted query shape; its fields are the query columns.
 @reflect
-export class CustomerModel extends ModelEntity {
+export class CustomerRowModel extends ModelEntity {
     // The row identity — a lite of the concrete customer (Person or Company).
     @implementedBy(() => [PersonEntity, CompanyEntity])
     entity: Lite<CustomerEntity> = null!;

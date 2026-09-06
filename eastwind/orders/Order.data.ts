@@ -110,7 +110,7 @@ export class OrderLineEntity extends Entity {
 
 // Southwind's OrderFilterModel (OrderEntity.cs): the shape backing the Orders SIMPLE FILTER BUILDER — a
 // ModelEntity (reflected, never persisted) whose fields are the search form's inputs. Not a query row
-// model; it only lives client-side inside OrderFilter (TypeContext.root(model)). Mirrors CustomerModel.
+// model; it only lives client-side inside OrderFilter (TypeContext.root(model)). Mirrors CustomerRowModel.
 @reflect
 export class OrderFilterModel extends ModelEntity {
     // Polymorphic like OrderEntity.customer — the filter picks a lite of a Person or a Company.

@@ -1,6 +1,6 @@
 import { ClientBuilder } from "@altea/altea/client/ClientBuilder";
 import { Finder } from "@altea/altea/client/Finder";
-import { PersonEntity, CompanyEntity, AddressEmbedded, CustomerModel } from "./Customer.data";
+import { PersonEntity, CompanyEntity, AddressEmbedded, CustomerRowModel } from "./Customer.data";
 
 // Customers domain client. CustomerEntity is abstract (@implementedBy Person/Company); the queries are
 // the concrete PersonEntity / CompanyEntity. AddressEmbedded's view is registered so EntityDetail lines
@@ -44,13 +44,13 @@ export namespace CustomersClient {
             .withView(() => import("./Address"));
 
         // Southwind's CustomersClient defaultFilters on the union query (CustomerQuery.Customer → altea's
-        // CustomerModel): the pinned "Search" box (Finder.filterGroupSearch). Southwind searched each
+        // CustomerRowModel): the pinned "Search" box (Finder.filterGroupSearch). Southwind searched each
         // concrete type's ToString; the union already projects that into the `name` column (Person →
         // "first last", Company → company name), so a single Contains over `name` is the faithful
         // equivalent. filterGroupSearch supplies the pinned label + `splitValue` (word-splits the text) +
         // `active: "WhenHasValue"` (altea's stand-in for Signum's `disableOnNull`). The generic id+text
         // default filter skips ModelEntity projections, so this is the only search here.
-        cb.configure(CustomerModel)
+        cb.configure(CustomerRowModel)
             .withQuerySettings(token => ({
                 defaultFilters: [Finder.filterGroupSearch([
                     { token: token(a => a.name), operation: "Contains" },
