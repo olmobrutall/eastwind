@@ -47,6 +47,7 @@ import { ScheduleTaskRunner } from "@altea/altea-scheduler/server/ScheduleTaskRu
 import { ProcessRunner } from "@altea/altea-processes/server/ProcessRunner";
 import { AsyncEmailSender } from "@altea/altea-email/server/AsyncEmailSender";
 import { ProcessLogic } from "@altea/altea-processes/server/ProcessLogic";
+import { PackageLogic } from "@altea/altea-processes/server/PackageLogic";
 import { ProcessSchedulerBridge } from "@altea/altea-processes/server/ProcessSchedulerBridge";
 import { OmniboxLogic } from "@altea/altea-omnibox/server/OmniboxLogic";
 import { MapLogic } from "@altea/altea-map/server/MapLogic";
@@ -391,6 +392,12 @@ export namespace Starter {
         // creates + queues a process instead of running inline. (The matching implementedBy widening is
         // declared in entityOverrides.data.ts — both tiers need it.)
         ProcessLogic.start(sb);
+        // Southwind's `PackageLogic.Start(sb, packages: true, packageOperations: true)`: the algorithms that
+        // walk a PACKAGE's lines, plus `PackageOperationProcess.PackageOperation` — the one that applies the
+        // operation a PackageOperationEntity names, which is what a contextual "run this on all of them"
+        // creates. altea's ProcessLogic already includes the three package tables and their queries, so this
+        // adds only the algorithm registry (see that module's header on why Signum's two flags are gone).
+        PackageLogic.start(sb);
         ProcessSchedulerBridge.start(sb);
 
         // Agent module (@altea/altea-agent): the chat tables + language-model registry (ChatbotLogic) and the

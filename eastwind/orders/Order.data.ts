@@ -10,7 +10,7 @@ import { ProductEntity } from "../products/Product.data";
 import { ShipperEntity } from "../shippers/Shipper.data";
 import { msg } from "@altea/altea/data/utils/localization";
 import type { SimpleTaskSymbol } from "@altea/altea-scheduler/data/Scheduler";
-import type { ProcessAlgorithmSymbol } from "@altea/altea-processes/data/Processes";
+import type { ProcessAlgorithmSymbol, ProcessEntity } from "@altea/altea-processes/data/Processes";
 import "@altea/altea/data/globals"; // Array.prototype.sum (in-memory) + its SQL-mappable aggregate (totalPrice)
 
 // Port of Southwind's Orders domain (Southwind/Orders/OrderEntity.cs), keeping Signum's Entity /
@@ -127,18 +127,18 @@ export class OrderFilterModel extends ModelEntity {
 // tasks and the process algorithm this domain owns. They live HERE, beside the entity, because that is where
 // Southwind keeps them: a task that walks orders is part of the Orders domain, not of the application shell.
 export namespace OrderTask {
-    /** Counts the orders that are still not shipped, writing the count into the run's remarks. */
-    export const CheckPendingOrders: SimpleTaskSymbol = init();
-    /** Walks every unshipped order one by one, so a failure on one is a line and the run continues. */
-    export const ReviewPendingOrders: SimpleTaskSymbol = init();
+    /** Cancels every order older than a week through a PROCESS, so the run is resumable and reviewable. */
+    export const CancelOldOrdersWithProcess: SimpleTaskSymbol = init();
+    /** The same, set-based: one UPDATE, no process, no per-order log. */
+    export const CancelOldOrders: SimpleTaskSymbol = init();
 }
 
 export namespace OrderProcess {
-    /** The same review as a PROCESS: progress, suspend, one transaction per element. */
-    export const ReviewPendingOrders: ProcessAlgorithmSymbol = init();
+    /** Southwind's CancelOrderAlgorithm — a PackageExecuteAlgorithm over OrderOperation.Cancel. */
+    export const CancelOrders: ProcessAlgorithmSymbol = init();
 }
 
-// Signum's `[AutoInit] static class OrderOperation`. CancelWithProcess is omitted (Processes).
+// Signum's `[AutoInit] static class OrderOperation`.
 export namespace OrderOperation {
     export const Create: ConstructSymbol<OrderEntity> = init();
     export const CreateOrderFromCustomer: ConstructSymbol<OrderEntity, From<CustomerEntity>> = init();
@@ -148,6 +148,11 @@ export namespace OrderOperation {
     export const Ship: ExecuteSymbol<OrderEntity> = init();
     export const Cancel: ExecuteSymbol<OrderEntity> = init();
     export const Delete: DeleteSymbol<OrderEntity> = init();
+
+    /** Southwind's `ConstructSymbol<ProcessEntity>.FromMany<OrderEntity> CancelWithProcess` — the
+     *  contextual "cancel all of these", which builds a package and hands it to a CancelOrders process
+     *  rather than cancelling inline. Its owner is the SOURCE type, so it is registered on OrderEntity. */
+    export const CancelWithProcess: ConstructSymbol<ProcessEntity, FromMany<OrderEntity>> = init();
 }
 
 // Southwind's `OrderQuery.OrderLines` — one row per LINE, but the row's entity is the ORDER, so the

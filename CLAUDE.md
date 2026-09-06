@@ -1136,8 +1136,10 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     `componentDidUpdate`. Signum's older navbar `WorkflowDropdown` is NOT ported (its toolbar menu config
     superseded it). altea has no `AutoLineModal`, so "pick an expiration date" and "edit remarks" are two
     small local modals.
-  - Not ported: `MyActiveAlerts` (no Signum.Alerts), Signum's SMS module, `PackageExecuteAlgorithm<T>` (the
-    timeout process walks its own package lines) and `registerWhenAlreadyFilteringBy`. (Instance
+  - Not ported: `MyActiveAlerts` (no Signum.Alerts), Signum's SMS module and
+    `registerWhenAlreadyFilteringBy`. (`PackageExecuteAlgorithm<T>` used to be listed here too — "the
+    timeout process walks its own package lines", which is true and is why this module needs none of it;
+    PackageLogic IS ported now, see altea-processes below.) (Instance
     translation of a workflow / activity name IS available now — see altea-translations below — but the
     workflow module does not opt its own routes into it.)
 
@@ -1939,6 +1941,58 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   `LiteImp.toString()` keeps, instead of failing the query it decorates.
 
 > `old/CLAUDE.md` and `old/**/AGENTS.md` describe **Signum's** conventions, not altea's — read them to understand the source, but altea's conventions above win.
+
+- **Signum.Processes' PackageLogic IS ported, and eastwind's Orders tasks are Southwind's again.** A
+  PACKAGE is a row plus one `PackageLineEntity` per element, and an algorithm walks the lines stamping
+  `finishTime` — so a run that dies halfway is resumable (`Lines().Where(a => a.FinishTime == null)`,
+  kept verbatim). This reverses a recorded non-port: `PackageExecuteAlgorithm<T>` was listed as declined
+  because altea-workflow's timeout process walks its own lines, which is true and is why THAT module needs
+  none of it — but Southwind's Orders domain is built on it, so eastwind had invented different scheduled
+  tasks (`CheckPendingOrders` / `ReviewPendingOrders`, which count unshipped orders and change nothing)
+  where Southwind cancels orders older than a week. A Southwind database read that as four symbols removed
+  and four added, across `simple_task`, `process_algorithm` and `operation` — and a RENAME would have been
+  worse than a drop, since it would point a configured schedule at different behaviour.
+  - **the gap was smaller than the note implied.** altea's `ProcessLogic.start` already includes the three
+    package tables and registers their three `*LastProcess` queries, so what was missing is the four
+    ALGORITHMS and the helpers that BUILD a package (`createLines` + its entity / query overloads,
+    `createPackageOperation`). Hence no `packages` / `packageOperations` flags — Signum's two gate the
+    table half, and there is nothing left for them to gate.
+  - eastwind now has Southwind's pair, which is the same job done two ways and is the point of having
+    both: `CancelOldOrdersWithProcess` packages the stale orders and runs `OrderProcess.CancelOrders` (a
+    `PackageExecuteAlgorithm<OrderEntity>` over `OrderOperation.Cancel`), `CancelOldOrders` does it as ONE
+    `executeUpdate` with no process and no per-order log. `OrderOperation.CancelWithProcess` comes with
+    them — it constructs a PROCESS, not an order, so it hangs off `sb.include(ProcessEntity)
+    .withConstructFromMany(OrderEntity, …)` rather than the order's own state machine.
+    `CancelOrderAlgorithm` needs no subclass here: Signum's overrides `Execute` only to call
+    `base.Execute`, with a "// Override if necessary" comment beside it.
+  - NOT ported: the `ProgressProxy` argument Signum appends to every per-line operation (altea has no such
+    type; cancellation is still honoured at the LINE boundary, which is where Signum's `ForEachLine`
+    checks it), `ExceptionLogic.DeleteLogs` (the note every log-owning module carries), the two
+    `PreDeleteSqlSync` cascades (both need `Administrator.unsafeDeletePreCommand` over an
+    `@implementedByAll` discriminator), and `RegisterUserTypeCondition` (its middle rule is a subquery
+    over another type's condition, which altea's TypeConditionLogic cannot express).
+  - **it found THREE core defects, each older than the module and each silent**, which together are why a
+    package process could run to Finished having done nothing — `ExecutingProcess.forEach` files a
+    per-line failure as a row rather than failing the run:
+    - `QueryBinder.assign` unwrapped a Lite column and then called ITSELF instead of `adaptAssign`, so the
+      pair was never re-run through the adapter — the one place the shapes can be lined up, since they
+      only match once the lite is off. Every set-based write into a polymorphic lite column
+      (`executeInsert(PackageLineEntity, o => ({ target: o.toLite() }))`, Signum's `Target = p`) died on
+      "Cannot assign". The adapter has known how to widen an entity into (typeId, id_<pk>) since it was
+      written; it was simply unreachable from there.
+    - `Retriever.liteImplementedByAll` kept the id AS READ. An `@implementedByAll` has one id column per
+      configured pk type and the value is coalesced over them, which is only typeable as TEXT once an app
+      configures more than one (eastwind adds `uuid`) — so an int id came back as the STRING `"11128"` and
+      `retrieve(OrderEntity, "11128")` answered "not found" for a row that is right there. Coerced through
+      the resolved type's own `parseId` now: that call site is the one place the concrete type is known.
+    - the OPERATION registry was keyed by the symbol OBJECT, so an operation named by DATA rather than in
+      code — which is exactly what a `PackageOperationEntity` names — was "not registered". Keyed by
+      `symbol.key` now, the call altea-scheduler and altea-processes already made for their own registries
+      and record as a gotcha.
+  **An existing altea database needs a `sync`** (four symbol rows move). Pinned by
+  `eastwind/terminal/probePackageLogic.ts` (20 checks), which RUNS things rather than inspecting
+  registration — the set-based task, the package task end to end (package → lines → queued process →
+  every order actually cancelled), and a PackageOperation over an operation symbol read from its row.
 
 - **Signum.SMS → altea-sms: a small sibling of altea-email, plus the GSM alphabet.** The module is a
   TEMPLATE (per-culture text authored against a query and/or a code-declared model), a MESSAGE, two PACKAGES

@@ -10,6 +10,10 @@ import { Clock } from "@altea/altea/data/utils/clock";
 import type { Entity } from "@altea/altea/data/entity";
 import { SimpleTaskLogic } from "@altea/altea-scheduler/server/SimpleTaskLogic";
 import { ProcessLogic } from "@altea/altea-processes/server/ProcessLogic";
+import { PackageLogic, PackageExecuteAlgorithm } from "@altea/altea-processes/server/PackageLogic";
+import { PackageEntity } from "@altea/altea-processes/data/Package";
+import { ProcessEntity, ProcessOperation } from "@altea/altea-processes/data/Processes";
+import { Operations } from "@altea/altea/server/operationLogic";
 import {
     OrderEntity, OrderLineEntity, OrderState, OrderOperation, OrderMessage, OrderTask, OrderProcess, OrderLinesRowModel,
 } from "./Order.data";
@@ -58,48 +62,69 @@ export namespace OrdersLogic {
         // runs well before SchedulerLogic.start / ProcessLogic.start, so this is also the right ORDER.
         registerTasks();
         registerProcesses();
+
+        // Southwind's `new Graph<ProcessEntity>.ConstructFromMany<OrderEntity>(OrderOperation
+        // .CancelWithProcess)`, registered inside OrderGraph. It constructs a PROCESS, not an order, so it
+        // cannot live on the order's own state machine — it hangs off the include of the CONSTRUCTED type
+        // with the SOURCE type named first, which is altea's shape for every ConstructFromMany. The include
+        // is idempotent and reaches the table altea-processes owns (the accommodation altea-workflow's
+        // WorkflowEventTaskLogic makes for CaseEntity).
+        sb.include(ProcessEntity).withConstructFromMany(OrderEntity, OrderOperation.CancelWithProcess, {
+            construct: async orders => {
+                const pack = await PackageLogic.createLines(PackageEntity.create({}), orders);
+                return await ProcessLogic.create(OrderProcess.CancelOrders, pack.toLite());
+            },
+        });
     }
 
-    /** Southwind's two `SimpleTaskLogic.Register(OrderTask.…)` calls. */
+    /**
+     * Southwind's two `SimpleTaskLogic.Register(OrderTask.…)` calls (Orders/OrdersLogic.cs), which are the
+     * same job done two ways — the point of having both in a demo. Neither is scheduled by default.
+     */
     function registerTasks(): void {
-        SimpleTaskLogic.register(OrderTask.CheckPendingOrders, async ctx => {
-            const pending = await table(OrderEntity).filter(o => o.shippedDate == null).toArray();
+        // Southwind's `CancelOldOrdersWithProcess`: build a PACKAGE of the stale orders and hand it to a
+        // process, so the run is resumable, cancellable, and leaves one reviewable line per order.
+        SimpleTaskLogic.register(OrderTask.CancelOldOrdersWithProcess, async () => {
+            const cutoff = today().subtract({ days: 7 });
 
-            ctx.writeLine(`${Clock.now.toString()} — ${pending.length} order(s) not shipped yet`);
+            // Signum's `new PackageEntity().CreateLines(Database.Query<OrderEntity>().Where(…))` — the
+            // query overload, so the ids never come into memory.
+            const pack = await PackageLogic.createLinesFromQuery(PackageEntity.create({}),
+                table(OrderEntity).filter(o => Temporal.PlainDate.compare(o.orderDate, cutoff) < 0
+                    && o.state != OrderState.Canceled));
 
-            // The "product" of a run is whatever the panel should link to; the oldest pending order is the
-            // one worth looking at.
-            return (pending[0]?.toLite() ?? null) as Lite<Entity> | null;
+            const process = await ProcessLogic.create(OrderProcess.CancelOrders, pack.toLite());
+
+            // Southwind runs it immediately rather than leaving it Created for the runner to pick up.
+            const executed = await Operations.execute(process, ProcessOperation.Execute);
+
+            return executed.toLite() as Lite<Entity>;
         });
 
-        SimpleTaskLogic.register(OrderTask.ReviewPendingOrders, async ctx => {
-            const pending = await table(OrderEntity).filter(o => o.shippedDate == null).toArray();
+        // Southwind's `CancelOldOrders`: the same outcome as ONE statement. No process, no per-order log,
+        // and no operation — which is exactly the trade the pair exists to show.
+        SimpleTaskLogic.register(OrderTask.CancelOldOrders, async () => {
+            const cutoff = today().subtract({ days: 7 });
+            const cancelationDate = today();
 
-            await ctx.forEachWriting(pending, o => `Order ${o.id}`, async order => {
-                // Nothing to change — this exists to exercise the per-element transaction + cancellation
-                // path that a real "process every pending order" task would use.
-                void order;
-            });
+            await table(OrderEntity)
+                .filter(o => Temporal.PlainDate.compare(o.orderDate, cutoff) < 0)
+                .executeUpdate(() => ({ cancelationDate, state: OrderState.Canceled }));
 
             return null;
         });
     }
 
-    /** Southwind's `ProcessLogic.Register(OrderProcess.…, new CancelOrderAlgorithm())`. */
+    /**
+     * Southwind's `ProcessLogic.Register(OrderProcess.CancelOrders, new CancelOrderAlgorithm())`.
+     *
+     * `CancelOrderAlgorithm : PackageExecuteAlgorithm<OrderEntity>` overrides `Execute` only to call
+     * `base.Execute` with a "// Override if necessary" comment beside it, so the subclass buys nothing
+     * here — the base class IS the algorithm, and altea uses it directly.
+     */
     function registerProcesses(): void {
-        ProcessLogic.registerAction(OrderProcess.ReviewPendingOrders, async ctx => {
-            const pending = await table(OrderEntity).filter(o => o.shippedDate == null).toArray();
-
-            await ctx.writeMessage(`Reviewing ${pending.length} pending order(s)`);
-
-            await ctx.forEach(pending, o => `Order ${o.id}`, async order => {
-                // A real algorithm would do its work here; the point is that each element runs in its own
-                // transaction, progress ticks after each one, and a cancellation is honoured between them.
-                void order;
-            }, order => order.toLite());
-
-            await ctx.writeMessage(`Reviewed ${pending.length} order(s)`);
-        });
+        ProcessLogic.register(OrderProcess.CancelOrders,
+            new PackageExecuteAlgorithm<OrderEntity>(OrderOperation.Cancel));
     }
 }
 
@@ -109,7 +134,7 @@ export namespace OrdersLogic {
 // `args.TryGetArgC/S<T>()` → `args[i] as T`; `EmployeeEntity.Current!` is kept verbatim (the non-null
 // assertion is Southwind's: a user with no employee linked gets an order with an empty Employee line, which
 // the implicit NotNull validator reports on save — better than a construct that refuses to open the form);
-// DB reads are async. CancelWithProcess is omitted (Processes not ported).
+// DB reads are async.
 
 function today(): Temporal.PlainDate {
     return Temporal.Now.plainDateISO();
