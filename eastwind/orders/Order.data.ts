@@ -12,6 +12,7 @@ import { msg } from "@altea/altea/data/utils/localization";
 import type { SimpleTaskSymbol } from "@altea/altea-scheduler/data/Scheduler";
 import type { ProcessAlgorithmSymbol, ProcessEntity } from "@altea/altea-processes/data/Processes";
 import "@altea/altea/data/globals"; // Array.prototype.sum (in-memory) + its SQL-mappable aggregate (totalPrice)
+import { Enum } from "@altea/altea/data/enum";
 
 // Port of Southwind's Orders domain (Southwind/Orders/OrderEntity.cs), keeping Signum's Entity /
 // Embedded name suffixes. OrderEntity.customer is @implementedBy(Person, Company) — the polymorphic
@@ -20,13 +21,14 @@ import "@altea/altea/data/globals"; // Array.prototype.sum (in-memory) + its SQL
 // Processes (CancelWithProcess) are omitted (extension-free).
 
 export enum OrderState {
-    /** Never stored — an order being created. Southwind marks it `[Ignore]`; eastwind excludes it from
-     *  the enum table with `Enum.markAsNotMapped` in OrdersLogic. */
+    /** Never stored — an order being created. Southwind marks it `[Ignore]`; the `markAsNotMapped` below
+     *  is eastwind's spelling of the same thing. */
     New,
     Ordered,
     Shipped,
     Canceled,
 }
+Enum.markAsNotMapped(OrderState, OrderState.New);
 
 // Southwind marks the Order table system-versioned (`Starter.OverrideAttributes`:
 // `sb.Schema.Settings.TypeAttributes<OrderEntity>().Add(new SystemVersionedAttribute())`) — every row

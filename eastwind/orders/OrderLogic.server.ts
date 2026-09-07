@@ -1,7 +1,6 @@
 import "@altea/altea/server"; // installs Entity.save()/delete() (used by the order operations)
 import "@altea/altea/server/dynamicQuery/fluentIncludeQuery"; // FluentInclude.withQuery
 import { SchemaBuilder } from "@altea/altea/server/schema";
-import { Enum } from "@altea/altea/data/enum";
 import { Lite } from "@altea/altea/data/lite";
 import { Temporal, toInt, Decimal, type int } from "@altea/altea/data/basics";
 import { retrieveFromListOfLite } from "@altea/altea/server/Database";
@@ -31,10 +30,6 @@ import { type FluentStateMachine } from "@altea/altea/server/fluentOperations";
 // included by their own *Logic modules.
 export namespace OrdersLogic {
     export function start(sb: SchemaBuilder): void {
-        // Southwind marks `OrderState.New` `[Ignore]` — the state of an order being created, never
-        // stored, so it must not become a row of the enum table.
-        Enum.markAsNotMapped(OrderState, OrderState.New);
-
         // Southwind's `QueryLogic.Queries.Register(OrderQuery.OrderLines, …)` — one row per LINE whose
         // ENTITY is the order. Signum flattens the order's Details; the source here is the line table and
         // the order comes through the line's back reference, which is the same join. A projection, so it
