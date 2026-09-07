@@ -1056,7 +1056,7 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   Also: `AgentSymbol` is a `SemiSymbol`, as in Signum (altea has one — see the Symbol/SemiSymbol bullet);
   `QueryDescription` is gone, so the `queryDescription` tool becomes `QueryTokens` over the
   token tree and `qd.NextAlternatives` becomes a walk to the longest valid token prefix; the query grammar the
-  instruction files teach is altea's (ROOTLESS, camelCase fields, PascalCase system tokens, case-sensitive);
+  instruction files teach is altea's (ROOTLESS, otherwise PascalCase like Signum's — see the token bullet);
   and a tool result is serialized with `Serializer.stringify`, NOT `JSON.stringify` — a plain stringify drops
   a Lite's entity type (its `entityType` is a constructor), leaving the model unable to build a filter value.
 
@@ -1124,9 +1124,9 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     `permissions` side map and reads it through `AppContext.isPermissionAuthorized`).
   - **The Inbox is named by its ROW MODEL** (`InboxRowModel`, so `/find/InboxRowModel`), not by Signum's
     `CaseActivityQuery.Inbox` enum member — altea has no QueryDescription, so a manual query's name IS its row
-    type and each caption is the field's own `@niceName`. Its tokens are camelCase literals: the SERVER's
-    `QueryLogic.getToken` is a strict Map lookup, and `Type.token()` still PascalCases as Signum's
-    `tokenSequence` did.
+    type and each caption is the field's own `@niceName`. Its tokens used to be camelCase literals, because
+    the SERVER's `QueryLogic.getToken` was an exact Map lookup while `Type.token()` PascalCased as Signum's
+    `tokenSequence` does — the mismatch the token bullet describes, and now fixed at the source.
   - `MList<T>` is gone, so `mainEntityStrategies` / `actors` / `decisionOptions` / `viewNameProps` are `@part`
     rows — which is why the designer has its own main-entity-strategy checkbox list (core's
     `EnumCheckboxList` edits an array OF an enum, not of rows) — and `WorkflowActivityEntity.boundaryTimers`
