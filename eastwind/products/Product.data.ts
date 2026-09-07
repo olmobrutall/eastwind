@@ -2,13 +2,14 @@ import { reflect, init } from "@altea/altea/data/reflection";
 import { Entity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
 import { entity, quoted, backReference, rowOrder, translatable, uniqueIndex, unit, legacyPropertyRoute } from "@altea/altea/data/decorators";
-import { type int, Decimal } from "@altea/altea/data/basics";
+import { type int, type short, Decimal } from "@altea/altea/data/basics";
 import { msg } from "@altea/altea/data/utils/localization";
 import type { IQuery } from "@altea/altea/data/iquery";
 import type { ExecuteSymbol } from "@altea/altea/data/operations";
 import { FileEmbedded } from "@altea/altea-files/data/Files";
 import { AddressEmbedded } from "../customers/Customer.data";
 import type { OrderLineEntity } from "../orders/Order.data";
+import type { PredictorPublicationSymbol } from "@altea/altea-machine-learning/data/Predictor";
 
 // Port of Southwind's Products domain (Southwind/Products/*.cs). CategoryEntity's Picture IS ported now that
 // @altea/altea-files exists; the ML PredictorPublication is still omitted. AdditionalInformation is an
@@ -17,6 +18,8 @@ import type { OrderLineEntity } from "../orders/Order.data";
 
 @entity("Main", "Master")
 export class SupplierEntity extends Entity {
+    // Southwind: `[UniqueIndex]` (Products/SupplierEntity.cs).
+    @uniqueIndex
     companyName: string;
     contactName: string | null;
     contactTitle: string | null;
@@ -36,6 +39,8 @@ export class CategoryEntity extends Entity {
     // Southwind marks both of these `[Translatable]` (Products/CategoryEntity.cs) — a category's name and
     // blurb are the app's canonical example of text worth translating PER ROW, which is what
     // @altea/altea-translations' instance half manages.
+    // Southwind: `[UniqueIndex]` (Products/CategoryEntity.cs).
+    @uniqueIndex
     @translatable
     categoryName: string;
 
@@ -54,12 +59,15 @@ export namespace CategoryOperation {
 
 @entity("Main", "Master")
 export class ProductEntity extends Entity {
+    // Southwind: `[UniqueIndex]` (Products/ProductEntity.cs).
+    @uniqueIndex
     productName: string;
     supplier: Lite<SupplierEntity>;
     category: Lite<CategoryEntity>;
     quantityPerUnit: string;
     unitPrice: Decimal;
-    unitsInStock: int;
+    /** Southwind declares `short` — a stock count fits a smallint, and the column is one. */
+    unitsInStock: short;
     reorderLevel: int;
     discontinued: boolean;
     // Signum's [PreserveOrder] MList<AdditionalInformationEmbedded> → owned part rows.
@@ -97,6 +105,16 @@ export namespace ProductOperation {
     export const Save: ExecuteSymbol<ProductEntity> = init();
 }
 
+/**
+ * Southwind's `[AutoInit] static class ProductPredictorPublication` (Products/ProductEntity.cs) — the
+ * name under which the app's trained sales model is PUBLISHED: "of all the predictors ever trained, this
+ * one is live for monthly sales". SalesEstimation reads through it rather than naming a predictor row,
+ * so re-training and publishing swaps the model with no code change. Registered in starter.server.ts.
+ */
+export namespace ProductPredictorPublication {
+    export const MonthlySales: PredictorPublicationSymbol = init();
+}
+
 // Southwind's `[AllowUnauthenticated] enum CatalogMessage` (Products/ProductEntity.cs) — the four column
 // captions of the ANONYMOUS public catalog page (publicApi/PublicCatalog.tsx). They are MESSAGES rather
 // than `ProductEntity.nicePropertyName(...)` reads because that page is reachable with no user, and a
@@ -124,5 +142,5 @@ export class CurrentProductsRowModel extends ModelEntity {
     category: Lite<CategoryEntity>;
     quantityPerUnit: string;
     @unit("€") unitPrice: Decimal;
-    unitsInStock: int;
+    unitsInStock: short;
 }

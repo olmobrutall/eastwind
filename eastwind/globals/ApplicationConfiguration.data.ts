@@ -89,7 +89,7 @@ export class ApplicationConfigurationEntity extends Entity {
     /** The sender the mail modules deliver through (Signum's `EmailSender`), a REFERENCE: the row is
      *  edited on its own page and referenced here, so switching host is not a re-save of the whole
      *  configuration. */
-    emailSender: EmailSenderConfigurationEntity | null;
+    emailSender: EmailSenderConfigurationEntity;
 
     /*Agent*/
     chatbot: ChatbotConfigurationEmbedded;

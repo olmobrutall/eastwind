@@ -2,7 +2,7 @@ import "@altea/altea/server";
 import { Connector } from "@altea/altea/server/connection/connector";
 import { view } from "@altea/altea/server/table";
 import { BulkInserter } from "@altea/altea/server/bulkInserter";
-import { toInt, Decimal } from "@altea/altea/data/basics";
+import { toInt, toShort, Decimal } from "@altea/altea/data/basics";
 import { SupplierEntity, CategoryEntity, ProductEntity, ProductEntity_AdditionalInformation } from "../products/Product.data";
 import { AddressEmbedded } from "../customers/Customer.data";
 import { Northwind, NwSupplier, NwCategory, NwProduct } from "./northwindSchema";
@@ -71,7 +71,7 @@ export namespace ProductLoader {
                 category: CategoryEntity.newLite(s.CategoryID!),
                 quantityPerUnit: s.QuantityPerUnit ?? "",
                 unitPrice: s.UnitPrice ?? new Decimal(0),
-                unitsInStock: s.UnitsInStock ?? toInt(0),
+                unitsInStock: s.UnitsInStock ?? toShort(0),
                 reorderLevel: s.ReorderLevel ?? toInt(0),
                 discontinued: s.Discontinued,
                 additionalInformation: info,

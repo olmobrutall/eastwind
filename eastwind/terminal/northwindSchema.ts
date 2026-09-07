@@ -1,7 +1,7 @@
 import { reflect } from "@altea/altea/data/reflection";
 import { tableName, viewPrimaryKey } from "@altea/altea/data/decorators";
 import { View } from "@altea/altea/data/entity";
-import { Temporal, type int, Decimal } from "@altea/altea/data/basics";
+import { Temporal, type int, type short, Decimal } from "@altea/altea/data/basics";
 import { SchemaBuilder } from "@altea/altea/server/schema";
 import { ViewBuilder } from "@altea/altea/server/schema/viewBuilder";
 import { ObjectName, SchemaName, DatabaseName } from "@altea/altea/server/schema/objectName";
@@ -93,7 +93,7 @@ export class NwProduct extends View {
     CategoryID!: int | null;
     QuantityPerUnit!: string | null;
     UnitPrice!: Decimal | null;
-    UnitsInStock!: int | null;
+    UnitsInStock!: short | null;
     ReorderLevel!: int | null;
     Discontinued!: boolean;
 }

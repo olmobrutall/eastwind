@@ -12,6 +12,7 @@
 //
 // Run: node --import @altea/altea/register.mjs --env-file=.env.postgres dist/terminal/probeEmbeddedCollection.js
 import { Starter } from "../starter.server";
+import { type uuid } from "@altea/altea/data/basics";
 import { Connector } from "@altea/altea/server/connection/connector";
 import { Schema } from "@altea/altea/server/schema/schema";
 import { ExecutionMode } from "@altea/altea/server/executionMode";
@@ -102,8 +103,8 @@ async function main(): Promise<void> {
         const app = newConfiguration("probe-embedded-collection", template, {
             type: AzureADType.AzureAD,
             // Well-formed placeholders: the probe never talks to a directory.
-            applicationID: "00000000-0000-0000-0000-000000000001",
-            directoryID: "00000000-0000-0000-0000-000000000002",
+            applicationID: "00000000-0000-0000-0000-000000000001" as uuid,
+            directoryID: "00000000-0000-0000-0000-000000000002" as uuid,
             roleMapping: [
                 AzureADRoleMappingEntity.create({ adNameOrGuid: "Group A", role: role.toLite() }),
                 AzureADRoleMappingEntity.create({ adNameOrGuid: "Group B", role: role.toLite() }),
@@ -152,8 +153,8 @@ async function main(): Promise<void> {
         // then failed on their foreign key).
         const app2 = newConfiguration("probe-embedded-collection-2", template, {
             type: AzureADType.AzureAD,
-            applicationID: "00000000-0000-0000-0000-000000000001",
-            directoryID: "00000000-0000-0000-0000-000000000002",
+            applicationID: "00000000-0000-0000-0000-000000000001" as uuid,
+            directoryID: "00000000-0000-0000-0000-000000000002" as uuid,
             roleMapping: [AzureADRoleMappingEntity.create({ adNameOrGuid: "Group C", role: role.toLite() })],
         });
         await app2.save();

@@ -1,6 +1,6 @@
-import { Entity, ModelEntity } from "@altea/altea/data/entity";
+import { Entity, ModelEntity, MixinEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
-import { entity, backReference, rowOrder, quoted, implementedBy, unit, format, systemVersioned, legacyPropertyRoute } from "@altea/altea/data/decorators";
+import { entity, backReference, rowOrder, quoted, mixin, implementedBy, unit, format, systemVersioned, legacyPropertyRoute } from "@altea/altea/data/decorators";
 import { Temporal, type int, Decimal } from "@altea/altea/data/basics";
 import { reflect, init } from "@altea/altea/data/reflection";
 import type { ConstructSymbol, From, FromMany, ExecuteSymbol, DeleteSymbol } from "@altea/altea/data/operations";
@@ -20,6 +20,8 @@ import "@altea/altea/data/globals"; // Array.prototype.sum (in-memory) + its SQL
 // Processes (CancelWithProcess) are omitted (extension-free).
 
 export enum OrderState {
+    /** Never stored — an order being created. Southwind marks it `[Ignore]`; eastwind excludes it from
+     *  the enum table with `Enum.markAsNotMapped` in OrdersLogic. */
     New,
     Ordered,
     Shipped,
@@ -80,9 +82,22 @@ export const OrderMessage = {
     subTotalPrice: msg()
 };
 
+// Southwind's `OrderDetailMixin` (Orders/OrderEntity.cs), registered in its Starter as
+// `MixinDeclarations.Register<OrderDetailEmbedded, OrderDetailMixin>()`. Kept under SOUTHWIND's name
+// because a mixin's name is identity in a property route — `[OrderDetailMixin].discountCode` is what a
+// property-auth rule and a translated instance store — where the entity it hangs off was free to be
+// renamed (OrderDetailEmbedded -> OrderLineEntity) since altea's part rows carry their own table.
+@reflect
+export class OrderDetailMixin extends MixinEntity {
+    discountCode: string | null = null;
+}
+
 // Owned child rows for OrderEntity.details (the per-row equivalent of Signum's
 // OrderDetailEmbedded, whose embedded fields are flattened in here).
 @entity("Part")
+// Southwind attaches OrderDetailMixin in its Starter; altea has no MixinDeclarations side-channel and
+// eastwind owns this class, so the attachment is the decorator (as with @systemVersioned above).
+@mixin(() => [OrderDetailMixin])
 export class OrderLineEntity extends Entity {
     @backReference
     order: Lite<OrderEntity>;

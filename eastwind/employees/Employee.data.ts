@@ -2,7 +2,7 @@ import { reflect, init } from "@altea/altea/data/reflection";
 import { Entity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
 import { CurrentUser } from "@altea/altea/data/security";
-import { entity, quoted, backReference, valueField, fullTextIndex, vectorIndex, column } from "@altea/altea/data/decorators";
+import { entity, quoted, backReference, valueField, fullTextIndex, vectorIndex, column, uniqueIndex } from "@altea/altea/data/decorators";
 import { customValidators } from "@altea/altea/data/validators";
 import { Temporal, type int, toInt } from "@altea/altea/data/basics";
 import { Vector } from "@altea/altea/data/vector";
@@ -17,6 +17,8 @@ import { AddressEmbedded } from "../customers/Customer.data";
 
 @entity("String", "Master")
 export class RegionEntity extends Entity {
+    // Southwind: `[UniqueIndex]` (Employees/RegionEntity.cs).
+    @uniqueIndex
     description: string;
     @quoted toString(): string { return this.description; }
 }
@@ -28,6 +30,8 @@ export namespace RegionOperation {
 @entity("String", "Master")
 export class TerritoryEntity extends Entity {
     region: RegionEntity;
+    // Southwind: `[UniqueIndex]` (Employees/TerritoryEntity.cs).
+    @uniqueIndex
     description: string;
     @quoted toString(): string { return this.description; }
 }

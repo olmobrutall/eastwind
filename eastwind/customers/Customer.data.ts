@@ -1,7 +1,8 @@
 import { reflect, init } from "@altea/altea/data/reflection";
 import { Entity, EmbeddedEntity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
-import { entity, quoted, implementedBy, primaryKey, stringLengthValidator, telephoneValidator } from "@altea/altea/data/decorators";
+import { entity, quoted, mixin, implementedBy, primaryKey, stringLengthValidator, telephoneValidator } from "@altea/altea/data/decorators";
+import { CorruptMixin } from "@altea/altea/data/corruptMixin";
 import { Temporal } from "@altea/altea/data/basics";
 import type { ExecuteSymbol } from "@altea/altea/data/operations";
 import type { SMSOwnerData } from "@altea/altea-sms/data/SMS";
@@ -58,13 +59,22 @@ export abstract class CustomerEntity extends Entity {
 }
 
 @entity("Shared", "Transactional")
+// Southwind's `[Mixin(typeof(CorruptMixin))]` (Customers/PersonEntity.cs) — the person is the app's one
+// example of a row that may be saved INVALID (an imported legacy customer with no title or birth date),
+// which is what the mixin's `corrupt` flag records. Southwind's own `IsApplicableValidator(p =>
+// Corruption.Strict)` on Title / DateOfBirth is the other half; altea has no Corruption scope, so the
+// column is carried and the escape hatch is not.
+@mixin(() => [CorruptMixin])
 export class PersonEntity extends CustomerEntity {
     firstName: string;
     lastName: string;
     title: string | null;
     dateOfBirth: Temporal.PlainDate | null;
 
-    @quoted toString(): string { return `${this.firstName} ${this.lastName}`; }
+    // NOT `@quoted`: Southwind writes a plain `ToString()` here (not an [AutoExpressionField]), so the
+    // display string is STORED in a `to_str` column rather than expanded into every query. Company's
+    // `As.Expression(() => CompanyName)` right below is the other case, and keeps its @quoted.
+    toString(): string { return `${this.firstName} ${this.lastName}`; }
 }
 
 @entity("Shared", "Transactional")
