@@ -20,6 +20,7 @@ import { DepartmentsLogic } from "./departments/DepartmentLogic.server";
 import { CustomersLogic } from "./customers/CustomerLogic.server";
 import { OrdersLogic } from "./orders/OrderLogic.server";
 import { OrderEntity } from "./orders/Order.data";
+import { ProductPredictorPublication } from "./products/Product.data";
 import { EmployeeEntity } from "./employees/Employee.data";
 import { CustomerEntity, PersonEntity, CompanyEntity } from "./customers/Customer.data";
 import { AuthLogic } from "@altea/altea-auth/server/AuthLogic";
@@ -102,9 +103,10 @@ import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic";
 import { SqlMigrationRunner } from "@altea/altea-migrations/server/SqlMigrationRunner";
 import { TokenMigrationLogic } from "@altea/altea-user-assets/server/TokenMigrationLogic";
 import { PredictorLogic } from "@altea/altea-machine-learning/server/PredictorLogic";
+import { PredictorEntity_Filter, PredictorSubQueryEntity_Filter } from "@altea/altea-machine-learning/data/Predictor";
 import { VisualTipLogic } from "@altea/altea/server/visualTipLogic";
 import { ChangeLogLogic } from "@altea/altea/server/changeLogLogic";
-import { EastwindTypeCondition, EastwindAgentUseCases, EastwindFileType, BigStringFileType } from "./globals/ApplicationConfiguration.data";
+import { ApplicationConfigurationEntity, EastwindTypeCondition, EastwindAgentUseCases, EastwindFileType, BigStringFileType } from "./globals/ApplicationConfiguration.data";
 import { PrintingLogic } from "@altea/altea-printing/server/PrintingLogic";
 import { PrintingServer } from "@altea/altea-printing/server/PrintingServer";
 import { WhatsNewLogic } from "@altea/altea-whats-new/server/WhatsNewLogic";
@@ -227,6 +229,25 @@ export namespace Starter {
         if (southwindOnly) {
             ignoreSouthwindOnlyConfiguration();
             ignoreRenamedEnumMembers();
+
+            // Field ROUTES that emit no column in Southwind (Signum's
+            // `Schema.Settings.FieldAttributes(route).Add(new IgnoreAttribute())`). Unlike a whole module,
+            // these are members of a type both applications HAVE — so the type is included either way and
+            // only the route stands down. Must precede every `include` below, as it does in Signum's
+            // `Starter.OverrideAttributes`.
+
+            // Southwind's `PredictorLogic.IgnorePinned(sb)` — Signum even ASSERTS the app called it
+            // (`sb.Settings.AssertIgnored(… p.MainQuery.Filters.Single().Pinned …)`). A predictor's filters
+            // are the query it TRAINS on; a pinned filter is a dashboard-interaction facet, meaningless
+            // there, and it is seven columns per filter table.
+            sb.settings.ignoreFieldRoute(PredictorEntity_Filter, "pinned");
+            sb.settings.ignoreFieldRoute(PredictorSubQueryEntity_Filter, "pinned");
+
+            // The two DIRECTORY configurations Southwind does not declare on its settings row (it declares
+            // AzureAD alone). Ignoring the route drops 26 columns and, with them, the role-mapping
+            // collection each embedded holds — a table apiece.
+            sb.settings.ignoreFieldRoute(ApplicationConfigurationEntity, "openID");
+            sb.settings.ignoreFieldRoute(ApplicationConfigurationEntity, "windowsAD");
         }
 
         // Southwind installs a SUBSET of the modules below, and legacy mode is pointed at a Southwind
@@ -398,7 +419,11 @@ export namespace Starter {
         // creates. altea's ProcessLogic already includes the three package tables and their queries, so this
         // adds only the algorithm registry (see that module's header on why Signum's two flags are gone).
         PackageLogic.start(sb);
-        ProcessSchedulerBridge.start(sb);
+        // Not in Southwind — see southwindOnly. Signum's ProcessAlgorithmSymbol is not an ITaskEntity, so
+        // there is no bridge to start and `scheduled_task.task` keeps its single implementation. The DATA
+        // half is gated to match (entityOverrides.data.ts).
+        if (!southwindOnly)
+            ProcessSchedulerBridge.start(sb);
 
         // Agent module (@altea/altea-agent): the chat tables + language-model registry (ChatbotLogic) and the
         // agent / skill registry (AgentLogic). Order matters three ways: the skill CLASSES are registered
@@ -422,7 +447,11 @@ export namespace Starter {
         // Profiler module (altea-profiler): declares no tables (state is in-memory); mounts the
         // /api/profilerHeavy/* + /api/profilerTimes/* routes and its permission symbols (seeded via the
         // PermissionSymbol table above). After the auth logics so its permissions land in the same seed.
-        ProfilerLogic.start(sb, { timeTracker: true, heavyProfiler: true });
+        // Southwind passes all three (`timeTracker`, `heavyProfiler`, `overrideSessionTimeout`), and each
+        // flag is what REGISTERS the matching permission — so all three are passed here too. The
+        // session-timeout override itself is still deferred in altea (see ProfilerLogic's header); the flag
+        // grants the permission a role can hold, which is what Southwind's database records.
+        ProfilerLogic.start(sb, { timeTracker: true, heavyProfiler: true, overrideSessionTimeout: true });
 
         // Cache admin surface (altea-cache): /api/cache/view + enable/disable/clear + the two anonymous
         // broadcast endpoints. Mounted HERE, not inside CacheLogic.start (which has to run before every
@@ -450,6 +479,11 @@ export namespace Starter {
         PredictorLogic.start(sb, {
             predictorFile: EastwindFileStores.store("predictor-files"),
         });
+        // Southwind's `PredictorLogic.RegisterPublication(ProductPredictorPublication.MonthlySales,
+        // new PublicationSettings(typeof(OrderEntity)))`: the trained model published under this name
+        // predicts over the ORDER query, which is what SalesEstimation asks for by publication rather
+        // than by predictor row. The registration is also what SEEDS the symbol table row.
+        PredictorLogic.registerPublication(ProductPredictorPublication.MonthlySales, { queryName: OrderEntity });
 
         // Token migrations (@altea/altea-user-assets): the version table for the `.tokens.json` files that
         // repair stored query TOKENS after a schema rename. Southwind's `TokenMigrationLogic.Start(sb)`.
@@ -484,7 +518,10 @@ export namespace Starter {
         // operations yet) / after the auth logics so ViewCharting lands in the same permission seed.
         // svgMapUrls registers the opt-in SvgMap chart with the sample map served from public/ (dev: vite,
         // prod: the API host's static files). Point a String LocationCode column at its region ids (US/DE/…).
-        ChartLogic.start(sb, ["/sample-maps/regions.svg"]);
+        // …and the SvgMap script is a symbol ROW, so it goes with the rest of what Southwind does not
+        // declare: Southwind starts `ChartLogic.Start(sb, googleMapsChartScripts: false)` and passes no
+        // svgMapUrls at all.
+        ChartLogic.start(sb, southwindOnly ? undefined : ["/sample-maps/regions.svg"]);
 
         // Per-type color palettes (altea-chart/ColorPalette): the ColorPalette entity + its Save/Delete
         // operations, the palette cache, and GET /api/colorPalette/:typeName (Signum's ColorPaletteLogic).
@@ -543,8 +580,13 @@ export namespace Starter {
         // .Value.Email, (template, target, message) => Configuration.Value.EmailSender)`: the two members of
         // the configuration row, and where attachments are stored. The USER email owner and the default
         // master template are the MODULES' (altea-email registers both — see EmailLogic.start).
-        FileTypeLogic.register(EmailFileType.Attachment,
-            EastwindFileStores.store("email-attachments"));
+        // Not in Southwind — see southwindOnly. Signum's `EmailLogic.Start` registers this file type only
+        // when the app PASSES an `attachment` algorithm, and Southwind passes none — so its
+        // `files.file_type` table has no `EmailFileType.Attachment` row and its templates cannot carry
+        // file attachments at all. eastwind gives them a store.
+        if (!southwindOnly)
+            FileTypeLogic.register(EmailFileType.Attachment,
+                EastwindFileStores.store("email-attachments"));
         // Self-service password reset (@altea/altea-auth-reset-password): the ResetPasswordRequest table, the
         // two e-mail models and the three ANONYMOUS /api/auth/* routes (Southwind's
         // `ResetPasswordRequestLogic.Start(sb)`). BEFORE EmailLogic.start, because its e-mail models have to
@@ -560,7 +602,13 @@ export namespace Starter {
         // The BATCH half of the mail module (Signum.Mailing/Package): the EmailPackage table, the two
         // process algorithms and the ReSendEmails operation. After EmailLogic.start (it reads the same
         // configuration) and after CacheLogic/ProcessLogic, whose registry it registers into.
-        EmailPackageLogic.start(sb);
+        //
+        // Not in Southwind — see southwindOnly. Its Starter.cs REGISTERS the package mixin (so a Southwind
+        // database has `email_message.package_id`, and eastwind declares it either way) but never calls
+        // `EmailPackageLogic.Start`, which is what adds the search page, the two process algorithms and
+        // ReSendEmails. The email_package TABLE stays: the mixin's `package` reference reaches it.
+        if (!southwindOnly)
+            EmailPackageLogic.start(sb);
 
         // The scheduled task that sends a template to nothing / one target / every row of a user query
         // (Signum.Mailing/Package/SendEmailTaskLogic). After EmailPackageLogic — its UserQuery branch
@@ -627,7 +675,10 @@ export namespace Starter {
         // the three routes (createReport / constructorType / officeTemplates). AFTER altea-email, because
         // an OfficeAttachment hangs off an EmailTemplate; BEFORE OperationLogic.start so its three
         // operations are in the registry when the OperationSymbol table is seeded.
-        OfficeTemplateLogic.start(sb);
+        // Its ATTACHMENT half is opt-in and off against a Southwind database: Signum has no caller for
+        // `WordAttachmentLogic.Start` and Southwind calls `WordTemplateLogic.Start(sb)` alone, so that
+        // database has the template tables and no word_attachment (and the attachment list stays at two).
+        OfficeTemplateLogic.start(sb, { attachments: !southwindOnly });
 
         // Excel export (altea-office-template's Signum.Excel half): declares no tables — its PlainExcel
         // permission symbol rides along in the PermissionSymbol seed — and mounts POST /api/excel/plain/
@@ -686,7 +737,15 @@ export namespace Starter {
         });
         // `isolations` is opt-in and OFF by default (see the flag): eastwind turns it on to exercise
         // DynamicIsolation, and still never starts @altea/altea-isolation — so no app-wide commitment.
-        DynamicLogic.start(sb, { isolations: true });
+        // …and two sub-modules stand down against a Southwind database: its DynamicLogicStarter.cs starts
+        // eight of them by name and neither `DynamicCSSOverrideLogic` nor `DynamicApiLogic` is on the list,
+        // so that database has neither table, query nor operation for them. `isolations` is a MIXIN, so it
+        // adds a column to dynamic_type — off there too.
+        DynamicLogic.start(sb, {
+            isolations: !southwindOnly,
+            cssOverrides: !southwindOnly,
+            apis: !southwindOnly,
+        });
 
         // Workflow module (@altea/altea-workflow): the BPMN engine — workflows / pools / lanes / nodes /
         // connections, cases, case activities + notifications, the scheduled-start tasks and the script
@@ -745,7 +804,14 @@ export namespace Starter {
         // either and Southwind passes null, so a message can be authored and packaged but sending answers
         // "No ISMSProvider set" until an app supplies one. BEFORE OperationLogic.start, so its eight
         // operation symbols get seeded.
-        SMSModuleLogic.start(sb, { getConfiguration: () => GlobalsLogic.configuration().sms });
+        // Its two OPT-IN halves stand down against a Southwind database: Signum's
+        // `SMSLogic.Start(sb, null, …)` reaches neither the send / update-status processes nor the SMSModel
+        // registry, so that database has the message and template tables with none of their symbols.
+        SMSModuleLogic.start(sb, {
+            getConfiguration: () => GlobalsLogic.configuration().sms,
+            processes: !southwindOnly,
+            models: !southwindOnly,
+        });
 
         // eastwind's SMS owner: a CUSTOMER (Northwind's customers carry a phone). This is what earns
         // Person / Company the `SMSMessages` sub-token, the "SMS messages" quick link, and the
@@ -759,9 +825,13 @@ export namespace Starter {
         // is keyed by its symbol, and a subclass inherits its base's (OperationLogic.operationsForType walks
         // the prototype chain — see CLAUDE.md). Signum registers it per concrete type only because C#
         // generics force `Graph<ProcessEntity>.ConstructFromMany<T>` to name one.
-        SMSProcessLogic.registerSMSOwnerData(CustomerEntity, c => ({
-            owner: c.toLite(), telephoneNumber: c.phone, culture: null,
-        }));
+        // …and it goes with the processes it belongs to: registering it reaches
+        // `SMSMessageOperation.SendMultipleSMSMessages`, one more operation row than a Southwind database
+        // has (see the `processes` flag above).
+        if (!southwindOnly)
+            SMSProcessLogic.registerSMSOwnerData(CustomerEntity, c => ({
+                owner: c.toLite(), telephoneNumber: c.phone, culture: null,
+            }));
 
         // Print queue (@altea/altea-printing): the PrintLine / PrintPackage tables, the line's state
         // machine, the batch process and the "reclaim printed files" scheduled task. AFTER
@@ -774,12 +844,15 @@ export namespace Starter {
         // The TEST file type IS supplied, so `PrintLineOperation.CreateTest` has somewhere to upload:
         // Southwind passes none, which leaves that flow with nowhere to go.
         // Not in Southwind — see southwindOnly.
-        if (!southwindOnly)
+        if (!southwindOnly) {
             PrintingLogic.start(sb, { testFileType: EastwindFileType.PrintTest });
-        FileTypeLogic.register(EastwindFileType.PrintTest,
-            EastwindFileStores.store("print-test"));
-        if (sb.webBuilder)
-            PrintingServer.start(sb.webBuilder);
+            // INSIDE the gate with it: a registered file type is a symbol ROW, and the routes reach the
+            // module's permission symbol — a module Southwind does not start must contribute neither.
+            FileTypeLogic.register(EastwindFileType.PrintTest,
+                EastwindFileStores.store("print-test"));
+            if (sb.webBuilder)
+                PrintingServer.start(sb.webBuilder);
+        }
 
         // Release notes (@altea/altea-whats-new): the news item + its per-culture messages, the read log,
         // and the six routes the navbar bullhorn / overview / news page call. BEFORE OperationLogic.start
@@ -792,14 +865,16 @@ export namespace Starter {
         // Not in Southwind — see southwindOnly.
         if (!southwindOnly) {
             WhatsNewLogic.start(sb);
+            // INSIDE the gate too: two file-type symbol rows and a TYPE CONDITION row, none of which a
+            // Southwind database has (see the Printing block above).
+            FileTypeLogic.register(WhatsNewFileType.WhatsNewPreviewFileType,
+                EastwindFileStores.store("whats-new"));
+            FileTypeLogic.register(WhatsNewFileType.WhatsNewAttachmentFileType,
+                EastwindFileStores.store("whats-new"));
+            WhatsNewLogic.registerPublishedTypeCondition(EastwindTypeCondition.PublishedNews);
+            if (sb.webBuilder)
+                WhatsNewServer.start(sb.webBuilder);
         }
-        FileTypeLogic.register(WhatsNewFileType.WhatsNewPreviewFileType,
-            EastwindFileStores.store("whats-new"));
-        FileTypeLogic.register(WhatsNewFileType.WhatsNewAttachmentFileType,
-            EastwindFileStores.store("whats-new"));
-        WhatsNewLogic.registerPublishedTypeCondition(EastwindTypeCondition.PublishedNews);
-        if (sb.webBuilder)
-            WhatsNewServer.start(sb.webBuilder);
 
         ViewLogLogic.start(sb, {
             registerExpressionsFor: [
@@ -813,7 +888,9 @@ export namespace Starter {
         // its pages (the instance half, for every @translatable route). BEFORE OperationLogic.start so
         // its Save/Delete symbols get seeded; the default translator chain is the offline
         // "already translated elsewhere" one, so no API key is needed.
-        TranslationLogic.start(sb);
+        // Its REPLACEMENT half is opt-in and off against a Southwind database, for the same reason: Signum
+        // has no caller for `TranslationReplacementLogic.Start` and Southwind is not one.
+        TranslationLogic.start(sb, { replacements: !southwindOnly });
 
         // Framework operation infrastructure (Signum's OperationLogic.Start): the OperationSymbol table
         // (seeded with the operations the modules above registered) + the OperationLogEntity table/query

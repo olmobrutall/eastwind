@@ -5,6 +5,7 @@ import type { SchemaBuilder } from "@altea/altea/server/schema";
 // `declare module` only reaches a program that loads the declaring file, and nothing else here imports it.
 // Signum's C# equivalent is the `using Signum.Workflow;` an extension method needs.
 import "@altea/altea-workflow/server/CaseActivityLogic";
+import { CaseActivityMixin } from "@altea/altea-workflow/data/CaseActivity";
 import { Operations } from "@altea/altea/server/operationLogic";
 import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
 import { OrderEntity, OrderOperation, OrderState } from "./Order.data";
@@ -39,8 +40,11 @@ export namespace OrderWorkflow {
      */
     export function registerOrderAsMainEntity(sb: SchemaBuilder): void {
         // The other half of the CaseActivityMixin declaration in entityOverrides: the preSaving hook that
-        // tags whatever an activity produces with the activity it came from.
-        sb.include(EmailMessageEntity).withCaseActivityMixin();
+        // tags whatever an activity produces with the activity it came from. It is a NO-OP unless the mixin
+        // is declared, which under southwindOnly it is not (Southwind declares none) — asking for the hook
+        // then would fail on a mixin the entity does not have.
+        if (CaseActivityMixin.isDeclaredOn(EmailMessageEntity))
+            sb.include(EmailMessageEntity).withCaseActivityMixin();
 
         sb.include(OrderEntity).withWorkflow({
             // NOT `new OrderEntity()`: `state` has no initializer (Signum leans on C#'s enum default) and

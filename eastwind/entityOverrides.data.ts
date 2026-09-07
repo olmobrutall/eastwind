@@ -20,6 +20,7 @@ import { ApplicationConfigurationEntity, EastwindTypeCondition, EastwindAgentUse
 import { ProcessEntity, ProcessExceptionLineEntity } from "@altea/altea-processes/data/Processes";
 import { PackageEntity, PackageOperationEntity, PackageLineEntity } from "@altea/altea-processes/data/Package";
 import { EmailPackageEntity } from "@altea/altea-email/data/EmailPackage";
+import { EmailTemplateEntity_Attachment, ImageAttachmentEntity } from "@altea/altea-email/data/EmailTemplate";
 import { AutoconfigureNeuralNetworkEntity } from "@altea/altea-machine-learning/data/NeuralNetworkSettings";
 import { AzureADRoleMappingEntity } from "@altea/altea-auth-azuread/data/AzureAD";
 import { OpenIDRoleMappingEntity } from "@altea/altea-auth-openid/data/OpenID";
@@ -146,7 +147,11 @@ export namespace EntityOverrides {
         // calls `IsolationLogic.start`, and that is where the app-wide assertion lives ("every table must
         // declare a strategy"). Declaring the mixin adds one column to `dynamic_type`; marking a dynamic
         // type Isolated then adds an `isolation` column to THAT type's table.
-        DynamicIsolationMixin.declare();
+        //
+        // Not in Southwind — see southwindOnly. It declares no isolation mixin, so `dynamic_type` has no
+        // `isolation_strategy` column there.
+        if (!southwindOnly)
+            DynamicIsolationMixin.declare();
 
         // VisualTipConsumedEntity.user — core declares no implementations so it needn't reference
         // altea-auth (the same accommodation ExceptionEntity.user and OperationLogEntity.user make).
@@ -163,6 +168,15 @@ export namespace EntityOverrides {
         overrideImplementedBy(AzureADRoleMappingEntity, a => a.configuration, () => [ApplicationConfigurationEntity]);
         overrideImplementedBy(OpenIDRoleMappingEntity, o => o.configuration, () => [ApplicationConfigurationEntity]);
         overrideImplementedBy(WindowsADRoleMappingEntity, w => w.configuration, () => [ApplicationConfigurationEntity]);
+
+        // An email template's ATTACHMENT kinds. The LIST is what decides the row's columns — one FK per
+        // implementation — so it belongs to the model rather than to module registration: Southwind offers
+        // ImageAttachment alone, and its `email_template_attachments` carries that one column, NOT NULL
+        // because a single implementation is not polymorphic. altea-email's own list adds
+        // FileTokenAttachment, and @altea/altea-office-template widens it to three when its attachment half
+        // starts (which is off in legacy mode — see OfficeTemplateLogic's `attachments`).
+        if (southwindOnly)
+            overrideImplementedBy(EmailTemplateEntity_Attachment, a => a.attachment, () => [ImageAttachmentEntity]);
 
         // ProcessEntity.data / ProcessExceptionLineEntity.line — Signum types both against an INTERFACE
         // (IProcessDataEntity / IEntity) and its schema builder gives one column per implementor in the
@@ -196,7 +210,13 @@ export namespace EntityOverrides {
         // tiers, because the client needs the PropertyRoute for the read-only line WorkflowClient adds; the
         // SERVER also asks for the stamping (`sb.include(EmailMessageEntity).withCaseActivityMixin()` in
         // eastwindWorkflow.server.ts), which is the half that fills it.
-        CaseActivityMixin.declareOn(EmailMessageEntity);
+        //
+        // Not in Southwind — see southwindOnly. Signum's own CaseActivityLogic only reacts to the mixin
+        // (`MixinDeclarations.IsDeclared(typeof(EmailMessageEntity), typeof(CaseActivityMixin))`) and never
+        // declares it, and Southwind's Starter does not either — so `email_message` has no
+        // `case_activity_id` column there.
+        if (!southwindOnly)
+            CaseActivityMixin.declareOn(EmailMessageEntity);
 
         // The employee behind a login — Southwind writes exactly this in its Starter.cs. Declaring it adds
         // `employee_id` to the User table, so it belongs here: both tiers, before any (de)serialization.
@@ -227,15 +247,18 @@ export namespace EntityOverrides {
         // ITaskEntity, as Signum does): scheduling "poll THIS mailbox" needs no task symbol of its own.
         // …or at altea-alert's SendNotificationEmailTask ("mail everyone their pending alerts"), which
         // AlertNotificationLogic.start re-checks and fails on if it is missing here.
-        ProcessSchedulerBridgeOverrides.overrideTaskImplementations([
-            SimpleTaskSymbol,
-            // NOT IN SOUTHWIND: it schedules neither a mailbox poll nor the alert-notification mail, and
-            // naming a type here is what CREATES its table.
-            ...(southwindOnly ? [] : [
+        //
+        // Under southwindOnly the override is SKIPPED ENTIRELY, leaving the scheduler's own declared
+        // `[SimpleTaskSymbol]`: Signum's ProcessAlgorithmSymbol is a plain Symbol and NOT an ITaskEntity —
+        // the "a scheduled task can BE a process" bridge is altea's addition — so Signum's
+        // `ScheduledTaskEntity.Task` stays single-implementation and its column is NOT NULL. The server
+        // half is gated to match (ProcessSchedulerBridge.start in starter.server.ts).
+        if (!southwindOnly)
+            ProcessSchedulerBridgeOverrides.overrideTaskImplementations([
+                SimpleTaskSymbol,
                 EmailReceptionConfigurationEntity,
                 SendNotificationEmailTaskEntity,
-            ]),
-        ]);
+            ]);
 
         // How this app SENDS mail. altea-email declares only its own SMTP service, so the two extra sender
         // packages are added here (Signum's per-module `AssertImplementedBy`, which each module's
