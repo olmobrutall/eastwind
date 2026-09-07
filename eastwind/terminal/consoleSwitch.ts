@@ -1,4 +1,5 @@
 import * as readline from "node:readline";
+import { SafeConsole } from "@altea/altea/server/safeConsole";
 
 // A small port of Signum.Utilities' ConsoleSwitch (old/Framework/Signum.Utilities/ConsoleSwitch.cs):
 // a keyed menu of actions with descriptions and optional separators. `choose()` prints the options,
@@ -45,6 +46,7 @@ export class ConsoleSwitch<V> {
 
         this.print();
         const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        SafeConsole.handleSigInt(rl);   // Ctrl+C at a prompt (see SafeConsole.handleSigInt)
         try {
             const line = (await ask(rl, "Enter your selections separated by comma or hyphen (nothing to exit): ")).trim();
             if (line === "") return undefined;
@@ -86,6 +88,7 @@ export class ConsoleSwitch<V> {
     async choose(): Promise<V | undefined> {
         this.print();
         const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        SafeConsole.handleSigInt(rl);   // Ctrl+C at a prompt (see SafeConsole.handleSigInt)
         try {
             for (;;) {
                 const input = (await ask(rl, "Enter your selection (nothing to exit): ")).trim();
