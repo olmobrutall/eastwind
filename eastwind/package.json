@@ -21,8 +21,10 @@
     "free:port": "node scripts/free-port.mjs",
     "server:postgres": "node --enable-source-maps --import @altea/altea/register.mjs --env-file=.env.postgres dist/webServer.server.js",
     "server:sqlserver": "node --enable-source-maps --import @altea/altea/register.mjs --env-file=.env.sqlserver dist/webServer.server.js",
+    "server:swpostgres": "node --enable-source-maps --import @altea/altea/register.mjs --env-file=.env.swpostgres dist/webServer.server.js",
     "stack:postgres": "pnpm run build:types && pnpm run free:port && concurrently -k -n types,api,client -c blue,green,magenta \"pnpm run dev:types\" \"pnpm run server:postgres\" \"pnpm run dev:client\"",
     "stack:sqlserver": "pnpm run build:types && pnpm run free:port && concurrently -k -n types,api,client -c blue,green,magenta \"pnpm run dev:types\" \"pnpm run server:sqlserver\" \"pnpm run dev:client\"",
+    "stack:swpostgres": "pnpm run build:types && pnpm run free:port && concurrently -k -n types,api,client -c blue,green,magenta \"pnpm run dev:types\" \"pnpm run server:swpostgres\" \"pnpm run dev:client\"",
     "test:e2e": "tspc -b && playwright test"
   },
   "keywords": [],
