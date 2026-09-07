@@ -281,6 +281,39 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   - `= null` on a nullable field says nothing `undefined` doesn't.
   **Keep only the initializers Signum itself declares** — a real non-default business value (`port = 25`, `editableMessage = true`, `chunkSizeSendingEmails = 100`, `creationDate = Clock.now`). Mirroring Signum is the rule; restating a zero value is not.
 - **QueryDescription is gone.** Signum shipped a serialized query-metadata DTO (`QueryDescription` / `ColumnDescription` / `QueryTokenWithoutParent`) to the client; altea resolves query tokens from the **registered entity metadata** instead (`entities/dynamicQuery/tokens/*`), so token trees are built client-side (`Finder.getQueryRoot`). There is no DTO, no `fetchQueryDescription`, and no `/api/query/description` route — the only remaining references are comments documenting the divergence.
+- **A query TOKEN is PascalCase and ROOTLESS, and it resolves case-insensitively.** Signum's token key is a C# property name, so `Entity.ShipAddress.City`; altea's is a TypeScript field name, and used to be the key verbatim — `shipAddress.city`. Rootless is a real divergence and stays (altea's query root IS the entity, where Signum's root token is its `Entity` COLUMN); the CASING was not a divergence at all but an inconsistency, because `QueryTokenString.tokenSequence` — what `Type.token(a => a.shipName)`, every `defaultColumns` entry and every `findOptions` builder go through — has always PascalCased. So a token the typed builder BUILT could be resolved by the client (whose `Finder.TokenCompleter` keys its cache by `fullKey().toLowerCase()`) and not by the server (whose `QueryLogic.getToken` was an exact Map lookup) — which is why altea-workflow's Inbox had to spell its tokens as camelCase literals. One spelling now, Signum's, so a stored token is the same string in both frameworks.
+  - it is the KEY that changed, on the three tokens that derive one from a member: `EntityPropertyToken` (the field), `ObjectPropertyToken` (`Length`, `Year`, `DayOfWeek` — Signum's PropertyInfo names, not the binder members `length` / `year`, which the token still carries separately) and a registered EXPRESSION whose key is derived from the lambda's tail member (`deriveKeyFromQuoted`). An explicit `{ key }` at registration is honoured verbatim, and every one in the workspace was already PascalCase. Every other token key (`ToString`, `HasValue`, `Count`, `Element`, `Any`, `(Album)`, `[QuickLinks]`) was Signum's already.
+  - **`QueryToken.subToken` falls back to a CASE-INSENSITIVE match**, so nothing stored has to be migrated: every token altea itself wrote before this, and every hand-written camelCase literal in the workspace, still resolves. An exact hit always wins, so two keys differing only in case (a `Notes` expression beside a `notes` field) stay distinguishable. The client resolved this way already; the server's exact-only lookup was the odd half, and a token that resolves in the browser but not on the server is the worst of both.
+  - **LEGACY MODE drops a leading `Entity.`** (`stripLegacyRootPrefix`, applied by `QueryLogic.getToken` and by the client's `TokenCompleter`): a Signum-stored `Entity.ShipName` is altea's `ShipName`. One direction only — READING — because a token altea writes back must stay altea's, or a Signum deployment reading the same row would find a column it cannot resolve. And only when nothing ANSWERS to `Entity`: a query named by a row MODEL has a real `Entity` member (`rowEntityToken` reads it), and that one wins. It is the mirror image of the fallback Signum's own `QueryTokenSynchronizer` has, which ADDS the prefix.
+  - **the `…Start` date tokens are ported** (`DatePartStartToken`, Signum's DateTimeSpecialTokens):
+    `QuarterStart` / `MonthStart` / `WeekStart` on any date, plus `HourStart` / `MinuteStart` /
+    `SecondStart` on a PlainDateTime. It is what a per-month chart axis groups by, which `Month` alone
+    cannot be — that is the number 9, so two Septembers a year apart share a bucket and the axis has no
+    chronology; Southwind's six month-axis charts are all built on `OrderDate.MonthStart`, and eastwind's
+    seed had been substituting `Month` for it. The SQL half already existed (the nominator lowers
+    `monthStart()` / `truncHours()` to `DATETRUNC` / `date_trunc`), so this is the token, not the
+    translation — and the same call evaluates in memory. Signum's STEPPED variants (`Every 12 Hours`) are
+    not ported, as the sibling numeric `StepTokens` are not.
+  - **a POLYMORPHIC reference exposes its DECLARED type's members**, beside the per-implementation
+    `(Company)` / `(Person)` AsType tokens. Signum's `SubTokensBase` offers the AsType tokens alone, so
+    `Customer.Address` has to be written `Customer.(Company).Address` — even though `Address` is declared
+    on the abstract `CustomerEntity` both implementations derive from, and even though Signum's own binder
+    reads it perfectly well (`BindMemberAccess` → `DispatchIb`, a CASE over the implementations, one LEFT
+    JOIN each). altea's binder has the same (`bindImplementedByMember` → `dispatchIb`), so the member was
+    always translatable and merely unreachable: the token tree was the only thing saying no, and splitting
+    a value that is common to every implementation buries half the model one click deeper and scatters it
+    across N columns that are null for all but one. Southwind's own `Customer.Address.Country` chart is
+    stored that way, so this is also what lets such an asset resolve as written — Signum's picker cannot
+    build that token, which is worth knowing before concluding the file is wrong.
+    - `Id` / `ToString` / `HasValue` come with them, and those three are Signum-PARITY rather than
+      divergence: its polymorphic branch ends in `.AndHasValue(this)` (altea's had dropped it), and both
+      binders answer all three for an IB (`idOfReference`, `entityToStringOf`).
+    - a reference typed against a TS INTERFACE (`AlbumEntity.author: IAuthorEntity`) gets none of the
+      declared half: there is no reflected type to read members off and no primary key to type an `Id`
+      from. Only `ToString`, which needs neither.
+    - the framework fixture's `AwardNominationEntity.award` was widened to `Lite<Entity>` where Signum
+      declares `Lite<AwardEntity>`; it is back on the abstract base, which is what makes `Award.Category`
+      a route at all. The column is named per implementation either way, so no database moves.
 - **`TypeReference` is the ONE shared value-type descriptor.** `FieldInfo extends TypeReference`; `QueryToken.type` / `PropertyRoute.type` return it. Signum's `RuntimeType` is **server-only** (lives in `server/logic`). Read type facets off it: `.typeName`, `.array`, `.lite`, `.kind`, `.getEnum()`, `.typeInfos()`.
 - **No compat accessors.** Use the real model: `entity.constructor` (not `.Type`), `lite.entityType` (a ctor, not a string), `entity.isDirty()` (snapshot-based, not `.modified`).
 - **`Type<T>` is the ONE entity-type handle, and it is a constructor** (Signum's `GenericType` is gone; `EnumEntity.typeFor` → a bound ctor). It is `abstract new (...args: any[]) => T`, so an ABSTRACT base (`CustomerEntity`, `AwardEntity`) is a valid handle — an operation or a rule may be attached to one and inherited by its implementations. There used to be a second, abstract-tolerant `EntityType<T>` beside it; two handles for one concept meant every signature had to pick a side, so they are merged. The few places that INSTANTIATE narrow explicitly — `newInstance(type)` (the Retriever building a row, the serializer, the enum-table synchronizer) — and `Entity.create`'s `this` stays `new () => T`, because a factory cannot be abstract-tolerant.
