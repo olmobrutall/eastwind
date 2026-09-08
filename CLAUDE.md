@@ -528,6 +528,103 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   - **`TypeMetadata.fields` is keyed by `PropertyRoute.propertyString()`**, so an EMBEDDED type's members appear dotted under every owning entity (`"shipAddress.city"`) — the same key `RulePropertyEntity.path` uses, which makes property authorization a direct lookup. An embedded/model type also gets its own entry; that one is where its translations live. NOTE the UI re-roots its PropertyRoute at each embedded it renders (`RenderEntity`, as Signum does), so a client-side rule lookup must climb the TypeContext chain to the owning entity (`AuthAdminClient.ownerRootedRoute`).
   - **An extension widens the model with `declare module`**, never a side-channel map — altea-auth adds the allowance fields in `altea-auth/data/Rules.ts` (the DATA layer, because a `declare module` only applies to programs that compile the declaring file, and the client tsconfig does not compile `server/`).
 - **The display-name API is fluent and typed, never a free function over a ctor.** `OrderEntity.niceName()` / `.nicePluralName()` / `.gender()` / `.newNiceName()`, `OrderEntity.nicePropertyName(a => a.orderNumber)` (and `AddressEmbedded.nicePropertyName(a => a.city)`), `Enum.niceName(ColorEnum, "Red")`, `someSymbol.niceToString()`, `fieldInfo.niceToString()`. The resolver engine behind them lives in `Localization.Internal` (`data/utils/localization`) and has exactly four legitimate callers — `data/entity`, `data/enum`, `data/symbol`, `data/reflection` — plus framework internals that only hold a bare name (the LINQ provider lowering `Type.niceName()` into SQL). A `Localization.Internal.` in application or extension code is a bug. Two gotchas on `nicePropertyName`: the lambda overload needs an INLINE lambda (the transformer emits `__quoted` only at a `Quoted<…>` parameter, and there is no toString fallback), and the transformer does NOT rewrite lambdas in JSX ATTRIBUTES — inside JSX pass the route as a string.
+- **The MODEL RULES — `@bindParent`, `@isReadOnly`, `@validate` — are decorators writing reflection, and
+  `propsMeta` is not how the client learns about them.** Signum answers "can this member be edited right
+  now?" in `PropertyValidator.IsPropertyReadonly` (a per-property `IsReadonly` event, then the entity's
+  `IsPropertyReadonly(PropertyInfo)` override, then a process-wide `GlobalIsReadonly`) and ships the answer
+  as a `propsMeta` string array its client reads back; validation is a third virtual pair
+  (`PropertyValidation` on the entity, `ChildPropertyValidation` on the PARENT) reached through a
+  `[BindParent]` back-pointer. altea keeps every capability and reshapes the delivery:
+  - **`@bindParent` on a field, and the parent lives in a WeakMap** (`data/parentEntity`). It is NOT the
+    same thing as a `@part` row's `@backReference`, and neither substitutes for the other: the back
+    reference is a `Lite` the SAVE cascade fills, so it is empty exactly when a rule needs it — while the
+    graph is being edited, and while the owner may still be new. A field rather than a WeakMap was
+    rejected because an own property would have to be kept out of the wire, out of the snapshot diff (or
+    every entity with a parent reads back dirty), out of ObjectDumper and out of every `JSON.stringify` in
+    a test, and it makes the graph cyclic.
+    - **the read VERIFIES.** The slot records the member it was bound under and `tryGetParentEntity`
+      checks the owner still holds this child there, so a child that was MOVED or REMOVED answers
+      `undefined` rather than its old owner — where Signum, which stamps from the property setter and
+      clears from the collection-changed event, answers confidently and wrongly. That is also why there is
+      no `clearParentEntity`, and why `SetParentEntity`'s throw-if-already-owned is not ported: a throw
+      inside a load pass is a landmine, and a wrong answer is already impossible.
+    - **it takes a runtime `Type<T>`** — `tryGetParentEntity(line, OrderEntity)` — so the cast is CHECKED,
+      where Signum's `TryGetParentEntity<T>()` resolves with an unchecked `as`. `tryGet` is silent on a
+      mismatch (as that `as` is, and what lets a rule stand down), `getParentEntity` insists and names
+      which of the two mistakes it was. `tryGetOwnerEntity(child, type)` CLIMBS to the nearest ancestor of
+      that type, which is Signum's two-level `GetParentEntity` chain in one call. An INTERFACE has no
+      runtime handle, so those callers pass `Entity` and cast — as Signum does too.
+    - **four binding points, and the client one is the interesting half.** The codec (at the end of
+      `applyFields`, one level per container — a nested modifiable is deserialized first, so the graph
+      binds bottom-up), `Retriever.postRetrieved` before the Retrieved events, the Saver before PreSaving
+      and validation, and **`Binding.setValue`** — altea's counterpart of the property setter Signum
+      hooks. That last one is why Signum needs two mechanisms and altea one: every write a form makes goes
+      through that single funnel, collections included, because `EntityListBase`'s add/remove mutate the
+      array and then call `setValue(list)`. It is what makes a rule reading the owner answer while the
+      user is still building the graph.
+  - **`@isReadOnly` and `@validate` resolve field → declaring mixin → entity chain**, first
+    non-`undefined` wins. `undefined` means "no opinion", so deferring is the DEFAULT — which is what
+    replaces Signum's `super.IsPropertyReadonly(pi)` and why no rule needs a handle on the next one. A
+    `false` WINS over everything below it, making `@isReadOnly(false)` on a field the escape hatch from a
+    whole-entity rule that Signum cannot express (its per-property event wins only on `true`).
+    - **`@isReadOnly` works at BOTH levels from one decorator**, dispatching on where it was put: on a
+      field it is about that member, on a CLASS it is about every member at once — which is what replaces
+      the entity override. Class rules are a LIST on the TypeInfo, walked up the prototype chain at
+      RESOLVE time rather than copied at decoration time (a subclass's own would otherwise replace its
+      base's, since `getOrCreateTypeInfo` seeds a subclass by shallow-copying its base). One decorator
+      also covers both things Signum keeps apart at the field level — the static `MemberInfo.isReadOnly`
+      boolean and the per-property predicate — because every reader asks through one resolver,
+      `FieldInfo.isReadOnlyFor`.
+    - **the type argument is written explicitly and is what makes the member name CHECKED**:
+      `@isReadOnly<OrderEntity>((o, fi) => …)` types `o` and narrows `fi.name` to `MemberOf<OrderEntity>`,
+      so a typo or a renamed member is a compile error — TypeScript having no `nameof`. Name the CLASS,
+      never `this`: `keyof this` compiles and then checks nothing (inside the method it is a deferred
+      type), and on `BaseEntity` it would make the class's own structure `this`-dependent, which costs
+      TypeScript its variance shortcut for every generic over it and stops the Lines layer compiling.
+      There is no default type parameter, so forgetting it fails to compile rather than silently checking
+      nothing. `fi` is the real FieldInfo with a narrowed `name`, so `niceToString()` and `declaringType`
+      still work.
+    - **a class rule must NAME the states that bite, never negate the initial one.** altea does not
+      initialize a field to its type default, so a fresh entity's enum is `undefined`, not `0` — and
+      `state === New ? undefined : true` therefore froze every NEW order solid. Signum is only safe from
+      that because C# initializes the field. Pinned by a case in `altea/test/data/modelRules.test.ts`.
+    - **a MIXIN's member is not in its owner's `MemberOf`**, since the owner's class does not declare it.
+      A blanket class rule on the owner still covers it (which the write gate needs); a rule that NAMES it
+      goes on the mixin, where it is declared. `fi.declaringType` tells the two apart.
+  - **`resolveField` / `eachFieldInfo` are the two-level field walk** (own + inherited + each declared
+    mixin), and every reader goes through them. A mixin keeps its OWN TypeInfo — `OrderLineEntity.fields`
+    has no `discountCode`, `OrderDetailMixin` does — so a bare `TypeInfo.fields[member]` silently answers
+    undefined for one. That was a live bug, not just a gap: the client's `Binding.getError` used the bare
+    lookup, so a mixin field's validators — the implicit NotNull included — never ran in the live pass and
+    the user only found out on save.
+  - **so `propsMeta` is not needed for this.** All of it lives in the ISOMORPHIC data layer, so the same
+    rules run on the client: the answer is re-evaluated on every render and follows the entity in hand,
+    and it holds for an entity the client just CONSTRUCTED, which never had a propsMeta. The array is
+    still written (property AUTH fills it), and `Binding.getIsHidden` stays false — altea-auth enforces
+    that dimension through its own line task rather than a second path to the same answer.
+  - **`@validate<T>` is the former `@fieldValidation` / `customValidators`**, and the validator decorators
+    are no longer re-exported from `data/decorators`: `@stringLengthValidator` and friends come from
+    `data/validators`, which is where they live. One home per thing.
+  - **the enforcement points**: the client Lines layer (`Binding.getIsReadonly`, applied per line by
+    LineBase's `taskSetReadOnly` — and a read-only line CASCADES, so marking a collection read-only makes
+    its whole EntityTable read-only) and the serializer's WRITE gate, Signum's `AssertCanWrite`. That gate
+    runs only on the OVERLAY path (the server applying a POSTed graph onto the retrieved original), so it
+    reads the STORED state and the client-receive path is untouched; it keeps the codec's silent-keep
+    where Signum throws, which cannot falsely reject a save.
+  - NOT ported: Signum's process-wide `Validator.GlobalIsReadonly` (no consumer), and
+    `ChildPropertyValidation` — which needs no counterpart, because with a parent back-pointer a rule on
+    the child that depends on the owner IS a rule on the child. Southwind's discount rule (a line's
+    discount must be a multiple of 5% unless the order is legacy) is a `@validate` on
+    `OrderLineEntity.discount` reading `tryGetParentEntity(l, OrderEntity)`, where Signum has to write it
+    as an override on the ORDER switching on `pi.Name`.
+  Consumers so far: `SemiSymbol.name` (read-only once the row carries a `key` — a row DECLARED in code
+  owns its name, which is the whole difference between the two halves of a SemiSymbol table), the sixteen
+  `EvalEmbedded` fields — which retired altea-eval's private owners WeakMap AND its `withEvals()` fluent
+  method: `EvalEmbedded.owner(type)` reads the shared back-pointer, and the `Reset()` `withEvals` also stood
+  in for (Signum drops the compilation from the `Script` SETTER, which altea has none of) is gone too, since
+  the compilation memo now records the script it was built from — a hit counts only while that is still the
+  script on the instance, which also covers the case the retrieve hook never did — and
+  eastwind's `OrderEntity`. Pinned by `altea/test/data/modelRules.test.ts` (16 DB-free cases).
 - **An operation's owning type is its FIRST CONSTRUCTOR ARGUMENT, not an option.** `new Graph.Execute(OrderEntity, OrderOperation.Ship, { execute })` — the argument stands in for the erased generic (Signum writes `new Graph<OrderEntity>.Execute(sym)` and reads T back through reflection), and the alternative is guessing the owner by splitting the symbol key (`"OrderOperation.Ship"` → `OrderEntity`), which silently lost every operation whose container is not named after its type. As an argument it cannot be forgotten, and it reads in the same position as `sb.include(OrderEntity)`. It is still almost never written by hand, because the surrounding registration passes it: every `sb.include(X).with*` method uses the type the include was opened for (see the next bullet). What stays explicit is what that cannot know:
   - **`ConstructFrom` / `ConstructFromMany`**, whose owner is the **SOURCE** type F — that is where the button appears, and F is erased too, so the enclosing graph cannot know it. Both take it FIRST: `.withConstructFrom(CustomerEntity, OrderOperation.CreateOrderFromCustomer, { … })`. This is real information, not boilerplate: the old key heuristic got it wrong for 4 of the 5 cross-type constructors in the repo.
   - an operation shared by an ABSTRACT base's implementations. Subclasses inherit it (`OperationLogic.operationsForType` walks the prototype chain), so ONE registration owned by the base covers them all — `withSave` cannot express that, since it owns the operation with the type the include was opened for (see eastwind's `CustomerOperation.Save`).
@@ -730,6 +827,23 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     The paths were never a
     deployment choice (every one read `./files/<the store name>`), and as data they were five more rows to
     keep in step with the code that names the stores.
+    - **the ROOT is a variable, and LEGACY mode is the only reason.** Pointing eastwind at a database a
+      Signum application generated points it at that deployment's FILES too: every file-backed row holds
+      a suffix relative to whatever Southwind's `Folders` was set to (`c:/SouthwindFiles/operation-logs`),
+      so a derived `./files/operation-log` finds nothing and the retrieve of that row FAILS — `ENOENT` out
+      of BigStringLogic's File-mode read, which Signum throws on too, taking the entity page and every
+      contextual menu with it. Hence `EASTWIND_FILE_STORE_ROOT` (default `./files`) plus a legacy-only
+      alias for the seven stores Southwind spells differently (`operation-log` → `operation-logs`,
+      `cached-queries` → `cached-query`, `help-images` → `help-image`, `predictor-files` →
+      `predictor-models`, …). Still not the ported member: ONE root for every store, and the per-store
+      path stays derived. Local stores only — an Azure container / S3 bucket is `eastwind-<name>` here and
+      a Southwind deployment's cloud configuration has no counterpart. It comes from the environment for
+      the same reason the dialect and LegacyMode do: a store is registered while the schema is BUILT.
+    - **a BigString's file is named by `storedMemberName`**, so it is `InitialState.txt` in legacy mode and
+      `initialState.txt` otherwise. Signum names it after the C# PROPERTY (`pr.PropertyInfo!.Name + ".txt"`)
+      and that name is written into the stored SUFFIX, so the two deployments must agree on it — on a
+      case-insensitive store the folder is what saves a mismatch, nowhere else. Same helper a stored
+      property route goes through, rather than a second rule that could drift from it.
   - **the three configuration members Southwind has and eastwind does not are IGNORED by a legacy sync,**
     rather than renamed or dropped: `Folders_*` (above), `Translation_*` (@altea/altea-translations reads
     its two translator credentials from the environment) and `AuthTokens_*` (altea's counterpart is a
@@ -1160,7 +1274,7 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   - **The client's permission gate lives in altea-auth**, not core: `AuthClient.isPermissionAuthorized` reads
     an `allowed` flag stamped onto the permission container's own metadata entry (Signum ships a
     `permissions` side map and reads it through `AppContext.isPermissionAuthorized`).
-  - **The Inbox is named by its ROW MODEL** (`InboxRowModel`, so `/find/InboxRowModel`), not by Signum's
+  - **The Inbox is named by its ROW MODEL** (`InboxRowModel`, whose clean name strips the suffix, so `/find/Inbox`), not by Signum's
     `CaseActivityQuery.Inbox` enum member — altea has no QueryDescription, so a manual query's name IS its row
     type and each caption is the field's own `@niceName`. Its tokens used to be camelCase literals, because
     the SERVER's `QueryLogic.getToken` was an exact Map lookup while `Type.token()` PascalCased as Signum's

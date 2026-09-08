@@ -1,7 +1,8 @@
 import { reflect, init } from "@altea/altea/data/reflection";
 import { Entity, EmbeddedEntity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
-import { entity, quoted, mixin, implementedBy, primaryKey, stringLengthValidator, telephoneValidator } from "@altea/altea/data/decorators";
+import { entity, quoted, mixin, implementedBy, primaryKey } from "@altea/altea/data/decorators";
+import { stringLengthValidator, telephoneValidator } from "@altea/altea/data/validators";
 import { CorruptMixin } from "@altea/altea/data/corruptMixin";
 import { Temporal } from "@altea/altea/data/basics";
 import type { ExecuteSymbol } from "@altea/altea/data/operations";

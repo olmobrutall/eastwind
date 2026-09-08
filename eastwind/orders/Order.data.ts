@@ -1,6 +1,11 @@
 import { Entity, ModelEntity, MixinEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
-import { entity, backReference, rowOrder, quoted, mixin, implementedBy, unit, format, systemVersioned, legacyPropertyRoute } from "@altea/altea/data/decorators";
+import {
+    entity, backReference, rowOrder, quoted, mixin, implementedBy, unit, format, systemVersioned,
+    legacyPropertyRoute, isReadOnly, bindParent,
+} from "@altea/altea/data/decorators";
+import { validate } from "@altea/altea/data/validators";
+import { tryGetParentEntity } from "@altea/altea/data/parentEntity";
 import { Temporal, type int, Decimal } from "@altea/altea/data/basics";
 import { reflect, init } from "@altea/altea/data/reflection";
 import type { ConstructSymbol, From, FromMany, ExecuteSymbol, DeleteSymbol } from "@altea/altea/data/operations";
@@ -17,8 +22,7 @@ import { Enum } from "@altea/altea/data/enum";
 // Port of Southwind's Orders domain (Southwind/Orders/OrderEntity.cs), keeping Signum's Entity /
 // Embedded name suffixes. OrderEntity.customer is @implementedBy(Person, Company) — the polymorphic
 // CustomerEntity (see ./customers). Simplifications vs Signum: the OrderDetailEmbedded is modeled as
-// an owned part entity (OrderLineEntity); the StateValidator, IsPropertyReadonly, OrderDetailMixin and
-// Processes (CancelWithProcess) are omitted (extension-free).
+// an owned part entity (OrderLineEntity); the StateValidator is omitted.
 
 export enum OrderState {
     /** Never stored — an order being created. Southwind marks it `[Ignore]`; the `markAsNotMapped` below
@@ -36,34 +40,66 @@ Enum.markAsNotMapped(OrderState, OrderState.New);
 // TypeAttributes side-channel, and eastwind owns this class, so the marker is the decorator itself.
 @systemVersioned
 @entity("Main", "Transactional")
+// The whole-entity half of Southwind's `OrderEntity.IsPropertyReadonly`: once the order EXISTS it is
+// mostly history — a placed one may still be re-addressed (`shipAddress` opts back out below), a shipped
+// or cancelled one not even that. A rule about every member at once, which is what a CLASS-level
+// `@isReadOnly` is for; the members that are read-only in every state carry their own above.
+//
+// It names the three STORED states rather than negating `New`, and that is not a style choice: altea does
+// not initialize a field to its type default, so a fresh order`s `state` is UNDEFINED, not `New`. Written
+// the other way round (`state === New ? undefined : true`) every new order came up entirely read-only.
+// Signum is only safe from that because C# initializes the enum to 0.
+//
+// `undefined` for a new one DEFERS rather than answering, which is what lets a field say otherwise. A
+// read-only line cascades, so `details` needs no mention: the whole EntityTable of order lines goes with it.
+@isReadOnly<OrderEntity>(o =>
+    o.state === OrderState.Ordered || o.state === OrderState.Shipped || o.state === OrderState.Canceled
+        ? true : undefined)
 export class OrderEntity extends Entity {
     // Signum's OrderEntity.Customer — polymorphic across the concrete customer types.
     @implementedBy(() => [PersonEntity, CompanyEntity])
     customer: CustomerEntity;
     employee: Lite<EmployeeEntity>;
 
+    // Southwind lists this member, `shippedDate`, `cancelationDate`, `state` and `isLegacy` first in its
+    // `IsPropertyReadonly` — they are the ENGINE's at every point in the life of an order, whatever state
+    // it is in. That is a rule about ONE member each, so it goes on the member (Signum has no per-property
+    // form to put it in, so it spells all five out in the method).
+    @isReadOnly(true)
     orderDate: Temporal.PlainDate;
     requiredDate: Temporal.PlainDate;
+    @isReadOnly(true)
     shippedDate: Temporal.PlainDate | null;
+    @isReadOnly(true)
     cancelationDate: Temporal.PlainDate | null;
 
     shipVia: Lite<ShipperEntity> | null;
     shipName: string | null;
 
+    // Southwind lets a PLACED order still be re-addressed: the only member the whole-entity rule above
+    // does not freeze while the state is Ordered. A field-level `false` wins over it — which is the
+    // escape hatch Signum's per-property hook cannot express, so it spells this out as a branch of the
+    // entity method instead.
+    @isReadOnly<OrderEntity>(o => o.state === OrderState.Ordered ? false : undefined)
     shipAddress: AddressEmbedded;
 
     @unit("Kg")
     freight: Decimal;
 
-    // Signum's [PreserveOrder] MList<OrderDetailEmbedded> Details → owned part rows.
+    // Signum's [PreserveOrder, BindParent] MList<OrderDetailEmbedded> Details → owned part rows. The
+    // @bindParent is Southwind's, and it is what lets a LINE reach the order it belongs to: the row's own
+    // `@backReference` is a Lite the SAVE cascade fills, so it is empty exactly when a rule needs it.
+    @bindParent
     details: OrderLineEntity[];
 
     // `= false` is NOT restating a zero value: Signum's `public bool IsLegacy { get; set; }` IS initialized
     // — by C#, to false — and altea's implicit NotNull validator rejects an unset non-nullable field, so a
     // hand-created order (`/create/Order`, or the one a workflow's CreateNew strategy builds) could never be
     // saved without it. Only the LOADER sets it true, for the imported Northwind orders.
+    @isReadOnly(true)
     isLegacy: boolean = false;
 
+    @isReadOnly(true)
     state: OrderState;
 
     // Signum's [AutoExpressionField] TotalPrice => Details.Sum(od => od.SubTotalPrice).
@@ -76,12 +112,15 @@ export class OrderEntity extends Entity {
     totalPrice(): Decimal {
         return this.details.sum(d => d.subTotalPrice());
     }
+
 }
 
 export const OrderMessage = {
     // (Signum has no OrderMessage.TotalPrice: the expression's label is a MEMBER of OrderEntity, read via
     // OrderEntity.nicePropertyName — see OrderLogic's expression registration.)
-    subTotalPrice: msg()
+    subTotalPrice: msg(),
+    // Signum's typo is kept: the member name is the KEY the shipped translations already carry.
+    discountShouldBeMultpleOf5: msg("Discount should be multiple of 5%"),
 };
 
 // Southwind's `OrderDetailMixin` (Orders/OrderEntity.cs), registered in its Starter as
@@ -114,6 +153,24 @@ export class OrderLineEntity extends Entity {
 
     quantity: int;
 
+    /**
+     * Southwind's `OrderEntity.ChildPropertyValidation`: on an order that is not LEGACY, a line's discount
+     * must be a multiple of 5%. Signum has to write it as an override on the ORDER, because that is where
+     * the rule can see `IsLegacy` — so it arrives as a method switching on `pi.Name == nameof(Discount)`.
+     *
+     * Here it goes on the field it is about, and reads the order through the parent back-pointer
+     * (`@bindParent` on `OrderEntity.details`). So `ChildPropertyValidation` needs no counterpart: a rule
+     * on the child that depends on the owner IS a rule on the child.
+     *
+     * An UNBOUND line (a graph nobody bound, or a line held by something other than an order) is left
+     * alone rather than refused: `tryGetParentEntity` answers undefined and the rule stands down, which
+     * is also what happens for the legacy imported orders.
+     */
+    @validate<OrderLineEntity>(l =>
+        tryGetParentEntity(l, OrderEntity)?.isLegacy === false
+            && !Decimal.mod(Decimal.mul(l.discount, 100), 5).isZero()
+            ? OrderMessage.discountShouldBeMultpleOf5.niceToString()
+            : null)
     @format("p")
     discount: Decimal;
 

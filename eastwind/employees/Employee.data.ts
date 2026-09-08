@@ -2,8 +2,10 @@ import { reflect, init } from "@altea/altea/data/reflection";
 import { Entity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
 import { CurrentUser } from "@altea/altea/data/security";
-import { entity, quoted, backReference, valueField, fullTextIndex, vectorIndex, column, uniqueIndex } from "@altea/altea/data/decorators";
-import { customValidators } from "@altea/altea/data/validators";
+import {
+    entity, quoted, backReference, valueField, fullTextIndex, vectorIndex, column, uniqueIndex,
+} from "@altea/altea/data/decorators";
+import { validate } from "@altea/altea/data/validators";
 import { Temporal, type int, toInt } from "@altea/altea/data/basics";
 import { Vector } from "@altea/altea/data/vector";
 import type { ExecuteSymbol } from "@altea/altea/data/operations";
@@ -51,7 +53,7 @@ export class EmployeeEntity extends Entity {
     // in the "Client" phase, so the browser never runs it; the server first reports it after
     // deserialization (phase 2). Trigger: set Title to "!srv" and Save — the field goes red and the
     // summary shows, even though the client let the request through.
-    @customValidators<EmployeeEntity>((e, _fi, env) =>
+    @validate<EmployeeEntity>((e, _fi, env) =>
         env !== "Client" && e.title === "!srv" ? "Title '!srv' is reserved (server-only rule)" : null)
     title: string | null;
     titleOfCourtesy: string | null;
@@ -61,7 +63,7 @@ export class EmployeeEntity extends Entity {
     homePhone: string | null;
     // VALIDATION DEMO — a SAVE-ONLY rule: silent on the client AND after deserialization, enforced only in
     // the final "Saving" phase (e.g. a last-moment consistency check). Trigger: set Extension to "!save".
-    @customValidators<EmployeeEntity>((e, _fi, env) =>
+    @validate<EmployeeEntity>((e, _fi, env) =>
         env === "Saving" && e.extension === "!save" ? "Extension '!save' is rejected at save time" : null)
     extension: string | null;
     notes: string | null;
