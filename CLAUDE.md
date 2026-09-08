@@ -213,12 +213,15 @@ Known structural divergences from Signum (this is what "fix" means — don't por
       contract altea-playwright's per-step narrowing is built on.
     **An existing altea database needs `eastwind/terminal/migratePartRoutes.ts` BEFORE the sync** — the
     synchronizer sees every part-rooted row as REMOVED and the DELETE cascades to every consumer.
-  - **A `@part` gets a `TypeEntity` ROW in BOTH MODES.** Legacy mode used to skip the row that stands in
-    for a Signum MLIST TABLE, on Signum's reasoning: an MList table is not an entity there, so a Signum
-    database has no row for one and its own synchronizer DELETES rows it does not recognise. altea's side
-    wins, because here the row IS an entity — a class, a clean name, a `toLite()`, a route root — and every
-    one of those resolves THROUGH the type caches, so a part with no row is a type `TypeLogic.typeToId`
-    throws on. **A legacy database gains one INSERT per MList row type on the next sync.**
+  - **A `@part` gets a `TypeEntity` ROW unless it IS a legacy MList table.** `typedTables` skips
+    `table.legacyMode && table.isMListRow`, and that predicate (`mlistRowOwner`) is the whole of the
+    question: a part reached through an owner's ARRAY is Signum's MList TABLE, which is not an entity
+    there at all — so a Signum database has no row for one, and Signum's own synchronizer DELETES rows it
+    does not recognise, which would have the two applications taking turns adding and removing them. A
+    part reached through a single reference stands in for a Signum EMBEDDED, and one whose owner declares
+    `@legacyTableName({ wasVirtualMList: true })` stands in for a real ENTITY: both get a row in either
+    mode, because Signum has one for both. Nothing needs the missing id — an MList row is never the target
+    of an `@implementedByAll`, and a property route is rooted at the OWNING entity.
   - **`includeArrayElements` gates the BARE element route, not the DESCENT into it** — Signum's
     `includeMListElements`, whose `GenerateEmbeddedProperties(itemRoute, …)` call sits outside the flag.
     altea had gated the whole descent, so the property-auth pack (false, as Signum's is) had never seen a
