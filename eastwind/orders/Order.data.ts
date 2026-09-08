@@ -1,7 +1,7 @@
 import { Entity, ModelEntity, MixinEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
 import {
-    entity, backReference, rowOrder, quoted, mixin, implementedBy, unit, format, systemVersioned,
+    entity, part, backReference, rowOrder, quoted, mixin, implementedBy, unit, format, systemVersioned,
     legacyPropertyRoute, isReadOnly, bindParent,
 } from "@altea/altea/data/decorators";
 import { validate } from "@altea/altea/data/validators";
@@ -135,7 +135,7 @@ export class OrderDetailMixin extends MixinEntity {
 
 // Owned child rows for OrderEntity.details (the per-row equivalent of Signum's
 // OrderDetailEmbedded, whose embedded fields are flattened in here).
-@entity("Part")
+@part
 // Southwind attaches OrderDetailMixin in its Starter; altea has no MixinDeclarations side-channel and
 // eastwind owns this class, so the attachment is the decorator (as with @systemVersioned above).
 @mixin(() => [OrderDetailMixin])

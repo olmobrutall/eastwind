@@ -1,7 +1,7 @@
 import { reflect, init } from "@altea/altea/data/reflection";
 import { Entity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
-import { entity, quoted, backReference, rowOrder, translatable, uniqueIndex, unit, legacyPropertyRoute } from "@altea/altea/data/decorators";
+import { entity, part, quoted, backReference, rowOrder, translatable, uniqueIndex, unit, legacyPropertyRoute } from "@altea/altea/data/decorators";
 import { type int, type short, Decimal } from "@altea/altea/data/basics";
 import { msg } from "@altea/altea/data/utils/localization";
 import type { IQuery } from "@altea/altea/data/iquery";
@@ -92,7 +92,7 @@ export interface ProductEntity {
 // Southwind declares the unique index in its LOGIC layer — `WithUniqueIndexMList(a =>
 // a.AdditionalInformation, mle => new { mle.Parent, mle.Element.Key })` — because an MList element
 // has no class of its own to put it on. Here the row IS a class, so it goes where the columns are.
-@entity("Part")
+@part
 @uniqueIndex((r: ProductEntity_AdditionalInformation) => [r.product, r.key])
 export class ProductEntity_AdditionalInformation extends Entity {
     @backReference product: Lite<ProductEntity>;

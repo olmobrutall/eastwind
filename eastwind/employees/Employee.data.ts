@@ -3,7 +3,7 @@ import { Entity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
 import { CurrentUser } from "@altea/altea/data/security";
 import {
-    entity, quoted, backReference, valueField, fullTextIndex, vectorIndex, column, uniqueIndex,
+    entity, part, quoted, backReference, valueField, fullTextIndex, vectorIndex, column, uniqueIndex,
 } from "@altea/altea/data/decorators";
 import { validate } from "@altea/altea/data/validators";
 import { Temporal, type int, toInt } from "@altea/altea/data/basics";
@@ -99,7 +99,7 @@ export class EmployeeEntity extends Entity {
 }
 
 // Junction rows for EmployeeEntity.territories (Signum's MList<TerritoryEntity>).
-@entity("Part")
+@part
 export class EmployeeEntity_Territory extends Entity {
     @backReference employee: Lite<EmployeeEntity>;
     @valueField territory: Lite<TerritoryEntity>;
