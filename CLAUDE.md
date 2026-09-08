@@ -155,10 +155,19 @@ Known structural divergences from Signum (this is what "fix" means — don't por
 
 - **`@part` is a DECORATOR, and a part is a CONTINUATION of its owner, never a root.** "Part" is by far
   the most-declared kind (120 of the 124 classes that name one) and the whole codebase already talks about
-  "a `@part` row", so it is `@part` bare and `@part("Master")` where the row declares its own EntityData.
-  `@entity("Part")` is GONE, not left beside it — `entity`'s `kind` excludes it and its `data` is
-  mandatory, which is the same split one argument down; two spellings of a declaration is the drift the
-  rest of that file is written to avoid. **The quote-transformer has to know the name**
+  "a `@part` row", so it is `@part` — bare, and with NO EntityData, where every other kind must be given
+  one. A part is reached and saved through the entity that OWNS it, so its data is the owner's by
+  construction (Signum's own rule for an MList table): `SchemaBuilder.include` passes it down as it
+  recurses, and `complete()` then propagates it across the whole model, which is what catches a part
+  reached through an `@implementedBy(() => [])` the APP widens — the owner's table was finished before
+  the app named it, so nothing had included it with the owner in hand. A part NOTHING references falls
+  back to `Master`, which is what Signum declares for both of the ownerless ones (HelpImage,
+  UserTreePart). Sixty declarations used to restate the derived value; ONE of them differed from its
+  owner and is now the owner's — `NeuralNetworkSettingsEntity` said Master where PredictorEntity is
+  Transactional, as Signum's declaration also does. Nothing in altea reads the facet yet (it is
+  Signum-parity metadata, used there by the sync and the schema map), so that is where to look first if a
+  consumer appears. `@entity("Part")` is GONE too, not left beside it: `entity`'s `kind` excludes it and
+  its `data` is mandatory. **The quote-transformer has to know the name**
   (`FIELD_INJECTING_DECORATORS`) or a part class gets no `@field` injection and no `registerType` and is
   simply absent from reflection — and a transformer change is invisible to tsc's up-to-date check, so
   this kind of edit needs **`tspc -b --force`** or an incremental build re-emits every part unregistered.
