@@ -526,7 +526,59 @@ Known structural divergences from Signum (this is what "fix" means — don't por
 - **Reflection metadata is ONE global blob** (nice names + auth + queries + operations) shipped eagerly at boot.
 - **`XxxInfo` vs `XxxMetadata` — the two halves of reflection.** `TypeInfo` / `FieldInfo` (`data/reflection`) are the **compile-time** descriptor the quote-transformer stamps onto each constructor: types, units, formats, validators, implementations — identical for every user and every culture. `TypeMetadata` / `FieldMetadata` / `OperationMetadata` (`data/metadata`) are the **runtime** half: per-CULTURE (nice names, plural, gender) and per-ROLE (`min/maxTypeAllowed`, `propertyAllowed`), assembled per request by `ReflectionServer.buildMetadata` and shipped as ONE `MetadataBlob`. Structurally this follows Signum — one entry per type carrying everything about it — but Signum's single `TypeInfo` family is split, so nothing per-role ever lands on the compile-time descriptor. Consequences: `TypeInfo` has NO `operations` / `hasConstructorOperation` / `gender`; read them via `Metadata.tryType(name)` or the client's `getOperationInfos` / `ti.getGender()`.
   - **`TypeMetadata.fields` is keyed by `PropertyRoute.propertyString()`**, so an EMBEDDED type's members appear dotted under every owning entity (`"shipAddress.city"`) — the same key `RulePropertyEntity.path` uses, which makes property authorization a direct lookup. An embedded/model type also gets its own entry; that one is where its translations live. NOTE the UI re-roots its PropertyRoute at each embedded it renders (`RenderEntity`, as Signum does), so a client-side rule lookup must climb the TypeContext chain to the owning entity (`AuthAdminClient.ownerRootedRoute`).
-  - **An extension widens the model with `declare module`**, never a side-channel map — altea-auth adds the allowance fields in `altea-auth/data/Rules.ts` (the DATA layer, because a `declare module` only applies to programs that compile the declaring file, and the client tsconfig does not compile `server/`).
+  - **An extension widens the model with `declare module`**, never a side-channel map — altea-auth adds the allowance fields in `altea-auth/data/Rules.ts` (the DATA layer, because a `declare module` only applies to programs that compile the declaring file, and the client tsconfig does not compile `server/`). Same rule, same reason, for the members a module registers as query EXPRESSIONS — see the registered-expression bullet below.
+- **A REGISTERED EXPRESSION is DECLARED in `data/` and IMPLEMENTED in `server/`. This is the pattern; there
+  is no second one.** Signum writes `[AutoExpressionField] public static IQueryable<AlertEntity>
+  Alerts(this Entity e)` — an extension METHOD, which occupies no name on the type and is visible to
+  everything that references the assembly. TypeScript has no extension methods, so altea puts the member on
+  the type in two halves:
+
+  ```ts
+  // altea-alert/data/Alert.ts — the DECLARATION
+  declare module "@altea/altea/data/entity" {
+      interface Entity { alerts?(): IQuery<AlertEntity>; }
+  }
+
+  // altea-alert/server/AlertLogic.ts — the IMPLEMENTATION
+  Entity.prototype.alerts = withQuoted(function (this: Entity): IQuery<AlertEntity> {
+      return table(AlertEntity).filter(a => a.target!.is(this));
+  });
+  ```
+
+  - **Why the halves split at all**: the body needs `table(...)`, which is server-only, while the
+    DECLARATION has to reach the CLIENT — `QueryTokenString` lives in `client/`, so a member declared in a
+    server file cannot be named by `token(a => a.alerts())`, which is what every `defaultColumns`,
+    `findOptions` and quick link is built from. Declaring in `data/` is what makes the typed token builder
+    work at all; a `declare module` only applies to programs that COMPILE the declaring file, and the client
+    tsconfig does not compile `server/`.
+  - **Never a local `type Target = Entity & { … }` at the register call, and never a cast to reach the
+    prototype.** Both were tried and both are gone: the local type made the member invisible to every other
+    caller (so no token could be built), and `(type as unknown as { prototype: Record<string, unknown> })`
+    bought nothing — `Type<T>` now declares `prototype: T`, so `type.prototype.alerts = …` is CHECKED, where
+    before it went through `Function.prototype`'s `any` and a typo in a stamped member name was silent.
+  - **OPTIONAL (`?`) always**, because the member is a TOKEN only on the types the registration names —
+    `AlertLogic.start` takes the list. The declaration says "any entity may carry this", the registration
+    says "these types offer it", and the `!` at the call site is the reminder.
+  - **Stamp ONCE on `Entity.prototype` when the body does not depend on the type** (alerts, viewLogs,
+    entityNotes, operationLogs, systemValidFrom/To, previousOperationLog): the per-type function then holds
+    only its `QueryLogic.expressions.register` calls. Stamp PER TYPE only when the body captures it —
+    altea-tree is the one case, since `table(type)` must be a constant in the quoted tree.
+  - **A per-type expression is typed by the polymorphic `this`**, not by a generic entity class:
+    `treeChildren?(): IQuery<this>` on `TreeEntity` makes `DepartmentEntity.prototype.treeChildren()` an
+    `IQuery<DepartmentEntity>`, so a token keeps walking into that type's own members. A `TreeEntity<T>`
+    would say the same at the cost of a type argument on every reference in the workspace (plus an F-bounded
+    `T extends TreeEntity<T>` to close the loop), and `this` is what core's own `Entity.inDB(): IQuery<this>`
+    already uses.
+  - **An INTERFACE instead of `Entity` only when it is a real CONTRACT** an app opts a type into and other
+    code takes as a parameter — `ICaseMainEntity` (altea-workflow's client frames are typed by it),
+    `ISMSOwnerEntity`. Those keep their own declaration in `data/`, and the stamp names it:
+    `const proto = type.prototype as ICaseMainEntity`.
+  - **Registering on `Entity` itself does NOT work**, which is why "once for every type" is a LOOP over
+    `schema.tables` and not one call: `QueryLogic.expressions.register` resolves the SOURCE type through
+    `Implementations.by`, which refuses the abstract root ("Entity is not an Entity"). Signum registers
+    `OperationLogs` once for `Entity`; altea registers it per included type from `OperationLogic.start`.
+    Registering on an abstract BASE that is a real mapped type does work, and is inherited by its
+    subclasses through the prototype-chain walk (altea-sms's `SMSOwnerData`).
 - **The display-name API is fluent and typed, never a free function over a ctor.** `OrderEntity.niceName()` / `.nicePluralName()` / `.gender()` / `.newNiceName()`, `OrderEntity.nicePropertyName(a => a.orderNumber)` (and `AddressEmbedded.nicePropertyName(a => a.city)`), `Enum.niceName(ColorEnum, "Red")`, `someSymbol.niceToString()`, `fieldInfo.niceToString()`. The resolver engine behind them lives in `Localization.Internal` (`data/utils/localization`) and has exactly four legitimate callers — `data/entity`, `data/enum`, `data/symbol`, `data/reflection` — plus framework internals that only hold a bare name (the LINQ provider lowering `Type.niceName()` into SQL). A `Localization.Internal.` in application or extension code is a bug. Two gotchas on `nicePropertyName`: the lambda overload needs an INLINE lambda (the transformer emits `__quoted` only at a `Quoted<…>` parameter, and there is no toString fallback), and the transformer does NOT rewrite lambdas in JSX ATTRIBUTES — inside JSX pass the route as a string.
 - **The MODEL RULES — `@bindParent`, `@isReadOnly`, `@validate` — are decorators writing reflection, and
   `propsMeta` is not how the client learns about them.** Signum answers "can this member be edited right
