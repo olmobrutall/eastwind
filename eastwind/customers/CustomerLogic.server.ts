@@ -19,6 +19,22 @@ export namespace CustomersLogic {
         sb.include(PersonEntity).withQuery();
         sb.include(CompanyEntity).withQuery();
 
+        // Southwind's three registrations on the ABSTRACT base (CustomersLogic.cs):
+        //   QueryLogic.Expressions.Register((CustomerEntity c) => c.Address) …Phone …Fax
+        // A polymorphic `Lite<CustomerEntity>` (an order's `customer`) offers only its `(Company)` /
+        // `(Person)` casts — that is Signum's rule and altea's — so the three members CustomerEntity
+        // itself declares are reachable off it only because they are registered here. It is what makes
+        // Southwind's stored `Customer.Address.Country` chart resolve, and the reason the app decides
+        // which of a base's members are worth a column rather than the framework guessing.
+        // Signum's `ForcePropertyRoute` has no counterpart: altea derives the route from the
+        // expression's own Meta, which already lands on `(CustomerEntity).address`.
+        QueryLogic.expressions.register(CustomerEntity, (c: CustomerEntity) => c.address,
+            { key: "Address", niceName: () => CustomerEntity.nicePropertyName(c => c.address) });
+        QueryLogic.expressions.register(CustomerEntity, (c: CustomerEntity) => c.phone,
+            { key: "Phone", niceName: () => CustomerEntity.nicePropertyName(c => c.phone) });
+        QueryLogic.expressions.register(CustomerEntity, (c: CustomerEntity) => c.fax,
+            { key: "Fax", niceName: () => CustomerEntity.nicePropertyName(c => c.fax) });
+
         // The `SMSOwnerData` token a query-based SMSTemplate's `to` points at (see Customer.data.ts).
         // Registered PER CONCRETE TYPE, like every altea extension token: the token walk follows the
         // concrete prototype chain, so a registration on the abstract base is not offered on the subclasses.
