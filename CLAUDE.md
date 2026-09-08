@@ -169,20 +169,46 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     is not special. `SharedPart` is EXCLUDED: several owners, so "continue the parent" has no single
     answer and re-rooting is the only unambiguous thing to do, which is what Signum's `EntityKind
     .SharedPart` is for.
-  - **…so it may not ROOT a STORED route.** `Product.AdditionalInformation/Key` and
-    `(Product_AdditionalInformation).Key` were two names for one member: a rule stored under one is
-    invisible to a lookup made through the other, and a Signum database's row has no counterpart at all
-    (eastwind's AuthRules.xml carried Southwind's two `AdditionalInformation/*` rules commented out for
-    exactly that). `PropertyRoute.assertNotPartRoot()` is the gate, and it is at the STORAGE boundary
-    rather than in `root()` — a part root is a fine TRANSIENT handle and some have no parent to continue
-    (a `@backReference` navigation walks UP and out of the subtree; a part in a modal or handed to the
-    codec alone has no enclosing route). So `toPropertyRouteEntity` / `propertyRouteEntitySync` refuse
-    one, and `PropertyRouteLogic.modelPaths` / the property-auth enumeration answer NOTHING for a part.
-    The client and the multi-setter follow, so a lookup uses the one spelling: EntityTable resolves its
-    columns against the owner's element route, RenderEntity keeps the owner's route for a part, and a
-    setter path MAY cross a part (Signum's `PropertyPart` intent, whose condition was wrong there).
+  - **…so it may not ROOT one at all, and that is checked in the CONSTRUCTOR.**
+    `Product.AdditionalInformation/Key` and `(Product_AdditionalInformation).Key` were two names for one
+    member: a rule stored under one is invisible to a lookup made through the other, and a Signum
+    database's row has no counterpart at all (eastwind's AuthRules.xml carried Southwind's two
+    `AdditionalInformation/*` rules commented out for exactly that). The `PropertyRoute` constructor
+    refuses a Root step on a part, so there is no way to end up HOLDING the second name — `root()` is not
+    the only way in (`add`'s re-root branch builds one too), and a check each caller must remember to make
+    is a check that gets forgotten.
+    - **`PropertyRoute.rootStandalone(ctor)` is the one deliberate way past it**, for a part with NO owner
+      in the picture, and it has exactly two consumers: the reflection blob's per-type LABEL dictionary
+      (`memberPaths`, which hands back STRINGS so the root cannot escape) — `FieldInfo.niceToString()`
+      reads it by (declaring type, member), so `AlbumEntity_Song.name` needs an entry under the SONG — and
+      a part's OWN registered query (`sb.include(x).withQuery()` on a row type: @altea/altea-agent does it
+      for a chat message's tool calls), whose columns are its own members and whose stored tokens are
+      scoped by the query key. altea-playwright's `LineContainer.as(type)` is the third, and stores nothing.
+    - `assertNotPartRoot()` remains what a STORAGE boundary asks, since a route can arrive from anywhere:
+      `toPropertyRouteEntity` / `propertyRouteEntitySync` refuse one, and `PropertyRouteLogic.modelPaths` /
+      the property-auth enumeration answer NOTHING for a part.
+    - **the consumers that used to re-root at a part now continue the owner's route**, which is also where
+      the rules are stored: EntityTable resolves its columns against the owner's element route, RenderEntity
+      and FrameModal keep the route they were opened from, the token layer's `normalizePropertyRoute` and
+      the synthetic `Id` token borrow the parent's, the SERIALIZER continues `sc.route` / `dc.route` (and
+      keeps the owner's auth metadata, since a part is no more an IRootEntity than Signum's embedded is),
+      and a multi-setter path MAY cross a part (Signum's `PropertyPart` intent, whose condition was wrong
+      there). `TypeContext.root` / `cast` / `as` and FramePage — which have no parent route by construction
+      — hand the context the bare TypeReference instead.
+    - **`@implementedByAll` no longer offers a CAST to a part**, which brings that list back to Signum's:
+      altea's mapped types include the rows standing in for MList tables, which are not types there.
+    - **`data-property-path` is still the line's OWN member.** `TypeContext.propertyPath` used to be the
+      whole `propertyString()` and read the same only because the UI re-rooted at every entity; it takes
+      the last step now, so an order line's cell says `Product` as every other line does — which is the
+      contract altea-playwright's per-step narrowing is built on.
     **An existing altea database needs `eastwind/terminal/migratePartRoutes.ts` BEFORE the sync** — the
     synchronizer sees every part-rooted row as REMOVED and the DELETE cascades to every consumer.
+  - **A `@part` gets a `TypeEntity` ROW in BOTH MODES.** Legacy mode used to skip the row that stands in
+    for a Signum MLIST TABLE, on Signum's reasoning: an MList table is not an entity there, so a Signum
+    database has no row for one and its own synchronizer DELETES rows it does not recognise. altea's side
+    wins, because here the row IS an entity — a class, a clean name, a `toLite()`, a route root — and every
+    one of those resolves THROUGH the type caches, so a part with no row is a type `TypeLogic.typeToId`
+    throws on. **A legacy database gains one INSERT per MList row type on the next sync.**
   - **`includeArrayElements` gates the BARE element route, not the DESCENT into it** — Signum's
     `includeMListElements`, whose `GenerateEmbeddedProperties(itemRoute, …)` call sits outside the flag.
     altea had gated the whole descent, so the property-auth pack (false, as Signum's is) had never seen a
