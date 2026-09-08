@@ -2053,8 +2053,9 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     `DescriptionOptions` POCO; altea needs no reflected type, because a `@quoted` member returning a
     hand-built object (`{ owner: this.toLite(), telephoneNumber: this.phone, culture: null }`) is a real
     query token — verified on eastwind's `CustomerEntity.smsOwnerData()`. That is what a template's `to`
-    points at. It still has to be REGISTERED as an expression per concrete type (`@quoted` alone is not a
-    token), and its `Equals`-based de-duplication becomes a key Set.
+    points at. It still has to be REGISTERED as an expression (`@quoted` alone is not a token) — ONCE, on
+    the abstract base, since `getExtensionsTokens` walks the parent token's own prototype chain and every
+    concrete subclass finds it there. And its `Equals`-based de-duplication becomes a key Set.
   - **`SendAsyncSMS` is dropped** (Signum's detached `Task.Factory.StartNew`): a floating promise in Node is
     an unhandled rejection waiting to happen and races process exit — the Send PROCESS is what
     fire-and-forget means here. Same call altea-view-log made for its log write.

@@ -35,12 +35,16 @@ export namespace CustomersLogic {
         QueryLogic.expressions.register(CustomerEntity, (c: CustomerEntity) => c.fax,
             { key: "Fax", niceName: () => CustomerEntity.nicePropertyName(c => c.fax) });
 
-        // The `SMSOwnerData` token a query-based SMSTemplate's `to` points at (see Customer.data.ts).
-        // Registered PER CONCRETE TYPE, like every altea extension token: the token walk follows the
-        // concrete prototype chain, so a registration on the abstract base is not offered on the subclasses.
-        for (const t of [PersonEntity, CompanyEntity])
-            QueryLogic.expressions.register(t, (c: CustomerEntity) => c.smsOwnerData(),
-                { key: "SMSOwnerData", niceName: () => CustomerEntity.nicePropertyName(c => c.smsOwnerData()) });
+        // The `SMSOwnerData` token a query-based SMSTemplate's `to` points at (see Customer.data.ts),
+        // on the same abstract base for the same reason. This used to be registered once per CONCRETE
+        // type, on the belief that a base registration is not offered on the subclasses — it is:
+        // `getExtensionsTokens` walks the parent token's own prototype chain, so `Person`'s and
+        // `Company`'s query roots both find it. One registration also puts it on the polymorphic
+        // `Order.Customer`, which is a gain rather than a side effect (an SMS template over the Order
+        // query can target the customer) and lowers like any other member of the base — the object it
+        // returns becomes one CASE per field over the implementations.
+        QueryLogic.expressions.register(CustomerEntity, (c: CustomerEntity) => c.smsOwnerData(),
+            { key: "SMSOwnerData", niceName: () => CustomerEntity.nicePropertyName(c => c.smsOwnerData()) });
 
         // Southwind calls `.WithSave(CustomerOperation.Save)` on BOTH Person and Company. altea's operation
         // registry is keyed by the symbol alone (one implementation per symbol), so the shared Save is

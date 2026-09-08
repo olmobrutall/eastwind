@@ -8,7 +8,7 @@ import { RootToken } from "@altea/altea/data/dynamicQuery/tokens/rootToken";
 import { SubTokensOptions, type QueryToken } from "@altea/altea/data/dynamicQuery/tokens/queryToken";
 import { QueryLogic } from "@altea/altea/server/dynamicQuery/queryLogic";
 import { OrderEntity } from "../orders/Order.data";
-import { CustomerEntity } from "../customers/Customer.data";
+import { CustomerEntity, PersonEntity, CompanyEntity } from "../customers/Customer.data";
 
 const O = SubTokensOptions.CanElement | SubTokensOptions.CanAnyAll;
 const customer = (): QueryToken => new RootToken(OrderEntity).subToken("Customer", O)!;
@@ -42,6 +42,16 @@ check("Fax", customer().subToken("Fax", O)?.fullKey(), "Customer.Fax");
 check("the casts survive", customer().subToken("(Company)", O)?.fullKey(), "Customer.(Company)");
 check("HasValue, which Signum's branch also ends in", customer().subToken("HasValue", O)?.fullKey(), "Customer.HasValue");
 check("an unregistered member is still not offered", customer().subToken("Id", O), undefined);
+
+// And a registration on the abstract base reaches every CONCRETE subclass's own query root, which is
+// why `SMSOwnerData` needs one registration rather than one per customer type.
+QueryLogic.expressions.register(CustomerEntity, (c: CustomerEntity) => c.smsOwnerData(),
+    { key: "SMSOwnerData", niceName: () => CustomerEntity.nicePropertyName(c => c.smsOwnerData()) });
+for (const t of [PersonEntity, CompanyEntity])
+    check(`${(t as Function).name}'s root offers the base's SMSOwnerData`,
+        new RootToken(t).subToken("SMSOwnerData", O)?.fullKey(), "SMSOwnerData");
+check("…and so does the polymorphic reference", customer().subToken("SMSOwnerData", O)?.fullKey(),
+    "Customer.SMSOwnerData");
 
 console.log(bad === 0 ? "\nALL OK" : `\n${bad} FAILED`);
 process.exitCode = bad === 0 ? 0 : 1;
