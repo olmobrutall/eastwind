@@ -153,11 +153,12 @@ Port faithfully: **mirror Signum's class / method names and member order**, copy
 
 Known structural divergences from Signum (this is what "fix" means — don't port these 1:1):
 
-- **`@part` is a DECORATOR, and a part is a CONTINUATION of its owner, never a root.** `@entity("Part")`
-  is by far the most-declared kind (120 of the 124 classes that name one) and the whole codebase already
-  talks about "a `@part` row", so it is `@part` bare and `@part("Master")` where the row declares its own
-  EntityData — the same split the `entity` overloads encode, since `data` is required for every kind
-  EXCEPT Part. `@entity("Part")` still works. **The quote-transformer has to know the name**
+- **`@part` is a DECORATOR, and a part is a CONTINUATION of its owner, never a root.** "Part" is by far
+  the most-declared kind (120 of the 124 classes that name one) and the whole codebase already talks about
+  "a `@part` row", so it is `@part` bare and `@part("Master")` where the row declares its own EntityData.
+  `@entity("Part")` is GONE, not left beside it — `entity`'s `kind` excludes it and its `data` is
+  mandatory, which is the same split one argument down; two spellings of a declaration is the drift the
+  rest of that file is written to avoid. **The quote-transformer has to know the name**
   (`FIELD_INJECTING_DECORATORS`) or a part class gets no `@field` injection and no `registerType` and is
   simply absent from reflection — and a transformer change is invisible to tsc's up-to-date check, so
   this kind of edit needs **`tspc -b --force`** or an incremental build re-emits every part unregistered.
