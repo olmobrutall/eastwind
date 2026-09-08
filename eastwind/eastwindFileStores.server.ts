@@ -16,14 +16,17 @@ import { S3Storage, resolveEndpoint, type S3Configuration } from "@altea/altea-f
 //  - the BACKEND choice and its credentials are the app's, and they live in the environment exactly where
 //    Southwind keeps them (`azureStorageConnectionString` is a `Starter.Start` parameter fed from
 //    appsettings.json, never a member of the configuration entity);
-//  - WHERE a local store writes is derived from the store's NAME (`./files/<name>`) rather than configured
-//    — see the divergence note in globals/ApplicationConfiguration.data.ts;
+//  - WHERE a local store writes is derived from the store's NAME (`<root>/<name>`) rather than configured
+//    per store — see the divergence note in globals/ApplicationConfiguration.data.ts. Only the ROOT is a
+//    variable (EASTWIND_FILE_STORE_ROOT, default `./files`), and only because LegacyMode points this app
+//    at another deployment's files as well as its database — see `filesRoot`;
 //  - CONNECTING to Azure / S3 is the MODULE's business — `AzureBlobStorage` / `S3Storage` cache the client
 //    and hold the container / bucket naming rules, so this file only names the store and the prefix.
 //
 //   EASTWIND_FILE_STORE=folder    (default) — a local folder per store
 //   EASTWIND_FILE_STORE=azure               — one Azure Blob container per store
 //   EASTWIND_FILE_STORE=s3                  — one S3 bucket (or key prefix) per store
+//   EASTWIND_FILE_STORE_ROOT=./files        — where the local folders live (see `filesRoot`)
 //
 // Azure needs EASTWIND_AZURE_STORAGE_CONNECTION_STRING — one credential, one variable (the module also
 // accepts an account + key pair, which eastwind does not use); S3 needs EASTWIND_S3_ENDPOINT / _ACCESS_KEY / _SECRET_KEY
@@ -37,8 +40,52 @@ export namespace EastwindFileStores {
     /** The prefix eastwind's containers / buckets are named with. */
     const prefix = "eastwind";
 
-    /** The root every LOCAL store writes under; each store gets `<filesRoot>/<its name>`. */
-    const filesRoot = "./files";
+    /**
+     * The root every LOCAL store writes under; each store gets `<filesRoot>/<its folder>`.
+     *
+     * Configurable for ONE reason: pointing eastwind at a database a Signum application generated
+     * (LegacyMode) points it at that deployment's FILES too — every file-backed row holds a suffix
+     * relative to whatever Southwind's `Folders` member was set to, typically `c:/SouthwindFiles`. Without
+     * it a diff-log dump, an exception stack trace or a received e-mail's raw MIME is simply not there,
+     * and the retrieve of that row FAILS (`ENOENT` out of BigStringLogic's File-mode read — Signum throws
+     * on a missing file too), which takes the entity page and every contextual menu with it.
+     *
+     *   EASTWIND_FILE_STORE_ROOT=c:/SouthwindFiles
+     *
+     * It is still not the ported `Folders` member (see globals/ApplicationConfiguration.data.ts): a path
+     * per store remains derived, and this is ONE root for all of them. It has to come from the
+     * environment rather than from the settings row for the same reason the dialect and LegacyMode do —
+     * a store is registered while the schema is BUILT, before any row can be read.
+     */
+    function filesRoot(): string {
+        return process.env["EASTWIND_FILE_STORE_ROOT"] ?? "./files";
+    }
+
+    /**
+     * Southwind's own folder for a store whose name it spells differently — the tails of its `Folders`
+     * values, which are the folders the bytes of a Signum-generated database actually live in. Applied
+     * only in LEGACY mode, and only to a LOCAL store: an Azure container / S3 bucket is named
+     * `${prefix}-${name}` here and has no counterpart in a Southwind deployment's cloud configuration.
+     *
+     * `exceptions` is absent because the two agree on it. Four stores have no Southwind counterpart at
+     * all (`profile-photos`, `email-attachments`, `print-test`, `whats-new`) — the modules behind them
+     * are not started under `southwindOnly`, so nothing addresses them.
+     */
+    const southwindFolders: Record<string, string> = {
+        "operation-log": "operation-logs",
+        "view-log": "view-logs",
+        "email-message": "email-messages",
+        "rest-log": "rest-logs",
+        "cached-queries": "cached-query",
+        "help-images": "help-image",
+        "predictor-files": "predictor-models",
+    };
+
+    /** LegacyMode, read here for the same reason `kind()` reads its own variable — see {@link filesRoot}. */
+    function legacy(): boolean {
+        const v = process.env["LegacyMode"]?.trim().toLowerCase();
+        return v === "true" || v === "1";
+    }
 
     export function kind(): FileStoreKind {
         const value = (process.env["EASTWIND_FILE_STORE"] ?? "folder").toLowerCase();
@@ -98,7 +145,8 @@ export namespace EastwindFileStores {
 
             default:
                 return new FileTypeAlgorithm({
-                    physicalPrefix: () => path.join(filesRoot, name),
+                    physicalPrefix: () => path.join(filesRoot(),
+                        legacy() ? southwindFolders[name] ?? name : name),
                     ...options,
                 });
         }
