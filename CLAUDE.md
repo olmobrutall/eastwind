@@ -153,6 +153,45 @@ Port faithfully: **mirror Signum's class / method names and member order**, copy
 
 Known structural divergences from Signum (this is what "fix" means — don't port these 1:1):
 
+- **`@part` is a DECORATOR, and a part is a CONTINUATION of its owner, never a root.** `@entity("Part")`
+  is by far the most-declared kind (120 of the 124 classes that name one) and the whole codebase already
+  talks about "a `@part` row", so it is `@part` bare and `@part("Master")` where the row declares its own
+  EntityData — the same split the `entity` overloads encode, since `data` is required for every kind
+  EXCEPT Part. `@entity("Part")` still works. **The quote-transformer has to know the name**
+  (`FIELD_INJECTING_DECORATORS`) or a part class gets no `@field` injection and no `registerType` and is
+  simply absent from reflection — and a transformer change is invisible to tsc's up-to-date check, so
+  this kind of edit needs **`tspc -b --force`** or an incremental build re-emits every part unregistered.
+  - **A `@part` does not RE-ROOT a PropertyRoute — in an array or not.** Signum re-roots at every entity
+    reference (`AddImp`) because a part is not an entity THERE: an `MList` element or an owned
+    `EmbeddedEntity` is flattened into its owner's route, so `Songs/Name` and `ShipAddress.City` are
+    routes of the owner. altea gives both a table and therefore a class, which made them look like
+    references. The rule is the predicate `isPartType`, applied to every reference — the collection case
+    is not special. `SharedPart` is EXCLUDED: several owners, so "continue the parent" has no single
+    answer and re-rooting is the only unambiguous thing to do, which is what Signum's `EntityKind
+    .SharedPart` is for.
+  - **…so it may not ROOT a STORED route.** `Product.AdditionalInformation/Key` and
+    `(Product_AdditionalInformation).Key` were two names for one member: a rule stored under one is
+    invisible to a lookup made through the other, and a Signum database's row has no counterpart at all
+    (eastwind's AuthRules.xml carried Southwind's two `AdditionalInformation/*` rules commented out for
+    exactly that). `PropertyRoute.assertNotPartRoot()` is the gate, and it is at the STORAGE boundary
+    rather than in `root()` — a part root is a fine TRANSIENT handle and some have no parent to continue
+    (a `@backReference` navigation walks UP and out of the subtree; a part in a modal or handed to the
+    codec alone has no enclosing route). So `toPropertyRouteEntity` / `propertyRouteEntitySync` refuse
+    one, and `PropertyRouteLogic.modelPaths` / the property-auth enumeration answer NOTHING for a part.
+    The client and the multi-setter follow, so a lookup uses the one spelling: EntityTable resolves its
+    columns against the owner's element route, RenderEntity keeps the owner's route for a part, and a
+    setter path MAY cross a part (Signum's `PropertyPart` intent, whose condition was wrong there).
+    **An existing altea database needs `eastwind/terminal/migratePartRoutes.ts` BEFORE the sync** — the
+    synchronizer sees every part-rooted row as REMOVED and the DELETE cascades to every consumer.
+  - **`includeArrayElements` gates the BARE element route, not the DESCENT into it** — Signum's
+    `includeMListElements`, whose `GenerateEmbeddedProperties(itemRoute, …)` call sits outside the flag.
+    altea had gated the whole descent, so the property-auth pack (false, as Signum's is) had never seen a
+    single collection member. A row's BOOKKEEPING is skipped when descending — `id`, `ticks`, the
+    `@backReference`, the `@rowOrder` — because Signum's element has none of them (its Parent and Order
+    are table columns built with a NULL route).
+  - **A ModelEntity may hold `@part` rows**, a field or a collection, with NO `@backReference`: it is
+    never persisted, the codec recovers the nearest ENTITY ancestor (so a model yields no owner rather
+    than dying on `slot.owner.toLite is not a function`), and the routes are the model's.
 - **MLists are gone.** No `MList<T>` / `MListElement` wrapper. A collection is a **plain array** of `@part` row entities (or scalars on a row's `@valueField`). `@id` / `@order` / `@backReference` are markers, **not columns**.
   - **A collection may be declared INSIDE AN EMBEDDED, and its rows belong to the entity that holds it.**
     Signum does this freely (its own test model's `EmbeddedConfigEmbedded.Awards` is an `MList` on an
@@ -1861,6 +1900,22 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     columns were never built and no test had ever seen a multi-column `@implementedByAll`.
     **That suite's database needs regenerating** (`pnpm --filter @altea/altea gen:postgres`).
 
+- **A `@valueField` is ONE HOP, and all three surfaces make it.** Signum's `MList<string>` element IS the
+  value, so its token ends at `Telephones.Any`; altea's element is a `@part` ROW whose `@valueField` holds
+  the value, so the same thing is `Telephones.Any.Telephone`.
+  - **`QueryTokenString`** takes an optional lambda on `any` / `all` / `notAny` / `notAll` / `element`, so
+    `token(a => a.telephones).any().append(a => a.telephone)` and `…any(a => a.telephone)` are one token.
+    There is no third spelling: the typed builder never produces the bare quantifier as a VALUE, because
+    that token is the row.
+  - **LEGACY MODE reads Signum's** — `appendLegacyValueField` descends into the `@valueField` when a token
+    stops at a collection element, applied by `QueryLogic.getToken` and the client's `TokenCompleter`, the
+    same two places `stripLegacyRootPrefix` is and the same ONE direction (a token altea writes back stays
+    altea's). So `Telephones.Any` and `Entity.Telephones.Any` both resolve; a row with no `@valueField` is
+    left exactly where it stopped.
+  - **`QueryTokenBuilder` makes the hop for the USER**, in both modes: picking Any / All / Element on such
+    a collection selects the value, since the picker would otherwise show a single choice to click every
+    time. Only when the selection ENDS there — `tryApplyToken` re-projects the previous tail first, so
+    changing a part in the MIDDLE keeps everything after it.
 - **`@valueField` marks an EMBEDDED element too, and that is what inlines its members unprefixed.** An
   MList element has no property in Signum, so a legacy-mode MList table names its columns without reference
   to one — and for an EMBEDDED element that means NO prefix at all (`file_name`, not `element_file_name`).
