@@ -68,10 +68,12 @@
       <Property Resource="File|Hash" Allowed="Read" />
       <Property Resource="File|Id" Allowed="Read" /> -->
       <Property OnType="Product" Resource="additionalInformation" Allowed="Read" />
-      <!-- altea: MLists are gone — Product.additionalInformation is a collection of @part ROW entities, so
-           `/Key` and `/Value` are routes of Product_AdditionalInformation, which inherits its owner's rules.
-      <Property Resource="Product|AdditionalInformation/Key" Allowed="Read" />
-      <Property Resource="Product|AdditionalInformation/Value" Allowed="Read" /> -->
+      <!-- Signum's two rules, back: a @part no longer roots a PropertyRoute, so a collection element's
+           members are routes of the OWNER (`additionalInformation/key`) exactly as Signum's MList element
+           is `AdditionalInformation/Key`. They used to be spelled against the row type, which a Southwind
+           database has never heard of, so both were commented out here. -->
+      <Property OnType="Product" Resource="additionalInformation/key" Allowed="Read" />
+      <Property OnType="Product" Resource="additionalInformation/value" Allowed="Read" />
       <Property OnType="Product" Resource="category" Allowed="Read" />
       <Property OnType="Product" Resource="discontinued" Allowed="Read" />
       <Property OnType="Product" Resource="id" Allowed="Read" />

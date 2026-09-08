@@ -21,7 +21,7 @@ import { PropertyRouteEntity } from "@altea/altea/data/propertyRouteEntity";
 import { PropertyRouteLogic, declaredLegacyRoutes } from "@altea/altea/server/propertyRouteLogic";
 import { TimeSpanEmbedded } from "@altea/altea-workflow/data/WorkflowNodes";
 import { SessionLogEntity } from "@altea/altea-auth/data/SessionLog";
-import { ProductEntity, CategoryEntity } from "../products/Product.data";
+import { ProductEntity, ProductEntity_AdditionalInformation, CategoryEntity } from "../products/Product.data";
 import { Serializer } from "@altea/altea/data/serializer";
 import { TypeEntity } from "@altea/altea/data/typeEntity";
 import { RulePropertyEntity } from "@altea/altea-auth/data/Rules";
@@ -144,6 +144,32 @@ async function main(): Promise<void> {
     // A TYPE being removed takes its routes with it (Signum's PropertyRouteLogic_PreDeleteSqlSync).
     check("a TypeEntity delete cascades to its routes",
         Schema.current.entityEvents(TypeEntity).preDeleteSqlSync.length >= 1);
+
+    // ---- a @part never roots a stored route ------------------------------------------------------
+    // Signum flattens an MList element into the owner's route, so a Southwind database has a rule on
+    // `Product|AdditionalInformation/Key`. altea's element is a `@part` ROW, which used to re-root — the
+    // member was spelled `(Product_AdditionalInformation).key` and eastwind's AuthRules.xml had to carry
+    // Signum's two rules commented out. Now there is ONE spelling of it, and it is Signum's.
+    {
+        const productPaths = PropertyRoute.generateRoutes(ProductEntity, false).map(pr => pr.propertyString());
+        check("a collection element's members are routes of the OWNER",
+            productPaths.includes(storedMemberName("additionalInformation") + "/" + storedMemberName("key")),
+            productPaths.join(", "));
+        // `includeArrayElements` is Signum's `includeMListElements`: it gates the BARE element route only,
+        // never the descent into it — which is why the pack (false, as Signum's is) still sees the member.
+        check("...and the BARE element route is not one of them",
+            !productPaths.some(p => p.endsWith("/")), productPaths.join(", "));
+        check("...but it is with includeArrayElements",
+            PropertyRoute.generateRoutes(ProductEntity, true).some(pr => pr.propertyString().endsWith("/")));
+
+        // The part owns NO routes of its own, so there is no second spelling to store a rule under.
+        check("a @part contributes no routes of its own",
+            PropertyRouteLogic.modelPaths(ProductEntity_AdditionalInformation, true).size === 0);
+        let refused = false;
+        try { PropertyRoute.root(ProductEntity_AdditionalInformation).add("key").assertNotPartRoot(); }
+        catch { refused = true; }
+        check("a part-rooted route is refused at the storage boundary", refused);
+    }
 
     // ---- the expression-route seam (legacy mode) -------------------------------------------------
     // Signum writes `ValueInStock` as a computed PROPERTY, so it is an ordinary route with an ordinary
