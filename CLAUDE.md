@@ -573,12 +573,29 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     code takes as a parameter — `ICaseMainEntity` (altea-workflow's client frames are typed by it),
     `ISMSOwnerEntity`. Those keep their own declaration in `data/`, and the stamp names it:
     `const proto = type.prototype as ICaseMainEntity`.
-  - **Registering on `Entity` itself does NOT work**, which is why "once for every type" is a LOOP over
-    `schema.tables` and not one call: `QueryLogic.expressions.register` resolves the SOURCE type through
-    `Implementations.by`, which refuses the abstract root ("Entity is not an Entity"). Signum registers
-    `OperationLogs` once for `Entity`; altea registers it per included type from `OperationLogic.start`.
-    Registering on an abstract BASE that is a real mapped type does work, and is inherited by its
-    subclasses through the prototype-chain walk (altea-sms's `SMSOwnerData`).
+  - **Registering on `Entity` itself WORKS, and is how an expression every entity offers is written** —
+    `QueryLogic.expressions.register(Entity, (e: Entity) => e.operationLogs!(), …)`, Signum's own shape,
+    ONE call rather than a loop over `schema.tables`. The lookup always walked the base chain
+    (`getExtensionsTokens` climbs `Object.getPrototypeOf` from the token's ctor), so an abstract base has
+    always been inherited by its subclasses — altea-sms registers `SMSOwnerData` that way. What refused
+    was the REGISTRATION, and only for the ROOT: the metadata visitor seeds the source parameter's meta
+    with `Implementations.by(sourceType)`, and `Implementations.error` rejects anything whose prototype is
+    not an Entity instance — which `Entity` itself is not. So `register(Entity, …)` compiled and then threw
+    "Entity is not an Entity" at boot.
+    - **`Implementations.ofDeclaredType(type)` is the fix**: `by(type)` for anything with a table, `byAll`
+      for the root, because "an Entity" is precisely what ImplementedByAll means. Signum needs no such
+      thing — it seeds an expression's source meta from the TOKEN being navigated
+      (`MetaExpression.FromToken` → `token.GetImplementations()`), which for a polymorphic token already
+      answers ImplementedByAll; altea asks by TYPE, so the root needed an answer. Only the root is
+      special-cased: a Lite, an interface or a non-entity still throws, since those are mistakes rather
+      than "any entity". (Signum's own `Error` additionally rejects any ABSTRACT type, so its
+      `Implementations.By` is stricter than altea's, which accepts an abstract mapped base.)
+    - the consequence is intended and is Signum's too: a root-registered expression is a sub-token of
+      EVERY entity, including the declared type of an `@implementedByAll` reference — so
+      `OperationLog.Target.OperationLogs` resolves. Pinned by two cases in
+      `altea/test/server/dynamicQueries/expressionContainer.test.ts`, on a LOCAL `ExpressionContainer`:
+      the registry is global and the suites share one process, so registering on the root in a fixture
+      would show up in a sibling suite asserting an exact sub-token set.
 - **The display-name API is fluent and typed, never a free function over a ctor.** `OrderEntity.niceName()` / `.nicePluralName()` / `.gender()` / `.newNiceName()`, `OrderEntity.nicePropertyName(a => a.orderNumber)` (and `AddressEmbedded.nicePropertyName(a => a.city)`), `Enum.niceName(ColorEnum, "Red")`, `someSymbol.niceToString()`, `fieldInfo.niceToString()`. The resolver engine behind them lives in `Localization.Internal` (`data/utils/localization`) and has exactly four legitimate callers — `data/entity`, `data/enum`, `data/symbol`, `data/reflection` — plus framework internals that only hold a bare name (the LINQ provider lowering `Type.niceName()` into SQL). A `Localization.Internal.` in application or extension code is a bug. Two gotchas on `nicePropertyName`: the lambda overload needs an INLINE lambda (the transformer emits `__quoted` only at a `Quoted<…>` parameter, and there is no toString fallback), and the transformer does NOT rewrite lambdas in JSX ATTRIBUTES — inside JSX pass the route as a string.
 - **The MODEL RULES — `@bindParent`, `@isReadOnly`, `@validate` — are decorators writing reflection, and
   `propsMeta` is not how the client learns about them.** Signum answers "can this member be edited right
