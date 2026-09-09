@@ -82,7 +82,10 @@ export default function Order(p: { ctx: TypeContext<OrderEntity> }): React.JSX.E
             <FormGroup ctx={dc}>
               {id => <div className={dc.inputGroupClass}>
                 <FormControlReadonly ctx={dc} id={id}>
-                  {formatNumber.format(dc.value.subTotalPrice().toNumber())}
+                  {/* A line being typed in has no quantity/price yet, so `subTotalPrice()` answers null
+                      (see its declaration — the body diverges from the quoted expression for exactly
+                      this). Show nothing rather than a 0 that is not a subtotal. */}
+                  {dc.value.subTotalPrice() == null ? "" : formatNumber.format(dc.value.subTotalPrice().toNumber())}
                 </FormControlReadonly>
                 <span className="input-group-text">€</span>
               </div>

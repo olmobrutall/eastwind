@@ -177,10 +177,22 @@ export class OrderLineEntity extends Entity {
     // Signum's [AutoExpressionField] SubTotalPrice => Quantity * UnitPrice * (1 - Discount).
     // Decimal arithmetic via the Decimal.* static methods: exact in-memory AND SQL-translatable
     // (the nominator lowers Decimal.mul/sub → the numeric operators — see server/decimalFunctions.ts).
+    //
+    // The expression is written OUT rather than quoted from the body, because the two must DIVERGE: SQL
+    // propagates NULL through the product all by itself, where `Decimal.mul(undefined, …)` throws. A line
+    // being typed in has neither quantity nor price yet — an EntityTable's "create" row is exactly that —
+    // so the body has to answer for an incomplete line, and the SQL column must stay Signum's plain
+    // product or every stored token over it would change shape. `null!` is what the caller already copes
+    // with: Array.sum skips it, so `OrderEntity.totalPrice()` totals the lines that ARE complete.
     @legacyPropertyRoute
-    @quoted
-    subTotalPrice(): Decimal {
+    @quoted(function (this: OrderLineEntity) {
         return Decimal.mul(Decimal.mul(this.quantity, this.unitPrice), Decimal.sub(1, this.discount));
+    })
+    subTotalPrice(): Decimal {
+        if (this.quantity == null || this.unitPrice == null)
+            return null!;
+
+        return Decimal.mul(Decimal.mul(this.quantity, this.unitPrice), Decimal.sub(1, this.discount ?? 0));
     }
 }
 
