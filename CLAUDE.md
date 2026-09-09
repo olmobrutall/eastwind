@@ -2162,52 +2162,13 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   checks) plus a seven-case HTTP round-trip; `auth.user_ticket` needs a `sync`, and matches Signum's
   table column for column (a Southwind sync scripts nothing for it).
 
-- **Signum.Rest → altea-rest: an MVC action filter becomes EXPRESS MIDDLEWARE.** The module is two halves —
-  an API KEY that authenticates a machine caller, and a replayable LOG of every request that reached the
-  app's public REST surface — and only the second reshapes. Signum's `RestLogFilter` is an
-  `ActionFilterAttribute` decorating a CONTROLLER, so its scope is "every action of that controller" and it
-  learns the controller type and action name from the filter context. altea's server is Express behind a
-  typed route wrapper, which has neither controllers nor action filters, so the same thing is middleware the
-  app mounts on the path prefix its public API lives under —
-  `ws.app.use("/api/catalog", RestLogFilter.middleware({ name: "CatalogApi", allowReplay: true }))`. A path
-  prefix is what "this controller" means once controllers are gone, and it composes the same way: one mount
-  per logged API, each with its own options. Consequences:
-  - the RESPONSE body is captured by wrapping `res.write` / `res.end` (Signum swaps `Response.Body` for a
-    MemoryStream and copies it back — same idea, same caveat that a streamed or binary response is buffered,
-    which is why `ignoreResponseBody` exists), and the row is written from the `finish`/`close` event, which
-    is what makes a request that THREW get logged too (Signum's second save path).
-  - the REQUEST body needs no `EnableBuffering`: altea's route wrapper already leaves the whole body on
-    `req.body` as a string.
-  - **`controller` / `action` follow altea's OWN established mapping**, the one `exceptionFilter.fillContext`
-    already uses: `controller` is the matched route path, `action` is the HTTP method. `controllerName`
-    carries the name the caller passed, which is the closest thing to Signum's short controller name.
-  - **it must be mounted AFTER `AuthLogic.start`** — that is what installs the per-request user scope.
-  - **an `?apiKey=` is REDACTED in the logged query string**, where Signum stores the query string verbatim.
-    A key is a long-lived credential and the log is readable by anyone who can read RestLog, so logging it
-    would turn a request log into a credential store. Nothing needs the logged value: the replay resolves
-    the key from the log's USER, and the url it re-sends has `apiKey=` stripped (the key rides as the
-    `X-ApiKey` header instead — Signum does the same surgery by hand).
-  Other divergences:
-  - **`MList<QueryStringValueEmbedded>` → `@part` rows** (Signum's `[PreserveOrder]` IS a `@rowOrder` child
-    table), keeping Signum's name, "Embedded" suffix included.
-  - **the API-key cache is ASYNC** (`sb.globalLazy` → a `ResetLazy`), which is fine because the
-    authenticator chain already is; `WebEncoders.Base64UrlEncode` → `randomBytes(32).toString("base64url")`,
-    the same bytes in the same alphabet; `AuthLogic.Disable()` → `ExecutionMode.global()`.
-  - **`/api/auth/loginFromApiKey` lives in THIS module**, not in altea-auth. Signum puts it on its
-    AuthController because that is where `CreateToken` is; altea-auth exports `createToken`, so the route
-    lives with the module that owns the concept and altea-auth needs no knowledge of API keys.
-  - **`Duration` is a `@quoted` member plus a registered expression**, so it is an orderable query column —
-    unlike the in-memory `duration()` helpers in altea-processes / -scheduler / -migrations, which return
-    the branded `int` the transformer cannot emit a type reference for. A plain `number` lowers fine.
-  - NOT ported: `ExceptionLogic.DeleteLogs` (altea has no log-retention machinery — the note every other
-    module carries), and Swagger / `[IncludeInDocumentation]` (altea's `httpMeta` carries OpenAPI hints but
-    no generator is wired). `ReplayState` / `ChangedPercentage` are declared and never assigned, exactly as
-    in Signum: the replay diffs in the browser and stores nothing.
-  It needed one seam and fixed one latent core bug: `AuthRequestLike` gained `query(name)` (the chain only
-  ever needed `hasQuery` before, and an authenticator that authenticates ON a query parameter must see every
-  occurrence — Signum REFUSES a request carrying two keys rather than picking one); and
-  `Duration.total({ unit })` did not translate to SQL, only the bare-string `total("ms")` form did — so the
-  object form every duration helper in the workspace is written in failed at query time.
+- **Signum.Rest → altea-rest: an MVC action filter becomes EXPRESS MIDDLEWARE** mounted on a path prefix
+  (`ws.app.use("/api/catalog", RestLogFilter.middleware({ name: "CatalogApi" }))`), and an `?apiKey=` is
+  REDACTED in the logged query string where Signum stores it verbatim. It needed one core seam
+  (`AuthRequestLike.query(name)`) and fixed one latent core bug (`Duration.total({ unit })` did not
+  translate to SQL, only the bare-string `total("ms")` form did — so the object form every duration helper
+  in the workspace is written in failed at query time). Full ledger:
+  **[altea/docs/port/Rest.md](altea/docs/port/Rest.md)**.
 
 - **Signum.ViewLog → altea-view-log: the module IS three subscriptions.** One table plus "the API handed out
   an entity", "a query ran", and the two navigations that let a type's search page ask "who looked at this
