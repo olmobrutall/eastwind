@@ -1538,45 +1538,16 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     `clearSettingsActions` pair has no counterpart; each provider factory is registered ONCE per
     dropdown entry, and the page throws if the server's list and the client's disagree.
 
-- **Signum.TimeMachine → altea-time-machine: the READER of a history that core already keeps.** Everything
-  the page shows already exists — `@systemVersioned` tables, `SystemTime` (core's server/systemTime), the
-  SearchControl's system-time dropdown — so the module is one route, one page and the quick link.
-  Divergences:
-  - **core's `getTimeMachineIcon` was a STUB and is now real** (`altea/client/Lines/TimeMachineIcon`): the
-    per-line coloured dot that marks added / removed / changed / moved values is what the "UI differences"
-    tab IS, and every Line already called it. Its vocabulary went into `EntityControlMessage`
-    (`PreviousValueWas0`, `Moved`, `Removed0`, `Added`, `RemovedAndSelectedAgain`, `Selected`). No
-    `translateX` (no altea Line passes one) and the checkbox variant reads `oldCtx.value` DIRECTLY (no
-    MListElement) off the ENUM OBJECT rather than a TypeInfo.
-  - **`PreviousOperationLog` is registered in CORE**, exactly where Signum registers it
-    (`OperationLogic.registerPreviousLog`, on `schemaCompleted`, for every @systemVersioned table): the
-    version grid's "who ran which operation" columns. `e.SystemPeriod().Contains(ol.End)` is spelled out
-    against `.min` / `.max` — altea's `NullableInterval.contains` is an in-memory method, only the BOUNDS
-    lower — which is also why `NullableInterval`'s bounds narrowed to `PlainDateTime` (a cast to a
-    QUALIFIED type name is not quotable).
-  - **`Administrator.SaveDisableIdentity` needs no counterpart**: altea's insert path already writes an
-    explicit id into an identity PK when an entity is `isNew` with an `id`, so "restore this deleted row"
-    is `isNew = true` with the id left alone. Signum's MList re-insertion block (its own "not tested"
-    comment attached) disappears with MList: a `@part` row is an ordinary graph member.
-  - eastwind marks `OrderEntity` `@systemVersioned`, as Southwind does — **so an existing database needs a
-    `terminal sync` before the Time Machine has anything to read.**
-  - **a `@part` row INHERITS its owner's versioning**, the way it already inherits the owner's EntityData:
-    both facets ride the same channel (`SchemaBuilder.include`'s `InheritedByPart`, stamped on the first
-    entity that includes the part and therefore transitive down a chain of parts). This is Signum's
-    `SchemaBuilder.cs` `Settings.TypeAttribute<SystemVersionedAttribute>(table.Type) != null ? new
-    SystemVersionedAttribute() : null` — an MList table of a versioned entity is versioned too — and it
-    reaches further here for a structural reason: a `@part` row IS that MList table when reached through an
-    owner's ARRAY, and stands in for a Signum EMBEDDED when reached through a single reference, whose
-    columns live in the owner's own row and are versioned there by construction. Either way the part holds
-    part of the owner's state, so a part-only change (which for an order is most of what changes) must be
-    in the history. What is inherited is the FACT, not the config: every name on it (history table, period
-    column) is per-TABLE, so the part gets a FRESH default — which is exactly why Signum constructs a new
-    attribute rather than reusing the owner's. A part that declares its own `@systemVersioned` keeps it
-    (Signum's per-route `FieldAttribute` override).
-    Without it a sync against a Signum database did not merely show less — it **scripted the existing line
-    history away** (`DROP TABLE order_details_history`, `DROP COLUMN sys_period`, `DROP TRIGGER
-    versioning_trigger`). **An existing altea database needs a `sync`**: eastwind's `order_line` gains
-    `sys_period`, a history table and the trigger. Pinned by `eastwind/terminal/probePartVersioning.ts`.
+- **Signum.TimeMachine → altea-time-machine: the READER of a history that core already keeps.** One route,
+  one page, the quick link, two restore helpers. Core gained the real `getTimeMachineIcon` (a stub before —
+  the per-line coloured dot IS the "UI differences" tab) and `OperationLogic.registerPreviousLog`. The
+  load-bearing part is that **a `@part` row INHERITS its owner's `@systemVersioned`**, the way it already
+  inherits the owner's EntityData: without it a sync against a Signum database did not merely show less, it
+  SCRIPTED THE EXISTING LINE HISTORY AWAY (`DROP TABLE order_details_history`, `DROP COLUMN sys_period`,
+  `DROP TRIGGER versioning_trigger`). Pinned by `eastwind/terminal/probePartVersioning.ts`. eastwind marks
+  `OrderEntity` `@systemVersioned` as Southwind does, so **an existing database needs a `terminal sync`**
+  before the Time Machine has anything to read. Full ledger:
+  **[altea/docs/port/TimeMachine.md](altea/docs/port/TimeMachine.md)**.
 
 - **Signum.Tour → altea-tour: an assembly of core seams plus driver.js.** The engine ports whole (the
   trigger model, the CSS-step discriminator, the editor, the player). Three pieces went into CORE where
@@ -2170,51 +2141,14 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   in the workspace is written in failed at query time). Full ledger:
   **[altea/docs/port/Rest.md](altea/docs/port/Rest.md)**.
 
-- **Signum.ViewLog → altea-view-log: the module IS three subscriptions.** One table plus "the API handed out
-  an entity", "a query ran", and the two navigations that let a type's search page ask "who looked at this
-  one?". The port is small; what it needed was three CORE seams, all in the shape
-  `OperationLogic.surroundOperation` established (a handler returning an AFTER callback, where Signum's event
-  returns an `IDisposable` and the `using` scope runs the second half):
-  - **`ExecutionMode.onApiRetrieved` / `apiRetrievedScope`** — Signum's same event, in the same place and for
-    the same reason: the DATA layer must not know about HTTP, and other modules report their own "a client
-    just looked at this" scopes through it. Opened by `/api/entity/:type/:id` and `/api/entityPack/:type/:id`,
-    exactly where Signum's EntityController opens it. **It is also how altea-dashboard / -user-queries /
-    -chart report their scopes**, where Signum has those three modules import Signum.ViewLog directly — so an
-    optional module stays optional and nothing happens when no observer is installed. (Of the three, only the
-    DASHBOARD ones are reachable: the user-query / user-chart `retrieve*` functions are cache-hit fast paths
-    nothing routes to, because altea's SPA fetches a user asset through the generic `/api/entity/…` — which
-    logs it under `EntitiesController.GetEntity` anyway.)
-  - **`DynamicQueryContainer.queryExecuted`** — Signum's same event minus its `ExecuteType` argument, which
-    it only ever used as the logged action name: altea funnels every read through one `executeQueryAsync`
-    (the queryValue route builds a QueryRequest too), so there is nothing to discriminate.
-  - **`Connector.withSqlCapture(sink, fn)`** — an ASYNC-LOCAL SQL sink, because Signum captures the SQL of a
-    query by swapping the process-wide `Connector.CurrentLogger` for a StringWriter for its duration. That
-    swap is racy on a server running concurrent work: the StringWriter sees every OTHER query's SQL too. The
-    sink is additive (`currentLogger` keeps working, so Signum's `DuplicateTextWriter` is unnecessary) and
-    the CALLER owns the array, which is what lets the observer log a query that THREW.
-  Other divergences:
-  - **the row is saved INLINE, awaited**, where Signum fires a detached `Task.Factory.StartNew`. A floating
-    promise in Node is an unhandled rejection waiting to happen and races process exit; the write is one
-    INSERT in its own transaction and the response has already been sent.
-  - **`registerExpressions` is per CONCRETE type** — Signum hangs `ViewLogs()` / `ViewLogMyLast()` off
-    `Entity` itself, but altea keys an extension token on a constructor and the token walk follows the
-    concrete prototype chain (the accommodation altea-alert already makes). `ViewLogMyLast` also stays a
-    QUERY rather than Signum's single-row `FirstOrDefault()`: altea's registered expressions are projections
-    and there is no single-entity extension token.
-  - `Duration` is a `@quoted` member plus a registered expression (as in @altea/altea-rest);
-    `registerChangeLogModule` has no counterpart (altea has no per-module changelog registry), so Signum's
-    `Changelog.ts` — an empty dictionary in the source — is not ported.
-  - NOT ported: `ExceptionLogic.DeleteLogs` and `EntityEvents<TypeEntity>.PreDeleteSqlSync` (no such schema
-    event, so deleting a TypeEntity row does not sweep this table's `@implementedByAll` orphans).
-  It also surfaced a CORE gap, since fixed: an `@implementedByAll` column stores just (id, typeId), so a
-  query handed the lite back with NO display string — the Target column of every operation-log and view-log
-  row rendered BLANK. **The Retriever now resolves it exactly as Signum's `IRetriever.RequestLite` does**:
-  each nameless lite is registered, and at the end of `completeAll` (after the id-only stub drain, which can
-  surface more) ONE query per TYPE names them all — a lite PROJECTION (`map(e => e.toLite())`), so the SELECT
-  is the id plus that row's own display columns, never the whole entity. It runs with the CALLER's rights
-  (never `ExecutionMode.global`), so no name the user may not see can leak; and each type group is wrapped, so
-  an unreadable type or a since-DELETED row leaves that one lite with the `"<NiceName> <id>"` fallback
-  `LiteImp.toString()` keeps, instead of failing the query it decorates.
+- **Signum.ViewLog → altea-view-log: the module IS three subscriptions**, and it forced three core seams —
+  `ExecutionMode.onApiRetrieved`, `DynamicQueryContainer.queryExecuted` and `Connector.withSqlCapture` (an
+  ASYNC-LOCAL SQL sink, where Signum swaps the process-wide `CurrentLogger`, which is racy on a server
+  running concurrent work). It also surfaced a core gap since FIXED: an `@implementedByAll` lite came back
+  with no display string, so the Target column of every operation-log and view-log row rendered blank — the
+  Retriever now resolves it as Signum's `IRetriever.RequestLite` does, one lite PROJECTION per type with the
+  CALLER's rights. Full ledger:
+  **[altea/docs/port/ViewLog.md](altea/docs/port/ViewLog.md)**.
 
 > `old/CLAUDE.md` and `old/**/AGENTS.md` describe **Signum's** conventions, not altea's — read them to understand the source, but altea's conventions above win.
 
@@ -2316,39 +2250,15 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   scheduled task, a queued process and an async e-mail were all created and never run. Started now, web-host
   only — a terminal run must not pick work up.
 
-- **Signum.Markdown → altea-markdown: Markdig becomes mdast, which is the parser react-markdown already
-  is.** Three small things — the "Markdown" query-column format rule, the `MarkdownLine`, and
-  `markdownToText` for the excel export — and the only substrate swap has a one-for-one correspondence:
-  `Markdown.Parse(md, new MarkdownPipelineBuilder().Build())` → `fromMarkdown(md)`, both plain CommonMark
-  with no extensions, and Markdig's Block/Inline visitor cases map node for node onto mdast's
-  (`MarkdownDocument`→`root`, `LiteralInline`→`text`, `CodeInline`→`inlineCode`, `ContainerInline`→recurse,
-  …). So this is the one flattener in the workspace that needs no hand-written tokenizer, where
-  altea-html-editor's `HtmlToPlainText` does. It carries a 17-case suite, because a substrate swap is
-  exactly where behaviour drifts silently. Divergences:
-  - **`MarkdownMessage` lives in this package**, not in core as Signum's enum does — the same call
-    `HtmlEditorMessage` made. Nothing outside reads it, and a message in core has to be translated by every
-    application whether or not it installs the module.
-  - **`markdownOption` is actually APPLIED.** Signum declares the prop on MarkdownLineProps and never reads
-    it, so a caller asking for custom components or remark plugins silently got the defaults — the same
-    shape as the `controller.editorState` bug altea-html-editor fixes rather than mirrors.
-  - a CODE BLOCK, a thematic break and an html block flatten to NOTHING, mirrored deliberately: Markdig's
-    `CodeBlock` is a LeafBlock, and Signum's switch has cases for the container kinds and for Paragraph /
-    Heading / List only. An IMAGE needed one line rather than a recursion — Markdig models it as a
-    `LinkInline` whose CHILDREN are the alt text, mdast makes `alt` an attribute of a childless node.
-  - the cheat-sheet popover's right column RENDERS the left column's markdown instead of being hand-written
-    HTML, so it cannot drift from what the editor does (mapped to compact elements to keep Signum's look).
-  It filled two gaps outside itself. **`htmlToText` was dead code**: Signum's PlainExcelGenerator flattens a
-  column whose property format is Html or Markdown and lays it out multiline, and altea's had no such branch
-  at all — so a rich-text column exported as raw markup. Both flatteners are now reached by a plain import,
-  the dependency edge Signum.Excel also has (a registry seam would have to live in altea CORE, since neither
-  module may depend on altea-office-template, and would need each to grow a server `start` purely to
-  register — which Signum.Markdown does not have at all). And **the FontAwesome BRANDS set was missing**:
-  `library.add(fas, far)` is all Southwind does too, so this module's `["fab", "markdown"]` cheat-sheet
-  marker and altea-auth-windowsad's `["fab", "windows"]` sign-in icon both rendered as an empty span. Signum
-  declares the package; eastwind now adds `fab`.
-  With the module ported, **altea-agent's SkillCustomization and altea-tour's TourStep use the real
-  `MarkdownLine`**, as Signum does — both had stood in altea-codemirror's `MarkdownCodeMirror`, which stays
-  as the syntax-highlighting alternative.
+- **Signum.Markdown → altea-markdown: Markdig becomes mdast**, which is the parser react-markdown already
+  is — so this is the one flattener in the workspace that needs no hand-written tokenizer (17-case suite,
+  because a substrate swap is where behaviour drifts silently). It filled two gaps outside itself:
+  **`htmlToText` was dead code** (Signum's PlainExcelGenerator flattens an Html/Markdown column and altea's
+  had no such branch, so a rich-text column exported as raw markup), and **the FontAwesome BRANDS set was
+  missing**, so this module's cheat-sheet marker and altea-auth-windowsad's sign-in icon both rendered as an
+  empty span. With it ported, altea-agent's SkillCustomization and altea-tour's TourStep use the real
+  `MarkdownLine`, as Signum does. Full ledger:
+  **[altea/docs/port/Markdown.md](altea/docs/port/Markdown.md)**.
 
 - **Signum.Isolation → altea-isolation: an app-wide commitment, so eastwind does not make it.** Every
   table declares a STRATEGY (`Isolated` / `Optional` / `None`), an isolated table gains an isolation
