@@ -342,8 +342,13 @@
   </ToolbarMenu>
   <ToolbarMenu Guid="2deb71ea-f065-4fe3-9215-90460bc2d5ec" Name="Reports">
     <Elements>
-      <!-- altea: WordTemplate -> OfficeTemplate (@altea/altea-office-template does docx/pptx/xlsx). -->
-      <ToolbarElement Type="Item" Content="OfficeTemplate" />
+      <!-- altea renamed the CLASS (Signum.Word -> @altea/altea-office-template, which does docx/pptx/xlsx),
+           but the type declares `@legacyCleanName("WordTemplate")` — and that is NOT gated on legacyMode
+           (it lives in data/registration, which both tiers compile and which has no view of the
+           server-only SchemaSettings flag). The clean name IS the registered query key, so the key is
+           `WordTemplate` in every deployment, exactly as `basics.query` stores it. This element must name
+           the query, not the class. -->
+      <ToolbarElement Type="Item" Content="WordTemplate" />
       <ToolbarElement Type="Item" Content="EmailTemplate" />
       <ToolbarElement Type="Item" Content="UserQuery" />
       <ToolbarElement Type="Item" Content="UserChart" />

@@ -38,14 +38,31 @@ export namespace EmployeeLoader {
         // is a full RegionEntity reference (regions were inserted with their Northwind ids preserved).
         const regionDic = new Map((await table(RegionEntity).toArray()).map(r => [Number(r.id), r]));
         const territories = await Connector.withConnector(await Northwind.connector(), () => view(NwTerritory).toArray());
-        await BulkInserter.bulkInsert(territories.map(t => {
+        const entities = territories.map(t => {
             const e = TerritoryEntity.create({
                 region: regionDic.get(t.RegionID)!,
                 description: t.TerritoryDescription.trim(),
             });
             e.id = toInt(parseInt(t.TerritoryID.trim()));
             return e;
-        }));
+        });
+
+        // Signum's `entities.Duplicates(a => a.Description).ForEach(t => t.Description += " (Dup)")`.
+        // NOT optional and not a nicety: `TerritoryEntity.description` is `@uniqueIndex` (Southwind declares
+        // the same `[UniqueIndex]`), and Northwind's own data has TWO territories described "New York" —
+        // zip 10019 and zip 10038, in both vendor scripts — so without this the load dies on
+        // `uix_territory_description`. `Duplicates` (Signum.Utilities) yields every element whose key was
+        // ALREADY seen, so the first "New York" keeps its name and the second becomes "New York (Dup)".
+        // Written out rather than added to altea's arrayExtensions: one consumer, and one line.
+        const seen = new Set<string>();
+        for (const e of entities) {
+            if (seen.has(e.description))
+                e.description += " (Dup)";
+            else
+                seen.add(e.description);
+        }
+
+        await BulkInserter.bulkInsert(entities);
     }
 
     export async function loadEmployees(): Promise<void> {

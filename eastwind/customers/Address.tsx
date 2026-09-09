@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { AutoLine } from '@altea/altea/client/Lines/AutoLine'
+import { TextBoxLine } from '@altea/altea/client/Lines/TextBoxLine'
 import { TypeContext } from '@altea/altea/client/TypeContext'
 import { useForceUpdate } from '@altea/altea/client/Hooks'
 import { AddressEmbedded } from './Customer.data'
@@ -10,14 +10,14 @@ export default function Address(p: { ctx: TypeContext<AddressEmbedded>, inheritS
   const forceUpdate = useForceUpdate();
   return (
     <div>
-      <AutoLine ctx={ctx.subCtx(a => a.address)} />
+      <TextBoxLine ctx={ctx.subCtx(a => a.address)} />
       <div className="row">
-        <div className="col-sm-6"><AutoLine ctx={ctx.subCtx(a => a.city)} /></div>
-        <div className="col-sm-6"><AutoLine ctx={ctx.subCtx(a => a.region)} /></div>
+        <div className="col-sm-6"><TextBoxLine ctx={ctx.subCtx(a => a.city)} /></div>
+        <div className="col-sm-6"><TextBoxLine ctx={ctx.subCtx(a => a.region)} /></div>
       </div>
       <div className="row">
-        <div className="col-sm-6"><AutoLine ctx={ctx.subCtx(a => a.postalCode)} mandatory={ctx.value.country != "Ireland"} /></div>
-        <div className="col-sm-6"><AutoLine ctx={ctx.subCtx(a => a.country)} onChange={forceUpdate} /></div>
+        <div className="col-sm-6"><TextBoxLine ctx={ctx.subCtx(a => a.postalCode)} mandatory={ctx.value.country != "Ireland"} /></div>
+        <div className="col-sm-6"><TextBoxLine ctx={ctx.subCtx(a => a.country)} onChange={forceUpdate} /></div>
       </div>
     </div>
   );

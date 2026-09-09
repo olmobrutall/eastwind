@@ -24,6 +24,7 @@ import { EntityOverrides } from "./entityOverrides.data";
 import Layout from "./Layout";
 import Home from "./Home";
 import PublicCatalog from "./publicApi/PublicCatalog";
+import { PublicClient } from "./publicApi/PublicClient.client";
 import NotFound from "./NotFound";
 
 // Register the full free solid + regular icon sets so string-named icons resolve (Signum's
@@ -87,6 +88,11 @@ async function reload(): Promise<void> {
     // The ANONYMOUS shop window (Southwind's MainPublic pushes the same route first): where the landing
     // page sends a logged-out visitor.
     routes.push({ path: "/publicCatalog", element: <PublicCatalog /> });
+
+    // The ANONYMOUS self-service registration page (Southwind's MainPublic: `PublicClient.startPublic`).
+    // Pushed here, before the `isFull` branch, because the whole point is that a visitor with no user can
+    // reach it — an employee hands out `/registerUser/<their id>` through the quick link on their own page.
+    PublicClient.startPublic(routes);
 
     // Public auth routes (login / change password) — always registered, so they work with no user.
     // `userTicket: true` is Southwind's MainPublic (`startPublic({ routes, userTicket: true, … })`): it

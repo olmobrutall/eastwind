@@ -214,6 +214,24 @@
   <Type Name="RegionOperation">
     <Member Name="Save" Description="Salvar" />
   </Type>
+  <Type Name="RegisterUserMessage">
+    <Member Name="GoToLoginPage" Description="Ir a la página de inicio de sesión" />
+    <Member Name="PleaseFillTheFollowingFormToRegisterANewEastwindEmployee" Description="Rellene el siguiente formulario para registrar un nuevo empleado de Eastwind" />
+    <Member Name="Register" Description="Registrar" />
+    <Member Name="User0HasBeenRegisteredSuccessfully" Description="¡El usuario {0} se ha registrado correctamente!" />
+    <Member Name="User0IsAlreadyRegistered" Description="El usuario {0} ya está registrado" />
+    <Member Name="UserRegistered" Description="Usuario registrado" />
+  </Type>
+  <Type Name="RegisterUserModel" Description="Registrar usuario">
+    <Member Name="Address" Description="Dirección" />
+    <Member Name="EMail" Description="E-Mail" />
+    <Member Name="FirstName" Description="Nombre" />
+    <Member Name="LastName" Description="Apellidos" />
+    <Member Name="Password" Description="Contraseña" />
+    <Member Name="ReportsTo" Description="Reporta a" />
+    <Member Name="TitleOfCourtesy" Description="Tratamiento" />
+    <Member Name="Username" Description="Nombre de usuario" />
+  </Type>
   <Type Name="ShipperEntity" Description="Transportador">
     <Member Name="CompanyName" Description="Nombre empresa" />
     <Member Name="Phone" Description="Teléfono" />

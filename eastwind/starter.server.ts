@@ -66,6 +66,7 @@ import { UserChartEntity } from "@altea/altea-chart/data/UserChart";
 import { DashboardEntity } from "@altea/altea-dashboard/data/Dashboard";
 import { CatalogApi } from "./publicApi/CatalogApi.server";
 import { PublicCatalogApi } from "./publicApi/PublicCatalog.server";
+import { PublicLogic } from "./publicApi/PublicLogic.server";
 import { TourLogic } from "@altea/altea-tour/server/TourLogic";
 import { TranslationLogic } from "@altea/altea-translations/server/TranslationLogic";
 import { WorkflowLogicStarter } from "@altea/altea-workflow/server/WorkflowLogicStarter";
@@ -958,6 +959,13 @@ export namespace Starter {
             // Its property routes resolve through the reflection metadata, so it must come after the
             // entity modules — as it does here.
             PublicCatalogApi.start(sb.webBuilder);
+            // The ANONYMOUS self-service registration (Southwind's Public/PublicController +
+            // Public/PublicLogic): the two endpoints behind /registerUser. After AuthLogic.start, whose
+            // middleware the anonymous gate rides on, and after the entity modules — it saves an Employee
+            // and a User through their own operations. The ROLE a self-registered visitor is given is the
+            // app's decision, not the module's, so it is named here (Southwind hard-codes it inside the
+            // controller); it must be one of the roles createRoles seeds.
+            PublicLogic.start(sb.webBuilder, { registeredUserRoleName: "Standard user" });
         }
 
         // The three BACKGROUND RUNNERS (Southwind.Server/Program.cs's `StartBackgroundProcesses` block).

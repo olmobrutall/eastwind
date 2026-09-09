@@ -222,7 +222,7 @@
   </Type>
   <Type Name="RegisterUserMessage">
     <Member Name="GoToLoginPage" Description="Zur Login-Seite gehen" />
-    <Member Name="PleaseFillTheFollowingFormToRegisterANewSouthwindEmployee" Description="Bitte füllen Sie das folgende Formular aus, um einen neuen Southwind-Mitarbeiter zu registrieren" />
+    <Member Name="PleaseFillTheFollowingFormToRegisterANewEastwindEmployee" Description="Bitte füllen Sie das folgende Formular aus, um einen neuen Eastwind-Mitarbeiter zu registrieren" />
     <Member Name="Register" Description="Register" />
     <Member Name="User0HasBeenRegisteredSuccessfully" Description="Benutzer {0} wurde erfolgreich registriert!" />
     <Member Name="User0IsAlreadyRegistered" Description="Benutzer {0} ist bereits registriert" />
