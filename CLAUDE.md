@@ -1159,22 +1159,14 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   bypasses) and one with `additionalBindings`. And `sb.globalLazy(…, { invalidateWith: [X] })` does NOT
   start caching X (Signum force-caches it); the lazy keeps its event wiring and is also reset by a broadcast.
 
-- **The diff log is TWO core seams plus a mixin.** `altea-diff-log` stores the before/after dumps of an
-  operation on the operation log itself, which needs two things core did not have and now does:
-  `ObjectDumper` (`data/objectDumper`) and `OperationLogic.surroundOperation` — Signum's
-  `SurroundOperation`, an event returning an `IDisposable`, becomes a before-handler that returns an AFTER
-  callback (which still runs when the operation threw). The dumper keeps Signum's C#-flavoured output
-  verbatim (`new OrderEntity(10248) { … }`, `new LiteImp<CustomerEntity>(5, "Acme")`, 3-space indent), because
-  that shape is the contract `simplifyDump`'s regex reads and what makes a dump comparable across the two
-  frameworks. Divergences: `[AvoidDump]` / `[AvoidDumpEntity]` become `ObjectDumper.avoidDump` /
-  `avoidDumpEntity` Sets keyed `"TypeName.fieldName"`; `Schema.ForceCultureInfo` is unnecessary because the
-  dumper formats invariantly by construction (Temporal → ISO, Decimal → `toString`); mixins are not a
-  separate branch (altea inlines them). Two things do NOT port: `registerWhenAlreadyFilteringBy` (altea has
-  no "only while the query already filters by this property" condition kind, so
-  `OperationLogTypeCondition.FilteringByTarget` is declared but unregistered) and the auditor-token registry
-  its client half pairs with. And note the MIXIN's two consequences — the fields are FLATTENED onto
-  `operation_log` (`initial_state_text`, …), but a client PropertyRoute still needs the mixin STEP
-  (`subCtx(a => a.mixin(DiffLogMixin))`), because a route models the mixin even where the columns don't.
+- **The diff log is TWO core seams plus a mixin.** altea-diff-log stores the before/after dumps of an
+  operation on the operation log itself, which needed `ObjectDumper` (`data/objectDumper`, keeping Signum's
+  C#-flavoured output VERBATIM — that shape is the contract `simplifyDump`'s regex reads, and what makes a
+  dump comparable across the two frameworks) and `OperationLogic.surroundOperation` — a before-handler
+  returning an AFTER callback, which still runs when the operation threw. Note the MIXIN's two consequences:
+  the fields are FLATTENED onto `operation_log` (`initial_state_text`, …), but a client PropertyRoute still
+  needs the mixin STEP (`subCtx(a => a.mixin(DiffLogMixin))`), because a route models the mixin even where
+  the columns don't. Full ledger: **[altea/docs/port/DiffLog.md](altea/docs/port/DiffLog.md)**.
 
 - **Lexical is Signum's editor, and altea pins Signum's exact version.** `altea-html-editor` is a
   near-verbatim port (same package, same 0.45), so the extension protocol, the controller and the toolbar are
@@ -1332,7 +1324,8 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     from `setAccessTokenFactory`, which altea-auth installs beside `setExtraHeaders`. Frames that arrive
     before authentication resolves are QUEUED, not dropped.
   `altea-concurrent-user` is its first consumer; it also trusts the socket's OWN user rather than the
-  `userKey` the client passes (Signum trusts the argument), so a tab cannot register presence as someone else.
+  `userKey` the client passes (Signum trusts the argument), so a tab cannot register presence as someone
+  else. That module's ledger: **[altea/docs/port/ConcurrentUser.md](altea/docs/port/ConcurrentUser.md)**.
 
 - **The agent's THREE missing .NET substrates.** `altea-agent` ports Signum.Agent, whose whole surface rests
   on packages with no JavaScript counterpart:
@@ -2300,35 +2293,13 @@ Known structural divergences from Signum (this is what "fix" means — don't por
 
 - **Signum.Printing → altea-printing: a queue whose last step is an app seam.** A document producer drops a
   LINE instead of printing, a PACKAGE is a batch a process walks, and `PrintingLogic.print` is what actually
-  prints — default THROWS, as Signum's does, because what "print" means is not something a framework can
-  know. eastwind wires the module and leaves that hook unset (the same call the SMS `provider` gets), but DOES
-  supply the test file type, which Southwind omits and thereby leaves `CreateTest` with nowhere to upload.
-  Divergences: Signum's table-driven `StateValidator` becomes per-field `@fieldValidation` (altea-email's
-  translation, and the table it replaces is written out in the file header); `[Ignore]` → `@column(false)`;
-  `PrintPackageEntity.Lines()` is a `withQuoted` prototype member where Signum has an
-  `[AutoExpressionField]` extension method; `IProcessAlgorithm` → a `registerAction` closure;
-  `ProcessLogic.AssertStarted` / `PermissionLogic.RegisterPermissions` / `OperationLogic.AllowSave<T>` have
-  no counterparts; both endpoints are gated by `ViewPrintPanel`, where Signum gates only the omnibox entry
-  and leaves them open to any authenticated user; `isCreable: "IsSearch"` cannot be expressed (altea's
-  `EntityClientBuilder` has no such option). Signum's `PrintPanelPage` uses `LinkButton` without importing
-  it — its page does not compile as written — and there is no custom `toString()` on either entity, as in
-  Signum: a first attempt built one from `PrintLineState[this.state]`, and **a reverse ENUM LOOKUP is a
-  subscript no SQL dialect can evaluate** ("cannot subscript type unknown" on every query of the table).
-  It found TWO core bugs, both older than this module:
-  - **an `@implementedByAll` reference had NO sub-tokens on the client.**
-    `QueryLogic.getImplementedByAllTypes` reads `Schema.Tables.Keys`, so it exists only on the server, and
-    only the server installed it as the token tree's provider — Signum needs no client half, since its token
-    tree is a server-built QueryDescription. So `ProcessEntity.data`, `OperationLogEntity.target`,
-    `ViewLogEntity.target` and `AlertEntity.target` offered nothing in the column chooser, and a `.cast(X)`
-    token could not resolve at all. The client's source is now the reflection registry narrowed by the
-    metadata blob's `kind`.
-  - **`ExceptionLogic.logException` wrote in the AMBIENT transaction.** It is nearly always called from a
-    catch block whose transaction is about to roll back, so the row went with it while the entity — stashed
-    on the Error for reuse — kept the id that insert handed out; the next caller then saved it as an
-    existing row and `exception.toLite()` pointed at an id that was never committed. That is why every
-    process whose per-item action threw died with "insert or update on process_exception_line violates
-    foreign key constraint" and ended in Error instead of Finished, losing the exception line too. Now in
-    its own transaction, which is what Signum's `ex.LogException()` does.
+  prints — default THROWS, as Signum's does. It found TWO core bugs, both older than the module: an
+  `@implementedByAll` reference had **NO sub-tokens on the client** (so `ProcessEntity.data`,
+  `OperationLogEntity.target`, `ViewLogEntity.target` and `AlertEntity.target` offered nothing in the column
+  chooser), and **`ExceptionLogic.logException` wrote in the AMBIENT transaction** — nearly always one about
+  to roll back, so the row went with it while the entity kept the id that insert handed out, which is why
+  every process whose per-item action threw died on a foreign-key violation and ended in Error instead of
+  Finished. Full ledger: **[altea/docs/port/Printing.md](altea/docs/port/Printing.md)**.
 
 - **Signum.WhatsNew → altea-whats-new: the news are NOT cached, and that is what makes them safe.** Signum
   keeps a `GlobalLazy` of every news item and then re-applies row security to the cached list with
