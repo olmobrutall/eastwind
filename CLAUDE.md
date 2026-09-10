@@ -867,6 +867,64 @@ Known structural divergences from Signum (this is what "fix" means — don't por
 
   There is no second root: `FluentOperations<T>` IS `FluentInclude<T>`, and `sb.include` is idempotent, so the two cases with no include of one's own — a `Type<T>` known only at RUNTIME (altea-tree's `registerOperations(include)`, which takes the include `withTree` hangs off) and a module that owns a type's operations but not its include (altea-workflow's `WorkflowEventTaskLogic` on `CaseEntity`) — just open one: `sb.include(CaseEntity).withOperations(…)` reaches a type another module included. For full control over ONE operation — holding it, mutating it later, re-registering it with `replace` — use the `new Graph.Execute(Order, sym, { … })` classes directly (`server/graph.ts`). This replaced the earlier `graph(Order, OrderState, g => { g.GetState = …; g.Execute(sym, …) })` builder, whose verbs read as "construct something" rather than "register an operation".
 - **`@quoted` lambda navigations**: `entity.customer.name`-style navs inside queries are rewritten by `quote-transformer` (a ts-patch transformer). A nav off a **nullable** reference must use `singleOrNull` / `firstOrNull` (OUTER APPLY), not `single` / `first`.
+- **A COMPLEX ORDER BY is promoted to a COLUMN of the sub-select it comes from.** The OrderByRewriter
+  copies the orderings onto every select that needs them (the one with the TOP / OFFSET, and the
+  outer-most one) and the QueryRebinder re-correlates each copy to the closest alias — so ordering a
+  paginated query by something that is not a column (`a.albums().count()`, or any `Albums.Count`-shaped
+  query token) translated that sub-query once PER LEVEL: three `COUNT(*)`s for a query that needs two.
+  `OrderByColumnPromoter` (`server/linq/visitors/`, Signum's same file, run right after
+  RedundantSubqueryRemover in `bindAndOptimize`) reuses an equivalent column if the select already has
+  one and adds one to the sub-select otherwise, pushing it down through pass-through selects so the
+  expression is evaluated once and each level just forwards it. The first two points below are
+  divergences, both because altea's tree says less than Signum's; the other two are what it needed:
+  - **no `RemoveNullify`.** Signum has to look through a `Convert(expr, T?)` because a QueryToken used
+    as an ORDER is nullified while the same token used as a COLUMN is not, so the two do not look
+    equivalent. TypeScript has no nullable-value-type conversion and altea's token layer builds ONE
+    expression for both (`dQueryable`'s `orderBy` and `select` both call `token.buildExpression`).
+  - **the ROW_NUMBER pass is about `withIndex`, not pagination.** Signum's Skip becomes a ROW_NUMBER
+    select — hence its test asserting TWO ORDER BYs — where altea's becomes an OFFSET on the select's
+    own ORDER BY, so a paginated query is handled by the ordinary promotion. `RowNumberPromoter` is
+    ported all the same: an indexed selector's window inherits the query's orderings.
+  - **it needed the comparer altea had declined**, and the codebase had already answered how:
+    `dbExpressionEquals` (AliasReplacer) is Signum's `DbExpressionComparer.AreEqual` — structural
+    equality with alias ALPHA-EQUIVALENCE, so two identical correlated sub-queries differing only in the
+    aliases the binder generated compare equal while a reference to an OUTER alias still has to match —
+    implemented as the CANONICAL SIGNATURE `CanonicalAliasVisitor` already built for the unique-function
+    dedupe rather than as a port of the 545-line per-node comparer. The consequence is that **each
+    node's `toString()` is part of that contract**: `RowNumberExpression` now carries its orderings and
+    `SelectExpression` its non-default `selectOptions`, which they dropped — two differently-ordered
+    windows, or a string-aggregating select and the same body without it, would otherwise compare equal.
+  - **a select may now order by its OWN column, by the bare alias** (`SELECT expr as c0 … ORDER BY c0`),
+    which is what lets the promoter avoid adding a column at all; `s0.c0` there would name a source that
+    is not in that select's FROM, so the formatter special-cases it. And `RedundantSubqueryRemover` will
+    now merge two selects that BOTH have an ORDER BY when it is the very same one
+    (`SubqueryMerger.isSameOrderBy`) — an outer select that only re-projects a TOP / OFFSET, which is
+    exactly what the OrderByRewriter produces. Pinned by three cases in
+    `altea/test/server/linqExecute/orderBy.test.ts` (Signum's same three) and three in
+    `altea/test/server/dynamicQueries/orderByColumnPromotion.test.ts` — the QueryRequest half, which
+    Signum can only test by EXECUTING and reading its SQL logger, and which runs DB-free here
+    (`allQueryOperations(request).bindProjection()` is the whole pipeline as a translated expression).
+- **A UserQuery / UserChart can be CLONED, and the row clones are isomorphic while the entity's is not.**
+  Signum keeps `Clone()` on the entity; altea puts `cloneUserQuery` / `cloneUserChart` in the logic layer,
+  as @altea/altea-dashboard's `cloneDashboard` already does, and the per-ROW clones on the row types
+  (`QueryFilterBaseEntity.clone()`, `UserQueryEntity_Column.clone()`, `ChartColumnEmbedded.clone()`, …)
+  where Signum has them. `@rowOrder` and the `@backReference` are deliberately left unset — the save
+  cascade fills both from the array the clone is placed into.
+  - **the filter clone is ONE method for six row types.** Signum has one shared `QueryFilterEmbedded` and
+    so one `Clone`; altea has a filter row per owner (six subclasses of `QueryFilterBaseEntity`, each
+    adding only its back reference), so the copy lives on the base and mints the same row type it was
+    called on through `entity.constructor` — altea's stand-in for `GetType()`.
+  - **Signum's Clone drops `DashboardBehaviour`; this one keeps it.** A filter that drives a dashboard
+    interaction would otherwise come back from the clone as an ordinary filter.
+  - **`SynchronizeColumns` needs no counterpart.** Signum re-runs it after copying because assigning
+    `ChartScript` runs its SETTER, which pre-creates a column per script slot that the cloned columns then
+    have to replace; altea has no property setters, so the copy already IS the end state, and the two
+    bindings it also sets (`scriptColumn` / `parentChart`) are `@field(false)` scratch the client re-binds
+    on load.
+  - it retired the private `cloneColumn` / `cloneParameter` in `ChartRequestLogic` (the same copy, minus
+    the token's resolved `token`). **An existing database needs a `sync`**: `UserQueryOperation.Clone` and
+    `UserChartOperation.Clone` are new declared symbols, so `basics.operation` gains two rows and the
+    buttons do nothing until it has them.
 - **Rule sets live in `client/FinderRules.tsx`** (like Signum), not inline in `Finder.tsx` — the editors import Lines, and Lines import Finder, so keeping them separate avoids a module-eval import cycle. Finder imports `FinderRules` for its four `init*Rules()` and installs them, so `import { Finder }` is enough.
 
 - **Physical NAMING is overridable on both builders, as it is in Signum.** Signum makes its naming
