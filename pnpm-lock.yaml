@@ -933,6 +933,9 @@ importers:
       '@altea/altea-eval':
         specifier: workspace:*
         version: link:../altea-eval
+      '@altea/altea-user-assets':
+        specifier: workspace:*
+        version: link:../altea-user-assets
       quote-transformer:
         specifier: workspace:*
         version: link:../quote-transformer
