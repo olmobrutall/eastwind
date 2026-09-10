@@ -105,7 +105,7 @@ async function use(): Promise<void> {
     if (!reportCompilation())
         return;
 
-    const ctor = resolveType(TYPE_NAME + "Entity") as unknown as (new () => Entity) & { create(v: object): Entity };
+    const ctor = resolveType(TYPE_NAME + "Entity") as (new () => Entity) & { create(v: object): Entity };
 
     await asSystem(async () => {
         // Save a row through the generated type, using the generated Save operation.

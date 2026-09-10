@@ -92,7 +92,7 @@ if (result.errors.length === 0) {
             check("PropertyRoute walks it", false, String((e as Error).message));
         }
 
-        const inst = new (Built as unknown as new () => Entity)() as Entity & Record<string, unknown>;
+        const inst = new (Built as new () => Entity)() as Entity & Record<string, unknown>;
         inst["code"] = "ABC";
         check("an instance is an Entity", inst instanceof Entity);
         check("its toString() runs", inst.toString() === "ABC", inst.toString());
@@ -101,8 +101,7 @@ if (result.errors.length === 0) {
         //    show this type's display string as a column. It is stamped by the transformer from the
         //    `@quoted` decorator (a plain toString() carries none, declared types included), so this is
         //    the check that the transformer's most substantial rewrite reached generated code.
-        const quoted = (Built as unknown as { prototype: { toString: { __quoted?: unknown } } })
-            .prototype.toString.__quoted;
+        const quoted = Built.prototype.toString.__quoted;
         check("its toString() carries a __quoted tree", quoted != null);
     }
 }

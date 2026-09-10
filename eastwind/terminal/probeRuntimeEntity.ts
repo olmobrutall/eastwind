@@ -49,7 +49,7 @@ interface DynamicTypeDef {
  */
 function buildEntityType(def: DynamicTypeDef): typeof Entity {
     // A named class, so the ctor name matches the type name (stack traces, toString, the registries).
-    const ctor = { [def.typeName]: class extends Entity { } }[def.typeName] as unknown as typeof Entity;
+    const ctor = { [def.typeName]: class extends Entity { } }[def.typeName];
 
     for (const f of def.fields) {
         const decorators: Array<(t: object, k: string) => void> = [
