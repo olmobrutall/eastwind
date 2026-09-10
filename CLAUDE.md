@@ -1104,13 +1104,11 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   a SYNC `prepareSuffix` (assign the suffix, so the owning row can be INSERTed with it) and an ASYNC
   `writePrepared` (write the bytes just before commit). `altea-files-azure` / `altea-files-s3` therefore
   **REFUSE a `renameAlgorithm`** — the collision probe is a network round-trip, and a rename decided in the
-  async half could not be written back to the row that already carries the old suffix. Signum defaults it to
-  null in both backends and says why ("ExistBlob is too slow, consider using CalculateSuffix with a GUID!"),
-  which is what the default suffix generator does. Likewise `readAllBytesSync` THROWS in both, so a
-  `BigString` column must not live in a remote store. Signum's chunked-upload API (StartUpload /
-  UploadChunk / …) is not ported at all, because altea-files has no chunk protocol: a file reaches the server
-  inside the entity graph. S3's PRESIGNED url is `presignedUrl()` rather than `fullWebPath()`, because SigV4
-  presigning is async in the AWS v3 SDK (Azure's SAS signing is sync, so it stays in `fullWebPath`).
+  async half could not be written back to the row that already carries the old suffix — and
+  `readAllBytesSync` THROWS in both, so **a `BigString` column must not live in a remote store**. Signum's
+  chunked-upload API is not ported at all: altea-files has no chunk protocol, a file reaching the server
+  inside the entity graph. Full ledger:
+  **[altea/docs/port/FileStores.md](altea/docs/port/FileStores.md)**.
 
 - **The mail SERVICES are a registry, and each protocol package fills one slot.** `EmailServiceEntity`
   (sending) and `EmailReceptionServiceEntity` (receiving) are abstract with an EMPTY / minimal
@@ -1127,7 +1125,9 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   becomes ~200 lines over `node:tls` and MailKit's MIME becomes **mailparser**. Three things do NOT port:
   Windows INTEGRATED authentication for EWS (no SSPI on Node — an injected `negotiateProvider` seam, as in
   altea-auth-windowsad), Autodiscover's SCP / DNS-SRV paths (only the two well-known POX URLs), and TNEF
-  (`winmail.dat`) unpacking on reception.
+  (`winmail.dat`) unpacking on reception. Per-module ledgers:
+  **[MailingExchange.md](altea/docs/port/MailingExchange.md)**,
+  **[MailingPop3.md](altea/docs/port/MailingPop3.md)**.
 
 - **The remote-mailbox search page is addressed by USER, not by mailbox id.** Signum's RemoteEmails routes
   take the directory object id (`{oid}`) and the client reads it off `UserLiteModel.ExternalId`; altea has no
