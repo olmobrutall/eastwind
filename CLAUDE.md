@@ -391,9 +391,18 @@ Known structural divergences from Signum (this is what "fix" means — don't por
       and the mechanism for saying yes already exists on both sides. Signum's `ForcePropertyRoute` has
       no counterpart: altea derives the route from the expression's own Meta.
     - **`HasValue` IS a fix**: Signum's polymorphic branch ends in `.AndHasValue(this)` and altea's had
-      dropped it. `Id` and `ToString` are NOT offered there by either framework (they belong to the
-      single-implementation branch), and altea still lacks the `EntityTypeToken` Signum also puts here —
-      a `phase3c` TODO, so the divergence that remains runs the other way.
+      dropped it — on the `@implementedBy` branch AND on `@implementedByAll`, which had neither that nor
+      the type token. `Id` and `ToString` are NOT offered there by either framework (they belong to the
+      single-implementation branch).
+    - **`[EntityType]` IS offered, and comes FIRST** (Signum's `PreAnd(new EntityTypeToken(this))`) — the
+      one thing a caller can ask of a polymorphic reference without committing to a cast, so it filters,
+      groups and sorts where a cast is null for every row of another type. It is a `Lite<TypeEntity>`, so
+      it keeps walking into `CleanName` / `Namespace` / … , and it needed no new SQL: an
+      `@implementedByAll` already STORES the discriminator, an `@implementedBy` derives one from whichever
+      implementation column is filled (the binder's `getEntityType` → `extractTypeId`), and
+      `.toTypeEntity()` was already the navigation to that row. Pinned in
+      `altea/test/server/dynamicQueries/queryLogic.test.ts` (both shapes' SQL) and `queryTokenLeaf.test.ts`
+      (the order, and that the type table's own members follow).
     - the framework fixture's `AwardNominationEntity.award` was widened to `Lite<Entity>` where Signum
       declares `Lite<AwardEntity>`; it is back on the abstract base, which is what lets the test register
       an expression on it. The column is named per implementation either way, so no database moves.
