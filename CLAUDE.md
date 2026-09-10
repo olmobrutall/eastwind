@@ -560,7 +560,6 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   Pinned by `eastwind/terminal/probeRowGuids.ts` (55 checks: the thirteen primary keys and their generator, the three dropped
   guid columns, each matching rule including the two refusals, and an end-to-end export + re-import of a
   real UserQuery that keeps every filter and column row id). Full ledger:
-  **[altea/docs/port/UserAssets.md](altea/docs/port/UserAssets.md)**. Full ledger:
   **[altea/docs/port/UserAssets.md](altea/docs/port/UserAssets.md)**.
 - **The CHANGE LOG is source, not data — and it is per MODULE, which is what makes it interesting.**
   Signum's Basics/ChangeLog.cs + ChangeLogLogic + the React ChangeLogClient/ChangeLogViewer: a navbar
@@ -1162,7 +1161,8 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   Server app uses). Two things are REFUSED at startup rather than silently mis-served: a
   cached type with row-level TypeConditions (altea enforces those as a query filter, which a cached read
   bypasses) and one with `additionalBindings`. And `sb.globalLazy(…, { invalidateWith: [X] })` does NOT
-  start caching X (Signum force-caches it); the lazy keeps its event wiring and is also reset by a broadcast.
+  start caching X (Signum force-caches it); the lazy keeps its event wiring and is also reset by a
+  broadcast. Full ledger: **[altea/docs/port/Cache.md](altea/docs/port/Cache.md)**.
 
 - **The diff log is TWO core seams plus a mixin.** altea-diff-log stores the before/after dumps of an
   operation on the operation log itself, which needed `ObjectDumper` (`data/objectDumper`, keeping Signum's
