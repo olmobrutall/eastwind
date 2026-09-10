@@ -194,6 +194,69 @@ Known structural divergences from Signum (this is what "fix" means — don't por
       a part's OWN registered query (`sb.include(x).withQuery()` on a row type: @altea/altea-agent does it
       for a chat message's tool calls), whose columns are its own members and whose stored tokens are
       scoped by the query key. altea-playwright's `LineContainer.as(type)` is the third, and stores nothing.
+    - **a CAST is a route STEP, `(CleanName)`, and it is what gives a `@part` CONTENT's members a route
+      at all.** `PropertyRoute.addCast(ctor)` — NEW here; Signum's PropertyRouteType has no cast because
+      it needs none, a member of a polymorphic reference's implementation being a route ROOTED at that
+      implementation. altea cannot say that for a `@part` implementation, so the two outcomes are the
+      `@part` distinction the whole route model turns on: a NON-part implementation RE-ROOTS at it
+      (Signum's `AddImp` exactly, so the cast contributes nothing to the stored path and
+      `(Dashboard).parts/content.(Company).name` IS `(Company).name`), while a `@part` gets a real step
+      that CONTINUES the owner — `(Dashboard).parts/content.(TextPart).textContent` is a route of the
+      DASHBOARD, stored under it like every other part's, so there is still exactly one spelling of that
+      member. Before it, a dashboard part's content was the one part of the model nothing could name:
+      the route stopped dead at the reference ("Cast first."), and the content may not be a route root,
+      so property auth, help, a tour "Property" step and per-instance translation were all unavailable
+      for it.
+      - **the spelling is `AsTypeToken.key`**, so the two layers are one grammar — the query token
+        `Parts.Element.Content.(TextPart).TextContent` and the route above are the same member seen
+        twice. `AsTypeToken.getPropertyRoute()` now returns the REAL cast route where the parent token
+        has one, instead of always answering `rootStandalone(ctor)`. `parse` / `parseFull` round-trip it;
+        `splitRoute` needed nothing, since `(X)` already falls out as its own step.
+      - **`rootStandalone` keeps both its consumers and gains a third role as the FALLBACK** — a token
+        whose parent has no route, and legacy mode. The part-root REFUSAL is untouched, and does not need
+        to move: a cast reaches the part THROUGH its owner, so it never wants a root.
+      - **the descent is OPT-IN** (`generateRoutes(root, includeArrayElements, includeCasts)`), because
+        it multiplies a polymorphic reference's routes by the implementation count. Two callers pass it:
+        `PropertyRouteLogic.modelPaths` — which MUST, since `should` is what the routes synchronizer
+        diffs against and a cast route missing from it is a row DELETED, cascading to every consumer —
+        and `PropertyAuthLogic.authRoutes`, so a rule can be written. Help, translations and the
+        designers stay on today's set; they are one argument away. The BARE cast route is never emitted,
+        only what is below it — the same rule the bare element route follows (`parts/` is gated by
+        `includeArrayElements` while `parts/title` is not): a cast is a navigation step, not a member
+        anything writes a rule about. A part's BOOKKEEPING is skipped under a cast exactly as it is under
+        a continuation, and `byAll` never descends (it yields no typeInfos, which is right — "every
+        entity" is not a set to walk). A part cast is REFUSED on an `@implementedByAll` outright, which
+        is the same rule the token layer applies: "any entity" gives the step no owner to continue from.
+      - **the SERIALIZER names the part too, and it had to** — `continueRoute` (data/serializer) is the
+        one place the write gate and `propsMeta` get their route, and for a part behind a polymorphic
+        reference it returned the owner's route UNCHANGED: every implementation's members then shared one
+        path (`parts/content.title` for a TextPart and an ImagePart alike), which is ambiguous between
+        them AND matches no generated route. So a rule written on a part content would have gated
+        nothing. It now appends the cast whenever the route's own target has more than one
+        implementation — suppressed in legacy mode, following `generateRoutes` rather than inventing a
+        path no rule can exist at.
+      - **LEGACY MODE generates NO cast route.** It is an altea extension of the stored grammar, so
+        `basics.property_route` in a Signum database has no counterpart for one and Signum's own
+        synchronizer DELETES the rows it does not recognise — the two applications would take turns
+        adding and removing them, the same trade `typedTables` makes for an MList row. So a part
+        content's members stay unreachable while pointed at a Signum database. PARSING is not
+        suppressed: a path already stored still reads back whichever mode is on.
+      - **NOT fixed, and worth knowing:** a Signum database's own part-rooted rows. Signum's
+        `TextPartEntity` is a plain `[EntityKind(EntityKind.Part, EntityData.Master)]` entity whose
+        members are ordinary routes there, so `basics.property_route` may hold `(TextPart).TextContent`;
+        altea's `modelPaths` answers `∅` for a part, and `synchronizeProperties` builds `should` for
+        every table ctor, so each such row falls to `deleteSqlSync` and the PropertyRouteEntity cascade
+        takes the rule / help / tour step / translation with it. Pre-existing and unaffected by the cast
+        step (legacy suppresses it); latent, because the table is demand-populated and Southwind ships no
+        such row. The fix, if one is ever wanted, is to let `modelPaths` consult `extraSyncRoutes` even
+        for a part ctor and register a legacy-only handler yielding that part's own Signum-spelled paths.
+      Pinned by `altea/test/data/reflection/propertyRoute.test.ts` (15 DB-free cases over the shared
+      `test/data/castProbe` fixture — Signum's `PanelPartEmbedded.Content` in miniature, with a non-part
+      implementation as the re-root control), `altea/test/server/dynamicQueries/castToken.test.ts` (5,
+      that the token layer and the route layer agree) and two cases in
+      `altea/test/data/serialization/serializerAuth.test.ts` (that the gate is asked about the cast route
+      in normal mode and the pre-cast one in legacy). `TypeEntity.isPart` has its own three in
+      `altea/test/server/schema/typeEntityIsPart.test.ts`.
     - `assertNotPartRoot()` remains what a STORAGE boundary asks, since a route can arrive from anywhere:
       `toPropertyRouteEntity` / `propertyRouteEntitySync` refuse one, and `PropertyRouteLogic.modelPaths` /
       the property-auth enumeration answer NOTHING for a part.
@@ -206,7 +269,11 @@ Known structural divergences from Signum (this is what "fix" means — don't por
       there). `TypeContext.root` / `cast` / `as` and FramePage — which have no parent route by construction
       — hand the context the bare TypeReference instead.
     - **`@implementedByAll` no longer offers a CAST to a part**, which brings that list back to Signum's:
-      altea's mapped types include the rows standing in for MList tables, which are not types there.
+      altea's mapped types include the rows standing in for MList tables, which are not types there. It
+      STAYS that way now that a route can express a cast: a byAll reference has no owner to continue
+      from, so a part cast there would name a member of a part that is not that route's part. Hiding
+      parts by DEFAULT has a better home than a hard filter in the token layer, and now has one — the
+      picker, through `TypeEntity.isPart`.
     - **`data-property-path` is still the line's OWN member.** `TypeContext.propertyPath` used to be the
       whole `propertyString()` and read the same only because the UI re-rooted at every entity; it takes
       the last step now, so an order line's cell says `Product` as every other line does — which is the
@@ -1803,6 +1870,34 @@ Known structural divergences from Signum (this is what "fix" means — don't por
       with a Signum database's.
     Together a Southwind sync went from ~220 type-row DELETE + INSERT pairs to ZERO deletes and 65
     inserts — the types eastwind has and Southwind does not.
+  - **`isPart` is a STORED column, and it is altea's alone** — Signum has no such column, because it has
+    no such rows to hide. altea models a Signum MList element and several owned embeddeds as `@part`
+    ENTITIES with tables of their own, so `basics.type` carries ~100 rows naming something that is only
+    ever reached through the entity that owns it; the picker `EntityBase.chooseType` opens for an
+    `@implementedByAll` reference (`Finder.find(TypeEntity)`) listed every one of them. The value is
+    `PropertyRoute.isPartType(ctor)` — the same predicate the route rules and the token layer go through,
+    so the row and the model cannot disagree about what a part is — and `SharedPart` is excluded exactly
+    as `isPartType` excludes it: it has several owners and stands alone, so it is a legitimate answer.
+    - **a column and not the client-side `TypeInfo.entityKind`, which already ships.** A client-side
+      predicate would filter the rows a page happened to receive, which lies about the total count and
+      pages past what it hid; the requirement is `isPart == false` in the query REQUEST. That is the
+      whole justification for a column Signum does not have.
+    - **it is a FILTER, not a hidden row.** `TypeEntityClient` (NEW, framework, started by
+      `ClientBuilder.startFramework` rather than the app's MainAdmin as CultureInfoClient /
+      SystemEventLogClient are — this is a default on a picker the FRAMEWORK opens, so an app that forgot
+      the call would get part rows in every polymorphic reference) registers it as a pinned
+      `NotCheckbox_Unchecked` filter labelled **"Include Part entities"**: the box is unticked while the
+      filter applies, and ticking it drops the filter from the next request. `SearchModal` passes
+      `defaultIncludeDefaultFilters={true}`, so the picker really does apply it.
+    - **KEPT in legacy mode — deliberately NOT hidden through `simplifyDiffTables`.** Hiding it there
+      would mean the column does not exist against a Signum database, and the server-side filter is
+      exactly what would then break. So a Southwind sync scripts one ADD COLUMN — the same call `package`
+      already makes, an altea-maintained column a Signum deployment ignores.
+    - the value is DERIVED, so `synchronizeTypes` must rewrite every existing row, which `copyRowFields`
+      copying wholesale already does — the opposite of `namespace`, which is carried over precisely
+      because it is not model metadata. The sync's own ADD COLUMN backfills a temporary `false` first
+      (`alterTableAddColumnDefault`), so the UPDATEs put the true ones back. **An existing altea database
+      therefore needs a `sync`, run TWICE** — see the next bullet, which is exactly this case.
   - **a first sync after adding a TypeEntity column cannot read that column**, so `synchronizeTypes` /
     `synchronizeProperties` are commented out of that one script and everything downstream of the type
     cache — the DYNAMIC definitions included — reads as absent. **Do not apply such a script blind**: with
