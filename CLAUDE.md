@@ -1839,7 +1839,8 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   and drops `template_binary_file` in one script, and every template keeps its name, filters and tokens
   while losing the DOCUMENT. The migration computes the file's hash the way `calculateMD5Hash` does
   (base64 of the MD5, via Postgres' own `md5()` and a decode/encode pair — no pgcrypto), because that
-  hash is the file's cache identity: it rides the download url and becomes the ETag.
+  hash is the file's cache identity: it rides the download url and becomes the ETag. The module's own
+  ledger: **[altea/docs/port/OfficeTemplate.md](altea/docs/port/OfficeTemplate.md)**.
 
 - **An `@implementedByAll` is a LAST resort, and its id columns are the APP's choice.** Signum types a
   polymorphic reference against an INTERFACE (`IProcessDataEntity`, `Lite<IEntity>`) and its schema builder
@@ -2072,7 +2073,8 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     is not ported, the note every log-owning module carries.
   Pinned by `eastwind/terminal/probeSessionLog.ts` (23 checks, including that the nullable-ternary
   `durationSeconds` really lowers to SQL both as a projection and as an ORDER BY). `auth.session_log`
-  needs a `sync` and matches Signum's table column for column. **A new declared symbol means each test
+  needs a `sync` and matches Signum's table column for column. Full ledger:
+  **[altea/docs/port/Auth.md](altea/docs/port/Auth.md)**. **A new declared symbol means each test
   suite's own database needs regenerating** — the auth suite failed 27 of 30 with "Mismatches caching
   PermissionSymbol: Missing SessionLogPermission.TrackSession" until `pnpm --filter @altea/altea-auth
   gen:postgres`.
@@ -2113,7 +2115,8 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   **"Remember me" checkbox was never rendered** (the ref existed, so `rememberMe` was always `undefined`),
   and `/api/auth/loginFromCookie` did not exist. Pinned by `eastwind/terminal/probeUserTicket.ts` (21
   checks) plus a seven-case HTTP round-trip; `auth.user_ticket` needs a `sync`, and matches Signum's
-  table column for column (a Southwind sync scripts nothing for it).
+  table column for column (a Southwind sync scripts nothing for it). Full ledger:
+  **[altea/docs/port/Auth.md](altea/docs/port/Auth.md)**.
 
 - **Signum.Rest → altea-rest: an MVC action filter becomes EXPRESS MIDDLEWARE** mounted on a path prefix
   (`ws.app.use("/api/catalog", RestLogFilter.middleware({ name: "CatalogApi" }))`), and an `?apiKey=` is
@@ -2380,7 +2383,8 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   url. A client needs the QueryEntity ROW whenever it builds an entity that references a query (a new
   UserQuery, a new ExcelReport), because the FK is the row and not the key; altea-user-queries had been
   carrying a private copy of the route gated on its own permission. The core one is gated on the QUERY's
-  authorization, which is the right question.
+  authorization, which is the right question. Full ledger:
+  **[altea/docs/port/OfficeTemplate.md](altea/docs/port/OfficeTemplate.md)**.
 
 - **Signum.MachineLearning → altea-machine-learning: a CODIFICATION is the unit, and CNTK becomes
   TensorFlow.js.** A predictor names a registered QUERY, marks each column Input or Output, and trains a
