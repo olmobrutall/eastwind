@@ -1100,6 +1100,9 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     fields' own `@niceName` — altea has no QueryDescription to hang `ColumnDisplayName` on. They also
     re-apply the request's filters/orders IN MEMORY, because Graph silently loosens what it cannot express.
 
+  Full ledger for all three directory modules:
+  **[altea/docs/port/AuthDirectory.md](altea/docs/port/AuthDirectory.md)**.
+
 - **A REMOTE file store cannot rename, and cannot be read synchronously.** `altea-files` splits a save into
   a SYNC `prepareSuffix` (assign the suffix, so the owning row can be INSERTed with it) and an ASYNC
   `writePrepared` (write the bytes just before commit). `altea-files-azure` / `altea-files-s3` therefore
@@ -2155,11 +2158,6 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   where Southwind cancels orders older than a week. A Southwind database read that as four symbols removed
   and four added, across `simple_task`, `process_algorithm` and `operation` — and a RENAME would have been
   worse than a drop, since it would point a configured schedule at different behaviour.
-  - **the gap was smaller than the note implied.** altea's `ProcessLogic.start` already includes the three
-    package tables and registers their three `*LastProcess` queries, so what was missing is the four
-    ALGORITHMS and the helpers that BUILD a package (`createLines` + its entity / query overloads,
-    `createPackageOperation`). Hence no `packages` / `packageOperations` flags — Signum's two gate the
-    table half, and there is nothing left for them to gate.
   - eastwind now has Southwind's pair, which is the same job done two ways and is the point of having
     both: `CancelOldOrdersWithProcess` packages the stale orders and runs `OrderProcess.CancelOrders` (a
     `PackageExecuteAlgorithm<OrderEntity>` over `OrderOperation.Cancel`), `CancelOldOrders` does it as ONE
@@ -2168,34 +2166,17 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     .withConstructFromMany(OrderEntity, …)` rather than the order's own state machine.
     `CancelOrderAlgorithm` needs no subclass here: Signum's overrides `Execute` only to call
     `base.Execute`, with a "// Override if necessary" comment beside it.
-  - NOT ported: the `ProgressProxy` argument Signum appends to every per-line operation (altea has no such
-    type; cancellation is still honoured at the LINE boundary, which is where Signum's `ForEachLine`
-    checks it), `ExceptionLogic.DeleteLogs` (the note every log-owning module carries), the two
-    `PreDeleteSqlSync` cascades (both need `Administrator.unsafeDeletePreCommand` over an
-    `@implementedByAll` discriminator), and `RegisterUserTypeCondition` (its middle rule is a subquery
-    over another type's condition, which altea's TypeConditionLogic cannot express).
-  - **it found THREE core defects, each older than the module and each silent**, which together are why a
-    package process could run to Finished having done nothing — `ExecutingProcess.forEach` files a
-    per-line failure as a row rather than failing the run:
-    - `QueryBinder.assign` unwrapped a Lite column and then called ITSELF instead of `adaptAssign`, so the
-      pair was never re-run through the adapter — the one place the shapes can be lined up, since they
-      only match once the lite is off. Every set-based write into a polymorphic lite column
-      (`executeInsert(PackageLineEntity, o => ({ target: o.toLite() }))`, Signum's `Target = p`) died on
-      "Cannot assign". The adapter has known how to widen an entity into (typeId, id_<pk>) since it was
-      written; it was simply unreachable from there.
-    - `Retriever.liteImplementedByAll` kept the id AS READ. An `@implementedByAll` has one id column per
-      configured pk type and the value is coalesced over them, which is only typeable as TEXT once an app
-      configures more than one (eastwind adds `uuid`) — so an int id came back as the STRING `"11128"` and
-      `retrieve(OrderEntity, "11128")` answered "not found" for a row that is right there. Coerced through
-      the resolved type's own `parseId` now: that call site is the one place the concrete type is known.
-    - the OPERATION registry was keyed by the symbol OBJECT, so an operation named by DATA rather than in
-      code — which is exactly what a `PackageOperationEntity` names — was "not registered". Keyed by
-      `symbol.key` now, the call altea-scheduler and altea-processes already made for their own registries
-      and record as a gotcha.
+  - **it found THREE core defects, each older than the module and each silent** — together why a package
+    process could run to Finished having done nothing, since `ExecutingProcess.forEach` files a per-line
+    failure as a row rather than failing the run: `QueryBinder.assign` recursed instead of calling
+    `adaptAssign` (so every set-based write into a polymorphic lite column died on "Cannot assign"),
+    `Retriever.liteImplementedByAll` kept the coalesced id AS READ (an int came back as the STRING
+    `"11128"`, so `retrieve` answered "not found" for a row that is right there), and the OPERATION
+    registry was keyed by the symbol OBJECT rather than by `symbol.key` — so an operation named by DATA,
+    which is exactly what a `PackageOperationEntity` names, was "not registered".
   **An existing altea database needs a `sync`** (four symbol rows move). Pinned by
   `eastwind/terminal/probePackageLogic.ts` (20 checks), which RUNS things rather than inspecting
-  registration — the set-based task, the package task end to end (package → lines → queued process →
-  every order actually cancelled), and a PackageOperation over an operation symbol read from its row.
+  registration. Full ledger: **[altea/docs/port/Processes.md](altea/docs/port/Processes.md)**.
 
 - **Signum.SMS → altea-sms: a small sibling of altea-email, plus the GSM alphabet.** The module is a
   TEMPLATE (per-culture text authored against a query and/or a code-declared model), a MESSAGE, two PACKAGES
