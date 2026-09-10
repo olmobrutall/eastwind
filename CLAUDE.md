@@ -2471,6 +2471,8 @@ Known structural divergences from Signum (this is what "fix" means — don't por
   ALWAYS false — and the accessible name was `String(p.label)`, which for a React element is the literal
   text "[object Object]". Both now go through `client/Lines/ariaLabel.ts`.
 
+  Full ledger: **[altea/docs/port/MachineLearning.md](altea/docs/port/MachineLearning.md)**.
+
 - **A download's file name is written in BOTH `Content-Disposition` forms, from one helper.** ASP.NET's
   `File(bytes, contentType, fileName)` emits `filename="…"; filename*=UTF-8''…` and Signum's
   `Services.getFileName` reads the `filename*=` one first, so its ASCII branch — `.replace("\"", "")`,
