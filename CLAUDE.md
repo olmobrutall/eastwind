@@ -1302,6 +1302,9 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     `BasicViewDispatcher` / `setViewDispatcher` (altea resolved views inline, with a
     `// TODO: real ViewDispatcher` where the seam belonged), and `applyViewOverrides` now asks the
     DISPATCHER for overrides so a module can contribute them for a type it does not own.
+
+  Full ledger: **[altea/docs/port/Dynamic.md](altea/docs/port/Dynamic.md)**.
+
 - **CodeMirror 5 → CodeMirror 6.** `altea-codemirror` keeps every wrapper's PROPS identical (`script` /
   `onChange` / `isReadOnly` / `errorLineNumber` / `innerRef`) and rewrites everything behind them: CM5 is
   end-of-life, ships no ESM entry points and no bundled types. So the options BAG becomes explicit props plus
