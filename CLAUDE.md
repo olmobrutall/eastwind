@@ -1440,6 +1440,8 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     translation of a workflow / activity name IS available now — see altea-translations below — but the
     workflow module does not opt its own routes into it.)
 
+  Full ledger: **[altea/docs/port/Workflow.md](altea/docs/port/Workflow.md)**.
+
 - **Signum.Help → altea-help: the prose is GENERATED, and what is stored is only the overrides.** A help
   page shows one sentence per type / property / operation / query / query column, assembled from
   reflection by `HelpGenerator` (free, per request, never stored) with any human-written description
