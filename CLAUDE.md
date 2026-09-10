@@ -2000,13 +2000,36 @@ Known structural divergences from Signum (this is what "fix" means — don't por
     into a sibling `.query.json`, so they are on disk before the old names are gone), and the NEW core
     seam `Administrator.afterSynchronize` → `afterSynchronize`. Core also gained four Colors
     (magenta / darkYellow / blue / cyan) that Signum's pickers distinguish outcomes with.
-  **NOT ported, and it is a real limit:** the pass over a template's BODY TEXT, where `@[Customer.Name]`
-  lives — Signum's `TemplateSynchronizationContext` plus a `Synchronize` on every value provider, which
-  is what the `Member` / `Global` buckets are for. The two template subscribers repair a template's
-  stored QUERY tokens (filters, orders, the From token); a renamed token inside the body still surfaces as
-  a parse error when the template renders. altea-templating's header used to say that pass was impossible
-  because altea had no TokenMigrations; that premise is now false and its comment says so, so the follow-up
-  has its prerequisites in place. Pinned by `eastwind/terminal/probeTokenMigration.ts` (23 checks: the
+  - **the pass over a template's BODY is ported too, on BOTH substrates**, and it is what the `Member` and
+    `Global` rename buckets were built for. `altea-templating/server/TemplateSync` is Signum's
+    `TemplateSynchronizationContext`, plus a `synchronize` on every value provider, condition and node;
+    @altea/altea-email drives it over each message's Subject and Text — ONE context per template, so a
+    decision answered for the first culture is not asked again for the rest — and
+    @altea/altea-office-template over the .docx/.pptx/.xlsx DOCUMENT and the file name, the same context
+    over a DIFFERENT tree (`OfficeTemplateNodes`' own `synchronize` per node). The walk MIRRORS the
+    re-print (`write` / `renderTemplate`) in order and in variable scoping, because that is what turns the
+    tree back into the stored template: a node synchronised under a different scope than it prints under
+    would rewrite a `$var` into one that is not in scope there.
+    - **the office half rewrites the SAME FileEntity row.** It is one of the three places Signum lifts
+      immutability per instance (`file.AllowChange = true`) rather than superseding the file, and it is
+      the right call here: the document is the same file with its tokens repaired, where a new row would
+      leave the old one behind for every template that shares it.
+    - **the TEXT half needs a self-check Signum has no counterpart of.** A token that fails to RESOLVE is
+      a non-fatal parse error and leaves the tree complete — precisely the state this pass repairs — but a
+      FATAL one aborts the parse and leaves a tree that is a PREFIX of the template. Signum writes back
+      unconditionally; here `synchronize` re-prints the freshly parsed tree first and refuses, loudly,
+      unless it matches the text it came from, because otherwise it would truncate somebody's template
+      instead of repairing it. The DOCUMENT half needs none: its nodes replace markers IN PLACE inside the
+      real document, so there is no prefix state to write, and a marker that found no partner is still a
+      MatchNode — which `assertClean` throws on.
+    - a DOCUMENT node is reached only through its container. A block keyword moves its body into a
+      BlockNode that is NOT its child in the tree, so the driver's own descendant sweep stops at the
+      container and the container's recursion is the whole of the walk below it.
+    Pinned by `altea-templating/test/templateRoundTrip.test.ts` (20 DB-free cases) and
+    `altea-office-template/test/documentRoundTrip.test.ts` (21, over a minimal .docx built in memory —
+    including a token SHATTERED across Word runs, and that every construct of a nested document is
+    reached in document order with each token asked exactly once).
+  Pinned by `eastwind/terminal/probeTokenMigration.ts` (23 checks: the
   file contract, a rename CHAIN across two files — and that half a chain does NOT resolve — the
   multi-candidate branch, era-subkey unwinding, that Apply refuses to guess, and an end-to-end repair of
   a stored UserQuery). `user_assets.token_migration` needs a `sync` and matches Signum's table column
