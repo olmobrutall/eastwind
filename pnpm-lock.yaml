@@ -412,6 +412,9 @@ importers:
       '@altea/altea-migrations':
         specifier: workspace:*
         version: link:../altea-migrations
+      '@altea/altea-tree':
+        specifier: workspace:*
+        version: link:../altea-tree
       quote-transformer:
         specifier: workspace:*
         version: link:../quote-transformer
