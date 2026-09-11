@@ -124,9 +124,9 @@ statically, so it is dead code in a production build.
 ## Starting a NEW application from this one
 
 ```bash
-pnpm --filter @altea/altea-clone start -- --name northbreeze   # or the altea-clone binary
+node altea/cli/altea-clone/dist/main.js --name northbreeze
 cd ../northbreeze
-altea-simplify                     # untick what you do not need; one commit per module
+node <altea>/cli/altea-simplify/dist/main.js   # untick what you do not need; one commit per module
 pnpm install
 pnpm --filter quote-transformer build
 pnpm --filter northbreeze build:types

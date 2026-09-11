@@ -34,6 +34,7 @@ packages:
   - altea/altea-chart
   - altea/altea-alert
   - altea/altea-playwright
+  - altea/cli/altea-cli-utils
   - altea/cli/altea-upgrade
   - altea/cli/altea-clone
   - altea/cli/altea-simplify
