@@ -89,7 +89,7 @@ pnpm --filter eastwind stack local              # types watcher + API + vite cli
 pnpm --filter eastwind server dev               # the API alone
 pnpm --filter eastwind terminal test sync       # the console; extra args reach its commands
 pnpm --filter eastwind test:e2e                 # Playwright, against a RUNNING stack
-pnpm --filter eastwind check:modules            # validate Modules.xml against the sources
+pnpm --filter eastwind check:modules            # = altea-simplify --check
 ```
 
 `stack` opens the client on **http://localhost:5173** and the API on **3001** (3000 is left free for a

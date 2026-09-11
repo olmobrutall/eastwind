@@ -18,7 +18,7 @@
     "server": "node scripts/withEnv.mjs server",
     "stack": "node scripts/withEnv.mjs stack",
     "free:port": "node scripts/free-port.mjs",
-    "check:modules": "node scripts/check-modules-xml.mjs",
+    "check:modules": "node ../altea/cli/altea-simplify/dist/altea-simplify/main.js --check",
     "test:e2e": "tspc -b && playwright test"
   },
   "keywords": [],
