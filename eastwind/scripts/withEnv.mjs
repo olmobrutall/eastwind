@@ -41,6 +41,23 @@ const TARGETS = {
         build: false,
         node: ["--enable-source-maps", "--import", "@altea/altea/register.mjs", "dist/webServer.server.js"],
     },
+    "gen:environment": {
+        describe: "generate the TEST database and its snapshot (DESTRUCTIVE — it drops what is there)",
+        build: true,
+        node: ["--enable-source-maps", "--import", "@altea/altea/register.mjs", "dist/test/environment/generateEnvironment.js"],
+    },
+    test: {
+        describe: "the Playwright suites, against a RUNNING stack",
+        // The build is not optional: a spec addresses lines and tokens with property LAMBDAS, which mean
+        // something only once the quote-transformer has stamped them — so Playwright runs dist/test/**.
+        build: true,
+        // Playwright is a BINARY, not a node entry point, so there is no command line to splice
+        // `--env-file` into. The file is loaded into this process instead and inherited by the child.
+        run: async () => {
+            process.loadEnvFile(path.join(appRoot, envFile));
+            await shell(["pnpm exec playwright test", ...rest].join(" "));
+        },
+    },//test-targets
 };
 
 const [target, env, ...rest] = process.argv.slice(2);
@@ -67,10 +84,15 @@ else
 
 // ---- targets -------------------------------------------------------------------------------------
 
-/** One entry point: optionally build, then run node with the env file spliced in. */
+/** One entry point: optionally build, then run node with the env file spliced in (or the target's own run). */
 async function single(spec) {
     if (spec.build)
         await shell("pnpm run build:types");
+
+    if (spec.run != null) {
+        await spec.run();
+        return;
+    }
 
     const entry = spec.node[spec.node.length - 1];
     await node([...spec.node.slice(0, -1), `--env-file=${envFile}`, entry, ...rest]);

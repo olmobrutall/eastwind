@@ -88,7 +88,8 @@ pnpm --filter eastwind build:types              # tspc -b  (builds altea + eastw
 pnpm --filter eastwind stack local              # types watcher + API + vite client, together
 pnpm --filter eastwind server dev               # the API alone
 pnpm --filter eastwind terminal test sync       # the console; extra args reach its commands
-pnpm --filter eastwind test:e2e                 # Playwright, against a RUNNING stack
+pnpm --filter eastwind gen:environment local    # (re)build the TEST database + its snapshot — DESTRUCTIVE
+pnpm --filter eastwind test local               # Playwright, against a RUNNING stack
 pnpm --filter eastwind check:modules            # = altea-simplify --check
 ```
 
@@ -96,9 +97,23 @@ pnpm --filter eastwind check:modules            # = altea-simplify --check
 local Signum host; override with `PORT`, and `VITE_API_TARGET` for the proxy). `-k` means if one process
 dies the whole stack stops.
 
-`test:e2e` is `tspc -b && playwright test`, and the build is not optional: a spec addresses lines with
-property LAMBDAS, which only work once the quote-transformer has stamped them — so Playwright runs the
+`test` builds first, and that is not optional: a spec addresses lines, columns and filters with property
+LAMBDAS, which only mean something once the quote-transformer has stamped them — so Playwright runs the
 COMPILED specs (`testDir: dist/test`). First run on a machine: `npx playwright install chromium`.
+
+### The test database
+
+The suite drives the browser AND the database: a test creates its order through `OrderOperation`, then
+navigates to it. Both ends are the environment named on the command line — the one the running stack is
+serving — so `test local` works against `.env.local`, as Signum's Southwind.Test.React works against its
+dev database.
+
+`gen:environment` builds that database once: a full generation, the roles + `AuthRules.xml` +
+`UserAssets.xml` the terminal also applies, and then the TEST data (`test/environment/`) — three employees,
+five users, two products, three customers, one shipper — rather than the terminal's whole Northwind import.
+It leaves a SNAPSHOT behind (a database snapshot on SQL Server, a `<db>_Template` database on PostgreSQL),
+and every test rewinds to it before it runs. So a spec creates rows freely and never cleans up — and the
+local database ends up holding the test fixture, not the Northwind demo data.
 
 ### Environments
 

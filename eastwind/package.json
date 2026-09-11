@@ -19,7 +19,8 @@
     "stack": "node scripts/withEnv.mjs stack",
     "free:port": "node scripts/free-port.mjs",
     "check:modules": "node ../altea/cli/altea-simplify/dist/main.js --check",
-    "test:e2e": "tspc -b && playwright test"
+    "test": "node scripts/withEnv.mjs test",
+    "gen:environment": "node scripts/withEnv.mjs gen:environment"
   },
   "keywords": [],
   "author": "Olmo del Corral",
