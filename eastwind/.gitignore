@@ -1,4 +1,8 @@
-# Local-only DB credentials — never commit
+# Environment files hold connection strings, keys and per-deployment choices. `.env.example` is the
+# tracked TEMPLATE; every real `.env.<environment>` stays out of git — `.env.local`, `.env.dev`,
+# `.env.test`, `.env.live` and (while the port lasts) `.env.postgres` / `.env.sqlserver` /
+# `.env.swpostgres`. The project copier (`altea-upgrade clone`) copies them into a new application
+# anyway; they simply are not part of its first commit, so sharing one is a deliberate force-add.
 .env
 .env.*
 !.env.example

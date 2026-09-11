@@ -4,7 +4,7 @@
     {
       "name": "eastwind-api",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "eastwind", "server:postgres"],
+      "runtimeArgs": ["--filter", "eastwind", "server", "local"],
       "port": 3001
     },
     {

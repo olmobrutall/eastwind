@@ -92,9 +92,9 @@
 		},
 		{
 			"label": "eastwind full stack — PostgreSQL",
-			"detail": "Build types, then run the API server (Postgres) + vite client + tspc watch together (pnpm stack:postgres). Open http://localhost:5173.",
+			"detail": "Build types, then run the API server (.env.local) + vite client + tspc watch together (pnpm stack local). Open http://localhost:5173.",
 			"type": "shell",
-			"command": "pnpm --filter eastwind stack:postgres",
+			"command": "pnpm --filter eastwind stack local",
 			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": [],
 			"isBackground": true,
@@ -102,9 +102,9 @@
 		},
 		{
 			"label": "eastwind full stack — SQL Server",
-			"detail": "Build types, then run the API server (SQL Server) + vite client + tspc watch together (pnpm stack:sqlserver). Open http://localhost:5173.",
+			"detail": "Build types, then run the API server (.env.dev) + vite client + tspc watch together (pnpm stack dev). Open http://localhost:5173.",
 			"type": "shell",
-			"command": "pnpm --filter eastwind stack:sqlserver",
+			"command": "pnpm --filter eastwind stack dev",
 			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": [],
 			"isBackground": true,
