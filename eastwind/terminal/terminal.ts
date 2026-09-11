@@ -14,27 +14,28 @@ import { StartParameters } from "@altea/altea/data/utils/startParameters";
 import { table } from "@altea/altea/server/table";
 import { Decimal } from "@altea/altea/data/basics";
 import { Starter } from "../starter.server";
-import { ConsoleSwitch } from "./consoleSwitch";
+import { ConsoleSwitch } from "@altea/altea/server/consoleSwitch";
 import { terminalFile } from "./terminalFile";
 import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic";
 import { SqlMigrationRunner } from "@altea/altea-migrations/server/SqlMigrationRunner";
 import * as Administrator from "@altea/altea/server/administrator";
 import { TokenMigrationLogic } from "@altea/altea-user-assets/server/TokenMigrationLogic";
 import { TokenMigrationRunner } from "@altea/altea-user-assets/server/TokenMigrationRunner";
-import { Northwind } from "./northwindSchema";
-import { NorthwindSeed } from "./northwindSeed";
+import { Northwind } from "./northwind/northwindSchema";
+import { NorthwindSeed } from "./northwind/northwindSeed";
 import { RegionEntity, TerritoryEntity, EmployeeEntity } from "../employees/Employee.data";
 import { SupplierEntity, CategoryEntity, ProductEntity } from "../products/Product.data";
 import { ShipperEntity } from "../shippers/Shipper.data";
 import { OrderEntity, OrderLineEntity } from "../orders/Order.data";
 import { PersonEntity, CompanyEntity } from "../customers/Customer.data";
-import { EastwindMigrations } from "./eastwindMigrations";
+import { TypeScriptMigrations } from "./typeScriptMigrations";
 
 // Port of Southwind.Terminal (old/Southwind.Terminal/Program.cs): a console host that boots the engine
 // (Starter.start) then dispatches ONE command (Signum takes args.First() only) or, with no args, an
 // interactive ConsoleSwitch menu. The commands mirror Southwind's, and so does the split between them:
-//   • `csharp` — the ONCE-per-database code steps (roles, users, the Northwind data, the XML seeds),
-//                recorded in CSharpMigrationEntity → EastwindMigrations.cSharpMigrations.
+//   • `ts`     — the ONCE-per-database code steps (roles, users, the Northwind data, the XML seeds),
+//                recorded in TypeScriptMigrationEntity (`CSharpMigration` in legacy mode) →
+//                TypeScriptMigrations.run.
 //   • `sql`    — the versioned .sql migrations in eastwind/Migrations → SqlMigrationRunner.
 //   • `load`   — a sub-menu of RE-RUNNABLE ad-hoc tools, each logged to LoadMethodLog.
 // altea has no CREATE DATABASE, so "new" = clean + generate into an already-existing database. The
@@ -67,8 +68,8 @@ async function main(): Promise<void> {
                 case "sync":
                 case "synchronize": await synchronize(args); break;
                 case "load": await load(args.slice(1)); break;
-                case "csharp":
-                case "cs": await cSharpMigrations(args.slice(1)); break;
+                case "typescript":
+                case "ts": await typeScriptMigrations(args.slice(1)); break;
                 case "check": await check(); break;
                 case "export-auth": await exportAuth(args.slice(1)); break;
                 case "import-auth": await importAuth(args.slice(1)); break;
@@ -76,7 +77,7 @@ async function main(): Promise<void> {
                 case "seed-northwind": await NorthwindSeed.seed(); break;
                 case "migrations":
                 case "sql": await migrations(args.slice(1)); break;
-                default: console.log(`Unknown command '${command}'. Valid: new, sync, sql, csharp, load [SN,EA,IA,IU,SO], check, export-auth, import-auth, import-assets, seed-northwind`);
+                default: console.log(`Unknown command '${command}'. Valid: new, sync, sql, ts, load [SN,EA,IA,IU,SO], check, export-auth, import-auth, import-assets, seed-northwind`);
             }
         }
     } finally {
@@ -133,7 +134,7 @@ async function interactive(): Promise<void> {
             .add("N", "New Database (clean + generate schema)", () => create())
             .add("S", "Synchronize (diff model vs DB)", () => synchronize())
             .add("SQL", "SQL Migrations (apply / create versioned .sql)", () => migrations([]))
-            .add("CS", "C# Migrations (roles, users, Northwind data, XML seeds)", () => cSharpMigrations([]))
+            .add("TS", "TypeScript Migrations (roles, users, Northwind data, XML seeds)", () => typeScriptMigrations([]))
             .add("L", "Load (ad-hoc tools)", () => load([]))
             .add("C", "Check (row counts)", () => check())
             .choose();
@@ -152,8 +153,8 @@ async function interactive(): Promise<void> {
  * utilities, each run through `MigrationLogic.ExecuteLoadProcess` (so it lands in LoadMethodLog with its
  * timing and exception) and each RE-RUNNABLE — nothing here is recorded as a migration.
  *
- * The data loading is NOT here: that is the C# MIGRATIONS list (`csharp`, see EastwindMigrations.
- * cSharpMigrations), exactly as in Southwind.
+ * The data loading is NOT here: that is the CODE MIGRATIONS list (`ts`, see TypeScriptMigrations.run),
+ * exactly as in Southwind.
  *
  * Southwind's entries were AR (import/export auth rules), HL (help), TP (train predictor), SO (show order)
  * and EE (export embeddings). Help / MachineLearning are not ported, and there is no embeddings EXPORT here
@@ -166,9 +167,9 @@ async function load(args: string[]): Promise<void> {
     for (; ;) {
         const selected = await new ConsoleSwitch<() => Promise<void>>("Load processes (e.g. SN,EA,IA):")
             .add("SN", "Seed Northwind (the demo-data SOURCE database)", () => NorthwindSeed.seed())
-            .add("EA", "Export Auth Rules (to ./AuthRules.xml)", () => EastwindMigrations.exportAuthRules())
-            .add("IA", "Import Auth Rules (terminal/AuthRules.xml)", () => EastwindMigrations.importAuthRules())
-            .add("IU", "Import User Assets (terminal/UserAssets.xml)", () => EastwindMigrations.importUserAssets())
+            .add("EA", "Export Auth Rules (to ./AuthRules.xml)", () => TypeScriptMigrations.exportAuthRules())
+            .add("IA", "Import Auth Rules (terminal/AuthRules.xml)", () => TypeScriptMigrations.importAuthRules())
+            .add("IU", "Import User Assets (terminal/UserAssets.xml)", () => TypeScriptMigrations.importUserAssets())
             .add("SO", "Show Order (the most expensive discounted order)", () => showOrder())
             .chooseMultipleWithDescription(args);
 
@@ -206,11 +207,12 @@ async function showOrder(): Promise<void> {
 
 /**
  * Southwind's `csharp` command / `CS` menu entry → `SouthwindMigrations.CSharpMigrations(autoRun)`: the
- * ordered, once-per-database code steps (roles, users, the Northwind loaders, the XML seeds).
+ * ordered, once-per-database code steps (roles, users, the Northwind loaders, the XML seeds). Named for
+ * the language they are actually written in; the TABLE behind them keeps Signum's name.
  */
-async function cSharpMigrations(args: string[]): Promise<void> {
+async function typeScriptMigrations(args: string[]): Promise<void> {
     await ensureInitialized(); // Signum's `SouthwindMigrations.CSharpMigrations` opens with it too
-    await EastwindMigrations.cSharpMigrations(/* autoRun */ args.includes("--auto") || !process.stdin.isTTY);
+    await TypeScriptMigrations.run(/* autoRun */ args.includes("--auto") || !process.stdin.isTTY);
 }
 
 // Southwind's `SqlMigrationRunner.SqlMigrations()` (its Program.cs "SQL" option): the versioned .sql files in
@@ -333,20 +335,20 @@ async function synchronize(args: string[] = []): Promise<void> {
 }
 
 // The three file-based seeds as DIRECT commands (a deploy script calls these). The bodies live in
-// EastwindMigrations — the Load menu and the C# migration list call exactly the same functions.
+// TypeScriptMigrations — the Load menu and the code-migration list call exactly the same functions.
 async function exportAuth(args: string[]): Promise<void> {
     await ensureInitialized();
-    await EastwindMigrations.exportAuthRules(args[0]);
+    await TypeScriptMigrations.exportAuthRules(args[0]);
 }
 
 async function importAuth(args: string[]): Promise<void> {
     await ensureInitialized();
-    await EastwindMigrations.importAuthRules(args[0]);
+    await TypeScriptMigrations.importAuthRules(args[0]);
 }
 
 async function importAssets(args: string[]): Promise<void> {
     await ensureInitialized();
-    await EastwindMigrations.importUserAssets(args.find(a => !a.startsWith("--")), args.includes("--keep-existing"));
+    await TypeScriptMigrations.importUserAssets(args.find(a => !a.startsWith("--")), args.includes("--keep-existing"));
 }
 
 // Read-back health check: row counts of every table via altea's LINQ.

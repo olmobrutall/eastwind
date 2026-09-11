@@ -38,7 +38,7 @@ async function main(): Promise<void> {
     await UserHolder.withUser(new UserWithClaims(system.toLite(), { Role: system.role }), async () => {
         const db = (await table(DashboardEntity).toArray() as DashboardEntity[])[0];
         if (db == null)
-            throw new Error("no dashboard found — run `terminal csharp` first");
+            throw new Error("no dashboard found — run `terminal ts` first");
 
         console.log(`[configure] ${db.displayName} (${db.parts?.length ?? 0} parts)`);
 

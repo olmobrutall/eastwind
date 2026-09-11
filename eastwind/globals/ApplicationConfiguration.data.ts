@@ -25,7 +25,7 @@ import { WindowsADConfigurationEmbedded } from "@altea/altea-auth-windowsad/data
 // not deployment wiring. What stays in the environment is what Southwind also keeps in `appsettings.json`
 // and passes to `Starter.Start` — the connection string, and the storage credentials / backend switch of
 // `eastwindFileStores.server.ts` (Southwind's `azureStorageConnectionString` parameter). A fresh database
-// gets this row from CreateCulturesAndConfiguration with plain dev DEFAULTS (terminal/eastwindMigrations.ts);
+// gets this row from CreateCulturesAndConfiguration with plain dev DEFAULTS (terminal/typeScriptMigrations.ts);
 // from then on the row is the only source of truth, and no setting here is read from the environment.
 //
 // Divergences from Southwind's entity:
@@ -127,7 +127,7 @@ export namespace ApplicationConfigurationOperation {
 // `RoleEntities`  — the row is global (no owner) or owned by one of the current user's ROLES (shared).
 // `CurrentEmployee` — the ORDER is handled by the employee behind the current login.
 //
-// A symbol only bites once a role has a condition RULE using it (seeded in terminal/eastwindMigrations.ts for
+// A symbol only bites once a role has a condition RULE using it (seeded in terminal/typeScriptMigrations.ts for
 // "Standard user", editable in the Role → Type rules UI).
 export namespace EastwindTypeCondition {
     export const UserEntities: TypeConditionSymbol = init();

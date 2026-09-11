@@ -68,7 +68,7 @@ export namespace GlobalsLogic {
                 if (row == null)
                     throw new Error(`No ApplicationConfiguration row for environment '${name}' (DB_ENVIRONMENT).`
                         + ` A fresh database gets one from the CreateCulturesAndConfiguration migration —`
-                        + ` run \`terminal csharp\`, or add the row and set its Environment to '${name}'.`);
+                        + ` run \`terminal ts\`, or add the row and set its Environment to '${name}'.`);
                 return row;
             },
             { invalidateWith: [ApplicationConfigurationEntity] });
@@ -93,7 +93,7 @@ export namespace GlobalsLogic {
         if (warm == null)
             throw new Error("The ApplicationConfiguration is not loaded yet."
                 + " GlobalsLogic.warmUp() runs at startup, after schema.initialize();"
-                + ` on a fresh database, seed the row for environment '${environment()}' with \`terminal csharp\`.`);
+                + ` on a fresh database, seed the row for environment '${environment()}' with \`terminal ts\`.`);
         return warm;
     }
 

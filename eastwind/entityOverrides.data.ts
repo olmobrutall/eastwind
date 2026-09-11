@@ -12,7 +12,7 @@
 // Today: four mixins (three of them a module's, plus the app's own UserEmployeeMixin), every lite model
 // is the default, and implementedBy is declared inline via @implementedBy on OrderEntity.customer.
 import { overrideImplementedBy } from "@altea/altea/data/decorators";
-import { renameSymbolContainer } from "@altea/altea/data/reflection";
+import { renameSymbolContainer, setLegacyMode } from "@altea/altea/data/reflection";
 import { setLegacyPropertyPaths } from "@altea/altea/data/propertyRoute";
 import { useLegacyWordNames } from "@altea/altea-office-template/data/OfficeTemplate";
 import { BigStringMixin } from "@altea/altea-files/data/BigString";
@@ -98,6 +98,10 @@ export namespace EntityOverrides {
         // blob, so every `toLite()` on it would throw. This module is the one place that runs first
         // on both, which is the same reason the mixins below live here.
         if (legacyMode) {
+            // FIRST: the `@legacy*` NAMES (class / clean / table) are gated on this, and the CLIENT has no
+            // schema to carry the flag the way SchemaSettings.legacyMode does on the server.
+            setLegacyMode(true);
+
             renameSymbolContainer(EastwindTypeCondition, "SouthwindTypeCondition");
             renameSymbolContainer(EastwindAgentUseCases, "SouthwindAgentUseCases");
 

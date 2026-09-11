@@ -9,7 +9,7 @@ import { UserEntity, UserState } from "@altea/altea-auth/data/User";
 import { AuthImportExport } from "@altea/altea-auth/server/AuthImportExport";
 import { UserAssetsImporter, warmUserAssetCaches } from "@altea/altea-user-assets/server/UserAssetsImportExport";
 import { EntityAction } from "@altea/altea-user-assets/data/UserAssets";
-import { CSharpMigrationRunner } from "@altea/altea-migrations/server/CSharpMigrationRunner";
+import { TypeScriptMigrationRunner } from "@altea/altea-migrations/server/TypeScriptMigrationRunner";
 import { CultureInfoLogic } from "@altea/altea/server/cultureInfoLogic";
 import { EmailConfigurationEmbedded } from "@altea/altea-email/data/Email";
 import {
@@ -19,18 +19,19 @@ import {
 import { ChatbotConfigurationEmbedded } from "@altea/altea-agent/data/LanguageModel";
 import { WorkflowConfigurationEmbedded } from "@altea/altea-workflow/data/Workflow";
 import { ApplicationConfigurationEntity, currentEnvironment } from "../globals/ApplicationConfiguration.data";
-import { EmployeeLoader } from "./employeeLoader";
-import { DepartmentLoader } from "./departmentLoader";
+import { EmployeeLoader } from "./northwind/employeeLoader";
+import { DepartmentLoader } from "./northwind/departmentLoader";
 import { SMSConfigurationEmbedded } from "@altea/altea-sms/data/SMS";
-import { ProductLoader } from "./productLoader";
-import { CustomerLoader } from "./customerLoader";
-import { OrderLoader } from "./orderLoader";
-import { NorthwindSeed } from "./northwindSeed";
+import { ProductLoader } from "./northwind/productLoader";
+import { CustomerLoader } from "./northwind/customerLoader";
+import { OrderLoader } from "./northwind/orderLoader";
+import { NorthwindSeed } from "./northwind/northwindSeed";
 import { terminalFile } from "./terminalFile";
 
-// Port of Southwind.Terminal/SouthwindMigrations.cs — the app's C# MIGRATIONS: the ordered list of code
-// steps that bring a fresh database to a usable state, each recorded in CSharpMigrationEntity so it runs
-// ONCE per database (Southwind's `new CSharpMigrationRunner { … }.Run(autoRun)`).
+// Port of Southwind.Terminal/SouthwindMigrations.cs — the app's CODE MIGRATIONS: the ordered list of
+// TypeScript steps that bring a fresh database to a usable state, each recorded in
+// TypeScriptMigrationEntity — `CSharpMigration` against a Signum database — so it runs ONCE per database
+// (Southwind's `new CSharpMigrationRunner { … }.Run(autoRun)`).
 //
 // This is NOT the terminal's "Load" menu: that one (Southwind's `Program.Load`) is a bag of RE-RUNNABLE
 // ad-hoc tools, logged to LoadMethodLog but never recorded as migrations — see terminal.ts.
@@ -51,18 +52,18 @@ import { terminalFile } from "./terminalFile";
 // Not ported (Southwind steps whose module does not exist here): SimulateOrderSystemTime,
 // ImportWordReportTemplateForOrder, ImportInstanceTranslations, ImportPredictor.
 // Passwords equal the username (Southwind's HashPassword(name, name)) — dev only. Every step is idempotent
-// on its own, so re-running one after deleting its CSharpMigration row is safe.
-export namespace EastwindMigrations {
+// on its own, so re-running one after deleting its TypeScriptMigration row is safe.
+export namespace TypeScriptMigrations {
 
-    /** Southwind's `SouthwindMigrations.CSharpMigrations(autoRun)`. */
-    export async function cSharpMigrations(autoRun: boolean): Promise<void> {
-        const runner = new CSharpMigrationRunner();
+    /** Southwind's `SouthwindMigrations.CSharpMigrations(autoRun)` — the terminal's `ts` command. */
+    export async function run(autoRun: boolean): Promise<void> {
+        const runner = new TypeScriptMigrationRunner();
 
         // The unique names are the MIGRATION IDENTITY in the database (renaming one re-runs it), so they are
         // the C# method names Southwind used rather than the console captions.
         // FIRST: every Load* step below reads the Northwind SOURCE database through the `Nw*` views, and
         // Southwind simply assumes it is there (the SQL Server sample everyone had installed). eastwind ships
-        // the vendor script for both dialects and seeds it, so `csharp` is self-contained on a fresh machine.
+        // the vendor script for both dialects and seeds it, so `ts` is self-contained on a fresh machine.
         runner.add("CreateCulturesAndConfiguration", () => createCulturesAndConfiguration());
         runner.add("CreateRoles", () => createRoles());
         runner.add("CreateSystemUser", () => createSystemUser());
