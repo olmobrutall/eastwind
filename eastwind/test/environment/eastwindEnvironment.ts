@@ -1,7 +1,11 @@
+import * as path from "node:path";
+import * as url from "node:url";
 import { table } from "@altea/altea/server/table";
+import { Connector } from "@altea/altea/server/connection/connector";
+import { CultureInfoLogic } from "@altea/altea/server/cultureInfoLogic";
 import { Decimal, toInt, toShort } from "@altea/altea/data/basics";
 import { UserEntity, UserState } from "@altea/altea-auth/data/User";
-import { RoleEntity } from "@altea/altea-auth/data/Role";
+import { RoleEntity, RoleEntity_InheritsFrom, MergeStrategy } from "@altea/altea-auth/data/Role";
 import { PasswordEncoding } from "@altea/altea/server/passwordEncoding";
 import { CorruptMixin } from "@altea/altea/data/corruptMixin";
 import { RegionEntity, TerritoryEntity, EmployeeEntity, EmployeeEntity_Territory } from "../../employees/Employee.data";
@@ -10,9 +14,25 @@ import { AddressEmbedded, PersonEntity, CompanyEntity } from "../../customers/Cu
 import { SupplierEntity, CategoryEntity, ProductEntity } from "../../products/Product.data";
 import { ShipperEntity } from "../../shippers/Shipper.data";
 import { OrderEntity, OrderLineEntity } from "../../orders/Order.data";
+import { ApplicationConfigurationEntity, currentEnvironment } from "../../globals/ApplicationConfiguration.data";
+import { EmailConfigurationEmbedded } from "@altea/altea-email/data/Email";
+import {
+    EmailSenderConfigurationEntity, SmtpEmailServiceEntity, SmtpNetworkDeliveryEmbedded,
+    SmtpDeliveryFormat, SmtpDeliveryMethod,
+} from "@altea/altea-email/data/EmailSenderConfiguration";
+import { ChatbotConfigurationEmbedded } from "@altea/altea-agent/data/LanguageModel";
+import { WorkflowConfigurationEmbedded } from "@altea/altea-workflow/data/Workflow";
+import { SMSConfigurationEmbedded } from "@altea/altea-sms/data/SMS";
 
 // Port of Southwind.Test.Environment/SouthwindEnvironment.cs — the data a TEST database is seeded with,
 // which is deliberately NOT what the terminal loads.
+//
+// It DUPLICATES the terminal's own seed steps (the configuration row, the roles) rather than calling
+// them, which is what Southwind does too: `SouthwindEnvironment.LoadBasics` writes its own
+// ApplicationConfiguration and its Terminal writes another. The two projects share the XML FILES and
+// nothing else — a test must not depend on the loading console, and the console must not depend on the
+// tests, so neither tsconfig references the other. Where they drift, they drift on purpose: this one is
+// the environment a test asserts against.
 //
 // The terminal's `ts` migrations import the whole Northwind database: ~830 orders over 91 customers,
 // the shape a demo or a production rehearsal wants. A test wants the opposite — a handful of rows it can
@@ -22,6 +42,65 @@ import { OrderEntity, OrderLineEntity } from "../../orders/Order.data";
 //
 // Every step is idempotent, so a half-finished generation can be re-run.
 export namespace EastwindEnvironment {
+
+    /**
+     * Southwind's `LoadBasics`: the cultures this application ships translations for, and THE
+     * ApplicationConfiguration row every module's settings are read from (globals/GlobalsLogic).
+     *
+     * The values are a test's: e-mail OFF (nothing may leave the process), every credential empty — as
+     * Southwind seeds `AzureAD = null` — and a localhost SMTP sender so the mail module has somewhere to
+     * point. The terminal seeds its own row for a dev machine; this is the one a test runs against.
+     */
+    export async function loadBasics(): Promise<void> {
+        await CultureInfoLogic.ensureCultures(["en", "es", "de"]);
+        const english = CultureInfoLogic.getCulture("en");
+
+        const existing = await table(ApplicationConfigurationEntity)
+            .filter(a => a.environment == currentEnvironment).singleOrNull();
+        if (existing != null)
+            return;
+
+        const sender = EmailSenderConfigurationEntity.create({
+            name: "localhost",
+            service: SmtpEmailServiceEntity.create({
+                deliveryFormat: SmtpDeliveryFormat.SevenBit,
+                deliveryMethod: SmtpDeliveryMethod.Network,
+                network: SmtpNetworkDeliveryEmbedded.create({ host: "localhost" }),
+            }),
+        });
+        await sender.save();
+
+        await ApplicationConfigurationEntity.create({
+            environment: currentEnvironment,
+            databaseName: Connector.current().databaseName(),
+            email: EmailConfigurationEmbedded.create({
+                defaultCulture: english,
+                urlLeft: "http://localhost:5173",
+                sendEmails: false,
+                reciveEmails: false,
+                avoidSendingEmailsOlderThan: null,
+            }),
+            emailSender: sender,
+            chatbot: ChatbotConfigurationEmbedded.create({}),
+            workflow: WorkflowConfigurationEmbedded.create({ avoidExecutingScriptsOlderThan: null }),
+            sms: SMSConfigurationEmbedded.create({ defaultCulture: english }),
+            azureAD: null,
+            openID: null,
+            windowsAD: null,
+        }).save();
+    }
+
+    /**
+     * The four roles AuthRules.xml then hangs its rules on — Signum's `AuthLogic.LoadRoles(xml)`, which
+     * reads them out of the file; altea's importer expects the roles to exist, so they are named here.
+     * The same four the terminal creates, and they have to be: the XML is shared.
+     */
+    export async function loadRoles(): Promise<void> {
+        await ensureRole("Anonymous", MergeStrategy.Union, []);
+        const standard = await ensureRole("Standard user", MergeStrategy.Union, []);
+        await ensureRole("Super user", MergeStrategy.Intersection, []);
+        await ensureRole("Advanced user", MergeStrategy.Union, [standard]);
+    }
 
     /** Southwind's `LoadEmployees`: one region, two territories, and the three employees users map to. */
     export async function loadEmployees(): Promise<void> {
@@ -230,6 +309,19 @@ export namespace EastwindEnvironment {
         return line;
     }
 
+    /**
+     * An XML seed that ships with the application: `terminal/AuthRules.xml`, `terminal/UserAssets.xml`.
+     * The FILES are shared with the terminal — Southwind's EnvironmentTest reads
+     * `..\..\..\..\Southwind.Terminal\AuthRules.xml` for the same reason — while the code that applies
+     * them is each project's own.
+     *
+     * Resolved off this module's location (compiled to `dist/test/environment`), not the cwd, so it does
+     * not matter where the generator was launched from.
+     */
+    export function seedFile(name: string): string {
+        return path.resolve(url.fileURLToPath(new URL(".", import.meta.url)), "../../../terminal", name);
+    }
+
     /** A seeded user, by name (the five {@link loadUsers} creates). */
     export async function user(userName: string): Promise<UserEntity> {
         const found = await table(UserEntity).filter(u => u.userName == userName).singleOrNull() as UserEntity | null;
@@ -237,6 +329,20 @@ export namespace EastwindEnvironment {
             throw new Error(`No user '${userName}' — was the test environment generated? (pnpm --filter eastwind gen:environment <environment>)`);
         return found;
     }
+}
+
+async function ensureRole(name: string, strategy: MergeStrategy, inheritsFrom: RoleEntity[]): Promise<RoleEntity> {
+    const existing = await table(RoleEntity).filter(r => r.name == name).singleOrNull() as RoleEntity | null;
+    if (existing != null)
+        return existing;
+
+    const role = RoleEntity.create({
+        name,
+        mergeStrategy: strategy,
+        inheritsFrom: inheritsFrom.map(r => RoleEntity_InheritsFrom.create({ inheritsFrom: r.toLite() })),
+    });
+    await role.save();
+    return role;
 }
 
 // Southwind's `RandomAddress(seed)` / `RandomPhone(seed)`: made-up but STABLE values, so a test that

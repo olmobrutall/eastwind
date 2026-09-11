@@ -3,11 +3,13 @@
     // (Playwright drives a browser from node), compiled by the same `tspc -b` into dist/test/**.
     //
     // It references the DATA layer because the page objects take PROPERTY LAMBDAS over the app's entities
-    // (see @altea/altea-playwright), and the SERVER + TERMINAL layers because a test ARRANGES its data in
-    // the database directly — an order is created through OrderOperation, not by clicking one together —
-    // and the environment generator shares the terminal's schema / AuthRules / UserAssets steps. Signum
-    // splits the same thing in two (Southwind.Test.Environment references the logic, Southwind.Test.React
-    // the browser); here it is one project because TypeScript's are cheap.
+    // (see @altea/altea-playwright), and the SERVER layer because a test ARRANGES its data in the database
+    // directly — an order is created through OrderOperation, not by clicking one together.
+    //
+    // NOT the terminal: neither references the other. A test must not depend on the loading console, and
+    // the console must not depend on the tests — so the environment generator applies the shared XML seeds
+    // through the framework's own importers and writes its own configuration row, exactly as Signum splits
+    // Southwind.Test.Environment from Southwind.Terminal.
     "extends": "../altea/altea/presets/server.json",
     "compilerOptions": {
         "tsBuildInfoFile": "${configDir}/dist/.tsbuildinfo.test",
@@ -18,7 +20,6 @@
     "references": [
         { "path": "./tsconfig.data.json" },
         { "path": "./tsconfig.server.json" },
-        { "path": "./tsconfig.terminal.json" },
         { "path": "../altea/altea/tsconfig.data.json" },
         { "path": "../altea/altea/tsconfig.server.json" },
         { "path": "../altea/altea-playwright/tsconfig.json" }

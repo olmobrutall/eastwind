@@ -1,10 +1,13 @@
 import "@altea/altea/server/context.node";
+import * as fs from "node:fs";
 import { Connector } from "@altea/altea/server/connection/connector";
 import { Administrator } from "@altea/altea/server/Administrator";
 import { Schema } from "@altea/altea/server/schema";
 import { ExecutionMode } from "@altea/altea/server/executionMode";
+import { Replacements } from "@altea/altea/server/sync/synchronizer";
+import { AuthImportExport } from "@altea/altea-auth/server/AuthImportExport";
+import { UserAssetsImporter, warmUserAssetCaches } from "@altea/altea-user-assets/server/UserAssetsImportExport";
 import { Starter } from "../../starter.server";
-import { TypeScriptMigrations } from "../../terminal/typeScriptMigrations";
 import { EastwindEnvironment } from "./eastwindEnvironment";
 import { requireConnectionString } from "../testDatabase";
 
@@ -19,6 +22,10 @@ import { requireConnectionString } from "../testDatabase";
 //
 // all of it inside `withSnapshotOrTemplateDatabase`, which is what turns the result into something
 // `restoreSnapshotOrDatabase` can rewind to before every test (see test/fixtures.ts).
+//
+// The two XML seeds are applied through the FRAMEWORK's own importers, exactly as Signum's EnvironmentTest
+// calls `AuthLogic.ImportAuthRules` and `UserAssetsImporter.ImportAll` rather than going through
+// Southwind.Terminal. Only the files are shared (EastwindEnvironment.seedFile); no code is.
 //
 //   pnpm --filter eastwind gen:environment local
 //
@@ -48,11 +55,11 @@ async function main(): Promise<void> {
         // runs as trusted framework code, with no logged-in user to authorize it.
         await ExecutionMode.global(async () => {
             console.log("[generate] cultures + the application configuration");
-            await TypeScriptMigrations.createCulturesAndConfiguration();
+            await EastwindEnvironment.loadBasics();
 
             console.log("[generate] roles + AuthRules.xml");
-            await TypeScriptMigrations.createRoles();
-            await TypeScriptMigrations.importAuthRules();
+            await EastwindEnvironment.loadRoles();
+            await importAuthRules();
 
             console.log("[generate] the test data");
             await EastwindEnvironment.loadEmployees();
@@ -62,12 +69,45 @@ async function main(): Promise<void> {
             await EastwindEnvironment.loadShippers();
 
             console.log("[generate] UserAssets.xml");
-            await TypeScriptMigrations.importUserAssets();
+            await importUserAssets();
         });
     }
 
     console.log("[generate] done — the suite can now restore this state before every test");
     await Connector.current().closeConnection();
+}
+
+/**
+ * Signum's `AuthLogic.ImportAuthRules(authRules, interactive: false)`. Non-interactive is the whole point
+ * here: a generation has nobody to ask, so an ambiguous rename is answered "no rename" (the rule is
+ * dropped) and logged, instead of blocking on a prompt.
+ */
+async function importAuthRules(): Promise<void> {
+    const replacements = new Replacements();
+    replacements.interactive = false;
+    replacements.autoReplacement = ({ oldValue }) => {
+        console.log(`  [auth] no-rename (drop): '${oldValue}'`);
+        return { oldValue, newValue: null };
+    };
+
+    const result = await AuthImportExport.importAuthRules(
+        fs.readFileSync(EastwindEnvironment.seedFile("AuthRules.xml"), "utf8"), replacements);
+
+    console.log(`  [auth] applied roles: ${result.appliedRoles.join(", ") || "(none)"}`);
+    if (result.skippedRoles.length > 0)
+        console.log(`  [auth] SKIPPED (no role after rename): ${result.skippedRoles.join(", ")}`);
+}
+
+/** Signum's `UserAssetsImporter.ImportAll(path)` — the preview says "override everything", which on a
+ *  database this script just generated means "create everything". */
+async function importUserAssets(): Promise<void> {
+    const xml = fs.readFileSync(EastwindEnvironment.seedFile("UserAssets.xml"), "utf8");
+
+    await warmUserAssetCaches(); // the query / type lookups the (de)serializers resolve against
+    const model = await UserAssetsImporter.preview(xml);
+    await UserAssetsImporter.importAssets(xml, model);
+
+    console.log(`  [assets] imported ${model.lines.length} asset(s)`);
 }
 
 main().catch(e => { console.error(e); process.exit(1); });
