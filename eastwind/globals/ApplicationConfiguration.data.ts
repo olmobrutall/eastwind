@@ -161,4 +161,4 @@ export namespace BigStringFileType {
 export namespace EastwindAgentUseCases {
     /** The tree exposed at /api/mcp — all sub-skills Lazy, so an external host discovers them one by one. */
     export const MCP: AgentSymbol = init();
-}
+}//EastwindAgentUseCases

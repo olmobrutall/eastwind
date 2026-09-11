@@ -202,7 +202,7 @@ async function showOrder(): Promise<void> {
     console.log(`  Order ${order.id} — ${order.customer.toString()} — total ${order.totalPrice().toString()}`);
     for (const line of order.details)
         console.log(`    ${line.product.toString()} x${line.quantity} @${line.unitPrice} -${line.discount}`);
-}
+}//showOrder
 
 /**
  * Southwind's `csharp` command / `CS` menu entry → `SouthwindMigrations.CSharpMigrations(autoRun)`: the
