@@ -3,11 +3,11 @@ import { Connector } from "@altea/altea/server/connection/connector";
 import { view, table } from "@altea/altea/server/table";
 import { BulkInserter } from "@altea/altea/server/bulkInserter";
 import { Temporal, Decimal } from "@altea/altea/data/basics";
-import { OrderEntity, OrderLineEntity, OrderState } from "../orders/Order.data";
-import { AddressEmbedded, CompanyEntity, PersonEntity, type CustomerEntity } from "../customers/Customer.data";
-import { EmployeeEntity } from "../employees/Employee.data";
-import { ProductEntity } from "../products/Product.data";
-import { ShipperEntity } from "../shippers/Shipper.data";
+import { OrderEntity, OrderLineEntity, OrderState } from "../../orders/Order.data";
+import { AddressEmbedded, CompanyEntity, PersonEntity, type CustomerEntity } from "../../customers/Customer.data";
+import { EmployeeEntity } from "../../employees/Employee.data";
+import { ProductEntity } from "../../products/Product.data";
+import { ShipperEntity } from "../../shippers/Shipper.data";
 import { Northwind, NwShipper, NwOrder, NwOrderDetail, NwCustomer } from "./northwindSchema";
 
 // Port of Southwind.Terminal/OrderLoader.cs. Shippers preserve their Northwind ids; Orders preserve

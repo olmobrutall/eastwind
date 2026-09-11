@@ -10,3 +10,15 @@
 # Synchronization scripts written by `terminal sync` — a throwaway artefact of one
 # database's drift, reviewed then applied. A migration you KEEP goes to eastwind/Migrations.
 terminal/sync/
+
+# One-off end-to-end checks written against a real database while a framework module was being ported
+# ("does a @quoted toString lower to SQL", "does the cached dashboard invalidate"). Each is a scratch
+# script for ONE session's question, kept on disk because re-running it beats rewriting it — but not
+# source this application ships, so it stays out of git (and out of Modules.xml, which asks git what
+# belongs to the project).
+terminal/probes/
+
+# Playwright's own output for the last run (traces, screenshots, .last-run.json). Written by
+# `pnpm --filter eastwind test`, regenerated every run.
+test-results/
+playwright-report/

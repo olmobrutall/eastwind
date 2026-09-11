@@ -70,13 +70,16 @@
 
 		<!--
 		  PORT: everything eastwind carries only because it was ported from Southwind — the ledger of
-		  app-level divergences, the probe scripts, the legacy-mode machinery and the three dialect
-		  environment files. A NEW application needs none of it, which is why this is the one module
-		  marked optional: a plain confirm on a fresh clone drops it.
-		
-		  LegacyMode and Probes DependOn it, so removing Port removes those too. They stay separate
-		  modules because an application that is ITSELF being ported from a Signum codebase wants to keep
-		  Port (the reasoning) while possibly dropping the probes.
+		  app-level divergences, the legacy-mode machinery and the three dialect environment files. A NEW
+		  application needs none of it, which is why this is the one module marked optional: a plain
+		  confirm on a fresh clone drops it.
+
+		  LegacyMode DependsOn it, so removing Port removes it too. It stays a separate module because an
+		  application that is ITSELF being ported from a Signum codebase wants to keep Port (the reasoning)
+		  while possibly dropping the legacy switch.
+
+		  The probe scripts a port wrote (terminal/probes) are not listed here at all: they are gitignored,
+		  so they never reach a clone in the first place.
 		-->
 		<Module Name="Port" optional="true">
 			<RemoveFiles Path="eastwind/port"/>
@@ -126,10 +129,10 @@
 			<RemoveLine Path="eastwind/globals/GlobalsClient.client.tsx" From="u.mixin(UserEmployeeMixin).employee" To="u.mixin(UserEmployeeMixin).employee"/>
 
 			<!-- Demo data + the domain's terminal tools. -->
-			<RemoveFiles Path="eastwind/terminal/customerLoader.ts"/>
-			<RemoveFiles Path="eastwind/terminal/employeeLoader.ts"/>
-			<RemoveFiles Path="eastwind/terminal/orderLoader.ts"/>
-			<RemoveFiles Path="eastwind/terminal/productLoader.ts"/>
+			<RemoveFiles Path="eastwind/terminal/northwind/customerLoader.ts"/>
+			<RemoveFiles Path="eastwind/terminal/northwind/employeeLoader.ts"/>
+			<RemoveFiles Path="eastwind/terminal/northwind/orderLoader.ts"/>
+			<RemoveFiles Path="eastwind/terminal/northwind/productLoader.ts"/>
 			<RemoveLine Path="eastwind/terminal/terminal.ts" From=".add(&quot;SO&quot;, &quot;Show Order" To=".add(&quot;SO&quot;, &quot;Show Order"/>
 			<RemoveLine Path="eastwind/terminal/terminal.ts" From="async function showOrder()" To="}//showOrder"/>
 
@@ -150,20 +153,20 @@
 			<RemoveFiles Path="eastwind/Migrations"/>
 			<RemoveFiles Path="eastwind/terminal/sync"/>
 			<RemoveLine Path="eastwind/terminal/terminal.ts" From=".add(&quot;SQL&quot;" To=".add(&quot;SQL&quot;"/>
-			<RemoveLine Path="eastwind/terminal/terminal.ts" From=".add(&quot;CS&quot;" To=".add(&quot;CS&quot;"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" From=".add(&quot;TS&quot;" To=".add(&quot;TS&quot;"/>
 		</Module>
 
 		<Module Name="LoadNorthwind" DependsOn="ExampleEntities,Migrations">
-			<RemoveFiles Path="eastwind/terminal/northwindSchema.ts"/>
-			<RemoveFiles Path="eastwind/terminal/northwindSeed.ts"/>
-			<RemoveFiles Path="eastwind/terminal/northwindImages.ts"/>
-			<RemoveFiles Path="eastwind/terminal/Northwind.Postgree.sql"/>
-			<RemoveFiles Path="eastwind/terminal/Northwind.SqlServer.sql"/>
-			<RemoveFiles Path="eastwind/terminal/image_categories"/>
-			<RemoveFiles Path="eastwind/terminal/image_photos"/>
+			<RemoveFiles Path="eastwind/terminal/northwind/northwindSchema.ts"/>
+			<RemoveFiles Path="eastwind/terminal/northwind/northwindSeed.ts"/>
+			<RemoveFiles Path="eastwind/terminal/northwind/northwindImages.ts"/>
+			<RemoveFiles Path="eastwind/terminal/northwind/Northwind.Postgree.sql"/>
+			<RemoveFiles Path="eastwind/terminal/northwind/Northwind.SqlServer.sql"/>
+			<RemoveFiles Path="eastwind/terminal/northwind/image_categories"/>
+			<RemoveFiles Path="eastwind/terminal/northwind/image_photos"/>
 			<RemoveLine Path="eastwind/terminal/terminal.ts" From=".add(&quot;SN&quot;, &quot;Seed Northwind database&quot;" To=".add(&quot;SN&quot;, &quot;Seed Northwind database&quot;"/>
 			<RemoveLine Path="eastwind/terminal/terminal.ts" From=".add(&quot;SN&quot;, &quot;Seed Northwind (the demo-data SOURCE database)&quot;" To=".add(&quot;SN&quot;, &quot;Seed Northwind (the demo-data SOURCE database)&quot;"/>
-			<RemoveLine Path="eastwind/terminal/eastwindMigrations.ts" From="runner.add(&quot;LoadRegions&quot;" To="runner.add(&quot;LoadEmployeePassages&quot;"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" From="runner.add(&quot;LoadRegions&quot;" To="runner.add(&quot;LoadEmployeePassages&quot;"/>
 			<RemoveLine Path="eastwind/.env.example" From="NORTHWIND_DB=Server=" To="NORTHWIND_DB=Server="/>
 			<RemoveLine Path="eastwind/.env.example" From="# NORTHWIND_DB=postgresql" To="# NORTHWIND_DB=postgresql"/>
 		</Module>
@@ -780,8 +783,8 @@
 		<Module Name="Tree">
 			<RemovePackageReference Name="@altea/altea-tree"/>
 			<RemoveFiles Path="eastwind/departments"/>
-			<RemoveFiles Path="eastwind/terminal/departmentLoader.ts"/>
-			<RemoveLine Path="eastwind/terminal/eastwindMigrations.ts" From="runner.add(&quot;LoadDepartments&quot;" To="runner.add(&quot;LoadDepartments&quot;"/>
+			<RemoveFiles Path="eastwind/terminal/northwind/departmentLoader.ts"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" From="runner.add(&quot;LoadDepartments&quot;" To="runner.add(&quot;LoadDepartments&quot;"/>
 			<RemoveLine Path="eastwind/starter.server.ts" Line="import { TreeModuleLogic } from &quot;@altea/altea-tree/server/TreeModuleLogic&quot;;"/>
 			<RemoveLine Path="eastwind/starter.server.ts" Line="import { DepartmentsLogic } from &quot;./departments/DepartmentLogic.server&quot;;"/>
 			<RemoveLine Path="eastwind/starter.server.ts" From="// Tree owns no tree TYPE" To="}//Tree"/>
@@ -902,7 +905,7 @@
 			<!-- ---- entityOverrides.data.ts ---- -->
 			<!-- Five single-statement guards: dropping the "if" line leaves the statement unconditional. -->
 			<RemoveLine Path="eastwind/entityOverrides.data.ts" Line="if (!legacyMode)"/>
-			<RemoveLine Path="eastwind/entityOverrides.data.ts" Line="import { renameSymbolContainer } from &quot;@altea/altea/data/reflection&quot;;"/>
+			<RemoveLine Path="eastwind/entityOverrides.data.ts" Line="import { renameSymbolContainer, setLegacyMode } from &quot;@altea/altea/data/reflection&quot;;"/>
 			<RemoveLine Path="eastwind/entityOverrides.data.ts" Line="import { setLegacyPropertyPaths } from &quot;@altea/altea/data/propertyRoute&quot;;"/>
 			<RemoveLine Path="eastwind/entityOverrides.data.ts" From="if (legacyMode) {" To="}//LegacySymbolNames"/>
 			<RemoveLine Path="eastwind/entityOverrides.data.ts" From="starts (which is off in legacy mode" To="overrideImplementedBy(EmailTemplateEntity_Attachment"/>
@@ -914,56 +917,22 @@
 
 			<!-- ---- the environment ---- -->
 			<RemoveFiles Path="eastwind/.env.swpostgres"/>
-			<!-- The per-module migrations that only exist to convert a Signum-shaped database. -->
-			<RemoveFiles Path="eastwind/terminal/migrateChartOrderByType.ts"/>
-			<RemoveFiles Path="eastwind/terminal/migrateDefaultCulture.ts"/>
-			<RemoveFiles Path="eastwind/terminal/migrateEmailTemplateAddress.ts"/>
-			<RemoveFiles Path="eastwind/terminal/migrateOfficeTemplateFile.ts"/>
-			<RemoveFiles Path="eastwind/terminal/migratePartRoutes.ts"/>
-			<RemoveFiles Path="eastwind/terminal/migratePropertyRoutes.ts"/>
-			<RemoveFiles Path="eastwind/terminal/migrateRowGuids.ts"/>
-			<RemoveFiles Path="eastwind/terminal/migrateSmtpNetwork.ts"/>
 				</Module>
 
 		<!--
-		  The PROBE scripts: one-off end-to-end checks a port wrote against a real database. Useful while
-		  the framework is being ported, noise in an application built on it.
+		  The browser suites, the environment they run against, and the two commands that drive them. The
+		  application keeps working without any of it; what it loses is the ability to prove that it does.
 		-->
-		<Module Name="Probes" DependsOn="Port">
-			<RemoveFiles Path="eastwind/terminal/probeBigString.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeCachedDefinitions.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeCachedParts.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeCachedQueries.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeChangeLog.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeCustomerExpressions.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeDynamicCodegen.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeDynamicIsolation.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeDynamicSiblings.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeDynamicType.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeEmbeddedCollection.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeExcelReport.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeFileEntity.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probePackageLogic.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probePartVersioning.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probePropertyRoute.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeRowGuids.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeRuntimeEntity.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeSessionLog.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeSystemEventLog.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeTokenMigration.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeToString.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeUserTicket.ts"/>
-			<RemoveFiles Path="eastwind/terminal/probeVisualTip.ts"/>
-		</Module>
-
-		<Module Name="Test.E2E">
+		<Module Name="Test">
 			<RemovePackageReference Name="@altea/altea-playwright"/>
 			<RemoveFiles Path="eastwind/test"/>
 			<RemoveFiles Path="eastwind/playwright.config.ts"/>
 			<RemoveFiles Path="eastwind/tsconfig.test.json"/>
 			<RemoveTsProjectReference Path="eastwind/tsconfig.json" Reference="./tsconfig.test.json"/>
-			<RemoveLine Path="eastwind/package.json" Line="&quot;test:e2e&quot;: &quot;tspc -b &amp;&amp; playwright test&quot;"/>
+			<RemoveLine Path="eastwind/package.json" Line="&quot;test&quot;: &quot;node scripts/withEnv.mjs test&quot;,"/>
+			<RemoveLine Path="eastwind/package.json" Line="&quot;gen:environment&quot;: &quot;node scripts/withEnv.mjs gen:environment&quot;"/>
 			<RemoveLine Path="eastwind/package.json" Line="&quot;@playwright/test&quot;: &quot;^1.50.0&quot;"/>
+			<RemoveLine Path="eastwind/scripts/withEnv.mjs" From="&quot;gen:environment&quot;: {" To="},//test-targets"/>
 		</Module>
 
 	</Modules>

@@ -7,8 +7,12 @@ than the framework's — the framework's are in
 
 Everything in this directory exists because eastwind was PORTED. A new application built from
 eastwind does not need it, which is why `Modules.xml` has a `port` module that removes the whole
-folder (plus the probe scripts and the legacy-mode environment files) — unticked by default, so a
-fresh clone drops it.
+folder (plus the legacy-mode environment files) — unticked by default, so a fresh clone drops it.
+
+The one-off checks a port wrote against a real database live in `terminal/probes/` and are GITIGNORED:
+scratch scripts for one session's question, kept on disk because re-running one beats rewriting it, but
+not source this application ships. The one-off data migrations that converted a Signum-shaped database
+(`migrate*.ts`) are gone entirely — that work belongs in a `.sql` migration or in `terminal sync`.
 
 | Southwind (C#) | eastwind (TypeScript) |
 | --- | --- |
@@ -22,7 +26,7 @@ fresh clone drops it.
 - **The Northwind SOURCE database is seeded, on either dialect, and its images come off disk.** Southwind
   assumes a Northwind database is already installed (the SQL Server sample everyone had), so
   `NorthwindSchema.cs` needs no seed and no dialect question. eastwind runs on both, so `terminal
-  seed-northwind` — also the FIRST `csharp` migration, so that command is self-contained — creates it from
+  seed-northwind` — also the FIRST `ts` migration, so that command is self-contained — creates it from
   the vendor script matching `NORTHWIND_DB`'s own prefix: `Northwind.SqlServer.sql` (Microsoft's
   `instnwnd.sql`, `GO`-separated) or `Northwind.Postgree.sql` (the pg_dump port, `;`-separated). **Both run
   VERBATIM** — the seed only SPLITS them into the units a driver accepts (neither driver takes a script
@@ -42,7 +46,7 @@ fresh clone drops it.
   - **IMAGES**, the only real DATA difference: `Categories.Picture` / `Employees.Photo` are ~700 KB of
     OLE-wrapped bitmap as `0x…` literals in the SQL Server script and an EMPTY bytea in the Postgres one.
     Neither wins, and neither is MAPPED by any view — so whatever a script puts there is never read, and the
-    loaders take the pictures from `terminal/image_categories` + `terminal/image_photos` instead
+    loaders take the pictures from `terminal/northwind/image_categories` + `terminal/northwind/image_photos` instead
     (`northwindImages.ts`, by base name with the extension discovered from the directory), the same bytes on
     both dialects. Hence no `Picture` column on `NwCategory` and no `RemoveOlePrefix`. A category name may
     hold a slash, so ONE mechanical rule maps it to a file (`Grains/Cereals` → `Grains-Cereals`); an

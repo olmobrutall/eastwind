@@ -15,7 +15,7 @@ export interface CategoryWithProducts {
     picture: string | null;
     /**
      * The picture's media type, for that data: url. NOT in Southwind, which hard-codes `image/jpeg`:
-     * eastwind's category pictures come off disk (terminal/image_categories) with the extension the file
+     * eastwind's category pictures come off disk (terminal/northwind/image_categories) with the extension the file
      * actually has — today PNG — so the type has to travel with the bytes.
      */
     pictureMimeType: string | null;

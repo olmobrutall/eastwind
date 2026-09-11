@@ -2,8 +2,9 @@ import * as path from "node:path";
 import * as url from "node:url";
 
 /**
- * Resolve a data file that ships beside the terminal's SOURCE — `AuthRules.xml`, `UserAssets.xml`,
- * `passagesWithEmbeddings.json`, the two `Northwind.*.sql` scripts, the `image_*` folders.
+ * Resolve a data file that ships beside the terminal's SOURCE — `AuthRules.xml` and `UserAssets.xml` at
+ * the root, and everything the demo data is made of under `northwind/` (the two `Northwind.*.sql`
+ * scripts, `passagesWithEmbeddings.json`, the `image_*` folders), named with that first segment.
  *
  * Signum reads these relative to the CWD (Southwind.Terminal names them "../../../AuthRules.xml" from its
  * bin folder). Here they are resolved off this module's own location instead, so the cwd does not matter:

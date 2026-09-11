@@ -51,7 +51,7 @@ export namespace PublicCatalogApi {
             });
     }
 
-    // The category pictures are loaded from terminal/image_categories, whose files are PNG today — so the
+    // The category pictures are loaded from terminal/northwind/image_categories, whose files are PNG today — so the
     // media type is read off the name rather than assumed (Southwind hard-codes image/jpeg).
     function mimeTypeOf(fileName: string): string {
         const ext = fileName.toLowerCase().tryAfterLast(".");

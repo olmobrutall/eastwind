@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import { Connector } from "@altea/altea/server/connection/connector";
 import { Transaction } from "@altea/altea/server/connection/transaction";
 import { Northwind } from "./northwindSchema";
-import { terminalFile } from "./terminalFile";
+import { terminalFile } from "../terminalFile";
 
 /**
  * Seed the Northwind SOURCE database — the demo data every `Load*` step reads through the `Nw*` views.
@@ -37,7 +37,7 @@ export namespace NorthwindSeed {
         const connector = await Northwind.connector();
         const label = connector.isPostgres ? "PostgreSQL" : "SQL Server";
         const script = connector.isPostgres ? "Northwind.Postgree.sql" : "Northwind.SqlServer.sql";
-        const file = terminalFile(script);
+        const file = terminalFile("northwind", script);
 
         if (!fs.existsSync(file))
             throw new Error(`Northwind seed script not found: ${file}`);

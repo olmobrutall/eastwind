@@ -2,7 +2,7 @@ import "@altea/altea/server";
 import { Connector } from "@altea/altea/server/connection/connector";
 import { view } from "@altea/altea/server/table";
 import { BulkInserter } from "@altea/altea/server/bulkInserter";
-import { CompanyEntity, PersonEntity, AddressEmbedded } from "../customers/Customer.data";
+import { CompanyEntity, PersonEntity, AddressEmbedded } from "../../customers/Customer.data";
 import { Northwind, NwCustomer } from "./northwindSchema";
 
 // Port of Southwind.Terminal/CustomerLoader.cs. Splits Northwind Customers by ContactTitle "Owner"

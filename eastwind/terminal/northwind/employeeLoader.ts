@@ -7,15 +7,15 @@ import { BulkInserter } from "@altea/altea/server/bulkInserter";
 import { toInt } from "@altea/altea/data/basics";
 import { Vector } from "@altea/altea/data/vector";
 import { PasswordEncoding } from "@altea/altea/server/passwordEncoding";
-import { RegionEntity, TerritoryEntity, EmployeeEntity, EmployeeEntity_Territory, EmployeePassageEntity } from "../employees/Employee.data";
-import { AddressEmbedded } from "../customers/Customer.data";
+import { RegionEntity, TerritoryEntity, EmployeeEntity, EmployeeEntity_Territory, EmployeePassageEntity } from "../../employees/Employee.data";
+import { AddressEmbedded } from "../../customers/Customer.data";
 import { RoleEntity } from "@altea/altea-auth/data/Role";
 import { UserEntity, UserState } from "@altea/altea-auth/data/User";
-import { UserEmployeeMixin } from "../globals/UserEmployeeMixin.data";
+import { UserEmployeeMixin } from "../../globals/UserEmployeeMixin.data";
 import { Northwind, NwRegion, NwTerritory, NwEmployee, NwEmployeeTerritory } from "./northwindSchema";
 import { NorthwindImages } from "./northwindImages";
 import { FileEntity } from "@altea/altea-files/data/Files";
-import { terminalFile } from "./terminalFile";
+import { terminalFile } from "../terminalFile";
 
 // Port of Southwind.Terminal/EmployeeLoader.cs. Reads Northwind through IView classes under a second
 // connector (Signum's Connector.Override(...).Using), and bulk-inserts eastwind entities preserving the
@@ -139,7 +139,7 @@ export namespace EmployeeLoader {
     // The { chunkText: float[] } embeddings dictionary shipped alongside the loader (Southwind's
     // passagesWithEmbeddings.json). Returns undefined (embeddings skipped) if the file is missing.
     function readEmbeddings(): Record<string, number[]> | undefined {
-        const file = terminalFile("passagesWithEmbeddings.json");
+        const file = terminalFile("northwind", "passagesWithEmbeddings.json");
         if (!fs.existsSync(file)) {
             console.log(`[passages] ${path.basename(file)} not found — inserting passages without embeddings.`);
             return undefined;
@@ -180,7 +180,7 @@ export namespace EmployeeLoader {
     // `i < 2 ? "Super user" : i < 5 ? "Advanced user" : "Standard user"`, each linked back to its employee
     // through the UserEmployeeMixin (Southwind's `.SetMixin((UserEmployeeMixin e) => e.Employee,
     // employee.ToLite())`). Run AFTER loadEmployees and after the roles exist
-    // (EastwindMigrations.createRoles). Idempotent: an existing username is left alone, except that a
+    // (TypeScriptMigrations.createRoles). Idempotent: an existing username is left alone, except that a
     // user with no employee linked yet gets one (a database seeded before the mixin existed).
     export async function createUsers(): Promise<void> {
         const roles = new Map((await table(RoleEntity).toArray() as RoleEntity[]).map(r => [r.name, r]));

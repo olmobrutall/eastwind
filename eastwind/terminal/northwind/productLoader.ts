@@ -3,8 +3,8 @@ import { Connector } from "@altea/altea/server/connection/connector";
 import { view } from "@altea/altea/server/table";
 import { BulkInserter } from "@altea/altea/server/bulkInserter";
 import { toInt, toShort, Decimal } from "@altea/altea/data/basics";
-import { SupplierEntity, CategoryEntity, ProductEntity, ProductEntity_AdditionalInformation } from "../products/Product.data";
-import { AddressEmbedded } from "../customers/Customer.data";
+import { SupplierEntity, CategoryEntity, ProductEntity, ProductEntity_AdditionalInformation } from "../../products/Product.data";
+import { AddressEmbedded } from "../../customers/Customer.data";
 import { Northwind, NwSupplier, NwCategory, NwProduct } from "./northwindSchema";
 import { NorthwindImages } from "./northwindImages";
 

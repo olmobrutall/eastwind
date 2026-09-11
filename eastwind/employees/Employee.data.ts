@@ -77,7 +77,7 @@ export class EmployeeEntity extends Entity {
     // DIVERGENCE: a full reference, not a `Lite`. The COLUMN is the same either way, and the view
     // renders the photo — so a lite would only force the second fetch Southwind makes by hand
     // (`Navigator.useFetchInState`). altea's file LINES do not bind a lite either.
-    // Loaded from terminal/image_photos (see northwindImages.ts).
+    // Loaded from terminal/northwind/image_photos (see northwindImages.ts).
     photo: FileEntity | null;
     // Signum's MList<TerritoryEntity> Territories → owned junction rows.
     territories: EmployeeEntity_Territory[];

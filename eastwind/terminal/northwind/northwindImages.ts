@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { FileEmbedded, FileEntity } from "@altea/altea-files/data/Files";
-import { terminalFile } from "./terminalFile";
+import { terminalFile } from "../terminalFile";
 
 // The Northwind demo IMAGES, as files on disk beside this module.
 //
@@ -43,7 +43,7 @@ export namespace NorthwindImages {
         let files = dirCache.get(folder);
         if (files == null) {
             files = new Map();
-            const dir = terminalFile(folder);
+            const dir = terminalFile("northwind", folder);
             if (fs.existsSync(dir))
                 for (const name of fs.readdirSync(dir))
                     files.set(path.parse(name).name.toLowerCase(), path.join(dir, name));
