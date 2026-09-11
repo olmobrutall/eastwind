@@ -41,7 +41,7 @@ export namespace OrderWorkflow {
     export function registerOrderAsMainEntity(sb: SchemaBuilder): void {
         // The other half of the CaseActivityMixin declaration in entityOverrides: the preSaving hook that
         // tags whatever an activity produces with the activity it came from. It is a NO-OP unless the mixin
-        // is declared, which under southwindOnly it is not (Southwind declares none) — asking for the hook
+        // is declared, which under legacyMode it is not (Southwind declares none) — asking for the hook
         // then would fail on a mixin the entity does not have.
         if (CaseActivityMixin.isDeclaredOn(EmailMessageEntity))
             sb.include(EmailMessageEntity).withCaseActivityMixin();

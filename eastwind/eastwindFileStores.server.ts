@@ -69,7 +69,7 @@ export namespace EastwindFileStores {
      *
      * `exceptions` is absent because the two agree on it. Four stores have no Southwind counterpart at
      * all (`profile-photos`, `email-attachments`, `print-test`, `whats-new`) — the modules behind them
-     * are not started under `southwindOnly`, so nothing addresses them.
+     * are not started under `legacyMode`, so nothing addresses them.
      */
     const southwindFolders: Record<string, string> = {
         "operation-log": "operation-logs",

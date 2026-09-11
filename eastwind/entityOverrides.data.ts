@@ -78,13 +78,13 @@ import { UserEmployeeMixin } from "./globals/UserEmployeeMixin.data";
 
 export namespace EntityOverrides {
     /**
-     * @param options.southwindOnly  Declare only what SOUTHWIND declares. An `implementedBy` list decides both what
+     * @param options.legacyMode  Declare only what SOUTHWIND declares. An `implementedBy` list decides both what
      *   the editor offers and which TABLES the schema creates, so a few of these lists are the difference
      *   between a Southwind-shaped database and this one — see the marked entries. Set from LegacyMode by
      *   the Starter, and by the client from `/api/eastwind/appMode` (this runs on both tiers).
      */
-    export function start(options?: { southwindOnly?: boolean }): void {
-        const southwindOnly = options?.southwindOnly === true;
+    export function start(options?: { legacyMode?: boolean }): void {
+        const legacyMode = options?.legacyMode === true;
 
         // The two symbol containers this app renamed when it was ported. A symbol's KEY is
         // `<Container>.<Member>` and it is the `key` column of that symbol's table, so against a
@@ -97,7 +97,7 @@ export namespace EntityOverrides {
         // and a client still saying Eastwind* could not be handed the symbol's id by the metadata
         // blob, so every `toLite()` on it would throw. This module is the one place that runs first
         // on both, which is the same reason the mixins below live here.
-        if (southwindOnly) {
+        if (legacyMode) {
             renameSymbolContainer(EastwindTypeCondition, "SouthwindTypeCondition");
             renameSymbolContainer(EastwindAgentUseCases, "SouthwindAgentUseCases");
 
@@ -110,14 +110,14 @@ export namespace EntityOverrides {
             // is the TypeScript field name, so `basics.property_route.path` held `id` where a Signum
             // database holds `Id`, and every stored route read as a different one.
             setLegacyPropertyPaths(true);
-        }
+        }//LegacySymbolNames
 
         // The reception mixin on EmailMessageEntity (asserted by EmailReceptionLogic.start): what makes a
         // RECEIVED message carry its server uid, its raw MIME and its reception row. Declaring it adds those
         // columns to the EmailMessage table — and, through that reference, pulls the whole reception schema
         // in — so it belongs here, on both tiers, before any (de)serialization.
         // NOT IN SOUTHWIND: its Starter.cs registers four mixins and this is not one of them.
-        if (!southwindOnly)
+        if (!legacyMode)
             EmailReceptionMixin.declare();
 
         // The package mixin on EmailMessageEntity (Signum's `MixinDeclarations.Register<EmailMessageEntity,
@@ -148,9 +148,9 @@ export namespace EntityOverrides {
         // declare a strategy"). Declaring the mixin adds one column to `dynamic_type`; marking a dynamic
         // type Isolated then adds an `isolation` column to THAT type's table.
         //
-        // Not in Southwind — see southwindOnly. It declares no isolation mixin, so `dynamic_type` has no
+        // Not in Southwind — see legacyMode. It declares no isolation mixin, so `dynamic_type` has no
         // `isolation_strategy` column there.
-        if (!southwindOnly)
+        if (!legacyMode)
             DynamicIsolationMixin.declare();
 
         // VisualTipConsumedEntity.user — core declares no implementations so it needn't reference
@@ -175,7 +175,7 @@ export namespace EntityOverrides {
         // because a single implementation is not polymorphic. altea-email's own list adds
         // FileTokenAttachment, and @altea/altea-office-template widens it to three when its attachment half
         // starts (which is off in legacy mode — see OfficeTemplateLogic's `attachments`).
-        if (southwindOnly)
+        if (legacyMode)
             overrideImplementedBy(EmailTemplateEntity_Attachment, a => a.attachment, () => [ImageAttachmentEntity]);
 
         // ProcessEntity.data / ProcessExceptionLineEntity.line — Signum types both against an INTERFACE
@@ -211,11 +211,11 @@ export namespace EntityOverrides {
         // SERVER also asks for the stamping (`sb.include(EmailMessageEntity).withCaseActivityMixin()` in
         // eastwindWorkflow.server.ts), which is the half that fills it.
         //
-        // Not in Southwind — see southwindOnly. Signum's own CaseActivityLogic only reacts to the mixin
+        // Not in Southwind — see legacyMode. Signum's own CaseActivityLogic only reacts to the mixin
         // (`MixinDeclarations.IsDeclared(typeof(EmailMessageEntity), typeof(CaseActivityMixin))`) and never
         // declares it, and Southwind's Starter does not either — so `email_message` has no
         // `case_activity_id` column there.
-        if (!southwindOnly)
+        if (!legacyMode)
             CaseActivityMixin.declareOn(EmailMessageEntity);
 
         // The employee behind a login — Southwind writes exactly this in its Starter.cs. Declaring it adds
@@ -248,12 +248,12 @@ export namespace EntityOverrides {
         // …or at altea-alert's SendNotificationEmailTask ("mail everyone their pending alerts"), which
         // AlertNotificationLogic.start re-checks and fails on if it is missing here.
         //
-        // Under southwindOnly the override is SKIPPED ENTIRELY, leaving the scheduler's own declared
+        // Under legacyMode the override is SKIPPED ENTIRELY, leaving the scheduler's own declared
         // `[SimpleTaskSymbol]`: Signum's ProcessAlgorithmSymbol is a plain Symbol and NOT an ITaskEntity —
         // the "a scheduled task can BE a process" bridge is altea's addition — so Signum's
         // `ScheduledTaskEntity.Task` stays single-implementation and its column is NOT NULL. The server
         // half is gated to match (ProcessSchedulerBridge.start in starter.server.ts).
-        if (!southwindOnly)
+        if (!legacyMode)
             ProcessSchedulerBridgeOverrides.overrideTaskImplementations([
                 SimpleTaskSymbol,
                 EmailReceptionConfigurationEntity,
@@ -267,7 +267,7 @@ export namespace EntityOverrides {
         overrideImplementedBy(EmailSenderConfigurationEntity, e => e.service, () => [
             SmtpEmailServiceEntity,
             // NOT IN SOUTHWIND, whose list is exactly Smtp + MicrosoftGraph.
-            ...(southwindOnly ? [] : [ExchangeWebServiceEmailServiceEntity]),
+            ...(legacyMode ? [] : [ExchangeWebServiceEmailServiceEntity]),
             MicrosoftGraphEmailServiceEntity,
         ]);
 
@@ -275,7 +275,7 @@ export namespace EntityOverrides {
         // EMPTY implementedBy on purpose — it ships no protocol of its own).
         // NOT IN SOUTHWIND: it receives no mail, so it names no reception service (and the empty list
         // altea-email declares then creates no service table).
-        if (!southwindOnly)
+        if (!legacyMode)
             overrideImplementedBy(EmailReceptionConfigurationEntity, e => e.service, () => [
                 Pop3EmailReceptionServiceEntity,
             ]);
@@ -300,15 +300,19 @@ export namespace EntityOverrides {
         // `FieldAttributes((DashboardEntity a) => a.Parts.First().Content).Replace(new ImplementedByAttribute(
         // …))`). The list decides both the pickable part types in the editor and which part TABLES the schema
         // creates — @altea/altea-dashboard declares only its own five, so the modules' parts are added here.
+        // The dashboard PARTS Southwind does not declare, hoisted into a name so that removing the
+        // legacy-mode machinery is one substitution: `legacyMode ? [] : eastwindOnlyParts` → the list.
+        // (Modules.xml has to be able to express that; a multi-line conditional spread it cannot.)
+        const eastwindOnlyParts = [
+            TextPartEntity,
+            ImagePartEntity,
+            SeparatorPartEntity,
+            HealthCheckPartEntity,
+            CustomPartEntity,
+        ];
+
         overrideImplementedBy(DashboardEntity_Part, d => d.content, () => [
-            // NOT IN SOUTHWIND, whose list is exactly the six user-asset parts below.
-            ...(southwindOnly ? [] : [
-                TextPartEntity,
-                ImagePartEntity,
-                SeparatorPartEntity,
-                HealthCheckPartEntity,
-                CustomPartEntity,
-            ]),
+            ...(legacyMode ? [] : eastwindOnlyParts),
             UserQueryPartEntity,
             ValueUserQueryListPartEntity,
             BigValuePartEntity,

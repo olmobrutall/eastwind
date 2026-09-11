@@ -70,303 +70,212 @@ import { DynamicViewClient } from "@altea/altea-dynamic/client/DynamicViewClient
 import { DynamicClient } from "@altea/altea-dynamic/client/DynamicClient";
 import { EvalClient } from "@altea/altea-eval/client/EvalClient";
 
-// The full (admin) registration bundle — Southwind's MainAdmin.startFull: the framework client modules
-// (Operations/Navigator/Finder) first, then each entity domain's client. Mirrors the server's
-// Starter.start threading a single SchemaBuilder — here one ClientBuilder (`cb`) owns the routes and is
-// threaded through every domain's `start(cb)`. eastwind has no extensions and (for now) no auth, so
-// MainPublic always calls this. Importing the *Client modules also registers every entity type on the
-// client (needed for token resolution + operation→type mapping).
-export function startFull(routes: RouteObject[], southwindOnly = false): void {
+// The full (admin) registration bundle — Southwind's MainAdmin.startFull. One `ClientBuilder` (`cb`) owns
+// the routes and is threaded through every module's `start(cb)`, mirroring the server's single
+// SchemaBuilder. Importing a *Client module is also what registers its entity types on the client (needed
+// for token resolution and operation→type mapping).
+//
+// Kept as THIN as Southwind's — one line per module — and ordered by DEPENDENCY, the same way the Starter
+// is: the framework first, then each altea module after the ones whose registries it writes into, and the
+// APP's own domains last. Every ordering constraint is recorded in **docs/Wiring.md**; read it before
+// moving a call. `legacyMode` gates the modules Southwind does not install, in step with the server.
+export function startFull(routes: RouteObject[], legacyMode = false): void {
     const cb = new ClientBuilder(routes);
     cb.startFramework();
 
-    // Files (altea-files): the file lines / downloader used by the domain views (Category.picture).
-    // The culture table's query settings + the client half of the culture-name resolver. Before the
-    // template modules, whose `culture` fields reference it.
-    CultureInfoClient.start(cb);
+    // ==== The FRAMEWORK (@altea/altea) ==============================================================
 
-    // The process-event log's search columns (core — see @altea/altea/data/systemEventLog). Rows come from
-    // the host's SystemEventServer.logStartStop; this is only what the search page shows.
+    // Before the template modules, whose `culture` fields reference it.
+    CultureInfoClient.start(cb);
     SystemEventLogClient.start(cb);
 
-    // The token-migration version table's search columns (@altea/altea-user-assets) — "which token
-    // migrations has this database run?", the counterpart of the SQL migration table for the schema.
-    TokenMigrationClient.start(cb);
-
-    FilesClient.start(cb);
-
-    // Html editor (altea-html-editor): registers the "Html" cell formatter, so a query column whose token
-    // carries format "Html" renders through the read-only viewer instead of showing raw markup. Registers no
-    // routes and no entity settings — the EDITOR is a line component the views below import directly.
-    // Before the modules whose searches have html columns (the email + office templates).
-    HtmlEditorClient.start();
-
-    // Markdown (altea-markdown): the same shape one format down — the "Markdown" cell formatter, so a query
-    // column whose token carries format "Markdown" renders as rendered markdown rather than as its source.
-    // Registers nothing else; its `MarkdownLine` is a line component the views import directly (the tour
-    // step description and the agent skill instructions, exactly as in Signum).
-    MarkdownClient.start();
-
-    // Print queue (altea-printing): the PrintLine / PrintPackage views, the /printing/view panel and the
-    // omnibox entry that reaches it.
-    // Not in Southwind — see EastwindMode. Gated in step with the server: a client that registered these
-    // pages against a server that never started the module would offer views whose every call 404s.
-    if (!southwindOnly)
-        PrintClient.start(cb);
-
-    // Release notes (altea-whats-new): the news entity + read log views, the /news overview and
-    // /newspage/:id pages, and the "Preview" quick link. The navbar bullhorn is in Layout.tsx.
-    if (!southwindOnly)
-        WhatsNewClient.start(cb);
-
-    EmployeesClient.start(cb);
-    ProductsClient.start(cb);
-    ShippersClient.start(cb);
-    if (!southwindOnly)
-        DepartmentsClient.start(cb);
-    CustomersClient.start(cb);
-    OrdersClient.start(cb);
-
-    // Authorization admin (altea-auth, part of the FULL bundle): the User/Role admin views + rule-pack
-    // admin. The PUBLIC auth routes (login / change password) are registered by AuthClient.startPublic
-    // in MainPublic — they must work without this admin bundle.
-    AuthAdminClient.start(cb, { types: true, permissions: true, operations: true, queries: true, properties: true });
-
-    // The app GLOBALS (Southwind's GlobalsClient): the ApplicationConfiguration page — one tab per module,
-    // each rendering that module's own configuration view (registered by each module's own start(cb), and
-    // resolved only when the page is opened, so the order between them does not matter) — plus the
-    // UserEmployeeMixin line on the User view. That line is why this comes AFTER AuthAdminClient, which is
-    // what registers UserEntity's own EntitySettings: overriding a view the builder has not created yet
-    // would claim the settings first and make its `withView` throw "Key User already added". Southwind's
-    // GlobalsClient sits after its auth clients for the same reason (it reads `getSettings(UserEntity)!`).
-    GlobalsClient.start(cb);
-
-    // The "invite a user from the directory" UI (altea-auth's shared BaseAD half): an extra autocomplete
-    // entry on any user picker and a button on the User search page. It gates itself on the
-    // ActiveDirectoryPermission.InviteUsersFromAD permission — which no role holds by default — so enabling
-    // it costs nothing until a role is granted it and a directory is actually configured.
-    // (Southwind passes `inviteUsers: false` because it uses no directory at all.)
-    ActiveDirectoryClient.start({ inviteUsers: true });
-
-    // The change log (framework): the navbar button and its unread badge. Southwind's
-    // `ChangeLogClient.start({ routes, applicationName, mainChangeLog })` — minus `routes`, which altea
-    // does not need (the log opens in a modal, and Signum registers no route for it either).
-    // `mainChangeLog` is the APP's own timeline; every module registers its own with one line, and the
-    // framework's is registered by `start` itself.
+    // The navbar button and its unread badge. `mainChangeLog` is the APP's own timeline; every module
+    // registers its own with one line, and the framework's is registered by `start` itself.
     ChangeLogClient.start({ applicationName: "Eastwind", mainChangeLog: () => import("./Changelog.client") });
 
-    // Azure AD / Entra ID (@altea/altea-auth-azuread): the configuration editor, the AD-group view, the two
-    // Microsoft Graph search pages and the profile-photo provider. `"cached"` serves avatars from the local
-    // CachedProfilePhoto copy rather than calling Graph per render; the provider is inert for a user with no
-    // `externalId`, which is every locally seeded eastwind user.
-    AzureADClient.start(cb, { adGroups: true, profilePhotos: southwindOnly ? false : "cached" });
+    // These two register a CELL FORMATTER only ("Html" / "Markdown" query-column format) — their editor /
+    // MarkdownLine are line components the views import directly. Before the modules whose searches have
+    // such columns (the email + office templates).
+    HtmlEditorClient.start();
+    MarkdownClient.start();
 
-    // Self-service password reset (@altea/altea-auth-reset-password): the request table's query settings.
-    // Its two PAGES are public and registered in MainPublic; this call is what registers the entity's client
-    // TypeInfo, so /find/ResetPasswordRequest works.
+    // The query settings for the three migration history tables. Signum has no client module for them.
+    MigrationsClient.start(cb);
+
+    // ==== AUTHORIZATION (@altea/altea-auth) =========================================================
+
+    // The User/Role admin views + rule-pack admin. The PUBLIC auth routes (login / change password) are
+    // registered by AuthClient.startPublic in MainPublic — they must work without this bundle.
+    AuthAdminClient.start(cb, { types: true, permissions: true, operations: true, queries: true, properties: true });
+
+    // "Invite a user from the directory": gates itself on ActiveDirectoryPermission.InviteUsersFromAD,
+    // which no role holds by default. (Southwind passes false — it uses no directory at all.)
+    ActiveDirectoryClient.start({ inviteUsers: true });
+
+    // `profilePhotos: "cached"` serves avatars from the local CachedProfilePhoto copy rather than calling
+    // Graph per render; inert for a user with no `externalId`, which is every locally seeded eastwind user.
+    AzureADClient.start(cb, { adGroups: true, profilePhotos: legacyMode ? false : "cached" });
+    // The reset-request table's query settings; its two PAGES are public (MainPublic).
     ResetPasswordClient.start(cb);
-
-    // OpenID Connect (@altea/altea-auth-openid): just the configuration editor — the callback ROUTE is
-    // public and registered in MainPublic.
+    // Just the configuration editor — the callback ROUTE is public (MainPublic).
     OpenIDAdminClient.start(cb);
-
-    // Windows AD (@altea/altea-auth-windowsad): the configuration editor. `profilePhotos` is left off: the
-    // Azure provider above already owns the avatar slot, and registering two providers would make every
-    // avatar try Azure first and Windows AD second.
+    // `profilePhotos` off: the Azure provider above already owns the avatar slot.
     WindowsADClient.start(cb, { profilePhotos: false });
 
-    // Profiler admin (altea-profiler): the /profiler/heavy + /profiler/times pages (Signum's ProfilerClient).
+    // ==== FILES, CACHE, PROFILER ====================================================================
+
+    FilesClient.start(cb);
+    CacheClient.start(cb);
     ProfilerClient.start(cb);
 
-    // Cache admin (altea-cache): the /cache/statistics panel (Signum's CacheClient) — cached tables and
-    // global lazies with their hit / invalidation / load statistics, plus Enable / Disable / Clear.
-    CacheClient.start(cb);
-
-    // Agent (@altea/altea-agent): the SkillCode / SkillCustomization / Agent editors and the language-model
-    // editors (AgentClient starts LanguageModelClient itself), then the chat entity views. The two UI TOOLS
-    // are what makes the server-declared `Confirm` / `GetUIContext` tools answerable in the browser — without
-    // registering them the model can call them and nothing ever replies.
-    AgentClient.start(cb);
-    ChatbotClient.start(cb);
-    ChatbotClient.registerUITool(new ConfirmUITool());
-    ChatbotClient.registerUITool(new GetUIContextUITool());
-
-    // Concurrent users (altea-concurrent-user): the entity-frame widget showing who else has this entity
-    // open, whether they are typing, and whether the copy on screen is already stale. Registers itself on
-    // `onWidgets`, so it applies to every entity view without per-type configuration.
+    // Registers itself on `onWidgets`, so it applies to every entity view without per-type configuration.
     ConcurrentUserClient.start();
 
-    // User queries (altea-user-queries): the UserQuery editor + /userQuery page + quick-links to run saved
-    // queries (Signum's UserQueryClient).
-    UserQueriesClient.start(cb);
+    // ==== SCHEDULING AND PROCESSES ==================================================================
 
-    // Charting (altea-chart): the /chart/:queryName page + the Columns D3 renderer (Signum's ChartClient).
-    ChartClient.start(cb);
-
-    // Per-type color palettes (altea-chart/ColorPalette): the ColorPalette editor + client palette cache
-    // (Signum's ColorPaletteClient, which it starts from within ChartClient.start — altea wires it here from
-    // MainAdmin to match how every other client is registered). After ChartClient.
-    ColorPaletteClient.start(cb);
-
-    // User charts (altea-chart/UserChart): the UserChart editor + /userChart page + quick-links to run saved
-    // charts (Signum's UserChartClient). After ChartClient so the chart-script catalog fetch is registered.
-    UserChartClient.start(cb);
-
-    // Dashboards (altea-dashboard): the dashboard editor + /dashboard/:id page + the embedded-dashboard
-    // widgets and quick-links (Signum's DashboardClient). LAST: the UserQuery / UserChart clients register
-    // their part renderers into the dashboard registry from their own start(cb) (which runs above), and the
-    // dashboard editor only reads that registry when a dashboard is actually opened.
-    DashboardClient.start(cb);
-
-    // Toolbar (altea-toolbar): the Toolbar / ToolbarMenu / ToolbarSwitcher editors + the QueryToolbarConfig.
-    // LAST of the asset modules: the UserQuery / UserChart / Dashboard clients register THEIR toolbar configs
-    // from their own start(cb) above, and the element editor reads that registry when a toolbar is opened.
-    ToolbarClient.start(cb);
-
-    // Scheduler (altea-scheduler): the /scheduler/view panel + the ScheduledTask / schedule-rule /
-    // HolidayCalendar editors (Signum's SchedulerClient).
     SchedulerClient.start(cb);
-
-    // Processes (altea-processes): the /processes/view panel + the Process editor (Signum's ProcessClient).
-    // After SchedulerClient: a ScheduledTask can point at a ProcessAlgorithmSymbol (the scheduler bridge).
     ProcessClient.start(cb);
 
-    // Email + templating (altea-email, which starts altea-templating itself): the EmailMessage /
-    // EmailTemplate / EmailMasterTemplate / EmailSenderConfiguration editors, the /asyncEmailSender/view
-    // panel, the "send this template" contextual menu + query button, and the "emails of this entity"
-    // quick-link (Southwind's `MailingClient.start({ routes, contextual: true, queryButton: true })`).
-    // AFTER UserQueriesClient: the template editor's filter builder is altea-user-queries' shared
-    // FilterBuilderEmbedded.
+    // ==== USER ASSETS (each reads a registry the previous ones write into — docs/Wiring.md) =========
+
+    TokenMigrationClient.start(cb);
+    UserQueriesClient.start(cb);
+    ChartClient.start(cb);
+    ColorPaletteClient.start(cb);
+    UserChartClient.start(cb);
+    DashboardClient.start(cb);
+    ToolbarClient.start(cb);
+
+    // ==== COMMUNICATION =============================================================================
+
+    // Southwind's `MailingClient.start({ routes, contextual: true, queryButton: true })`. AFTER
+    // UserQueriesClient: the template editor's filter builder is altea-user-queries' FilterBuilderEmbedded.
     MailingClient.start(cb, { contextual: true, queryButton: true });
 
-    // The two extra SENDER service editors (@altea/altea-mailing-exchange, -microsoft-graph) and the POP3
-    // reception service editor — each is one `cb.configure(T).withView(…)`, which is also what registers the
-    // type on the client so the polymorphic `service` picker can offer it.
-    if (!southwindOnly)
+    // The extra SENDER / reception service editors — each is one `cb.configure(T).withView(…)`, which is
+    // also what registers the type so the polymorphic `service` picker can offer it.
+    // Not in Southwind — see legacyMode.
+    if (!legacyMode)
         MailingExchangeWSClient.start(cb);
     MailingMicrosoftGraphClient.start(cb);
-    if (!southwindOnly)
+    if (!legacyMode)
         MailingPop3Client.start(cb);
-
-    // The inbound half's own editors + the extra tab a RECEIVED EmailMessage grows. AFTER MailingClient: the
-    // tab is an `overrideView` on EmailMessage's EntitySettings, which MailingClient registers.
-    if (!southwindOnly)
+    // AFTER MailingClient: its extra tab is an `overrideView` on the EntitySettings that call registers.
+    if (!legacyMode)
         MailingReceptionClient.start(cb);
+    // Registered unconditionally on the client — the search page simply has no rows unless the server side
+    // is enabled (EASTWIND_REMOTE_EMAILS) and an Entra tenant is configured.
+    if (!legacyMode)
+        RemoteEmailsClient.start(cb);//Mailing
 
-    // Browsing a user's real Outlook mailbox (the RemoteEmails half). Registered unconditionally on the
-    // client — the search page simply has no rows unless the server side is enabled
-    // (EASTWIND_REMOTE_EMAILS) and an Entra tenant is configured.
-    if (!southwindOnly)
-        RemoteEmailsClient.start(cb);
-
-    // Office reports (altea-office-template): the template editor, the "create report" operation, the
-    // contextual menu on a search's selected rows, the query-toolbar button and the entity-frame button.
-    OfficeClient.start(cb, { contextual: true, queryButton: true, entityButton: true });
-
-    // Excel export / import (the Signum.Excel half of @altea/altea-office-template): the "Export to Excel"
-    // button on every SearchControl toolbar — and on the chart page — plus "Import from Excel" beside it,
-    // each gated by its own permission. Southwind also passes `excelReport: true`; that half is not ported
-    // (an .xlsx OfficeTemplate supersedes it — see ExcelClient's header).
-    ExcelClient.start(cb, { plainExcel: true, importFromExcel: true, excelReport: true });
-
-    // Alerts (@altea/altea-alert): the Alert view + its search settings (the Text column renders its
-    // placeholders as links), the alert operations' buttons and the "alerts about this entity" quick link.
     // The navbar BELL is a component the app places itself — see Layout.tsx.
     AlertsClient.start(cb);
     NotesClient.start(cb);
 
-    // Migrations (altea-migrations): the query settings for the three history tables (SqlMigration /
-    // CSharpMigration / LoadMethodLog). Signum has no client module for them — see MigrationsClient.
-    MigrationsClient.start(cb);
-
-    // Omnibox (altea-omnibox): registers the three result-shape renderers the navbar's
-    // <OmniboxAutocomplete/> (see Layout.tsx) draws its suggestions with. Registers no routes.
-    OmniboxClient.start(cb);
-
-    // Schema / operation map (@altea/altea-map): the /map and /map/:type pages, the omnibox suggestion and
-    // the built-in colour providers. AFTER OmniboxClient.start, which creates the provider registry this
-    // one registers into.
-    MapClient.start(cb);
-
-    // In-app documentation (@altea/altea-help): the five help pages, the in-place editors, the "?" widget on
-    // every entity frame + the per-line help badge, the export quick link, and the omnibox provider and
-    // "!ImportHelp" special action. AFTER OmniboxClient.start (the provider registry) and AFTER
-    // HtmlEditorClient.start (its editors are the description editor).
-    HelpClient.start(cb);
-
-    // Dynamic views (altea-dynamic). This one is load-bearing beyond its own editors: it installs a
-    // ViewDispatcher that prefers a view stored in the DATABASE over the compiled one, for every type. With
-    // no DynamicView rows saved, every type keeps rendering exactly as before — the dispatcher falls through
-    // to the static view (or the auto-generated one).
-    DynamicViewClient.start(cb);
-    DynamicClient.start(cb);
-
-    // Eval module (@altea/altea-eval): registers nothing today (the dynamic panel that reads its
-    // eval-errors endpoint belongs to altea-dynamic above) — see EvalClient's header. Kept so the module
-    // has the same wiring as every other, and so its script EDITORS are reachable from one import.
-    EvalClient.start(cb);
-
-    // Workflow (@altea/altea-workflow): the BPMN designer page, the case-activity page/modal + the Inbox's
-    // Finder settings, every case/workflow operation's button behaviour, and the two toolbar configs. AFTER
-    // ToolbarClient.start / DynamicClient.start — the configs it registers land in registries those own, and
-    // its designer views must be the last word on the workflow types.
-    WorkflowClient.start(cb);
-
-    // eastwind makes ORDER a case main entity (see eastwindWorkflow.server.ts), and the app declares
-    // CaseActivityMixin on EmailMessageEntity, so the mixin's read-only line goes on the email view after its
-    // `target` — Signum hard-codes that pair in WorkflowClient.start; altea takes it per type.
-    if (CaseActivityMixin.isDeclaredOn(EmailMessageEntity))
-        WorkflowClient.overrideCaseActivityMixinView(EmailMessageEntity, a => a.target);
-
-    // DiffLog (altea-diff-log): the OperationLog view — the 7-tab strip that walks the log chain of one
-    // entity and diffs each pair of dumps — plus the log search's default columns. LAST, so its
-    // `cb.configure(OperationLogEntity)` is the app's final word on that type.
-    DiffLogClient.start(cb);
-
-    // TimeMachine (altea-time-machine): the quick link + the "Time Machine" entry in every search
-    // control's menu, the /timeMachine page route, and the search-result markers that flag a row
-    // version as created / deleted. AFTER DiffLogClient, whose DiffDocument the page's data tab uses.
-    TimeMachineClient.start(cb);
-
-    // Tree (altea-tree): the /tree/:typeName page, the Move/Copy modals, the "sitemap" button on every
-    // tree type's search control, the omnibox suggestion and the UserTreePart dashboard renderer. AFTER
-    // DashboardClient / UserQueriesClient, whose registries it writes into. The app's tree TYPE is
-    // configured separately, by DepartmentsClient above — the two are independent.
-    if (!southwindOnly)
-        TreeClient.start(cb);
-
-    // Rest (altea-rest): the API-key editor with its generate button, and the request log with its
-    // replay-and-diff tabs. `registerAuthenticator` is what lets `?apiKey=…` in the address bar log a
-    // caller in — the flow that lands an API client inside the app already authenticated. It is a separate
-    // call in Signum too, because a host may want the key ENTITY without letting a url parameter log
-    // anyone in; eastwind opts in, as Southwind does.
-    RestClient.start(cb);
-    RestApiKeyClient.start(cb);
-    RestApiKeyClient.registerAuthenticator();
-
-    // ViewLog (altea-view-log): the global "who has looked at this?" quick link on every entity, plus the
-    // log's own search columns. LAST of the log modules, so its quick link sits after the operation log's.
-    ViewLogClient.start(cb);
-
-    // SMS (altea-sms): the template editor with its live remaining-character count, the message / package
-    // views, and the "SMS messages" quick link on every registered owner type (eastwind: Customer).
     SMSClient.start(cb);
 
-    // Tour (altea-tour): implements core's TourButton extension point, registers the tour editor views,
-    // and hangs the tour button on entity frames, dashboard pages and user-query search controls. AFTER
-    // DashboardClient / UserQueriesClient, whose extension points it pushes onto.
-    if (!southwindOnly)
-        TourClient.start(cb);
+    // ==== DOCUMENTS =================================================================================
 
-    // Machine learning (altea-machine-learning): the predictor designer, the network settings editor, the
-    // epoch-progress grid with its four coloured loss formatters, and the interactive predict page.
-    // AFTER ChartClient.start — the `Full` result saver's view links to a Punchcard / Scatterplot chart,
-    // whose script keys must already be registered for the link to resolve.
+    OfficeClient.start(cb, { contextual: true, queryButton: true, entityButton: true });
+    ExcelClient.start(cb, { plainExcel: true, importFromExcel: true, excelReport: true });
+
+    // ==== PRINT QUEUE AND RELEASE NOTES =============================================================
+
+    // Print queue. Not in Southwind — see legacyMode; gated in step with the server, since a client that
+    // registered these pages against a server that never started the module would 404 on every call.
+    if (!legacyMode)
+        PrintClient.start(cb);//Printing
+
+    // Release notes. Not in Southwind — see legacyMode.
+    if (!legacyMode)
+        WhatsNewClient.start(cb);//WhatsNew
+
+    // ==== MACHINE LEARNING ==========================================================================
+
+    // AFTER ChartClient — the `Full` result saver links to a Punchcard / Scatterplot chart whose script
+    // keys must already be registered.
     MachineLearningClient.start(cb, routes);
 
-    // Translations (altea-translations): the four code pages + the three instance pages, the two omnibox
-    // "!TranslateCode" / "!TranslateInstances" actions, and the LINE TASK that puts a translate button on
-    // every @translatable text line. AFTER OmniboxClient, whose special-action registry it pushes onto.
+    // ==== AGENT, DYNAMIC AND WORKFLOW ===============================================================
+
+    // The two UI TOOLS are what makes the server-declared `Confirm` / `GetUIContext` tools answerable in
+    // the browser — without registering them the model can call them and nothing ever replies.
+    AgentClient.start(cb);
+    ChatbotClient.start(cb);
+    ChatbotClient.registerUITool(new ConfirmUITool());
+    ChatbotClient.registerUITool(new GetUIContextUITool());//Agent
+
+    // Load-bearing beyond its own editors: it installs a ViewDispatcher that prefers a view stored in the
+    // DATABASE over the compiled one, for every type. With no DynamicView rows saved, nothing changes.
+    DynamicViewClient.start(cb);
+    DynamicClient.start(cb);
+    // Registers nothing today (the dynamic panel that reads its eval-errors endpoint belongs to
+    // altea-dynamic above) — kept so the module has the same wiring as every other.
+    EvalClient.start(cb);//Dynamic
+
+    // AFTER ToolbarClient / DynamicClient — the configs it registers land in registries those own, and its
+    // designer views must be the last word on the workflow types.
+    WorkflowClient.start(cb);
+
+    // ==== CROSS-CUTTING: navigation, docs, logs =====================================================
+
+    // Registers the three result-shape renderers the navbar's <OmniboxAutocomplete/> draws with, and
+    // creates the provider registry the next two register into.
+    OmniboxClient.start(cb);
+    MapClient.start(cb);
+    // AFTER OmniboxClient (the provider registry) and AFTER HtmlEditorClient (its editors are the
+    // description editor).
+    HelpClient.start(cb);
+
+    // AFTER DashboardClient / UserQueriesClient, whose registries it writes into. The app's tree TYPE is
+    // configured separately, by DepartmentsClient below.
+    // Not in Southwind — see legacyMode.
+    if (!legacyMode)
+        TreeClient.start(cb);
+
+    // AFTER DashboardClient / UserQueriesClient, whose extension points it pushes onto.
+    // Not in Southwind — see legacyMode.
+    if (!legacyMode)
+        TourClient.start(cb);
+
+    // `registerAuthenticator` is what lets `?apiKey=…` in the address bar log a caller in. A separate call
+    // in Signum too, because a host may want the key ENTITY without that; eastwind opts in, as Southwind does.
+    RestClient.start(cb);
+    RestApiKeyClient.start(cb);
+    RestApiKeyClient.registerAuthenticator();//Rest
+
+    // LAST word on OperationLogEntity; TimeMachine then uses its DiffDocument.
+    DiffLogClient.start(cb);
+    TimeMachineClient.start(cb);
+
+    // LAST of the log modules, so its quick link sits after the operation log's.
+    ViewLogClient.start(cb);
+
+    // AFTER OmniboxClient, whose special-action registry it pushes onto.
     TranslationClient.start(cb);
-    TranslatedInstanceClient.start(cb);
+    TranslatedInstanceClient.start(cb);//Translation
+
+    // ==== THE APP (eastwind) ========================================================================
+    //
+    // Everything above is framework or module; everything below is this application.
+
+    EmployeesClient.start(cb);
+    ProductsClient.start(cb);
+    ShippersClient.start(cb);
+    CustomersClient.start(cb);
+    OrdersClient.start(cb);
+    // The app's TREE type (the module itself is started above).
+    // Not in Southwind — see legacyMode.
+    if (!legacyMode)
+        DepartmentsClient.start(cb);//Departments
+
+    // The app GLOBALS (Southwind's GlobalsClient): the ApplicationConfiguration page — one tab per module,
+    // each rendering that module's own configuration view — plus the UserEmployeeMixin line on the User
+    // view. AFTER AuthAdminClient, which registers UserEntity's own EntitySettings (docs/Wiring.md).
+    GlobalsClient.start(cb);
+
+    // eastwind declares CaseActivityMixin on EmailMessageEntity, so the mixin's read-only line goes on the
+    // email view after its `target` — Signum hard-codes that pair in WorkflowClient.start.
+    if (CaseActivityMixin.isDeclaredOn(EmailMessageEntity))
+        WorkflowClient.overrideCaseActivityMixinView(EmailMessageEntity, a => a.target);//Workflow
 }

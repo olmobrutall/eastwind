@@ -7,7 +7,7 @@
  */
 export interface EastwindMode {
     /**
-     * Declare and start only what SOUTHWIND does.
+     * LEGACY MODE: declare and start only what SOUTHWIND does.
      *
      * The app is pointed at a database a Signum application generated, so a `sync` should read as a
      * MIGRATION of the tables both applications have rather than also creating a dozen this one invented.
@@ -19,11 +19,11 @@ export interface EastwindMode {
      * configurations altea persists as rows where Southwind keeps them in appsettings, the mail service
      * embeddeds it models as `@part` entities). Those are model decisions, not module registration.
      */
-    southwindOnly: boolean;
+    legacyMode: boolean;
 }
 
 /** What an unreachable route or an older server means: the full module set. */
-export const FULL_MODE: EastwindMode = { southwindOnly: false };
+export const FULL_MODE: EastwindMode = { legacyMode: false };
 
 // The mode this client booted with. MainPublic fills it from the server before anything else runs; every
 // other client module reads it here rather than fetching again (the shape altea's own resolver slots use).
