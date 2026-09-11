@@ -34,6 +34,9 @@ packages:
   - altea/altea-chart
   - altea/altea-alert
   - altea/altea-playwright
+  - altea/cli/altea-upgrade
+  - altea/cli/altea-clone
+  - altea/cli/altea-simplify
   - altea/altea-workflow
   - altea/altea-time-machine
   - altea/altea-map
@@ -65,6 +68,10 @@ allowBuilds:
   core-js: set this to true or false
   esbuild: true
   unrs-resolver: true
+  # Its native build is OPTIONAL (it falls back to a polling watcher), and leaving it UNLISTED makes
+  # `pnpm install` fail with ERR_PNPM_IGNORED_BUILDS in a fresh checkout — which is what a cloned
+  # project is.
+  "@parcel/watcher": false
 # The root package.json was removed on the test-tiers refactor, so shared build tooling /
 # type packages are declared inside workspace packages instead:
 #   @types/node -> altea/altea (+ altea/quote-transformer-test)

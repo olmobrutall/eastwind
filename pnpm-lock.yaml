@@ -1141,6 +1141,42 @@ importers:
         specifier: workspace:*
         version: link:../quote-transformer
 
+  altea/cli/altea-clone:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../../altea
+      '@altea/altea-upgrade':
+        specifier: workspace:*
+        version: link:../altea-upgrade
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../../quote-transformer
+
+  altea/cli/altea-simplify:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../../altea
+      '@altea/altea-upgrade':
+        specifier: workspace:*
+        version: link:../altea-upgrade
+      fast-xml-parser:
+        specifier: ^5.0.0
+        version: 5.10.1
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../../quote-transformer
+
+  altea/cli/altea-upgrade:
+    dependencies:
+      '@altea/altea':
+        specifier: workspace:*
+        version: link:../../altea
+      quote-transformer:
+        specifier: workspace:*
+        version: link:../../quote-transformer
+
   altea/quote-transformer:
     dependencies:
       ts-patch:
