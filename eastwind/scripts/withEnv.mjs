@@ -47,15 +47,22 @@ const TARGETS = {
         node: ["--enable-source-maps", "--import", "@altea/altea/register.mjs", "dist/test/environment/generateEnvironment.js"],
     },
     test: {
-        describe: "the Playwright suites, against a RUNNING stack",
-        // The build is not optional: a spec addresses lines and tokens with property LAMBDAS, which mean
-        // something only once the quote-transformer has stamped them — so Playwright runs dist/test/**.
+        describe: "the browser suites, against a RUNNING stack",
+        // The build is not optional: a suite addresses lines and tokens with property LAMBDAS, which mean
+        // something only once the quote-transformer has stamped them. vitest runs the .ts files but
+        // executes tspc's output for each (see @altea/altea/vitest.shared.mjs), so the build still gates.
         build: true,
-        // Playwright is a BINARY, not a node entry point, so there is no command line to splice
-        // `--env-file` into. The file is loaded into this process instead and inherited by the child.
+        // vitest, and Playwright only as a LIBRARY — the suites drive `chromium.launch()` themselves
+        // (test/setup.ts), so the whole workspace has ONE runner and these suites appear in the Test
+        // Explorer beside every other package's.
+        //
+        // vitest is a BINARY, not a node entry point, so there is no command line to splice `--env-file`
+        // into. The file is loaded into THIS process and inherited by the child, which also sidesteps
+        // vitest's `--mode`: vite reserves the name "local" (it clashes with the .env.local convention),
+        // and "local" is exactly the environment you run most.
         run: async () => {
             process.loadEnvFile(path.join(appRoot, envFile));
-            await shell(["pnpm exec playwright test", ...rest].join(" "));
+            await shell(["pnpm exec vitest run", ...rest].join(" "));
         },
     },//test-targets
 };

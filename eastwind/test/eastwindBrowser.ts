@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Page } from "playwright";
 import { BrowserProxy } from "@altea/altea-playwright/BrowserProxy";
 import { baseUrl } from "./appStack";
 

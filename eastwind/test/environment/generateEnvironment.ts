@@ -21,7 +21,7 @@ import { requireConnectionString } from "../testDatabase";
 //   generation → schema initialize → (auth off) roles + AuthRules.xml → the test data → UserAssets.xml
 //
 // all of it inside `withSnapshotOrTemplateDatabase`, which is what turns the result into something
-// `restoreSnapshotOrDatabase` can rewind to before every test (see test/fixtures.ts).
+// `restoreSnapshotOrDatabase` can rewind to before every test (see test/setup.ts).
 //
 // The two XML seeds are applied through the FRAMEWORK's own importers, exactly as Signum's EnvironmentTest
 // calls `AuthLogic.ImportAuthRules` and `UserAssetsImporter.ImportAll` rather than going through
