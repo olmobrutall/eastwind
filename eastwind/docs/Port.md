@@ -5,9 +5,11 @@ eastwind is its port onto altea. This file holds the differences that are the AP
 than the framework's — the framework's are in
 [`../../altea/port/port.md`](../../altea/port/port.md).
 
-Everything in this directory exists because eastwind was PORTED. A new application built from
-eastwind does not need it, which is why `Modules.xml` has a `port` module that removes the whole
-folder (plus the legacy-mode environment files) — unticked by default, so a fresh clone drops it.
+Everything in this FILE exists because eastwind was PORTED. A new application built from eastwind does
+not need it, which is why `Modules.xml` has a `port` module that removes it (plus the legacy-mode
+environment files) — unticked by default, so a fresh clone drops it. It sits in `docs/` beside
+`Wiring.md` rather than in a `port/` directory of its own — the app-level counterpart of the submodule's
+`altea/port/` — because one file is not a directory.
 
 The one-off checks a port wrote against a real database live in `terminal/probes/` and are GITIGNORED:
 scratch scripts for one session's question, kept on disk because re-running one beats rewriting it, but
@@ -16,10 +18,10 @@ not source this application ships. The one-off data migrations that converted a 
 
 | Southwind (C#) | eastwind (TypeScript) |
 | --- | --- |
-| `Southwind/` — entities, logic and React by domain | `eastwind/<domain>/` — the same domains, one folder each |
-| `Southwind/Starter.cs` | `eastwind/starter.server.ts` |
-| `Southwind/MainAdmin.tsx` / `MainPublic.tsx` | `eastwind/MainAdmin.client.ts` / `MainPublic.client.tsx` |
-| `Southwind.Server/` | `eastwind/webServer.server.ts` |
+| `Southwind/` — entities, logic and React by domain | `eastwind/app/<domain>/` — the same domains, one folder each |
+| `Southwind/Starter.cs` | `eastwind/app/starter.server.ts` |
+| `Southwind/MainAdmin.tsx` / `MainPublic.tsx` | `eastwind/app/MainAdmin.client.ts` / `MainPublic.client.tsx` |
+| `Southwind.Server/` | `eastwind/app/webServer.server.ts` |
 | `Southwind.Terminal/` | `eastwind/terminal/` |
 | `Southwind.Test.React/` | `eastwind/test/` (Playwright) |
 
@@ -57,7 +59,7 @@ not source this application ships. The one-off data migrations that converted a 
     in.**
 
 - **App settings are ONE persisted row, and every module start takes a lambda to it.** eastwind ports
-  Southwind's `ApplicationConfigurationEntity` (`eastwind/globals/`): one row per environment carrying each
+  Southwind's `ApplicationConfigurationEntity` (`eastwind/app/globals/`): one row per environment carrying each
   module's configuration embedded (mail, chatbot, workflow, SMS, and the three directories), edited at
   `/view/ApplicationConfiguration`, and each `Logic.start` receives `() => GlobalsLogic.configuration().x`
   exactly as Signum's `EmailLogic.Start(sb, () => Configuration.Value.Email, …)` does. The per-module

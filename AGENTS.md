@@ -153,12 +153,14 @@ removes the optional modules, following `eastwind/Modules.xml` — including the
 `optional="true"` and therefore dropped by default. Both live in `altea/cli/`; see
 [`altea/cli/README.md`](altea/cli/README.md).
 
-## The `port/` folder
+## The port ledger
 
-`eastwind/port/` holds what this application carries only because it was ported from Southwind — the
-ledger of app-level divergences, and the reasoning behind the legacy-mode machinery. `Modules.xml` has a
-`port` module that removes it (with the probe scripts and the legacy `.env.*` files); it is
-`optional="true"`, so a new application built from eastwind drops it by default.
+[`eastwind/docs/Port.md`](eastwind/docs/Port.md) holds what this application carries only because it was
+ported from Southwind — the ledger of app-level divergences, and the reasoning behind the legacy-mode
+machinery. It is the app-level counterpart of the submodule's [`altea/port/`](altea/port), which keeps one
+such file per framework module. `Modules.xml` has a `port` module that removes it (with the probe scripts
+and the legacy `.env.*` files); it is `optional="true"`, so a new application built from eastwind drops it
+by default.
 
 `LegacyMode=true` in the environment points this build at a database a SIGNUM application generated, so
 `terminal sync` reads as a migration rather than a rebuild. It is a RUNTIME switch and unrelated to

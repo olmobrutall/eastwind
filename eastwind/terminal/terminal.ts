@@ -36,7 +36,7 @@ import { TypeScriptMigrations } from "./typeScriptMigrations";
 //   • `ts`     — the ONCE-per-database code steps (roles, users, the Northwind data, the XML seeds),
 //                recorded in TypeScriptMigrationEntity (`CSharpMigration` in legacy mode) →
 //                TypeScriptMigrations.run.
-//   • `sql`    — the versioned .sql migrations in eastwind/Migrations → SqlMigrationRunner.
+//   • `sql`    — the versioned .sql migrations in eastwind/migrations → SqlMigrationRunner.
 //   • `load`   — a sub-menu of RE-RUNNABLE ad-hoc tools, each logged to LoadMethodLog.
 // altea has no CREATE DATABASE, so "new" = clean + generate into an already-existing database. The
 // connection string comes from EASTWIND_DB (falling back to ALTEA_TEST_DB); "postgres…" → PG, else SQL Server.
@@ -216,7 +216,7 @@ async function typeScriptMigrations(args: string[]): Promise<void> {
 }
 
 // Southwind's `SqlMigrationRunner.SqlMigrations()` (its Program.cs "SQL" option): the versioned .sql files in
-// eastwind/Migrations are the schema's source of truth — apply what is pending, or write the next migration
+// eastwind/migrations are the schema's source of truth — apply what is pending, or write the next migration
 // from the synchronization script.
 async function migrations(args: string[]): Promise<void> {
     // Signum's SqlMigrationRunner does not initialize, but its TokenMigrationRunner does — and altea wires
@@ -253,12 +253,12 @@ function wireTokenMigrations(): void {
 // data files rather than in the cwd (Signum writes to the working directory, so the script lands wherever
 // the terminal happened to be launched from), and gitignored as a whole: a synchronization script is a
 // throwaway artefact of ONE database's drift, never source. A migration you mean to KEEP is a different
-// thing and goes to eastwind/Migrations through the `sql` command.
+// thing and goes to eastwind/migrations through the `sql` command.
 const syncDirectory = terminalFile("sync");
 
-// eastwind/Migrations — resolved off this module so the cwd does not matter (dist/terminal → ../../Migrations).
+// eastwind/migrations — resolved off this module so the cwd does not matter (dist/terminal → ../../migrations).
 function migrationsDir(): string {
-    return path.resolve(url.fileURLToPath(new URL(".", import.meta.url)), "../../Migrations");
+    return path.resolve(url.fileURLToPath(new URL(".", import.meta.url)), "../../migrations");
 }
 
 async function create(): Promise<void> {

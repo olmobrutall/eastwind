@@ -82,11 +82,11 @@
 		  so they never reach a clone in the first place.
 		-->
 		<Module Name="Port" optional="true">
-			<RemoveFiles Path="eastwind/port"/>
+			<RemoveFiles Path="eastwind/docs/Port.md"/>
 			<RemoveFiles Path="eastwind/.env.postgres"/>
 			<RemoveFiles Path="eastwind/.env.sqlserver"/>
 			<RemoveFiles Path="eastwind/.env.swpostgres"/>
-			<RemoveLine Path="AGENTS.md" From="## The `port/` folder" To="`eastwind/docs/Wiring.md`."/>
+			<RemoveLine Path="AGENTS.md" From="## The port ledger" To="`eastwind/docs/Wiring.md`."/>
 			<RemoveLine Path="eastwind/.gitignore" From="`.env.test`, `.env.live` and (while the port lasts)" To="`.env.test`, `.env.live` and (while the port lasts)"/>
 			<!-- The Signum sources and the workspace entry for them: a new application ports from nothing. -->
 			<RemoveFiles Path="old"/>
