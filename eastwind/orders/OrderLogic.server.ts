@@ -169,6 +169,13 @@ function registerOrderOperations(sm: FluentStateMachine<OrderEntity, OrderState>
             employee: EmployeeEntity.current()!,
             shipAddress: c.address.clone(),
             requiredDate: today().add({ days: 3 }),
+            // Southwind does not set this and does not have to: its OrderDate is a non-nullable DateOnly,
+            // so C# hands the new order a value and the mandatory check passes. Here the field is
+            // undefined until something writes it — and it is @isReadOnly(true), so the user CANNOT. A new
+            // order was therefore unsaveable through the UI: validation demanded a field the form forbids
+            // typing into, and the request was never sent. Save still overwrites this with today() when it
+            // places the order (New → Ordered, below); this only stops the entity being born invalid.
+            orderDate: today(),
         }),
     });
 

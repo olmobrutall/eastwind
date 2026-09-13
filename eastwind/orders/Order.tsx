@@ -38,6 +38,11 @@ export default function Order(p: { ctx: TypeContext<OrderEntity> }): React.JSX.E
   function handleProductChange(detail: OrderLineEntity): void {
     detail.quantity = 1 as int;
     detail.unitPrice = new Decimal(0);
+    // Southwind does not set this and does not have to: its Discount is a C# decimal, so a new line is
+    // born with 0. Here the field is undefined until something writes it, and it is MANDATORY — so a row
+    // created through the UI failed validation with "Discount is not set" and the order could never be
+    // saved. Same reason quantity and unitPrice are seeded on the two lines above.
+    detail.discount = new Decimal(0);
     forceUpdate();
 
     if (detail.product)
