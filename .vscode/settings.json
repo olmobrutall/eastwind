@@ -1,6 +1,6 @@
 {
   "files.exclude": {
-    "**/dist": true,
+    //"**/dist": true,
     "**/node_modules": true
   },
   "search.exclude": {
@@ -21,7 +21,6 @@
     ".env.sqlserver": "gear",
     "tsconfig.json": "brackets-yellow",
   },
-
   // ---- Tests -------------------------------------------------------------------------------------
   // vitest is the runner for every package (see any vitest.config.ts, all of which call the one shared
   // factory in @altea/altea/vitest.shared.mjs). Nothing is configured here: the extension reads each
@@ -30,6 +29,27 @@
   // Suites run COMPILED output under their .ts identity — the config explains why — so a run reflects the
   // last build. Keep the "watch types (altea suites)" task running, or rebuild before trusting a result.
   "vitest.disableWorkspaceWarning": true,
-
+  // ---- Running a DESTRUCTIVE suite from the Test Explorer -------------------------------------------
+  // `vitest.nodeEnv` is the extension's hook for this — an object merged over process.env for the runner
+  // (and `vitest.debugNodeEnv` for a debug run):
+  //
+  "vitest.nodeEnv": {
+    "EASTWIND_TEST_DESTRUCTIVE": "1"
+  }
+  //
+  // It is COMMENTED OUT on purpose, and should stay that way here. eastwind's EnvironmentTest drops and
+  // recreates the database named by `.env.local` — the one you develop against — so arming it in a
+  // CHECKED-IN workspace setting arms it for everyone who opens the repo, and then a mis-click in the
+  // Testing panel is enough. Two safer ways to run it:
+  //
+  //   - `pnpm --filter eastwind gen:environment local` — the intended route. It sets the flag itself, for
+  //     that one run, and runs exactly that suite.
+  //   - paste the line above into your USER settings (Ctrl+Shift+P → "Preferences: Open User Settings
+  //     (JSON)") while you need it. Per-machine, and it never reaches anyone else.
+  //
+  // The altea packages are deliberately NOT like this: their destructive suite (schemaSynchronizer) arms
+  // itself through test/destructive.env whenever the run is sequential, because there the database is a
+  // disposable fixture that suite regenerates anyway. Losing it costs a `gen:postgres`; losing yours does
+  // not.
   "npm.packageManager": "pnpm"
 }
