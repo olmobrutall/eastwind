@@ -1,3 +1,4 @@
+import * as fs from "node:fs";
 import * as path from "node:path";
 import * as url from "node:url";
 import { table } from "@altea/altea/server/table";
@@ -315,11 +316,30 @@ export namespace EastwindEnvironment {
      * `..\..\..\..\Southwind.Terminal\AuthRules.xml` for the same reason — while the code that applies
      * them is each project's own.
      *
-     * Resolved off this module's location (compiled to `dist/test/environment`), not the cwd, so it does
-     * not matter where the generator was launched from.
+     * Resolved off this module's location, not the cwd, so it does not matter where the generator was
+     * launched from — but by WALKING UP to the package root rather than counting `../`, because this
+     * module runs from two different depths.
+     *
+     * The terminal runs it from `dist/test/environment/`; vitest runs it from `test/environment/`, one
+     * level shallower, because the suites execute tspc's output under their SOURCE identity (see
+     * @altea/altea/vitest.shared.mjs). A fixed `../../../terminal` is right for exactly one of those: from
+     * the other it climbs out of eastwind entirely and reads the repository root's terminal/ — which
+     * exists, so it fails as a confusing "wrong seed" rather than a missing file.
      */
     export function seedFile(name: string): string {
-        return path.resolve(url.fileURLToPath(new URL(".", import.meta.url)), "../../../terminal", name);
+        return path.join(packageRoot(), "terminal", name);
+    }
+
+    /** The eastwind package directory — the nearest ancestor holding a package.json. */
+    function packageRoot(): string {
+        let dir = url.fileURLToPath(new URL(".", import.meta.url));
+        while (!fs.existsSync(path.join(dir, "package.json"))) {
+            const parent = path.dirname(dir);
+            if (parent === dir)
+                throw new Error(`No package.json above ${url.fileURLToPath(new URL(".", import.meta.url))} — cannot locate the seed files.`);
+            dir = parent;
+        }
+        return dir;
     }
 
     /** A seeded user, by name (the five {@link loadUsers} creates). */
