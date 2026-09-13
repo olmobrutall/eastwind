@@ -11,7 +11,7 @@
 	"tasks": [
 		{
 			"label": "build",
-			"detail": "Full build: transformer → types → eastwind server + client.",
+			"detail": "Compiles the transformer, then altea + eastwind (tspc -b). The DEFAULT build task — for the deployable bundles, run \"bundle eastwind\" instead.",
 			"type": "shell",
 			"command": "pnpm --filter eastwind build",
 			"options": { "cwd": "${workspaceFolder}" },
@@ -69,13 +69,26 @@
 			"group": "build"
 		},
 		{
-			"label": "build eastwind server bundle",
+			"label": "bundle eastwind server",
 			"detail": "Bundles transformer-emitted logic JS into one runnable file (used by the server debugger).",
 			"type": "shell",
-			"command": "pnpm --filter eastwind build:server",
+			"command": "pnpm --filter eastwind bundle:server",
 			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": [],
 			"dependsOn": ["build eastwind"],
+			"dependsOrder": "sequence",
+			"group": "build"
+		},
+		{
+			// `build` compiles; `bundle` produces what a deployment actually runs. Only eastwind has one,
+			// because only eastwind ships something other than its compiled output.
+			"label": "bundle eastwind",
+			"detail": "The deployable: compile, then the server and client vite bundles.",
+			"type": "shell",
+			"command": "pnpm --filter eastwind bundle",
+			"options": { "cwd": "${workspaceFolder}" },
+			"problemMatcher": ["$tsc"],
+			"dependsOn": ["build quote-transformer"],
 			"dependsOrder": "sequence",
 			"group": "build"
 		},
@@ -129,6 +142,52 @@
 			"problemMatcher": [],
 			"isBackground": true,
 			"group": "build"
+		},
+		{
+			// The same thing the `gen:*` scripts do, declared here so it is reachable from
+			// Terminal → Run Task rather than only from the NPM Scripts view (which is hidden by
+			// default, and which lists every one of the 58 packages).
+			"label": "generate altea test database",
+			"detail": "DESTRUCTIVE — drops and rebuilds the @altea/altea test database, then loads the Music sample graph.",
+			"type": "shell",
+			"command": "pnpm --filter @altea/altea gen:${input:alteaTestEnv}",
+			"options": { "cwd": "${workspaceFolder}" },
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "generate eastwind test database",
+			"detail": "DESTRUCTIVE — drops and rebuilds the eastwind database for the chosen environment, then loads the test seed. Refuses unless that environment's .env declares EASTWIND_DISPOSABLE_DB=true.",
+			"type": "shell",
+			"command": "pnpm --filter eastwind gen:environment ${input:eastwindEnv}",
+			"options": { "cwd": "${workspaceFolder}" },
+			"problemMatcher": [],
+			"group": "build"
+		}
+	],
+	// Same shape as launch.json's — tasks and launch configurations do not share an `inputs` list.
+	"inputs": [
+		{
+			"id": "alteaTestEnv",
+			"type": "pickString",
+			"description": "Which dialect's test database to generate",
+			"options": [
+				{ "label": "postgres — the PostgreSQL test database", "value": "postgres" },
+				{ "label": "sqlserver — the SQL Server test database", "value": "sqlserver" }
+			],
+			"default": "postgres"
+		},
+		{
+			"id": "eastwindEnv",
+			"type": "pickString",
+			"description": "Which environment's database to REBUILD (only one declaring EASTWIND_DISPOSABLE_DB=true can be)",
+			"options": [
+				{ "label": "local — the database the local stack serves", "value": "local" },
+				{ "label": "dev — shared development", "value": "dev" },
+				{ "label": "test — staging / QA", "value": "test" },
+				{ "label": "live — production", "value": "live" }
+			],
+			"default": "local"
 		}
 	]
 }

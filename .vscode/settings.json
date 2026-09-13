@@ -1,6 +1,6 @@
 {
   "files.exclude": {
-    //"**/dist": true,
+    "**/dist": true,
     "**/node_modules": true
   },
   "search.exclude": {
@@ -33,9 +33,9 @@
   // `vitest.nodeEnv` is the extension's hook for this — an object merged over process.env for the runner
   // (and `vitest.debugNodeEnv` for a debug run):
   //
-  "vitest.nodeEnv": {
-    "EASTWIND_TEST_DESTRUCTIVE": "1"
-  }
+  // "vitest.nodeEnv": {
+  //   "EASTWIND_TEST_DESTRUCTIVE": "1"
+  // }
   //
   // It is COMMENTED OUT on purpose, and should stay that way here. eastwind's EnvironmentTest drops and
   // recreates the database named by `.env.local` — the one you develop against — so arming it in a
@@ -51,5 +51,22 @@
   // itself through test/destructive.env whenever the run is sequential, because there the database is a
   // disposable fixture that suite regenerates anyway. Losing it costs a `gen:postgres`; losing yours does
   // not.
+  // ---- Choosing the DIALECT from the Test Explorer --------------------------------------------------
+  // A run's database comes from an env file, and `--mode <name>` picks which: no mode loads the package
+  // default (.env.postgres, or .env.local for eastwind), `--mode sqlserver` loads .env.sqlserver. That is
+  // what `test:postgres` / `test:sqlserver` pass on the command line, and the extension forwards extra
+  // CLI arguments through `vitest.cliArguments`:
+  //
+  // "vitest.cliArguments": "--mode sqlserver",
+  //
+  // Reload the window after changing it — the extension starts vitest once and keeps it.
+  //
+  // COMMENTED OUT for the same reason as `vitest.nodeEnv` above: paste it into your USER settings
+  // instead. The dialect you happen to be testing against is a property of YOUR machine (which server is
+  // installed and running), not of the project, so pinning it here switches it for everyone who opens
+  // the repo.
+  //
+  // Each package resolves its OWN .env.sqlserver, so the toggle is workspace-wide but the connection
+  // strings stay per-package. A package with no such file simply keeps its default.
   "npm.packageManager": "pnpm"
 }

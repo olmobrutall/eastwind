@@ -65,7 +65,7 @@
                 "@altea/altea/register.mjs",
                 "--env-file=.env.${input:eastwindEnv}"
             ],
-            "program": "${workspaceFolder}/eastwind/dist/webServer.server.js",
+            "program": "${workspaceFolder}/eastwind/dist/app/webServer.server.js",
             "outFiles": [
                 "${workspaceFolder}/eastwind/dist/**/*.js"
             ],
@@ -86,7 +86,7 @@
             "type": "node",
             "request": "launch",
             "name": "eastwind API server (bundled)",
-            "preLaunchTask": "build eastwind server bundle",
+            "preLaunchTask": "bundle eastwind server",
             "program": "${workspaceFolder}/eastwind/dist/server-bundle/main.js",
             "cwd": "${workspaceFolder}/eastwind/",
             "runtimeArgs": [
