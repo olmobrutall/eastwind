@@ -1,15 +1,23 @@
 {
 	"version": "2.0.0",
-	// All builds go through the root pnpm-workspace scripts (see package.json).
-	// One `pnpm install` at the root sets up every workspace — no per-folder installs.
+	// There is NO root package.json — it was removed on the test-tiers refactor (see the note at the
+	// bottom of pnpm-workspace.yaml), so nothing here may run a bare `pnpm <script>` at the workspace
+	// root: that fails with ERR_PNPM_NO_IMPORTER_MANIFEST_FOUND. Every task either names the package
+	// (`pnpm --filter <pkg> …`) or sets `cwd` to one.
+	//
+	// Running TESTS is not here. The Test Explorer covers one-test runs for all 12 packages (see
+	// settings.json), and a whole package's suite is its own script — `pnpm --filter @altea/altea-auth
+	// test:postgres` — which VS Code lists in its NPM Scripts view without anything being declared.
 	"tasks": [
 		{
 			"label": "build",
-			"detail": "Full build: transformer → types → eastwind (root: pnpm build)",
+			"detail": "Full build: transformer → types → eastwind server + client.",
 			"type": "shell",
-			"command": "pnpm build",
+			"command": "pnpm --filter eastwind build",
 			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": ["$tsc"],
+			"dependsOn": ["build quote-transformer"],
+			"dependsOrder": "sequence",
 			"group": { "kind": "build", "isDefault": true }
 		},
 		{
@@ -32,19 +40,29 @@
 		},
 		{
 			"label": "watch types",
-			"detail": "tspc -b --watch — keeps emitted JS fresh for vite dev.",
+			"detail": "tspc -b --watch over eastwind and the altea layers it references — keeps emitted JS fresh for vite dev. Does NOT build any package's test/ layer; for that run 'watch types (altea suites)'.",
 			"type": "shell",
-			"command": "pnpm watch:types",
+			"command": "pnpm --filter eastwind dev:types",
 			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": ["$tsc"],
 			"isBackground": true,
 			"group": "build"
 		},
 		{
-			"label": "dev (eastwind)",
-			"detail": "Runs eastwind types + server + client watchers (root: pnpm dev).",
+			"label": "watch types (altea suites)",
+			"detail": "tspc -b --watch inside @altea/altea, whose solution DOES reference tsconfig.test.json — so the compiled suites the Test Explorer runs stay fresh as you edit. Working in another package? Point this task's cwd at it.",
 			"type": "shell",
-			"command": "pnpm dev",
+			"command": "pnpm exec tspc -b --watch --preserveWatchOutput",
+			"options": { "cwd": "${workspaceFolder}/altea/altea" },
+			"problemMatcher": ["$tsc"],
+			"isBackground": true,
+			"group": "build"
+		},
+		{
+			"label": "dev (eastwind)",
+			"detail": "Runs eastwind types + server + client watchers together.",
+			"type": "shell",
+			"command": "pnpm --filter eastwind dev",
 			"options": { "cwd": "${workspaceFolder}" },
 			"problemMatcher": [],
 			"isBackground": true,
@@ -72,7 +90,7 @@
 		},
 		{
 			"label": "build quote-transformer-test",
-			"detail": "Compiles the transformer's test package (and the transformer it loads); preLaunchTask for the transformer-test debug configs.",
+			"detail": "Compiles the transformer's own test package (and the transformer it loads), so the Test Explorer runs current output.",
 			"type": "shell",
 			"command": "pnpm exec tsc",
 			"options": { "cwd": "${workspaceFolder}/altea/quote-transformer-test" },
@@ -83,7 +101,7 @@
 		},
 		{
 			"label": "build @altea/altea test (tspc -b)",
-			"detail": "Compiles @altea/altea (framework + its internalized test/ suite) to dist; preLaunchTask for the framework test debug configs. Skip the wait by running 'watch types' instead.",
+			"detail": "Compiles @altea/altea (framework + its internalized test/ suite) to dist; preLaunchTask for the generate-DB debug config. Skip the wait by running 'watch types (altea suites)' instead.",
 			"type": "shell",
 			"command": "pnpm exec tspc -b",
 			"options": { "cwd": "${workspaceFolder}/altea/altea" },
@@ -91,7 +109,9 @@
 			"group": "build"
 		},
 		{
-			"label": "eastwind full stack — PostgreSQL",
+			// The suffix is the ENVIRONMENT, not a dialect: `.env.local` and `.env.dev` each choose their
+			// own engine by connection-string prefix, exactly as the launch.json picker does.
+			"label": "eastwind full stack — local",
 			"detail": "Build types, then run the API server (.env.local) + vite client + tspc watch together (pnpm stack local). Open http://localhost:5173.",
 			"type": "shell",
 			"command": "pnpm --filter eastwind stack local",
@@ -101,7 +121,7 @@
 			"group": "build"
 		},
 		{
-			"label": "eastwind full stack — SQL Server",
+			"label": "eastwind full stack — dev",
 			"detail": "Build types, then run the API server (.env.dev) + vite client + tspc watch together (pnpm stack dev). Open http://localhost:5173.",
 			"type": "shell",
 			"command": "pnpm --filter eastwind stack dev",

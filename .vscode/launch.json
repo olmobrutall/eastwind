@@ -2,81 +2,41 @@
     // Use IntelliSense to learn about possible attributes.
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    //
+    // Every configuration that opens a database ASKS for its environment on F5, instead of shipping one
+    // entry per environment — which is how the API server and the terminal each came to exist twice,
+    // once "— PostgreSQL" and once "— SQL Server". The picker replaces the duplicate.
+    //
+    // The two projects do NOT share one: altea/altea holds the framework suite, whose only environments
+    // are the two DIALECTS and whose connection string is ALTEA_TEST_DB; eastwind NAMES its environments
+    // (local / dev / test / live, as its scripts do) and reads EASTWIND_DB. Offer an eastwind name to the
+    // framework suite and `--env-file` finds no file and node exits before the first line runs, so the
+    // inputs are split — `alteaTestEnv` and `eastwindEnv`.
+    //
+    // RUNNING AND DEBUGGING TESTS IS NOT HERE. Twelve packages carry suites today and eastwind will add
+    // more, so "run all" × "run one" × package would be an entry per package forever. Both axes are
+    // covered without enumeration:
+    //   - one test, with a debugger → the Test Explorer (settings.json discovers every package's dist
+    //     suites from two patterns; a new package appears on its own)
+    //   - a whole package, against a database → its own scripts, which already exist and are identical
+    //     everywhere: `pnpm --filter @altea/altea-auth test:postgres`, listed in VS Code's NPM Scripts view
+    // What stays below is the one test-adjacent thing neither covers: BUILDING a suite's database, which
+    // is a program rather than a test. Only altea's is here because it is the one worth stepping through;
+    // the sibling packages seed theirs with `pnpm --filter <pkg> gen:postgres`.
     "version": "0.2.0",
     "configurations": [
         {
+            // DESTRUCTIVE: drops and rebuilds the suite's database, then seeds the fixture.
             "type": "node",
             "request": "launch",
-            "name": "framework test (current file)",
-            "preLaunchTask": "build @altea/altea test (tspc -b)",
-            "cwd": "${workspaceFolder}/altea/altea",
-            "env": {
-                "ALTEA_TEST_LOG_SQL": "1"
-            },
-            "runtimeArgs": [
-                "--enable-source-maps",
-                "--import",
-                "./register.mjs",
-                "--env-file=${input:envFile}",
-                "--test",
-                "--test-name-pattern=${input:testName}",
-                // The compiled twin of the open file, at any depth: the suite lives in test/{client,
-                // data,server}/**, so a flat dist/test/<name>.js never resolved. Node expands the glob.
-                "dist/test/**/${fileBasenameNoExtension}.js"
-            ],
-            "outFiles": [
-                "${workspaceFolder}/altea/altea/dist/**/*.js"
-            ],
-            "sourceMaps": true,
-            "resolveSourceMapLocations": [
-                "${workspaceFolder}/**",
-                "!**/node_modules/**"
-            ],
-            "console": "integratedTerminal",
-            "skipFiles": [
-                "<node_internals>/**",
-                "**/node_modules/pg/lib/native/**"
-            ]
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "framework test (all files)",
+            "name": "altea test (generate DB)",
             "preLaunchTask": "build @altea/altea test (tspc -b)",
             "cwd": "${workspaceFolder}/altea/altea",
             "runtimeArgs": [
                 "--enable-source-maps",
                 "--import",
                 "./register.mjs",
-                "--env-file=${input:envFile}",
-                "--test",
-                "dist/test/**/*.test.js"
-            ],
-            "outFiles": [
-                "${workspaceFolder}/altea/altea/dist/**/*.js"
-            ],
-            "sourceMaps": true,
-            "resolveSourceMapLocations": [
-                "${workspaceFolder}/**",
-                "!**/node_modules/**"
-            ],
-            "console": "integratedTerminal",
-            "skipFiles": [
-                "<node_internals>/**",
-                "**/node_modules/pg/lib/native/**"
-            ]
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "framework test (generate DB)",
-            "preLaunchTask": "build @altea/altea test (tspc -b)",
-            "cwd": "${workspaceFolder}/altea/altea",
-            "runtimeArgs": [
-                "--enable-source-maps",
-                "--import",
-                "./register.mjs",
-                "--env-file=${input:envFile}"
+                "--env-file=.env.${input:alteaTestEnv}"
             ],
             "program": "${workspaceFolder}/altea/altea/dist/test/server/generateEnvironment.js",
             "outFiles": [
@@ -96,41 +56,42 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "quote-transformer-test (Debug)",
-            "preLaunchTask": "build quote-transformer-test",
-            "program": "${workspaceFolder}/altea/quote-transformer-test/dist/initTransformer.js",
-            "cwd": "${workspaceFolder}/altea/quote-transformer-test/",
-            "outFiles": [
-                "${workspaceFolder}/altea/quote-transformer-test/dist/**/*.js"
+            "name": "eastwind API server",
+            "preLaunchTask": "build eastwind",
+            "cwd": "${workspaceFolder}/eastwind",
+            "runtimeArgs": [
+                "--enable-source-maps",
+                "--import",
+                "@altea/altea/register.mjs",
+                "--env-file=.env.${input:eastwindEnv}"
             ],
-            "sourceMaps": true
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "quote-transformer-test (Debug Jest)",
-            "preLaunchTask": "build quote-transformer-test",
-            "program": "${workspaceFolder}/node_modules/jest/bin/jest.js",
-            "args": [
-                "--runInBand"
-            ],
-            "cwd": "${workspaceFolder}/altea/quote-transformer-test/",
+            "program": "${workspaceFolder}/eastwind/dist/webServer.server.js",
             "outFiles": [
-                "${workspaceFolder}/altea/quote-transformer-test/dist/**/*.js"
+                "${workspaceFolder}/eastwind/dist/**/*.js"
             ],
             "sourceMaps": true,
-            "console": "integratedTerminal"
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/**",
+                "!**/node_modules/**"
+            ],
+            "console": "integratedTerminal",
+            "skipFiles": [
+                "<node_internals>/**",
+                "**/node_modules/pg/lib/native/**"
+            ]
         },
         {
+            // The same host out of its single-file vite bundle rather than the tspc output: what a
+            // deployment actually runs, and the only way to debug a fault the bundler itself introduces.
             "type": "node",
             "request": "launch",
-            "name": "eastwind server (logic/main.ts)",
+            "name": "eastwind API server (bundled)",
             "preLaunchTask": "build eastwind server bundle",
             "program": "${workspaceFolder}/eastwind/dist/server-bundle/main.js",
             "cwd": "${workspaceFolder}/eastwind/",
             "runtimeArgs": [
                 "--enable-source-maps",
-                "--env-file=.env.postgres"
+                "--env-file=.env.${input:eastwindEnv}"
             ],
             "outFiles": [
                 "${workspaceFolder}/eastwind/dist/server-bundle/**/*.js"
@@ -149,68 +110,14 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "eastwind API server — PostgreSQL",
-            "preLaunchTask": "build eastwind",
-            "cwd": "${workspaceFolder}/eastwind",
-            "runtimeArgs": [
-                "--enable-source-maps",
-                "--import",
-                "@altea/altea/register.mjs",
-                "--env-file=.env.postgres"
-            ],
-            "program": "${workspaceFolder}/eastwind/dist/webServer.server.js",
-            "outFiles": [
-                "${workspaceFolder}/eastwind/dist/**/*.js"
-            ],
-            "sourceMaps": true,
-            "resolveSourceMapLocations": [
-                "${workspaceFolder}/**",
-                "!**/node_modules/**"
-            ],
-            "console": "integratedTerminal",
-            "skipFiles": [
-                "<node_internals>/**",
-                "**/node_modules/pg/lib/native/**"
-            ]
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "eastwind API server — SQL Server",
-            "preLaunchTask": "build eastwind",
-            "cwd": "${workspaceFolder}/eastwind",
-            "runtimeArgs": [
-                "--enable-source-maps",
-                "--import",
-                "@altea/altea/register.mjs",
-                "--env-file=.env.sqlserver"
-            ],
-            "program": "${workspaceFolder}/eastwind/dist/webServer.server.js",
-            "outFiles": [
-                "${workspaceFolder}/eastwind/dist/**/*.js"
-            ],
-            "sourceMaps": true,
-            "resolveSourceMapLocations": [
-                "${workspaceFolder}/**",
-                "!**/node_modules/**"
-            ],
-            "console": "integratedTerminal",
-            "skipFiles": [
-                "<node_internals>/**",
-                "**/node_modules/pg/lib/native/**"
-            ]
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "eastwind terminal — PostgreSQL",
+            "name": "eastwind terminal",
             "preLaunchTask": "build eastwind terminal",
             "cwd": "${workspaceFolder}/eastwind",
             "runtimeArgs": [
                 "--enable-source-maps",
                 "--import",
                 "@altea/altea/register.mjs",
-                "--env-file=.env.postgres"
+                "--env-file=.env.${input:eastwindEnv}"
             ],
             "program": "${workspaceFolder}/eastwind/dist/terminal/terminal.js",
             "outFiles": [
@@ -227,51 +134,40 @@
                 "**/get-intrinsic/**",
                 "**/pg/lib/native/client.js"
             ]
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "eastwind terminal — SQL Server",
-            "preLaunchTask": "build eastwind terminal",
-            "cwd": "${workspaceFolder}/eastwind",
-            "runtimeArgs": [
-                "--enable-source-maps",
-                "--import",
-                "@altea/altea/register.mjs",
-                "--env-file=.env.sqlserver"
-            ],
-            "program": "${workspaceFolder}/eastwind/dist/terminal/terminal.js",
-            "outFiles": [
-                "${workspaceFolder}/eastwind/dist/**/*.js"
-            ],
-            "sourceMaps": true,
-            "resolveSourceMapLocations": [
-                "${workspaceFolder}/**",
-                "!**/node_modules/**"
-            ],
-            "console": "integratedTerminal",
-            "skipFiles": [
-                "<node_internals>/**",
-                "**/node_modules/pg/lib/native/**"
-            ]
         }
     ],
     "inputs": [
         {
-            "id": "testName",
-            "type": "promptString",
-            "description": "node --test-name-pattern regex (leave empty to run every test in the file)",
-            "default": ""
+            // altea/altea ships exactly these two (.env.example is the tracked template). The framework
+            // suite's environment IS its dialect: one test database per engine, each naming itself in
+            // ALTEA_TEST_DB — so this picker is the dialect and nothing else.
+            "id": "alteaTestEnv",
+            "type": "pickString",
+            "description": "Framework suite — which dialect to run against (altea/altea/.env.*, read as ALTEA_TEST_DB)",
+            "options": [
+                { "label": "sqlserver — the SQL Server test database", "value": "sqlserver" },
+                { "label": "postgres — the PostgreSQL test database", "value": "postgres" }
+            ],
+            "default": "sqlserver"
         },
         {
-            "id": "envFile",
+            // eastwind/.env.<environment> — the very names its scripts take (`pnpm --filter eastwind
+            // stack local`, see eastwind/scripts/withEnv.mjs), so what you pick here and what you type
+            // there mean the same database. Keep the list in step with the files on disk: node's
+            // --env-file is not optional, and a name with no file fails before the first line runs.
+            "id": "eastwindEnv",
             "type": "pickString",
-            "description": "Database connection (env file loaded into ALTEA_TEST_DB)",
+            "description": "eastwind — which environment to run as (eastwind/.env.*, read as EASTWIND_DB)",
             "options": [
-                ".env.sqlserver",
-                ".env.postgres"
+                { "label": "local — what the local stack serves, and what the Playwright suite drives", "value": "local" },
+                { "label": "dev — shared development", "value": "dev" },
+                { "label": "test — staging / QA", "value": "test" },
+                { "label": "live — production", "value": "live" },
+                { "label": "postgres — port-era PostgreSQL database", "value": "postgres" },
+                { "label": "sqlserver — port-era SQL Server database", "value": "sqlserver" },
+                { "label": "swpostgres — a Signum Southwind database, read through legacyMode", "value": "swpostgres" }
             ],
-            "default": ".env.sqlserver"
+            "default": "local"
         }
     ]
 }
