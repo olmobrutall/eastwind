@@ -1,5 +1,8 @@
 {
   "recommendations": [
-    "miguelsolorio.symbols"
+    "miguelsolorio.symbols",
+    // Puts every package's suites in the Test Explorer. vitest is THE runner here (see any package's
+    // vitest.config.ts) — the suites import from "vitest" directly, with no adapter in between.
+    "vitest.explorer"
   ]
 }

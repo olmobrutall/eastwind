@@ -4,8 +4,8 @@
     "**/node_modules": true
   },
   "search.exclude": {
-    "**/dist": true,
-    "**/node_modules": true
+    "**/node_modules": true,
+    "**/dist": true
   },
   "workbench.iconTheme": "symbols",
   "symbols.folders.associations": {
@@ -20,5 +20,16 @@
     ".env.postgres": "gear",
     ".env.sqlserver": "gear",
     "tsconfig.json": "brackets-yellow",
-  }
+  },
+
+  // ---- Tests -------------------------------------------------------------------------------------
+  // vitest is the runner for every package (see any vitest.config.ts, all of which call the one shared
+  // factory in @altea/altea/vitest.shared.mjs). Nothing is configured here: the extension reads each
+  // package's own config, so a new package with tests needs no editor setup at all.
+  //
+  // Suites run COMPILED output under their .ts identity — the config explains why — so a run reflects the
+  // last build. Keep the "watch types (altea suites)" task running, or rebuild before trusting a result.
+  "vitest.disableWorkspaceWarning": true,
+
+  "npm.packageManager": "pnpm"
 }
