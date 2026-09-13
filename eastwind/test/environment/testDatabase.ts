@@ -1,6 +1,6 @@
 import "@altea/altea/server/context.node";
 import { Connector } from "@altea/altea/server/connection/connector";
-import { Starter } from "../starter.server";
+import { Starter } from "../../starter.server";
 
 // The DATABASE half of the test harness: the connection string the suite (and the environment generator)
 // work against, and the one-per-process engine boot that makes `table(OrderEntity)`, an operation and a
@@ -12,6 +12,13 @@ import { Starter } from "../starter.server";
 // the local stack runs on.
 
 /** The connection string of the database under test (`EASTWIND_DB`, out of the chosen `.env.<environment>`). */
+/**
+ * Whether a database is configured at all — the gate every DB-backed suite skips on, and the same shape
+ * @altea/altea's test/server/setup.ts uses. A machine with no `.env` reports its suites skipped, not
+ * failed.
+ */
+export const hasDb = (process.env["EASTWIND_DB"] ?? "") !== "";
+
 export function requireConnectionString(): string {
     const connectionString = process.env["EASTWIND_DB"];
     if (connectionString == null || connectionString === "")

@@ -1,5 +1,6 @@
 import "@altea/altea/server/context.node";
 import * as fs from "node:fs";
+import { pathToFileURL } from "node:url";
 import { Connector } from "@altea/altea/server/connection/connector";
 import { Administrator } from "@altea/altea/server/Administrator";
 import { Schema } from "@altea/altea/server/schema";
@@ -9,7 +10,7 @@ import { AuthImportExport } from "@altea/altea-auth/server/AuthImportExport";
 import { UserAssetsImporter, warmUserAssetCaches } from "@altea/altea-user-assets/server/UserAssetsImportExport";
 import { Starter } from "../../starter.server";
 import { EastwindEnvironment } from "./eastwindEnvironment";
-import { requireConnectionString } from "../testDatabase";
+import { requireConnectionString } from "./testDatabase";
 
 // Port of Southwind.Test.Environment/EnvironmentTest.cs `GenerateTestEnvironment` — build the database
 // every browser test starts from, and leave a SNAPSHOT of it behind.
@@ -31,7 +32,7 @@ import { requireConnectionString } from "../testDatabase";
 //
 // It DROPS AND RECREATES the database it is pointed at. That is the point — but it means the environment
 // argument has to name a database nobody minds losing.
-async function main(): Promise<void> {
+export async function generateTestEnvironment(): Promise<void> {
     const connectionString = requireConnectionString();
 
     // No web builder (there is no HTTP here) and no initialize: the schema is built in memory, and
@@ -90,8 +91,10 @@ async function importAuthRules(): Promise<void> {
         return { oldValue, newValue: null };
     };
 
-    const result = await AuthImportExport.importAuthRules(
-        fs.readFileSync(EastwindEnvironment.seedFile("AuthRules.xml"), "utf8"), replacements);
+    const filePath = EastwindEnvironment.seedFile("AuthRules.xml");
+    const fileContent = fs.readFileSync(filePath, "utf8");
+
+    const result = await AuthImportExport.importAuthRules(fileContent, replacements);
 
     console.log(`  [auth] applied roles: ${result.appliedRoles.join(", ") || "(none)"}`);
     if (result.skippedRoles.length > 0)
@@ -110,4 +113,8 @@ async function importUserAssets(): Promise<void> {
     console.log(`  [assets] imported ${model.lines.length} asset(s)`);
 }
 
-main().catch(e => { console.error(e); process.exit(1); });
+// Run as a SCRIPT (`pnpm --filter eastwind gen:environment <environment>`). The same body is also the
+// environment suite's single test — see environment.test.ts — which is Signum's shape exactly: one
+// [Fact] that builds the database every other suite starts from.
+if (process.argv[1] != null && import.meta.url === pathToFileURL(process.argv[1]).href)
+    generateTestEnvironment().catch(e => { console.error(e); process.exit(1); });

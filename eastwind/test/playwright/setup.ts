@@ -1,11 +1,11 @@
-import { beforeAll, beforeEach, afterEach, afterAll } from "vitest";
+import { beforeAll, beforeEach, afterAll } from "vitest";
 import { chromium, type Browser, type BrowserContext } from "playwright";
 import { Administrator } from "@altea/altea/server/Administrator";
 import { UserHolder } from "@altea/altea/server/userHolder";
 import { UserWithClaims } from "@altea/altea/data/security";
 import { EastwindBrowser } from "./eastwindBrowser";
-import { EastwindEnvironment } from "./environment/eastwindEnvironment";
-import { startEngine, stopEngine } from "./testDatabase";
+import { EastwindEnvironment } from "../environment/eastwindEnvironment";
+import { startEngine, stopEngine } from "../environment/testDatabase";
 import { baseUrl, clearServerCaches } from "./appStack";
 
 // Shared test bootstrap for the BROWSER suites — the same shape as @altea/altea's test/server/setup.ts,
@@ -13,8 +13,9 @@ import { baseUrl, clearServerCaches } from "./appStack";
 // module registers itself. A suite therefore reads the way every other suite in the workspace reads:
 //
 //     describe.skipIf(!hasStack)("Orders", () => {
-//         beforeAll(async () => { await start(); });
-//         test("…", async () => { await b().loginAs(TestUser.Super); });
+//         test("…", async () => {
+//             await browse(TestUser.Standard, async b => { … });
+//         });
 //     });
 //
 // Playwright is used as a LIBRARY, never `@playwright/test`: the suites are vitest like everything
@@ -45,8 +46,6 @@ async function ping(): Promise<boolean> {
 }
 
 let browser: Browser | undefined;
-let context: BrowserContext | undefined;
-let current: EastwindBrowser | undefined;
 let started: Promise<void> | undefined;
 
 /**
@@ -69,33 +68,27 @@ export function start(): Promise<void> {
     })());
 }
 
-// The per-test half, registered by this module the way @altea/altea's setup.ts registers its own
-// connection-closing `after`. A suite opts in by importing this module at all.
+// Signum's `SouthwindEnvironment.StartAndInitialize()` in the test class's constructor, plus its lazy
+// `DefaultBrowser`: both are ready before any test body runs, and both outlive every one of them.
+// `browse` deliberately does NOT do this — the per-test restore below needs a connector too, so the
+// engine cannot wait for the first browser.
+beforeAll(async () => { await start(); });
+
+// Signum's `InitializeAsync`: the per-test reset, and nothing about the browser — that is `browse`'s.
 beforeEach(async () => {
     if (!hasStack)
         return;
 
     // What makes a test independent: whatever the last one created, filtered, renamed or deleted is gone
     // and the seed is back exactly as `gen:environment` left it. Signum's
-    // `Administrator.RestoreSnapshotOrDatabase()` in `InitializeAsync`, and the reason a suite may create
-    // rows freely and never clean up.
+    // `Administrator.RestoreSnapshotOrDatabase()`, and the reason a suite may create rows freely and
+    // never clean up.
     await Administrator.restoreSnapshotOrDatabase();
 
     const warning = await clearServerCaches();
     if (warning != null)
         console.warn(`[test] the server's caches were not cleared after the restore (${warning}).`
             + ` Is the stack running? (pnpm --filter eastwind stack <environment>)`);
-
-    // A CONTEXT per test, not just a page: the login token lives in storage, so dropping the context is
-    // what makes the next test start from logged-out.
-    context = await browser!.newContext({ viewport: { width: 1280, height: 900 } });
-    current = new EastwindBrowser(await context.newPage());
-});
-
-afterEach(async () => {
-    await context?.close();
-    context = undefined;
-    current = undefined;
 });
 
 afterAll(async () => {
@@ -105,11 +98,29 @@ afterAll(async () => {
         await stopEngine();
 });
 
-/** This test's browser proxy. Valid inside a test body — `beforeEach` creates it. */
-export function b(): EastwindBrowser {
-    if (current == null)
-        throw new Error("No browser for this test. Did the suite call `await start()` in its `before`?");
-    return current;
+/**
+ * Signum's `SouthwindTestClass.BrowseAsync(username, action)` — open a browser AS someone, hand it to
+ * the closure, and close it however the closure ends.
+ *
+ * The proxy is created here and owned by the CLOSURE, not by a hook: a test says which user it is, its
+ * browser lives exactly as long as its body, and the `finally` closes it on a failure as surely as on a
+ * pass. That also means a test that never browses never opens one.
+ *
+ * A CONTEXT per call rather than just a page: the login token lives in storage, so dropping the context
+ * is what makes the next `browse` start from logged-out.
+ */
+export async function browse(userName: TestUserName, action: (b: EastwindBrowser) => Promise<void>): Promise<void> {
+    const context: BrowserContext = await browser!.newContext({ viewport: { width: 1280, height: 900 } });
+    // Signum's `page.SetDefaultTimeout(10000)`: a locator that never resolves should fail the test, not
+    // hang the run.
+    context.setDefaultTimeout(10_000);
+    try {
+        const b = new EastwindBrowser(await context.newPage());
+        await b.loginAs(userName);
+        await action(b);
+    } finally {
+        await context.close();
+    }
 }
 
 /**

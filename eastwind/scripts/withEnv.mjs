@@ -44,7 +44,15 @@ const TARGETS = {
     "gen:environment": {
         describe: "generate the TEST database and its snapshot (DESTRUCTIVE — it drops what is there)",
         build: true,
-        node: ["--enable-source-maps", "--import", "@altea/altea/register.mjs", "dist/test/environment/generateEnvironment.js"],
+        // Runs the EnvironmentTest suite rather than the script directly, so there is one definition of
+        // what the test environment is and one thing that can drift. This is also the ONLY place
+        // EASTWIND_TEST_DESTRUCTIVE is ever set: that suite drops the database, so every other way of
+        // reaching it — a plain `test <env>`, a click in the Test Explorer — finds it skipped.
+        run: async () => {
+            process.loadEnvFile(path.join(appRoot, envFile));
+            process.env["EASTWIND_TEST_DESTRUCTIVE"] = "1";
+            await shell(["pnpm exec vitest run test/environment/environment.test.ts", ...rest].join(" "));
+        },
     },
     test: {
         describe: "the browser suites, against a RUNNING stack",
