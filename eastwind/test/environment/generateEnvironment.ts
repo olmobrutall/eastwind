@@ -32,7 +32,40 @@ import { requireConnectionString } from "./testDatabase";
 //
 // It DROPS AND RECREATES the database it is pointed at. That is the point — but it means the environment
 // argument has to name a database nobody minds losing.
+
+/**
+ * Refuse to run unless the ENVIRONMENT FILE says its database is disposable.
+ *
+ * `gen:environment <environment>` takes a name and drops whatever `EASTWIND_DB` resolves to, so before
+ * this guard `gen:environment live` was a working command that destroyed production — one keystroke from
+ * `local`, with nothing in between. A confirmation prompt would not help: the mistake is typing the wrong
+ * name confidently, and the answer to "are you sure?" is yes.
+ *
+ * So the permission lives with the ENVIRONMENT rather than with the command. `.env.local` opts in;
+ * `.env.live` and `.env.test` never do, and there is nothing to add to the command line that overrides
+ * them — arming a database means editing that database's own env file, deliberately, in advance.
+ *
+ * It is checked HERE rather than in scripts/withEnv.mjs because this is the function that does the
+ * dropping: the `gen:environment` script, the EnvironmentTest suite and anything written later all pass
+ * through it.
+ */
+function assertDisposableDatabase(): void {
+    if (process.env["EASTWIND_DISPOSABLE_DB"] === "true")
+        return;
+
+    const db = (process.env["EASTWIND_DB"] ?? "").replace(/\/\/([^:/@]*):[^@]*@/, "//$1:***@");
+    throw new Error(
+        `REFUSING to generate: this environment does not declare its database disposable.\n`
+        + `  target: ${db || "(EASTWIND_DB unset)"}\n`
+        + `\n`
+        + `Generating DROPS AND RECREATES that database. Only an environment whose .env file contains\n`
+        + `    EASTWIND_DISPOSABLE_DB=true\n`
+        + `may be generated — see .env.example. Add it to .env.local (or whichever environment is yours to\n`
+        + `lose); never to .env.test or .env.live.`);
+}
 export async function generateTestEnvironment(): Promise<void> {
+    assertDisposableDatabase();
+
     const connectionString = requireConnectionString();
 
     // No web builder (there is no HTTP here) and no initialize: the schema is built in memory, and
