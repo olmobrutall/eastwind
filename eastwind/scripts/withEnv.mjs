@@ -39,7 +39,7 @@ const TARGETS = {
     server: {
         describe: "the API host alone",
         build: false,
-        node: ["--enable-source-maps", "--import", "@altea/altea/register.mjs", "dist/webServer.server.js"],
+        node: ["--enable-source-maps", "--import", "@altea/altea/register.mjs", "dist/app/webServer.server.js"],
     },
     "gen:environment": {
         describe: "generate the TEST database and its snapshot (DESTRUCTIVE — it drops what is there)",
@@ -49,7 +49,7 @@ const TARGETS = {
         // EASTWIND_TEST_DESTRUCTIVE is ever set: that suite drops the database, so every other way of
         // reaching it — a plain `test <env>`, a click in the Test Explorer — finds it skipped.
         run: async () => {
-            process.loadEnvFile(path.join(appRoot, envFile));
+            loadEnvironment();
             process.env["EASTWIND_TEST_DESTRUCTIVE"] = "1";
             await shell(["pnpm exec vitest run test/environment/environment.test.ts", ...rest].join(" "));
         },
@@ -69,7 +69,7 @@ const TARGETS = {
         // vitest's `--mode`: vite reserves the name "local" (it clashes with the .env.local convention),
         // and "local" is exactly the environment you run most.
         run: async () => {
-            process.loadEnvFile(path.join(appRoot, envFile));
+            loadEnvironment();
             await shell(["pnpm exec vitest run", ...rest].join(" "));
         },
     },//test-targets
@@ -102,7 +102,7 @@ else
 /** One entry point: optionally build, then run node with the env file spliced in (or the target's own run). */
 async function single(spec) {
     if (spec.build)
-        await shell("pnpm run build:types");
+        await shell("pnpm run build");
 
     if (spec.run != null) {
         await spec.run();
@@ -118,7 +118,7 @@ async function single(spec) {
  * `-k` means one of them dying stops the other two, which is what makes Ctrl+C leave nothing behind.
  */
 async function stack() {
-    await shell("pnpm run build:types");
+    await shell("pnpm run build");
     await shell("pnpm run free:port");
     await shell(`pnpm exec concurrently -k -n types,api,client -c blue,green,magenta`
         + ` "pnpm run dev:types" "pnpm run server ${env}" "pnpm run dev:client"`);
@@ -149,6 +149,20 @@ function wait(child) {
         child.on("error", reject);
         child.on("exit", code => code === 0 ? resolve() : process.exit(code ?? 1));
     });
+}
+
+/**
+ * Load the chosen environment into THIS process, and say so.
+ *
+ * ALTEA_ENV_LOADED is read by @altea/altea/vitest.shared.mjs, which otherwise layers a package default
+ * (.env.local for eastwind) underneath whatever is already set. Layering is wrong once an environment has
+ * been NAMED: it lets a value defined for one environment apply to another, and that is not theoretical —
+ * it carried EASTWIND_DISPOSABLE_DB=true from .env.local into a `gen:environment live` run and defeated
+ * the guard that stops production being dropped.
+ */
+function loadEnvironment() {
+    process.loadEnvFile(path.join(appRoot, envFile));
+    process.env["ALTEA_ENV_LOADED"] = envFile;
 }
 
 /** The `.env.*` files that exist, so a wrong name shows what is actually available. */

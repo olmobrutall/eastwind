@@ -45,7 +45,7 @@ function alteaDistAssetToSource(): Plugin {
             //     (`bpmn-js/dist/assets/…/bpmn-embedded.css`), which node resolution must handle, and
             //     rewriting it as a sibling path is how it used to 404.
             //     APP_ROOT is in the same rule because eastwind's own emitted JS has the same problem:
-            //     dist/main.client.js imports `./site.css`, which tsc did not copy next to it.
+            //     dist/app/main.client.js imports `./site.css`, which tsc did not copy next to it.
             if (importer == null || !(source.startsWith("./") || source.startsWith("../")))
                 return null;
             const normImporter = path.normalize(importer);

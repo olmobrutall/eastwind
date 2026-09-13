@@ -9,13 +9,13 @@ import { UserEntity, UserState } from "@altea/altea-auth/data/User";
 import { RoleEntity, RoleEntity_InheritsFrom, MergeStrategy } from "@altea/altea-auth/data/Role";
 import { PasswordEncoding } from "@altea/altea/server/passwordEncoding";
 import { CorruptMixin } from "@altea/altea/data/corruptMixin";
-import { RegionEntity, TerritoryEntity, EmployeeEntity, EmployeeEntity_Territory } from "../../employees/Employee.data";
-import { UserEmployeeMixin } from "../../globals/UserEmployeeMixin.data";
-import { AddressEmbedded, PersonEntity, CompanyEntity } from "../../customers/Customer.data";
-import { SupplierEntity, CategoryEntity, ProductEntity } from "../../products/Product.data";
-import { ShipperEntity } from "../../shippers/Shipper.data";
-import { OrderEntity, OrderLineEntity } from "../../orders/Order.data";
-import { ApplicationConfigurationEntity, currentEnvironment } from "../../globals/ApplicationConfiguration.data";
+import { RegionEntity, TerritoryEntity, EmployeeEntity, EmployeeEntity_Territory } from "../../app/employees/Employee.data";
+import { UserEmployeeMixin } from "../../app/globals/UserEmployeeMixin.data";
+import { AddressEmbedded, PersonEntity, CompanyEntity } from "../../app/customers/Customer.data";
+import { SupplierEntity, CategoryEntity, ProductEntity } from "../../app/products/Product.data";
+import { ShipperEntity } from "../../app/shippers/Shipper.data";
+import { OrderEntity, OrderLineEntity } from "../../app/orders/Order.data";
+import { ApplicationConfigurationEntity, currentEnvironment } from "../../app/globals/ApplicationConfiguration.data";
 import { EmailConfigurationEmbedded } from "@altea/altea-email/data/Email";
 import {
     EmailSenderConfigurationEntity, SmtpEmailServiceEntity, SmtpNetworkDeliveryEmbedded,

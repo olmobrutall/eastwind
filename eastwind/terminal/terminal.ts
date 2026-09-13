@@ -13,7 +13,7 @@ import { openSqlFileRetry, syncFileName } from "@altea/altea/server/sync/openSql
 import { StartParameters } from "@altea/altea/data/utils/startParameters";
 import { table } from "@altea/altea/server/table";
 import { Decimal } from "@altea/altea/data/basics";
-import { Starter } from "../starter.server";
+import { Starter } from "../app/starter.server";
 import { ConsoleSwitch } from "@altea/altea/server/consoleSwitch";
 import { terminalFile } from "./terminalFile";
 import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic";
@@ -23,11 +23,11 @@ import { TokenMigrationLogic } from "@altea/altea-user-assets/server/TokenMigrat
 import { TokenMigrationRunner } from "@altea/altea-user-assets/server/TokenMigrationRunner";
 import { Northwind } from "./northwind/northwindSchema";
 import { NorthwindSeed } from "./northwind/northwindSeed";
-import { RegionEntity, TerritoryEntity, EmployeeEntity } from "../employees/Employee.data";
-import { SupplierEntity, CategoryEntity, ProductEntity } from "../products/Product.data";
-import { ShipperEntity } from "../shippers/Shipper.data";
-import { OrderEntity, OrderLineEntity } from "../orders/Order.data";
-import { PersonEntity, CompanyEntity } from "../customers/Customer.data";
+import { RegionEntity, TerritoryEntity, EmployeeEntity } from "../app/employees/Employee.data";
+import { SupplierEntity, CategoryEntity, ProductEntity } from "../app/products/Product.data";
+import { ShipperEntity } from "../app/shippers/Shipper.data";
+import { OrderEntity, OrderLineEntity } from "../app/orders/Order.data";
+import { PersonEntity, CompanyEntity } from "../app/customers/Customer.data";
 import { TypeScriptMigrations } from "./typeScriptMigrations";
 
 // Port of Southwind.Terminal (old/Southwind.Terminal/Program.cs): a console host that boots the engine

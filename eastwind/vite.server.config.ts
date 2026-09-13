@@ -8,7 +8,7 @@ import { chainEmittedSourcemaps } from "./vite.emittedJs";
 export default defineConfig({
     plugins: [chainEmittedSourcemaps()],
     build: {
-        ssr: "dist/webServer.server.js",
+        ssr: "dist/app/webServer.server.js",
         outDir: "dist/server-bundle",
         emptyOutDir: true,
         target: "node22",

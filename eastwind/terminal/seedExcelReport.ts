@@ -2,7 +2,7 @@
 //
 // Run: node --import @altea/altea/register.mjs --env-file=.env.postgres dist/terminal/seedExcelReport.js <template.xlsx>
 import { readFileSync } from "node:fs";
-import { Starter } from "../starter.server";
+import { Starter } from "../app/starter.server";
 import { Connector } from "@altea/altea/server/connection/connector";
 import { QueryLogic } from "@altea/altea/server/dynamicQuery/queryLogic";
 import { ExecutionMode } from "@altea/altea/server/executionMode";

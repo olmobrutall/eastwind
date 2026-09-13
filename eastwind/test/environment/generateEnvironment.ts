@@ -8,7 +8,7 @@ import { ExecutionMode } from "@altea/altea/server/executionMode";
 import { Replacements } from "@altea/altea/server/sync/synchronizer";
 import { AuthImportExport } from "@altea/altea-auth/server/AuthImportExport";
 import { UserAssetsImporter, warmUserAssetCaches } from "@altea/altea-user-assets/server/UserAssetsImportExport";
-import { Starter } from "../../starter.server";
+import { Starter } from "../../app/starter.server";
 import { EastwindEnvironment } from "./eastwindEnvironment";
 import { requireConnectionString } from "./testDatabase";
 

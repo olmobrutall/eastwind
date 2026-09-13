@@ -1,6 +1,6 @@
 import "@altea/altea/server/context.node";
 import { Connector } from "@altea/altea/server/connection/connector";
-import { Starter } from "../../starter.server";
+import { Starter } from "../../app/starter.server";
 
 // The DATABASE half of the test harness: the connection string the suite (and the environment generator)
 // work against, and the one-per-process engine boot that makes `table(OrderEntity)`, an operation and a

@@ -3,7 +3,7 @@
 // real parts over real data).
 //
 // Run: node --import @altea/altea/register.mjs --env-file=.env.postgres dist/terminal/configureCachedDashboard.js
-import { Starter } from "../starter.server";
+import { Starter } from "../app/starter.server";
 import { Connector } from "@altea/altea/server/connection/connector";
 import { Transaction } from "@altea/altea/server/connection/transaction";
 import { table } from "@altea/altea/server/table";

@@ -23,21 +23,34 @@ reaches every application. `old/` is read-only.
 
 ## Project structure
 
+Southwind splits the deployment units into sibling PROJECTS (`Southwind`, `Southwind.Server`,
+`Southwind.Terminal`, `Southwind.Test.*`) and the domains into folders inside the first. eastwind is one
+pnpm package, so the deployment units are tsconfig PROJECTS instead — `terminal` and `test` are reserved
+names the altea presets exclude from the data/server/client programs — and `app/` holds everything they
+are built from, so no functional folder is a sibling of the tooling.
+
 ```
 eastwind/
-  <domain>/       one folder per domain — customers, employees, orders, products, shippers, departments
-                    <Domain>.data.ts          entities, enums, operation symbols, messages
-                    <Domain>Logic.server.ts   sb.include(…) / queries / operations / tasks
-                    <Domain>Client.client.ts  cb.configure(…) client registration
-                    <Domain>.tsx              the entity's view
-  globals/        the ApplicationConfiguration row every module's settings live on, + its view
-  publicApi/      the anonymous surface: the public catalog and self-service registration
-  client/…        MainPublic / MainAdmin / Layout / Home  (at the app root)
-  server/…        webServer.server.ts + starter.server.ts (at the app root)
-  terminal/       the loading / migration console
-  test/           Playwright e2e suites, driven through @altea/altea-playwright
-  translations/   the app's own Eastwind.<culture>.xml
-  port/           what this app carries only because it was PORTED — see below
+  app/            THE APPLICATION — what a browser and the API host run
+    <domain>/       one folder per domain — customers, employees, orders, products, shippers, departments
+                      <Domain>.data.ts          entities, enums, operation symbols, messages
+                      <Domain>Logic.server.ts   sb.include(…) / queries / operations / tasks
+                      <Domain>Client.client.ts  cb.configure(…) client registration
+                      <Domain>.tsx              the entity's view
+    globals/        the ApplicationConfiguration row every module's settings live on, + its view
+    publicApi/      the anonymous surface: the public catalog and self-service registration
+    starter.server.ts / webServer.server.ts     the server: schema + module starts, then the host
+    MainPublic.client.tsx / MainAdmin.client.ts / Layout.tsx / Home.tsx / main.client.ts   the SPA
+    entityOverrides.data.ts                     mixins and widenings, applied on BOTH tiers
+  terminal/       the loading / migration console      (Southwind.Terminal)
+  test/           environment / logic / playwright     (Southwind.Test.*)
+  migrations/     the versioned .sql files — empty in a template application
+  translations/   the app's own Eastwind.<culture>.xml — read from the package root at boot
+  docs/           Wiring.md (why each module start is where it is) + Port.md (see below)
+  scripts/        withEnv.mjs and friends, the entry point of every package.json script
+  public/         vite's static directory — must sit beside index.html
+  index.html      the SPA document; a build entry, like the vite and tsconfig files beside it
+  env.d.ts        ambient declarations; the client preset globs `*.d.ts` at the ROOT only
   Modules.xml     which modules are optional, and how to remove one
 ```
 
@@ -50,12 +63,12 @@ singular even where the exported namespace is plural (`OrdersLogic`).
 
 | File | What it is |
 | --- | --- |
-| `eastwind/starter.server.ts` | Central bootstrapping. Builds the schema, binds the connector, starts every module. |
-| `eastwind/MainAdmin.client.ts` | Starts every module's CLIENT (the full, logged-in bundle). |
-| `eastwind/MainPublic.client.tsx` | The SPA bootstrap: builds the route table for whoever is logged in, then the React root. |
-| `eastwind/entityOverrides.data.ts` | Mixins, lite models and `implementedBy` widenings — applied on BOTH tiers, before anything is (de)serialized. |
-| `eastwind/Layout.tsx` | The application shell (navbar, sidebar, modals). |
-| `eastwind/globals/ApplicationConfiguration.data.ts` | The settings singleton every module's configuration lambda reads. |
+| `eastwind/app/starter.server.ts` | Central bootstrapping. Builds the schema, binds the connector, starts every module. |
+| `eastwind/app/MainAdmin.client.ts` | Starts every module's CLIENT (the full, logged-in bundle). |
+| `eastwind/app/MainPublic.client.tsx` | The SPA bootstrap: builds the route table for whoever is logged in, then the React root. |
+| `eastwind/app/entityOverrides.data.ts` | Mixins, lite models and `implementedBy` widenings — applied on BOTH tiers, before anything is (de)serialized. |
+| `eastwind/app/Layout.tsx` | The application shell (navbar, sidebar, modals). |
+| `eastwind/app/globals/ApplicationConfiguration.data.ts` | The settings singleton every module's configuration lambda reads. |
 | `eastwind/Modules.xml` | Which modules are optional and exactly how to remove each one. |
 | `eastwind/docs/Wiring.md` | Why each module start is where it is. **Read before moving one.** |
 
@@ -84,7 +97,7 @@ Every entry point takes the ENVIRONMENT as an argument. There is no default — 
 list of `.env.*` files present, so nothing can start against the wrong database by omission.
 
 ```bash
-pnpm --filter eastwind build:types              # tspc -b  (builds altea + eastwind)
+pnpm --filter eastwind build              # tspc -b  (builds altea + eastwind)
 pnpm --filter eastwind stack local              # types watcher + API + vite client, together
 pnpm --filter eastwind server dev               # the API alone
 pnpm --filter eastwind terminal test sync       # the console; extra args reach its commands
@@ -144,7 +157,7 @@ cd ../northbreeze
 node <altea>/cli/altea-simplify/dist/main.js   # untick what you do not need; one commit per module
 pnpm install
 pnpm --filter quote-transformer build
-pnpm --filter northbreeze build:types
+pnpm --filter northbreeze build
 ```
 
 `altea-clone` creates a fresh git repository, adds the `altea` submodule pinned to the same commit this

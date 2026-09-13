@@ -29,8 +29,8 @@ import * as shipper from "./shippers/Shipper.data";
 
 export namespace EastwindEval {
 
-    /** The eastwind package directory (this module lives in `dist/`, so one level up). */
-    const packageDirectory = path.resolve(url.fileURLToPath(new URL(".", import.meta.url)), "..");
+    /** The eastwind package directory (this module lives in `dist/app/`, so two levels up). */
+    const packageDirectory = path.resolve(url.fileURLToPath(new URL(".", import.meta.url)), "../..");
 
     /** The built type declarations for eastwind's own modules — see the header. */
     function types(relative: string): string {
@@ -50,15 +50,15 @@ export namespace EastwindEval {
         });
 
         // ---- The app's own entity domains ----------------------------------------------------------------
-        EvalLogic.registerModule("./orders/Order.data", order, { typesPath: types("orders/Order.data.d.ts") });
-        EvalLogic.registerModule("./customers/Customer.data", customer,
-            { typesPath: types("customers/Customer.data.d.ts") });
-        EvalLogic.registerModule("./employees/Employee.data", employee,
-            { typesPath: types("employees/Employee.data.d.ts") });
-        EvalLogic.registerModule("./products/Product.data", product,
-            { typesPath: types("products/Product.data.d.ts") });
-        EvalLogic.registerModule("./shippers/Shipper.data", shipper,
-            { typesPath: types("shippers/Shipper.data.d.ts") });
+        EvalLogic.registerModule("./app/orders/Order.data", order, { typesPath: types("app/orders/Order.data.d.ts") });
+        EvalLogic.registerModule("./app/customers/Customer.data", customer,
+            { typesPath: types("app/customers/Customer.data.d.ts") });
+        EvalLogic.registerModule("./app/employees/Employee.data", employee,
+            { typesPath: types("app/employees/Employee.data.d.ts") });
+        EvalLogic.registerModule("./app/products/Product.data", product,
+            { typesPath: types("app/products/Product.data.d.ts") });
+        EvalLogic.registerModule("./app/shippers/Shipper.data", shipper,
+            { typesPath: types("app/shippers/Shipper.data.d.ts") });
 
     }
 }

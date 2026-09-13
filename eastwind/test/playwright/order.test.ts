@@ -2,9 +2,9 @@ import "@altea/altea-playwright/LineProxies/index"; // registers every auto-line
 import { describe, test } from "vitest";
 import assert from "node:assert/strict";
 import { table } from "@altea/altea/server/table";
-import { OrderEntity, OrderOperation } from "../../orders/Order.data";
-import { PersonEntity, CustomerEntity } from "../../customers/Customer.data";
-import { ProductEntity } from "../../products/Product.data";
+import { OrderEntity, OrderOperation } from "../../app/orders/Order.data";
+import { PersonEntity, CustomerEntity } from "../../app/customers/Customer.data";
+import { ProductEntity } from "../../app/products/Product.data";
 import { browse, hasStack, TestUser } from "./setup";
 
 // Port of Southwind.Test.React/OrderReactTest.cs, step for step. The point of this suite — and what

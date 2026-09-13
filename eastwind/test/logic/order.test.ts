@@ -5,9 +5,9 @@ import { Decimal } from "@altea/altea/data/basics";
 import { Transaction } from "@altea/altea/server/connection/transaction";
 import { UserHolder } from "@altea/altea/server/userHolder";
 import { UserWithClaims } from "@altea/altea/data/security";
-import { OrderEntity, OrderOperation } from "../../orders/Order.data";
-import { PersonEntity } from "../../customers/Customer.data";
-import { ProductEntity } from "../../products/Product.data";
+import { OrderEntity, OrderOperation } from "../../app/orders/Order.data";
+import { PersonEntity } from "../../app/customers/Customer.data";
+import { ProductEntity } from "../../app/products/Product.data";
 import { EastwindEnvironment } from "../environment/eastwindEnvironment";
 import { hasDb, startEngine } from "../environment/testDatabase";
 

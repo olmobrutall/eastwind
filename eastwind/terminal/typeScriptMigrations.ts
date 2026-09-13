@@ -18,7 +18,7 @@ import {
 } from "@altea/altea-email/data/EmailSenderConfiguration";
 import { ChatbotConfigurationEmbedded } from "@altea/altea-agent/data/LanguageModel";
 import { WorkflowConfigurationEmbedded } from "@altea/altea-workflow/data/Workflow";
-import { ApplicationConfigurationEntity, currentEnvironment } from "../globals/ApplicationConfiguration.data";
+import { ApplicationConfigurationEntity, currentEnvironment } from "../app/globals/ApplicationConfiguration.data";
 import { EmployeeLoader } from "./northwind/employeeLoader";
 import { DepartmentLoader } from "./northwind/departmentLoader";
 import { SMSConfigurationEmbedded } from "@altea/altea-sms/data/SMS";
