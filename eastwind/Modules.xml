@@ -136,7 +136,9 @@
 			<RemoveLine Path="eastwind/terminal/terminal.ts" From=".add(&quot;SO&quot;, &quot;Show Order" To=".add(&quot;SO&quot;, &quot;Show Order"/>
 			<RemoveLine Path="eastwind/terminal/terminal.ts" From="async function showOrder()" To="}//showOrder"/>
 
-			<RemoveFiles Path="eastwind/test/orders.spec.ts"/>
+			<!-- Both halves of the order story: the logic suite calls the operations, the browser one clicks them. -->
+			<RemoveFiles Path="eastwind/test/logic/order.test.ts"/>
+			<RemoveFiles Path="eastwind/test/playwright/order.test.ts"/>
 		</Module>
 
 		<!-- ==== Framework infrastructure ========================================================== -->
@@ -926,12 +928,12 @@
 		<Module Name="Test">
 			<RemovePackageReference Name="@altea/altea-playwright"/>
 			<RemoveFiles Path="eastwind/test"/>
-			<RemoveFiles Path="eastwind/playwright.config.ts"/>
+			<RemoveFiles Path="eastwind/vitest.config.ts"/>
 			<RemoveFiles Path="eastwind/tsconfig.test.json"/>
 			<RemoveTsProjectReference Path="eastwind/tsconfig.json" Reference="./tsconfig.test.json"/>
 			<RemoveLine Path="eastwind/package.json" Line="&quot;test&quot;: &quot;node scripts/withEnv.mjs test&quot;,"/>
 			<RemoveLine Path="eastwind/package.json" Line="&quot;gen:environment&quot;: &quot;node scripts/withEnv.mjs gen:environment&quot;"/>
-			<RemoveLine Path="eastwind/package.json" Line="&quot;@playwright/test&quot;: &quot;^1.50.0&quot;"/>
+			<RemovePackageReference Name="playwright"/>
 			<RemoveLine Path="eastwind/scripts/withEnv.mjs" From="&quot;gen:environment&quot;: {" To="},//test-targets"/>
 		</Module>
 
