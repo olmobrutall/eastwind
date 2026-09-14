@@ -104,7 +104,7 @@ export namespace TypeScriptMigrations {
      */
     export async function createCulturesAndConfiguration(): Promise<void> {
         await CultureInfoLogic.ensureCultures(["en", "es", "de"]);
-        const english = CultureInfoLogic.getCulture("en");
+        const english = (await CultureInfoLogic.getCulture("en"));
 
         const existing = await table(ApplicationConfigurationEntity)
             .filter(a => a.environment == currentEnvironment).singleOrNull();

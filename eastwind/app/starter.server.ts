@@ -159,10 +159,10 @@ export namespace Starter {
 
         await built.initialize();
 
-        // Both warm-ups tolerate a not-yet-generated / not-yet-seeded database: the `new` terminal command
+        // The warm-up tolerates a not-yet-generated / not-yet-seeded database: the `new` terminal command
         // runs against an empty one, and a module that then asks for its configuration fails with
         // GlobalsLogic's message naming the migration rather than silently running on defaults.
-        try { await CultureInfoLogic.warmUp(); } catch { /* table not created yet — the seeder fills it */ }
+        // (Cultures need none — every reader asks CultureInfoLogic for them and it loads on demand.)
         try { await GlobalsLogic.warmUp(); } catch (e) { console.warn(`[globals] ${(e as Error).message}`); }
     }
 
