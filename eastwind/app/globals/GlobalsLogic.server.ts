@@ -2,7 +2,7 @@ import "@altea/altea/server"; // installs save()/toLite()
 import "@altea/altea/server/dynamicQuery/fluentIncludeQuery"; // FluentInclude.withQuery
 import "@altea/altea/server/fluentOperations"; // FluentInclude.withSave / withDelete
 import type { SchemaBuilder } from "@altea/altea/server/schema";
-import type { ResetLazy } from "@altea/altea/data/resetLazy";
+import type { ResetLazy } from "@altea/altea/server/resetLazy";
 import { table } from "@altea/altea/server/table";
 import { QueryLogic } from "@altea/altea/server/dynamicQuery/queryLogic";
 import {

@@ -9,7 +9,7 @@ import type { int } from "@altea/altea/data/basics";
 import { QueryLogic } from "@altea/altea/server/dynamicQuery/queryLogic";
 import { AutoDynamicQueryCore } from "@altea/altea/server/dynamicQuery/dynamicQueryCore";
 import { SchemaBuilder } from "@altea/altea/server/schema";
-import type { ResetLazy } from "@altea/altea/data/resetLazy";
+import type { ResetLazy } from "@altea/altea/server/resetLazy";
 import { SupplierEntity, CategoryEntity, ProductEntity, SupplierOperation, CategoryOperation, ProductOperation, CurrentProductsRowModel } from "./Product.data";
 import { OrderLineEntity } from "../orders/Order.data";
 
