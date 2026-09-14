@@ -17,8 +17,9 @@ import {
 // Promise) while every module's configuration getter is SYNCHRONOUS:
 //
 //  1. the lazy is mirrored into a SYNC snapshot (`warm`), filled by `warmUp()` after the schema is ready.
-//     This is the pattern CultureInfoLogic already uses for the same reason, and the host calls the two
-//     warm-ups side by side.
+//     The framework keeps no such mirror any more — its readers ask for what they need (TypeLogic.caches(),
+//     SymbolLogic.cache(), CultureInfoLogic.lookup()) — but a module configuration getter is synchronous by
+//     contract, so this one stays. It cannot go stale: point 2.
 //  2. the snapshot is refreshed on the `saved` event rather than only by the lazy's invalidation, because a
 //     sync reader cannot await a reload. The lazy is still registered with `invalidateWith`, so the async
 //     readers (and the cache panel) see the same invalidation Signum's does.
