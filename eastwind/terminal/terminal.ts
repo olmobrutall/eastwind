@@ -29,6 +29,7 @@ import { ShipperEntity } from "../app/shippers/Shipper.data";
 import { OrderEntity, OrderLineEntity } from "../app/orders/Order.data";
 import { PersonEntity, CompanyEntity } from "../app/customers/Customer.data";
 import { TypeScriptMigrations } from "./typeScriptMigrations";
+import { portTranslationsCommand } from "./portTranslations";
 
 // Port of Southwind.Terminal (old/Southwind.Terminal/Program.cs): a console host that boots the engine
 // (Starter.start) then dispatches ONE command (Signum takes args.First() only) or, with no args, an
@@ -75,9 +76,10 @@ async function main(): Promise<void> {
                 case "import-auth": await importAuth(args.slice(1)); break;
                 case "import-assets": await importAssets(args.slice(1)); break;
                 case "seed-northwind": await NorthwindSeed.seed(); break;
+                case "port-translations": await portTranslationsCommand(args.slice(1)); break;
                 case "migrations":
                 case "sql": await migrations(args.slice(1)); break;
-                default: console.log(`Unknown command '${command}'. Valid: new, sync, sql, ts, load [SN,EA,IA,IU,SO], check, export-auth, import-auth, import-assets, seed-northwind`);
+                default: console.log(`Unknown command '${command}'. Valid: new, sync, sql, ts, load [SN,EA,IA,IU,SO], check, export-auth, import-auth, import-assets, seed-northwind, port-translations`);
             }
         }
     } finally {
