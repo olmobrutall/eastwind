@@ -2,17 +2,14 @@
 # One entry per line. A repeated key emits the snippet once per target; the first synchronization
 # then drops whatever the receiving package does not declare.
 
-# Renames the CODE already records (@legacyClassName), plus the Word* family that follows it.
+# Renames the CODE already records (@legacyClassName).
+#
+# Signum.Word -> altea-office-template is deliberately ABSENT: an altea Office template renders docx,
+# pptx and xlsx, so every German and Spanish string Signum wrote for it ("Word-Vorlage", "Plantilla
+# Word") is no longer true of the type it would land on. Leaving the rename out drops those types at the
+# first synchronization and puts them back on the sync page to be translated afresh.
 CSharpMigrationEntity -> TypeScriptMigrationEntity
 TokenEquivalenceGroupEntity -> DashboardEntity_TokenEquivalenceGroup
-WordAttachmentEntity -> OfficeAttachmentEntity
-WordConverterSymbol -> OfficeConverterSymbol
-WordModelEntity -> OfficeModelEntity
-WordTemplateEntity -> OfficeTemplateEntity
-WordTemplateMessage -> OfficeTemplateMessage
-WordTemplateOperation -> OfficeTemplateOperation
-WordTemplatePermission -> OfficeTemplatePermission
-WordTransformerSymbol -> OfficeTransformerSymbol
 
 # An MList of embeddeds became a @part row named <Owner>_<Field>; the element class follows.
 DynamicViewPropEmbedded -> DynamicViewEntity_Prop
