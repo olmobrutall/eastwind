@@ -76,7 +76,10 @@ async function main(): Promise<void> {
                 case "import-auth": await importAuth(args.slice(1)); break;
                 case "import-assets": await importAssets(args.slice(1)); break;
                 case "seed-northwind": await NorthwindSeed.seed(); break;
-                case "convert-translations": await TranslationConverter.runCommand(args.slice(1), "terminal/translationFiles.txt", "terminal/translationRenames.txt"); break;
+                case "convert-translations": await TranslationConverter.runCommand(args.slice(1), {
+                    files: "terminal/translationFiles.txt", renames: "terminal/translationRenames.txt",
+                    sourceRoot: "../old", targetRoot: "..", cultures: ["de", "es"],
+                }); break;
                 case "migrations":
                 case "sql": await migrations(args.slice(1)); break;
                 default: console.log(`Unknown command '${command}'. Valid: new, sync, sql, ts, load [SN,EA,IA,IU,SO], check, export-auth, import-auth, import-assets, seed-northwind, convert-translations`);

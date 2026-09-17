@@ -1,7 +1,7 @@
 # Signum translation file -> altea translation file, for translation-convert.
 #
-# Paths are bases WITHOUT the `.<culture>.xml` suffix, and resolve against the roots below, which in turn
-# resolve against this file's own directory.
+# Each line is a path base WITHOUT the `.<culture>.xml` suffix. The roots they resolve against and the
+# cultures to convert are arguments of the call, so this file has exactly one kind of line.
 #
 # ONE SOURCE, ONE TARGET. A Signum assembly becomes exactly one altea package, and a type is translated in
 # the assembly that DECLARES it: `ActiveDirectoryMessage` lives in Signum.Authorization.BaseAD.ts, so its
@@ -10,9 +10,6 @@
 #
 # A pair whose source file does not exist is skipped, so every culture can be listed once here.
 
-source-root ../../old
-target-root ../..
-cultures de es
 
 # ---- The framework ---------------------------------------------------------------------------------
 Framework/Signum/Translations/Signum -> altea/altea/translations/Altea
