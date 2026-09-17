@@ -1,0 +1,48 @@
+# Signum type name -> altea type name, for translation-convert.
+# One entry per line. A repeated key emits the snippet once per target; the first synchronization
+# then drops whatever the receiving package does not declare.
+
+# Renames the CODE already records (@legacyClassName), plus the Word* family that follows it.
+CSharpMigrationEntity -> TypeScriptMigrationEntity
+TokenEquivalenceGroupEntity -> DashboardEntity_TokenEquivalenceGroup
+WordAttachmentEntity -> OfficeAttachmentEntity
+WordConverterSymbol -> OfficeConverterSymbol
+WordModelEntity -> OfficeModelEntity
+WordTemplateEntity -> OfficeTemplateEntity
+WordTemplateMessage -> OfficeTemplateMessage
+WordTemplateOperation -> OfficeTemplateOperation
+WordTemplatePermission -> OfficeTemplatePermission
+WordTransformerSymbol -> OfficeTransformerSymbol
+
+# An MList of embeddeds became a @part row named <Owner>_<Field>; the element class follows.
+DynamicViewPropEmbedded -> DynamicViewEntity_Prop
+EmailMasterTemplateMessageEmbedded -> EmailMasterTemplateEntity_Message
+EmailTemplateMessageEmbedded -> EmailTemplateEntity_Message
+EmailTemplateRecipientEmbedded -> EmailTemplateEntity_Recipient
+PredictorColumnEmbedded -> PredictorEntity_Column
+PredictorSubQueryColumnEmbedded -> PredictorSubQueryEntity_Column
+SMSTemplateMessageEmbedded -> SMSTemplateEntity_Message
+ToolbarElementEmbedded -> ToolbarEntity_Element
+ToolbarMenuElementEmbedded -> ToolbarMenuEntity_Element
+ToolbarSwitcherOptionEmbedded -> ToolbarSwitcherEntity_Option
+
+# Restructurings no rule reaches: a shared element, or a name not derived from its owner.
+ActiveDirectoryConfigurationEmbedded -> AzureADConfigurationEmbedded
+ComparisonType -> FilterOperation
+FilePathEntity -> FilePathEmbedded
+OrderDetailEmbedded -> OrderLineEntity
+PanelPartEmbedded -> DashboardEntity_Part
+QueryColumnEmbedded -> UserQueryEntity_Column
+QueryColumnHelpEmbedded -> QueryHelpEntity_Column
+QueryFilterEmbedded -> QueryFilterBaseEntity
+QueryOrderEmbedded -> UserQueryEntity_Order
+RoleMappingEmbedded -> AzureADRoleMappingEntity
+ToolbarElementEmbedded -> ToolbarElementBaseEntity
+
+# One Signum type feeding SEVERAL altea types. Duplicate keys duplicate the snippet.
+ActiveDirectoryConfigurationEmbedded -> WindowsADConfigurationEmbedded
+QueryColumnEmbedded -> UserChartEntity_Column
+QueryFilterEmbedded -> UserChartEntity_Filter
+QueryFilterEmbedded -> UserQueryEntity_Filter
+QueryOrderEmbedded -> OfficeTemplateEntity_Order
+RoleMappingEmbedded -> WindowsADRoleMappingEntity
