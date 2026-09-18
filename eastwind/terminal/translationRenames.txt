@@ -43,3 +43,36 @@ QueryFilterEmbedded -> UserChartEntity_Filter
 QueryFilterEmbedded -> UserQueryEntity_Filter
 QueryOrderEmbedded -> OfficeTemplateEntity_Order
 RoleMappingEmbedded -> WindowsADRoleMappingEntity
+
+# Signum's GENERIC bases, whose members altea declares on each concrete class.
+#
+# Signum describes a rule's shared members once on `AllowedRule<A,R>` and resolves them through the
+# declaring type; altea has no generic entities, so QueryAllowedRule / OperationAllowedRule / … each
+# declare Allowed, AllowedBase, Resource and Coerced themselves and each needs its own entry. One key
+# therefore fans out to every concrete class, and two keys land on the same one — which is why a repeated
+# <Type> in a converted file is merged rather than overwritten.
+AllowedRule`2 -> TypeAllowedRule
+AllowedRule`2 -> PermissionAllowedRule
+AllowedRule`2 -> OperationAllowedRule
+AllowedRule`2 -> QueryAllowedRule
+AllowedRule`2 -> PropertyAllowedRule
+AllowedRuleCoerced`2 -> OperationAllowedRule
+AllowedRuleCoerced`2 -> QueryAllowedRule
+AllowedRuleCoerced`2 -> PropertyAllowedRule
+BaseRulePack`1 -> TypeRulePack
+BaseRulePack`1 -> PermissionRulePack
+BaseRulePack`1 -> OperationRulePack
+BaseRulePack`1 -> QueryRulePack
+BaseRulePack`1 -> PropertyRulePack
+ConditionRuleModel`1 -> ConditionRuleModel
+ConditionRuleModel`1 -> OperationConditionRuleModel
+ConditionRuleModel`1 -> PropertyConditionRuleModel
+WithConditionsModel`1 -> WithConditionsModel
+WithConditionsModel`1 -> TypeWithConditionsModel
+WithConditionsModel`1 -> OperationWithConditionsModel
+WithConditionsModel`1 -> PropertyWithConditionsModel
+RuleEntity`1 -> RuleEntity
+RuleEntity`1 -> RulePermissionEntity
+RuleEntity`1 -> RuleQueryEntity
+RuleEntity`1 -> RuleOperationEntity
+RuleEntity`1 -> RuleTypeEntity
