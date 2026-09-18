@@ -33,7 +33,7 @@ import { OperationLogEntity } from "@altea/altea/data/operationLog";
 import { UserEntity } from "@altea/altea-auth/data/User";
 import { MixinDeclarations } from "@altea/altea/data/mixinDeclarations";
 import { UserWithClaims } from "@altea/altea/data/security";
-import { SimpleTaskSymbol } from "@altea/altea-scheduler/data/Scheduler";
+import { SimpleTaskSymbol, ScheduledTaskEntity, ScheduledTaskLogEntity } from "@altea/altea-scheduler/data/Scheduler";
 import { AlertEntity, SendNotificationEmailTaskEntity } from "@altea/altea-alert/data/Alert";
 import {
     EmailSenderConfigurationEntity, SmtpEmailServiceEntity,
@@ -59,8 +59,10 @@ import { UserChartEntity } from "@altea/altea-chart/data/UserChart";
 import { DashboardEntity } from "@altea/altea-dashboard/data/Dashboard";
 import { CachedQueryEntity_UserAsset } from "@altea/altea-dashboard/data/CachedQuery";
 import { QueryEntity } from "@altea/altea/data/queryEntity";
-import { PermissionSymbol } from "@altea/altea-auth/data/Rules";
+import { PermissionSymbol } from "@altea/altea/data/permissionSymbol";
 import { WorkflowEntity } from "@altea/altea-workflow/data/Workflow";
+import { CaseTagEntity } from "@altea/altea-workflow/data/Case";
+import { DynamicSqlMigrationEntity } from "@altea/altea-dynamic/data/DynamicSqlMigration";
 import {
     ToolbarElementBaseEntity, ToolbarEntity, ToolbarMenuEntity, ToolbarSwitcherEntity,
 } from "@altea/altea-toolbar/data/Toolbar";
@@ -294,6 +296,15 @@ export namespace EntityOverrides {
         overrideImplementedBy(AlertEntity, a => a.recipient, () => [UserEntity]);
         overrideImplementedBy(AlertEntity, a => a.attendedBy, () => [UserEntity]);
         overrideImplementedBy(NoteEntity, n => n.createdBy, () => [UserEntity]);
+        // These four modules used to name UserEntity themselves, which made their DATA layer — the tier
+        // that ships to the browser — depend on altea-auth for a type they never otherwise touch. The
+        // implementations are the same, so the columns are unchanged; only who declares them moved.
+        overrideImplementedBy(DynamicSqlMigrationEntity, d => d.createdBy, () => [UserEntity]);
+        overrideImplementedBy(DynamicSqlMigrationEntity, d => d.executedBy, () => [UserEntity]);
+        overrideImplementedBy(ProcessEntity, p => p.user, () => [UserEntity]);
+        overrideImplementedBy(ScheduledTaskEntity, s => s.user, () => [UserEntity]);
+        overrideImplementedBy(ScheduledTaskLogEntity, s => s.user, () => [UserEntity]);
+        overrideImplementedBy(CaseTagEntity, c => c.createdBy, () => [UserEntity]);
 
         // Which user assets a dashboard SNAPSHOT can cover (Signum's `[ImplementedBy()]` empty list on
         // CachedQueryEntity.UserAssets, widened by the app): @altea/altea-dashboard cannot name them,
