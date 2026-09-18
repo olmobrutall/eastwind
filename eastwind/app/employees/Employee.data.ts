@@ -1,4 +1,4 @@
-import { reflect, init } from "@altea/altea/data/reflection";
+import { reflect, init, MAX_SIZE } from "@altea/altea/data/reflection";
 import { Entity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
 import { CurrentUser } from "@altea/altea/data/security";
@@ -66,6 +66,17 @@ export class EmployeeEntity extends Entity {
     @validate<EmployeeEntity>((e, _fi, env) =>
         env === "Saving" && e.extension === "!save" ? "Extension '!save' is rejected at save time" : null)
     extension: string | null;
+
+    // Southwind declares `[StringLengthValidator(Min = 3, MultiLine = true)]` — no Max — so Signum sizes
+    // this column at the 200-character default too, and the Northwind sample notes DO NOT FIT: nine rows
+    // run to 448 characters. That is a latent Southwind bug altea inherited the moment
+    // `@stringLengthValidator` started sizing columns, and it surfaced as the one `ALTER COLUMN` in the
+    // whole 578-column sync script that would have failed against live data.
+    //
+    // MAX_SIZE rather than a bigger number: it is exactly what the column already is today (unsized →
+    // unbounded), so the sizing change costs this table nothing and no note can ever be truncated. A
+    // free-text field the passage generator splits into embeddings has no natural maximum to pick.
+    @column({ size: MAX_SIZE })
     notes: string | null;
     reportsTo: Lite<EmployeeEntity> | null;
     photoPath: string | null;
