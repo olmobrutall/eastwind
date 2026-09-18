@@ -61,13 +61,6 @@
     <Member Name="Fax" Description="Fax" />
     <Member Name="Phone" Description="Teléfono" />
   </Type>
-  <Type Name="CustomerModel" Description="Cliente" PluralDescription="Clientes" Gender="m">
-    <Member Name="Address" Description="Dirección" />
-    <Member Name="Entity" Description="Cliente" />
-    <Member Name="Fax" Description="Fax" />
-    <Member Name="Name" Description="Nombre" />
-    <Member Name="Phone" Description="Teléfono" />
-  </Type>
   <Type Name="CustomerOperation">
     <Member Name="Save" Description="Guardar" />
   </Type>
@@ -93,12 +86,6 @@
   <Type Name="EmployeeOperation">
     <Member Name="Save" Description="Guardar" />
   </Type>
-<Type Name="EmployeePassageEntity" Description="Fragmento de empleado" PluralDescription="Fragmentos de empleado" Gender="m">
-    <Member Name="Chunk" Description="Fragmento" />
-    <Member Name="Employee" Description="Empleado" />
-    <Member Name="Index" Description="Índice" />
-    <Member Name="IsTitle" Description="Es título" />
-  </Type>
   <Type Name="EmployeeQuery">
     <Member Name="EmployeesByTerritory" Description="Empleados por territorio" />
   </Type>
@@ -109,7 +96,7 @@
     <Member Name="PredictorModelFolder" Description="Carpeta modelo Predictor" />
     <Member Name="ViewLogFolder" Description="Carpeta de registro de visita" />
   </Type>
-  <Type Name="OrderDetailEmbedded" Description="Detalle del pedido">
+  <Type Name="OrderLineEntity" Description="Detalle del pedido">
     <Member Name="Discount" Description="Descuento" />
     <Member Name="Product" Description="Producto" />
     <Member Name="Quantity" Description="Cantidad" />
@@ -140,13 +127,6 @@
     <Member Name="Employee" Description="Empleado" />
     <Member Name="MaxOrderDate" Description="Fecha máxima de pedido" />
     <Member Name="MinOrderDate" Description="Fecha mínima de pedido" />
-  </Type>
-  <Type Name="OrderLineEntity" Description="Línea de pedido">
-    <Member Name="Discount" Description="Descuento" />
-    <Member Name="Product" Description="Producto" />
-    <Member Name="Quantity" Description="Cantidad" />
-    <Member Name="SubTotalPrice" Description="Precio sub-total" />
-    <Member Name="UnitPrice" Description="Precio unitario" />
   </Type>
   <Type Name="OrderMessage">
     <Member Name="CancelShippedOrder0" Description="Cancelar pedido enviado {0}." />
@@ -213,24 +193,6 @@
   </Type>
   <Type Name="RegionOperation">
     <Member Name="Save" Description="Salvar" />
-  </Type>
-  <Type Name="RegisterUserMessage">
-    <Member Name="GoToLoginPage" Description="Ir a la página de inicio de sesión" />
-    <Member Name="PleaseFillTheFollowingFormToRegisterANewEastwindEmployee" Description="Rellene el siguiente formulario para registrar un nuevo empleado de Eastwind" />
-    <Member Name="Register" Description="Registrar" />
-    <Member Name="User0HasBeenRegisteredSuccessfully" Description="¡El usuario {0} se ha registrado correctamente!" />
-    <Member Name="User0IsAlreadyRegistered" Description="El usuario {0} ya está registrado" />
-    <Member Name="UserRegistered" Description="Usuario registrado" />
-  </Type>
-  <Type Name="RegisterUserModel" Description="Registrar usuario">
-    <Member Name="Address" Description="Dirección" />
-    <Member Name="EMail" Description="E-Mail" />
-    <Member Name="FirstName" Description="Nombre" />
-    <Member Name="LastName" Description="Apellidos" />
-    <Member Name="Password" Description="Contraseña" />
-    <Member Name="ReportsTo" Description="Reporta a" />
-    <Member Name="TitleOfCourtesy" Description="Tratamiento" />
-    <Member Name="Username" Description="Nombre de usuario" />
   </Type>
   <Type Name="ShipperEntity" Description="Transportador">
     <Member Name="CompanyName" Description="Nombre empresa" />
