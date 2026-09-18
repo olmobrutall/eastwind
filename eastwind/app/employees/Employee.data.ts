@@ -5,7 +5,7 @@ import { CurrentUser } from "@altea/altea/data/security";
 import {
     entity, part, quoted, backReference, valueField, fullTextIndex, vectorIndex, column, uniqueIndex,
 } from "@altea/altea/data/decorators";
-import { validate } from "@altea/altea/data/validators";
+import { validate, stringLengthValidator, noRepeatValidator } from "@altea/altea/data/validators";
 import { Temporal, type int, toInt } from "@altea/altea/data/basics";
 import { Vector } from "@altea/altea/data/vector";
 import type { ExecuteSymbol } from "@altea/altea/data/operations";
@@ -21,6 +21,7 @@ import { AddressEmbedded } from "../customers/Customer.data";
 export class RegionEntity extends Entity {
     // Southwind: `[UniqueIndex]` (Employees/RegionEntity.cs).
     @uniqueIndex
+    @stringLengthValidator({ min: 3, max: 50 })
     description: string;
     @quoted toString(): string { return this.description; }
 }
@@ -34,6 +35,7 @@ export class TerritoryEntity extends Entity {
     region: RegionEntity;
     // Southwind: `[UniqueIndex]` (Employees/TerritoryEntity.cs).
     @uniqueIndex
+    @stringLengthValidator({ min: 3, max: 100 })
     description: string;
     @quoted toString(): string { return this.description; }
 }
@@ -47,7 +49,9 @@ export namespace TerritoryOperation {
 // .WithFullTextIndex(a => new { a.FirstName, a.LastName, a.Notes })).
 @fullTextIndex<EmployeeEntity>(a => [a.firstName, a.lastName, a.notes])
 export class EmployeeEntity extends Entity {
+    @stringLengthValidator({ min: 3, max: 20 })
     lastName: string;
+    @stringLengthValidator({ min: 3, max: 10 })
     firstName: string;
     // VALIDATION DEMO — a SERVER-ONLY rule (imagine it needs the DB / another aggregate). It returns null
     // in the "Client" phase, so the browser never runs it; the server first reports it after
@@ -55,30 +59,30 @@ export class EmployeeEntity extends Entity {
     // summary shows, even though the client let the request through.
     @validate<EmployeeEntity>((e, _fi, env) =>
         env !== "Client" && e.title === "!srv" ? "Title '!srv' is reserved (server-only rule)" : null)
+    @stringLengthValidator({ min: 3, max: 30 })
     title: string | null;
+    @stringLengthValidator({ min: 3, max: 25 })
     titleOfCourtesy: string | null;
     birthDate: Temporal.PlainDate | null;
     hireDate: Temporal.PlainDate | null;
     address: AddressEmbedded;
+    @stringLengthValidator({ min: 3, max: 25 })
     homePhone: string | null;
     // VALIDATION DEMO — a SAVE-ONLY rule: silent on the client AND after deserialization, enforced only in
     // the final "Saving" phase (e.g. a last-moment consistency check). Trigger: set Extension to "!save".
     @validate<EmployeeEntity>((e, _fi, env) =>
         env === "Saving" && e.extension === "!save" ? "Extension '!save' is rejected at save time" : null)
+    @stringLengthValidator({ min: 3, max: 4 })
     extension: string | null;
 
-    // Southwind declares `[StringLengthValidator(Min = 3, MultiLine = true)]` — no Max — so Signum sizes
-    // this column at the 200-character default too, and the Northwind sample notes DO NOT FIT: nine rows
-    // run to 448 characters. That is a latent Southwind bug altea inherited the moment
-    // `@stringLengthValidator` started sizing columns, and it surfaced as the one `ALTER COLUMN` in the
-    // whole 578-column sync script that would have failed against live data.
-    //
-    // MAX_SIZE rather than a bigger number: it is exactly what the column already is today (unsized →
-    // unbounded), so the sizing change costs this table nothing and no note can ever be truncated. A
-    // free-text field the passage generator splits into embeddings has no natural maximum to pick.
-    @column({ size: MAX_SIZE })
+    // Southwind's `[StringLengthValidator(Min = 3, MultiLine = true)]`. No Max means UNBOUNDED there —
+    // Signum's `Max` defaults to -1 and `GetSqlSize` reads -1 as int.MaxValue — which is why the
+    // Northwind notes (448 characters over nine rows) fit it and not a 200-character column.
+    // `@stringLengthValidator` carries both halves, so the min travels with the size.
+    @stringLengthValidator({ min: 3, multiLine: true })
     notes: string | null;
     reportsTo: Lite<EmployeeEntity> | null;
+    @stringLengthValidator({ min: 3, max: 255 })
     photoPath: string | null;
     // Southwind's `Lite<FileEntity>? Photo` (Employees/EmployeeEntity.cs) — a row in `files.file`, so
     // the column is `photo_id`. It was a FileEmbedded here (bytes inline, the shape
@@ -91,6 +95,7 @@ export class EmployeeEntity extends Entity {
     // Loaded from terminal/northwind/image_photos (see northwindImages.ts).
     photo: FileEntity | null;
     // Signum's MList<TerritoryEntity> Territories → owned junction rows.
+    @noRepeatValidator()
     territories: EmployeeEntity_Territory[];
 
     @quoted toString(): string { return `${this.firstName} ${this.lastName}`; }
@@ -129,6 +134,9 @@ export namespace EmployeeOperation {
 export class EmployeePassageEntity extends Entity {
     employee: Lite<EmployeeEntity>;
     isTitle: boolean;
+    // Southwind's `[StringLengthValidator(Max = int.MaxValue)]` — a passage is free text split for
+    // embedding, so the 200-character default would truncate it (the sample data already reaches 175).
+    @stringLengthValidator({ max: MAX_SIZE })
     chunk: string;
     // pgvector / SQL Server VECTOR(768) column (Signum's [DbType(Size=768)] Vector? Embedding).
     @column({ pgDbType: "vector", sqlDbType: "vector", size: 768, nullable: true })

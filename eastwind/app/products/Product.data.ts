@@ -1,3 +1,4 @@
+import { noRepeatValidator, stringLengthValidator } from "@altea/altea/data/validators";
 import { reflect, init } from "@altea/altea/data/reflection";
 import { Entity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
@@ -20,12 +21,18 @@ import type { PredictorPublicationSymbol } from "@altea/altea-machine-learning/d
 export class SupplierEntity extends Entity {
     // Southwind: `[UniqueIndex]` (Products/SupplierEntity.cs).
     @uniqueIndex
+    @stringLengthValidator({ min: 3, max: 40 })
     companyName: string;
+    @stringLengthValidator({ min: 3, max: 30 })
     contactName: string | null;
+    @stringLengthValidator({ min: 3, max: 30 })
     contactTitle: string | null;
     address: AddressEmbedded;
+    @stringLengthValidator({ min: 3, max: 24 })
     phone: string;
+    @stringLengthValidator({ min: 3, max: 24 })
     fax: string;
+    @stringLengthValidator({ min: 3, multiLine: true })
     homePage: string | null;
     @quoted toString(): string { return this.companyName; }
 }
@@ -42,9 +49,11 @@ export class CategoryEntity extends Entity {
     // Southwind: `[UniqueIndex]` (Products/CategoryEntity.cs).
     @uniqueIndex
     @translatable
+    @stringLengthValidator({ min: 3, max: 100 })
     categoryName: string;
 
     @translatable
+    @stringLengthValidator({ min: 3, multiLine: true })
     description: string;
     // Southwind's `FileEmbedded? Picture` (Products/CategoryEntity.cs) — the bytes live in the row. Loaded
     // from terminal/northwind/image_categories rather than Northwind's own Categories.Picture, which the two vendor
@@ -61,9 +70,11 @@ export namespace CategoryOperation {
 export class ProductEntity extends Entity {
     // Southwind: `[UniqueIndex]` (Products/ProductEntity.cs).
     @uniqueIndex
+    @stringLengthValidator({ min: 3, max: 40 })
     productName: string;
     supplier: Lite<SupplierEntity>;
     category: Lite<CategoryEntity>;
+    @stringLengthValidator({ min: 3, max: 20 })
     quantityPerUnit: string;
     unitPrice: Decimal;
     /** Southwind declares `short` — a stock count fits a smallint, and the column is one. */
@@ -71,6 +82,7 @@ export class ProductEntity extends Entity {
     reorderLevel: int;
     discontinued: boolean;
     // Signum's [PreserveOrder] MList<AdditionalInformationEmbedded> → owned part rows.
+    @noRepeatValidator<ProductEntity_AdditionalInformation>(a => a.key)
     additionalInformation: ProductEntity_AdditionalInformation[];
 
     // Signum's [AutoExpressionField] ValueInStock => UnitPrice * UnitsInStock. A PROPERTY there, so it is

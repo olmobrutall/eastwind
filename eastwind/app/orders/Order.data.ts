@@ -4,7 +4,7 @@ import {
     entity, part, backReference, rowOrder, quoted, mixin, implementedBy, unit, format, systemVersioned,
     legacyPropertyRoute, isReadOnly, bindParent,
 } from "@altea/altea/data/decorators";
-import { validate } from "@altea/altea/data/validators";
+import { validate, stringLengthValidator, noRepeatValidator } from "@altea/altea/data/validators";
 import { tryGetParentEntity } from "@altea/altea/data/parentEntity";
 import { Temporal, type int, Decimal } from "@altea/altea/data/basics";
 import { reflect, init } from "@altea/altea/data/reflection";
@@ -74,6 +74,7 @@ export class OrderEntity extends Entity {
     cancelationDate: Temporal.PlainDate | null;
 
     shipVia: Lite<ShipperEntity> | null;
+    @stringLengthValidator({ min: 3, max: 40 })
     shipName: string | null;
 
     // Southwind lets a PLACED order still be re-addressed: the only member the whole-entity rule above
@@ -90,6 +91,7 @@ export class OrderEntity extends Entity {
     // @bindParent is Southwind's, and it is what lets a LINE reach the order it belongs to: the row's own
     // `@backReference` is a Lite the SAVE cascade fills, so it is empty exactly when a rule needs it.
     @bindParent
+    @noRepeatValidator<OrderLineEntity>(a => a.product)
     details: OrderLineEntity[];
 
     // `= false` is NOT restating a zero value: Signum's `public bool IsLegacy { get; set; }` IS initialized

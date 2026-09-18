@@ -14,10 +14,15 @@ import type { SMSOwnerData } from "@altea/altea-sms/data/SMS";
 
 @reflect
 export class AddressEmbedded extends EmbeddedEntity {
+    @stringLengthValidator({ min: 3, max: 60, multiLine: true })
     address: string;
+    @stringLengthValidator({ min: 3, max: 15 })
     city: string;
+    @stringLengthValidator({ min: 2, max: 15 })
     region: string | null;
+    @stringLengthValidator({ min: 3, max: 10 })
     postalCode: string | null;
+    @stringLengthValidator({ min: 2, max: 15 })
     country: string;
 
     // Signum's AddressEmbedded.Clone() — a fresh copy (an order snapshots the customer's address).
@@ -67,8 +72,11 @@ export abstract class CustomerEntity extends Entity {
 // column is carried and the escape hatch is not.
 @mixin(() => [CorruptMixin])
 export class PersonEntity extends CustomerEntity {
+    @stringLengthValidator({ min: 3, max: 40 })
     firstName: string;
+    @stringLengthValidator({ min: 3, max: 40 })
     lastName: string;
+    @stringLengthValidator({ min: 2, max: 10 })
     title: string | null;
     dateOfBirth: Temporal.PlainDate | null;
 
@@ -80,8 +88,11 @@ export class PersonEntity extends CustomerEntity {
 
 @entity("Shared", "Transactional")
 export class CompanyEntity extends CustomerEntity {
+    @stringLengthValidator({ min: 3, max: 40 })
     companyName: string;
+    @stringLengthValidator({ min: 3, max: 30 })
     contactName: string;
+    @stringLengthValidator({ min: 3, max: 30 })
     contactTitle: string;
 
     @quoted toString(): string { return this.companyName; }
