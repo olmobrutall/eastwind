@@ -7,6 +7,13 @@
 # CollectionMessage in Signum.Utilities and the rest of core in Signum, while altea has one core package;
 # Signum.Excel and Signum.Word are one @altea/altea-office-template.
 #
+# THE REVERSE ALSO HAPPENS, ONCE: one source feeds TWO targets. Signum has no HtmlEditor assembly to keep
+# translations in, so `HtmlEditorMessage` is declared in Signum CORE; altea split the editor out into
+# @altea/altea-html-editor, which owns its own messages. So the core file is listed a second time, against
+# that package. Over-feeding a target is the cheap direction to be wrong in: `stub-translations` rewrites
+# every file from what the running process DECLARES, so core keeps everything and Altea.HtmlEditor keeps the
+# 11 members and nothing else.
+#
 # A type is translated in the assembly that DECLARES it, so pick that one: `ActiveDirectoryMessage` lives in
 # Signum.Authorization.BaseAD.ts and its strings come from Signum.Authorization, not from the stale copy in
 # Signum.Authorization.WindowsAD. Where altea split one Signum type in two, translationRenames.txt
@@ -20,6 +27,7 @@
 # ---- The framework ---------------------------------------------------------------------------------
 Framework/Signum/Translations/Signum -> altea/altea/translations/Altea
 Framework/Signum.Utilities/Translations/Signum.Utilities -> altea/altea/translations/Altea
+Framework/Signum/Translations/Signum -> altea/altea-html-editor/translations/Altea.HtmlEditor
 Framework/Extensions/Signum.Alerts/Translations/Signum.Alerts -> altea/altea-alert/translations/Altea.Alerts
 Framework/Extensions/Signum.Authorization/Translations/Signum.Authorization -> altea/altea-auth/translations/Altea.Auth
 Framework/Extensions/Signum.Authorization.AzureAD/Translations/Signum.Authorization.AzureAD -> altea/altea-auth-azuread/translations/Altea.AuthAzureAD
