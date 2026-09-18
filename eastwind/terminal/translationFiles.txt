@@ -3,16 +3,23 @@
 # Each line is a path base WITHOUT the `.<culture>.xml` suffix. The roots they resolve against and the
 # cultures to convert are arguments of the call, so this file has exactly one kind of line.
 #
-# ONE SOURCE, ONE TARGET. A Signum assembly becomes exactly one altea package, and a type is translated in
-# the assembly that DECLARES it: `ActiveDirectoryMessage` lives in Signum.Authorization.BaseAD.ts, so its
-# strings come from Signum.Authorization, not from the stale copy in Signum.Authorization.WindowsAD. Where
-# altea split one Signum type in two, translationRenames.txt duplicates the snippet inside that one target.
+# SEVERAL SOURCES MAY SHARE A TARGET, and they are merged into it: altea merges assemblies. Signum keeps
+# CollectionMessage in Signum.Utilities and the rest of core in Signum, while altea has one core package;
+# Signum.Excel and Signum.Word are one @altea/altea-office-template.
+#
+# A type is translated in the assembly that DECLARES it, so pick that one: `ActiveDirectoryMessage` lives in
+# Signum.Authorization.BaseAD.ts and its strings come from Signum.Authorization, not from the stale copy in
+# Signum.Authorization.WindowsAD. Where altea split one Signum type in two, translationRenames.txt
+# duplicates the snippet inside the target.
+#
+# Signum.Calendar and Signum.Disconnected are deliberately absent: altea has neither module.
 #
 # A pair whose source file does not exist is skipped, so every culture can be listed once here.
 
 
 # ---- The framework ---------------------------------------------------------------------------------
 Framework/Signum/Translations/Signum -> altea/altea/translations/Altea
+Framework/Signum.Utilities/Translations/Signum.Utilities -> altea/altea/translations/Altea
 Framework/Extensions/Signum.Alerts/Translations/Signum.Alerts -> altea/altea-alert/translations/Altea.Alerts
 Framework/Extensions/Signum.Authorization/Translations/Signum.Authorization -> altea/altea-auth/translations/Altea.Auth
 Framework/Extensions/Signum.Authorization.AzureAD/Translations/Signum.Authorization.AzureAD -> altea/altea-auth-azuread/translations/Altea.AuthAzureAD
@@ -53,6 +60,7 @@ Framework/Extensions/Signum.UserAssets/Translations/Signum.UserAssets -> altea/a
 Framework/Extensions/Signum.UserQueries/Translations/Signum.UserQueries -> altea/altea-user-queries/translations/Altea.UserQueries
 Framework/Extensions/Signum.ViewLog/Translations/Signum.ViewLog -> altea/altea-view-log/translations/Altea.ViewLog
 Framework/Extensions/Signum.WhatsNew/Translations/Signum.WhatsNew -> altea/altea-whats-new/translations/Altea.WhatsNew
+Framework/Extensions/Signum.Excel/Translations/Signum.Excel -> altea/altea-office-template/translations/Altea.OfficeTemplate
 Framework/Extensions/Signum.Word/Translations/Signum.Word -> altea/altea-office-template/translations/Altea.OfficeTemplate
 Framework/Extensions/Signum.Workflow/Translations/Signum.Workflow -> altea/altea-workflow/translations/Altea.Workflow
 
