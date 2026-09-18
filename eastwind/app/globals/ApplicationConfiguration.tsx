@@ -36,6 +36,14 @@ export default function ApplicationConfiguration(p: { ctx: TypeContext<Applicati
                 <Tab eventKey="workflow" title={ctx.niceName(a => a.workflow)}>
                     <RenderEntity ctx={ctx.subCtx(a => a.workflow)} />
                 </Tab>
+                {/* `sms` and `translation` are non-nullable embeddeds, like email and chatbot, so they are
+                    always there to edit. `sms` was on the entity with no tab at all. */}
+                <Tab eventKey="sms" title={ctx.niceName(a => a.sms)}>
+                    <RenderEntity ctx={ctx.subCtx(a => a.sms)} />
+                </Tab>
+                <Tab eventKey="translation" title={ctx.niceName(a => a.translation)}>
+                    <RenderEntity ctx={ctx.subCtx(a => a.translation)} />
+                </Tab>
                 <Tab eventKey="azureAD" title={ctx.niceName(a => a.azureAD)}>
                     <EntityDetail ctx={ctx.subCtx(a => a.azureAD)} />
                 </Tab>

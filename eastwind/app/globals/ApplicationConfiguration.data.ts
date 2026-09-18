@@ -10,6 +10,7 @@ import { EmailSenderConfigurationEntity } from "@altea/altea-email/data/EmailSen
 import { ChatbotConfigurationEmbedded } from "@altea/altea-agent/data/LanguageModel";
 import { WorkflowConfigurationEmbedded } from "@altea/altea-workflow/data/Workflow";
 import { SMSConfigurationEmbedded } from "@altea/altea-sms/data/SMS";
+import { TranslationConfigurationEmbedded } from "@altea/altea-translations/data/Translation";
 import { FileTypeSymbol } from "@altea/altea-files/data/Files";
 import { AzureADConfigurationEmbedded } from "@altea/altea-auth-azuread/data/AzureAD";
 import { OpenIDConfigurationEmbedded } from "@altea/altea-auth-openid/data/OpenID";
@@ -29,9 +30,12 @@ import { WindowsADConfigurationEmbedded } from "@altea/altea-auth-windowsad/data
 // from then on the row is the only source of truth, and no setting here is read from the environment.
 //
 // Divergences from Southwind's entity:
-//  - `Translation` has no member: @altea/altea-translations reads its keys from each package's own
-//    `translations/` directory and its two translator credentials from the environment, so there is
-//    nothing per-environment to store.
+//  - `Translation` IS a member, as Southwind's is. It was left out on the grounds that the two translator
+//    credentials would come from the environment — but nothing ever read them there and no translator was
+//    ever constructed, so the sync pages had no way to reach Azure or DeepL at all. An API key is also
+//    exactly the kind of setting the rule above covers: an administrator rotates it, so it is data. The
+//    embedded itself lives in @altea/altea-translations rather than here (Southwind declares it locally),
+//    which is what every other module's configuration section does.
 //  - `AuthTokens` neither: altea's counterpart (`AuthTokenServer.configuration`) is a server-side interface
 //    with one field, not an embedded entity, so there is nothing to store — `AuthServer.start` still takes
 //    it eagerly from the host.
@@ -99,6 +103,9 @@ export class ApplicationConfigurationEntity extends Entity {
 
     /*Workflow*/
     workflow: WorkflowConfigurationEmbedded;
+
+    /*Translation — the machine translators' keys. Empty is normal: both answer "nothing to suggest". */
+    translation: TranslationConfigurationEmbedded;
 
     /*Auth — at most one directory owns the login flow; see eastwindAuthAD.server.ts */
     azureAD: AzureADConfigurationEmbedded | null;

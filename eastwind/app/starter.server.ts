@@ -69,6 +69,7 @@ import { PublicCatalogApi } from "./publicApi/PublicCatalog.server";
 import { PublicLogic } from "./publicApi/PublicLogic.server";
 import { TourLogic } from "@altea/altea-tour/server/TourLogic";
 import { TranslationLogic } from "@altea/altea-translations/server/TranslationLogic";
+import { AzureTranslator, DeepLTranslator } from "@altea/altea-translations/server/Translators";
 import { WorkflowLogicStarter } from "@altea/altea-workflow/server/WorkflowLogicStarter";
 import { OrderWorkflow } from "./orders/OrderWorkflow.server";
 import { EastwindEval } from "./eastwindEval.server";
@@ -551,7 +552,20 @@ export namespace Starter {
 
         // Translations, both halves. Its REPLACEMENT half is off against a Southwind database: Signum has
         // no caller for `TranslationReplacementLogic.Start` and Southwind is not one.
-        TranslationLogic.start(sb, { replacements: !legacyMode });//Translation
+        //
+        // The two machine translators are Southwind's, and take their credentials as LAMBDAS over the
+        // configuration row, so rotating a key is a save rather than a restart. Either may be unset — each
+        // answers null for a missing key, which the chain reads as "nothing to suggest" — and the
+        // always-available AlreadyTranslatedTranslator is prepended by `start` itself.
+        TranslationLogic.start(sb, {
+            replacements: !legacyMode,
+            translators: [
+                new AzureTranslator(
+                    () => GlobalsLogic.configuration().translation.azureCognitiveServicesAPIKey,
+                    () => GlobalsLogic.configuration().translation.azureCognitiveServicesRegion),
+                new DeepLTranslator(() => GlobalsLogic.configuration().translation.deepLAPIKey),
+            ],
+        });//Translation
 
         // The two modules that DECORATE the operation log, so they come after OperationLogic.start above.
         // `registerAll` is Southwind's setting: dump EVERY entity type, not an opt-in list.
