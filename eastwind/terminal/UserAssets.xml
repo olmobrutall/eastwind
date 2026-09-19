@@ -16,8 +16,8 @@
      "Entity.Details.Element.Product" is "Details.Element.Product", and "Entity.TotalPrice.Sum" is
      "TotalPrice.Sum". Reading one back tolerates either case, and LEGACY MODE also drops a stored
      "Entity." — so this file is the only place the prefix has to be taken off by hand.
-   * The SmartDateTime grammar ("-1/mm/dd 00:00:00", "yyyy/mm/01 00:00:00") is not ported
-     (FilterValueString), so those date filters are commented out — the charts then cover all years.
+   * The SmartDateTime grammar ("-1/mm/dd 00:00:00", "yyyy/mm/01 00:00:00") IS ported — see
+     @altea/altea-user-assets data/FilterValueConverters — so those date filters are live, verbatim.
    * There is no storable spelling for the ROOT (entity) token: its key is "" and QueryTokenEmbedded.
      tokenString has StringLengthValidator(min 1). Where Signum wrote Token="Entity" this uses "ToString",
      and the Dashboard's TokenEquivalenceGroup (which needs Product's root token) is commented out.
@@ -29,10 +29,9 @@
 <Entities>
   <UserChart Guid="d681b3f5-a3a9-4228-93e9-e856f45d911a" DisplayName="Evolution By Employee" Query="Order" HideQuickLink="false" Owner="User;2;Anonymous" ChartScript="D3ChartScript.StackedLines">
     <Filters>
-      <!-- altea: eastwind has no UserEmployeeMixin (a user is not linked to an employee), and the
-           SmartDateTime grammar is not ported.
-      <Filter Indentation="0" Token="Employee" Operation="EqualTo" Value="[CurrentUser].[UserEmployeeMixin].Employee" DashboardBehaviour="UseAsInitialSelection" />
-      <Filter Indentation="0" Token="OrderDate" Operation="GreaterThan" Value="-1/mm/dd 00:00:00" /> -->
+      <!-- altea: eastwind has no UserEmployeeMixin (a user is not linked to an employee).
+      <Filter Indentation="0" Token="Employee" Operation="EqualTo" Value="[CurrentUser].[UserEmployeeMixin].Employee" DashboardBehaviour="UseAsInitialSelection" /> -->
+      <Filter Indentation="0" Token="OrderDate" Operation="GreaterThan" Value="-1/mm/dd 00:00:00" />
     </Filters>
     <Columns>
       <Column Token="OrderDate.MonthStart" DisplayName="Month Start of Order date" Format="Y" />
@@ -134,8 +133,7 @@
   </UserChart>
   <UserChart Guid="9d266fac-e35b-4845-a7aa-970e1590ea1e" DisplayName="Average Price Per Month" Query="Order" HideQuickLink="false" Owner="User;1;System" ChartScript="D3ChartScript.Columns">
     <Filters>
-      <!-- altea: SmartDateTime not ported.
-      <Filter Indentation="0" Token="OrderDate" Operation="LessThan" Value="yyyy/mm/01 00:00:00" /> -->
+      <Filter Indentation="0" Token="OrderDate" Operation="LessThan" Value="yyyy/mm/01 00:00:00" />
     </Filters>
     <Columns>
       <Column Token="OrderDate.MonthStart" DisplayName="Month Start of Order date" Format="Y" OrderByIndex="1" OrderByType="Ascending" />
@@ -155,8 +153,7 @@
   </UserChart>
   <UserChart Guid="6406d2f6-aa24-43e4-946e-8622f65eb010" DisplayName="Total Price Sum" Query="Order" HideQuickLink="false" Owner="User;1;System" ChartScript="D3ChartScript.Columns">
     <Filters>
-      <!-- altea: SmartDateTime not ported.
-      <Filter Indentation="0" Token="OrderDate" Operation="LessThan" Value="yyyy/mm/01 00:00:00" /> -->
+      <Filter Indentation="0" Token="OrderDate" Operation="LessThan" Value="yyyy/mm/01 00:00:00" />
     </Filters>
     <Columns>
       <Column Token="OrderDate.MonthStart" DisplayName="Month Start of Order date" Format="Y" OrderByIndex="1" OrderByType="Ascending" />
@@ -176,8 +173,7 @@
   </UserChart>
   <UserChart Guid="a3c7b86d-641e-4c1e-8032-72a099a00395" DisplayName="Order number by month" Query="Order" HideQuickLink="false" Owner="User;1;System" ChartScript="D3ChartScript.Line">
     <Filters>
-      <!-- altea: SmartDateTime not ported.
-      <Filter Indentation="0" Token="OrderDate" Operation="LessThan" Value="yyyy/mm/01 00:00:00" /> -->
+      <Filter Indentation="0" Token="OrderDate" Operation="LessThan" Value="yyyy/mm/01 00:00:00" />
     </Filters>
     <Columns>
       <Column Token="OrderDate.MonthStart" DisplayName="Month Start of Order date" Format="Y" OrderByIndex="1" OrderByType="Ascending" />
