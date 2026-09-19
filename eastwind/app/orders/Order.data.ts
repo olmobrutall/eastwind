@@ -118,8 +118,15 @@ export class OrderEntity extends Entity {
 }
 
 export const OrderMessage = {
-    // (Signum has no OrderMessage.TotalPrice: the expression's label is a MEMBER of OrderEntity, read via
-    // OrderEntity.nicePropertyName — see OrderLogic's expression registration.)
+    // `totalPrice` is a `@quoted` METHOD here, where Southwind declares a C# PROPERTY
+    // (`public decimal TotalPrice => As.Expression(…)`). A property is a PropertyRoute and gets a <Member>
+    // entry to hold its translation; a method does not — so `OrderEntity.nicePropertyName(o =>
+    // o.totalPrice())` had nothing to read and humanised to "Total price" in EVERY culture, which is what
+    // the order grid showed among otherwise German headers.
+    //
+    // Signum declares OrderMessage.TotalPrice too (a previous comment here claimed it did not), so its
+    // German comes with it. Same fix as RestLogMessage.Duration — see F1 in port/TranslationGaps.md.
+    totalPrice: msg("Total price"),
     subTotalPrice: msg(),
     // Signum's typo is kept: the member name is the KEY the shipped translations already carry.
     discountShouldBeMultpleOf5: msg("Discount should be multiple of 5%"),

@@ -52,12 +52,13 @@ export namespace OrdersLogic {
             .withStateMachine(o => o.state, registerOrderOperations)
             .withQuery();
 
-        // Southwind labels TotalPrice as a MEMBER of OrderEntity (Signum's [AutoExpressionField] is a
-        // property, so its translation lives under the type) and SubTotalPrice as an OrderMessage member.
-        // Follow the translation file: reading the entity member keeps "Precio total" / "Gesamtpreis"
-        // working without duplicating the string into a message container.
-        QueryLogic.expressions.register(OrderEntity, o => o.totalPrice(), { niceName: () => OrderEntity.nicePropertyName(o => o.totalPrice()) });
-        QueryLogic.expressions.register(OrderLineEntity, o => o.subTotalPrice(), { niceName: () => OrderMessage.subTotalPrice.niceToString() });
+        // Southwind labels TotalPrice as a MEMBER of OrderEntity, because Signum's [AutoExpressionField] is
+        // a PROPERTY and so a PropertyRoute with a <Member> entry of its own. altea's is a `@quoted` METHOD
+        // and has none, so reading the entity member gave the humanised identifier in every culture —
+        // "Total price" among German column headers. Both now come from OrderMessage, which Signum also
+        // declares for exactly these two.
+        QueryLogic.expressions.register(OrderEntity, o => o.totalPrice(), OrderMessage.totalPrice);
+        QueryLogic.expressions.register(OrderLineEntity, o => o.subTotalPrice(), OrderMessage.subTotalPrice);
         // The domain's scheduled TASKS and its process ALGORITHM, registered where Southwind registers
         // them — in OrdersLogic, beside the graph (Orders/OrdersLogic.cs). Both registries are read when
         // their module starts (the symbol tables are seeded from the registered keys), and OrdersLogic.start
