@@ -243,7 +243,10 @@ function registerOrderOperations(sm: FluentStateMachine<OrderEntity, OrderState>
     });
 
     sm.withExecute(OrderOperation.Ship, {
-        canExecute: o => o.details.length === 0
+        // QUOTED (Southwind's `CanExecuteExpression`), not a plain `canExecute`: a Quoted IS the function,
+        // so the in-memory guard is unchanged — and the expression is what lets Ship be a cell-operation
+        // COLUMN (`[Operations].OrderOperation#Ship`), where the reason has to be computed per row in SQL.
+        canExecuteExpression: o => o.details.length === 0
             ? ValidationMessage._0IsEmpty.niceToString(OrderEntity.nicePropertyName(a => a.details))
             : null,
         fromStates: [OrderState.Ordered],
