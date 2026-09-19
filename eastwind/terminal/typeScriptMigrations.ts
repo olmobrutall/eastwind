@@ -1,4 +1,5 @@
 import "@altea/altea/server"; // installs save()/toLite()
+import { TranslationConfigurationEmbedded } from "@altea/altea-translations/data/Translation";
 import * as fs from "node:fs";
 import { table } from "@altea/altea/server/table";
 import { PasswordEncoding } from "@altea/altea/server/passwordEncoding";
@@ -141,6 +142,10 @@ export namespace TypeScriptMigrations {
             // Every provider key is left EMPTY: a key is a credential, and the Chatbot tab is where one is
             // pasted (Southwind seeds none either).
             chatbot: ChatbotConfigurationEmbedded.create({}),
+            // Every field is an optional API key, so an empty one is the right seed — as for chatbot.
+            // It is MANDATORY though (a non-null embedded), and this seed predates @altea/altea-translations
+            // adding it, so a fresh `new` + `ts` failed on "Translation is not set" until now.
+            translation: TranslationConfigurationEmbedded.create({}),
             workflow: WorkflowConfigurationEmbedded.create({
                 avoidExecutingScriptsOlderThan: null,
             }),
