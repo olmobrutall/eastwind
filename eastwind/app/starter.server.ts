@@ -100,6 +100,7 @@ import { OfficeTemplateLogic } from "@altea/altea-office-template/server/OfficeT
 import { ToolbarLogic } from "@altea/altea-toolbar/server/ToolbarLogic";
 import { PlainExcelLogic } from "@altea/altea-office-template/server/excel/PlainExcelLogic";
 import { ExcelImportLogic } from "@altea/altea-office-template/server/excel/ExcelImportLogic";
+import { HtmlEditorLogic } from "@altea/altea-html-editor/server/HtmlEditorLogic";
 import { ExcelReportLogic } from "@altea/altea-office-template/server/excel/ExcelReportLogic";
 import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic";
 import { SqlMigrationRunner } from "@altea/altea-migrations/server/SqlMigrationRunner";
@@ -448,6 +449,10 @@ export namespace Starter {
         PlainExcelLogic.start(sb);
         ExcelImportLogic.start(sb);
         ExcelReportLogic.start(sb);//Excel
+
+        // The HTML editor is a UI control with no table, but its messages must be registered on the SERVER
+        // or the translation sync cannot see them (see HtmlEditorLogic).
+        HtmlEditorLogic.start(sb);//HtmlEditor
 
         // ==== PRINT QUEUE AND RELEASE NOTES (need files, scheduler, processes) ========================
 

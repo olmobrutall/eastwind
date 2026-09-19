@@ -2,7 +2,7 @@ import { reflect, init } from "@altea/altea/data/reflection";
 import { Entity, EmbeddedEntity, ModelEntity } from "@altea/altea/data/entity";
 import { Lite } from "@altea/altea/data/lite";
 import { entity, quoted, mixin, implementedBy, primaryKey } from "@altea/altea/data/decorators";
-import { stringLengthValidator, telephoneValidator } from "@altea/altea/data/validators";
+import { stringLengthValidator, telephoneValidator, validate, ValidationMessage } from "@altea/altea/data/validators";
 import { CorruptMixin } from "@altea/altea/data/corruptMixin";
 import { Temporal } from "@altea/altea/data/basics";
 import type { ExecuteSymbol } from "@altea/altea/data/operations";
@@ -20,6 +20,12 @@ export class AddressEmbedded extends EmbeddedEntity {
     city: string;
     @stringLengthValidator({ min: 2, max: 15 })
     region: string | null;
+    // Southwind's `AddressEmbedded.PropertyValidation`: a postal code is mandatory everywhere except
+    // Ireland, which has (had) none. The field stays NULLABLE — the rule is about the country, not about
+    // the column — so it is a `@validate`, not a `@notNullValidator`.
+    @validate<AddressEmbedded>((a, fi) => (a.postalCode ?? "") === "" && a.country !== "Ireland"
+        ? ValidationMessage._0IsNotSet.niceToString(fi.niceToString())
+        : null)
     @stringLengthValidator({ min: 3, max: 10 })
     postalCode: string | null;
     @stringLengthValidator({ min: 2, max: 15 })

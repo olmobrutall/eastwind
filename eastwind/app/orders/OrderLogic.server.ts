@@ -14,6 +14,8 @@ import { PackageLogic, PackageExecuteAlgorithm } from "@altea/altea-processes/se
 import { PackageEntity } from "@altea/altea-processes/data/Package";
 import { ProcessEntity, ProcessOperation } from "@altea/altea-processes/data/Processes";
 import { Operations } from "@altea/altea/server/operationLogic";
+import { inState } from "@altea/altea/server/operation";
+import { ValidationMessage } from "@altea/altea/data/validators";
 import {
     OrderEntity, OrderLineEntity, OrderState, OrderOperation, OrderMessage, OrderTask, OrderProcess, OrderLinesRowModel,
 } from "./Order.data";
@@ -180,7 +182,10 @@ function registerOrderOperations(sm: FluentStateMachine<OrderEntity, OrderState>
     });
 
     sm.withConstructFrom(OrderEntity, OrderOperation.Clone, {
-        canConstruct: o => o.state === OrderState.Shipped ? null : "Only shipped orders can be cloned.",
+        // Southwind's `CanConstructExpression = o => o.State.InState(OrderState.Shipped)` — a ConstructFrom
+        // has no `fromStates`, so the state guard is the generic `canConstruct`, worded by the same
+        // message the graph's own transition check uses.
+        canConstruct: o => inState(o.state, OrderState, OrderState.Shipped),
         toStates: [OrderState.Ordered],
         resultIsSaved: true,
         construct: async o => {
@@ -238,7 +243,9 @@ function registerOrderOperations(sm: FluentStateMachine<OrderEntity, OrderState>
     });
 
     sm.withExecute(OrderOperation.Ship, {
-        canExecute: o => o.details.length === 0 ? "Details is empty." : null,
+        canExecute: o => o.details.length === 0
+            ? ValidationMessage._0IsEmpty.niceToString(OrderEntity.nicePropertyName(a => a.details))
+            : null,
         fromStates: [OrderState.Ordered],
         toStates: [OrderState.Shipped],
         canBeModified: true,
