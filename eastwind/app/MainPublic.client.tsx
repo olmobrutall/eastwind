@@ -90,7 +90,6 @@ async function reload(): Promise<void> {
     // Boot straight into the remembered culture, so the first paint is already translated. AFTER the route
     // build — the metadata blob's symbol ids and per-module hooks need those modules imported first.
     await loadReflectionMetadata({ culture: CultureClient.savedCulture() });
-    document.documentElement.setAttribute("lang", CultureClient.getCurrentCulture());
 
     const router = createBrowserRouter([{
         path: "/",
