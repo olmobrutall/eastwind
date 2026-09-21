@@ -2,20 +2,15 @@ import * as React from "react";
 import * as AppContext from "@altea/altea/client/AppContext";
 import { AuthClient } from "@altea/altea-auth/client/AuthClient";
 
-// Port of Southwind's `Home.tsx` — the landing page, which mostly decides where you actually belong:
+// The landing page, which mostly decides where you actually belong:
 //  • no user            → the ANONYMOUS shop window (publicApi/PublicCatalog.tsx);
 //  • a user with a HOME DASHBOARD (the highest-priority standalone dashboard the current role may see)
 //                       → that dashboard;
 //  • otherwise          → the hero below.
 // Re-rendered on login/logout because MainPublic remounts the tree on resetUI.
 //
-// The dashboard module is reached through a DYNAMIC import (as Signum does): the home page must keep working
-// when @altea/altea-dashboard isn't registered, and the dashboard chunk stays out of the initial bundle.
-//
-// Divergences from Southwind: no `logo.png` (Southwind's own branding — the app name is rendered as text
-// instead), and each item of its getting-started checklist points at eastwind's counterpart of the file
-// Southwind names, since half of them are C#/MSBuild artifacts this port does not have (`Index.cshtml`,
-// `Startup.cs`, the `/SCSS` pipeline).
+// The dashboard module is reached through a DYNAMIC import: the home page must keep working when
+// @altea/altea-dashboard isn't registered, and the dashboard chunk stays out of the initial bundle.
 export default function Home(): React.JSX.Element | null {
 
     const [loaded, setLoaded] = React.useState(false);
@@ -52,10 +47,10 @@ export default function Home(): React.JSX.Element | null {
         <div id="hero" style={{ background: "url(" + AppContext.toAbsoluteUrl("/background_dark.jpg") + ")", backgroundSize: "cover", flexGrow: 1 }}>
             <div className="hero-container">
                 <h1 className="white">eastwind</h1>
-                <h2 className="white mb-4">Southwind, the demo application of <a href="http://www.signumsoftware.com" style={{ color: "#cae4ff" }} title="Signum Software">Signum Software</a>, ported onto the altea framework — over Microsoft's Northwind database</h2>
+                <h2 className="white mb-4">A demo application on the <a href="https://github.com/olmobrutall/altea" style={{ color: "#cae4ff" }} title="altea">altea</a> framework — over Microsoft's Northwind database</h2>
                 {/* No "good places to start" list: the sidebar and the omnibox say that better than prose
-                    can. What is left is Southwind's getting-started checklist — the part a developer cannot
-                    discover by clicking — pointed at eastwind's counterpart of each file it names. */}
+                    can. What is left is the getting-started checklist — the part a developer cannot
+                    discover by clicking. */}
                 <div className="card shadow text-start" style={{ maxWidth: "min(48rem, 92vw)" }}>
                     <div className="card-body">
                         <h5 className="card-title">New to altea?</h5>

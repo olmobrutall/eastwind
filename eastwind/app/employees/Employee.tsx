@@ -8,10 +8,10 @@ import { TypeContext } from '@altea/altea/client/TypeContext'
 import { FileImageLine } from '@altea/altea-files/client/Components/FileImageLine'
 import { EmployeeEntity } from './Employee.data'
 
-// Ported from Southwind/Employees/Employee.tsx. Divergences: the Photo is a FileEmbedded rendered by
-// FileImageLine, where Southwind holds a Lite<FileEntity> and hand-rolls a fetched <img> (same line
+// The employee view. The Photo is a FileEmbedded rendered by FileImageLine rather than a
+// Lite<FileEntity> behind a hand-rolled fetched <img> (same line
 // Category.tsx uses for its picture); Territories is an owned junction part-array
-// (EmployeeEntity_Territory) rather than an MList<TerritoryEntity>.
+// (EmployeeEntity_Territory) rather than an inline list of references.
 export default function Employee(p: { ctx: TypeContext<EmployeeEntity> }): React.JSX.Element {
   const ctx = p.ctx;
   const ctxBasic = ctx.subCtx({ formGroupStyle: "SrOnly" });

@@ -11,7 +11,7 @@ import { SystemEventLogLogic } from "@altea/altea/server/systemEventLogLogic";
 import { CultureInfoLogic } from "@altea/altea/server/cultureInfoLogic";
 import { OperationLogic } from "@altea/altea/server/operationLogic";
 import { loadAppTranslations } from "@altea/altea/server/translations";
-import { simplifyDiffTables, simplifyDiffEnums } from "@altea/altea/server/sync/schemaSynchronizer";
+import { simplifyDiffTables } from "@altea/altea/server/sync/schemaSynchronizer";
 import { EntityOverrides } from "./entityOverrides.data";
 import { EmployeesLogic } from "./employees/EmployeeLogic.server";
 import { ProductsLogic } from "./products/ProductLogic.server";
@@ -138,22 +138,20 @@ import { CacheServer } from "@altea/altea-cache/server/CacheServer";
 import type { Schema } from "@altea/altea/server/schema";
 import { EastwindModeServer } from "./eastwindMode.server";
 
-// Port of Southwind's Starter.Start (Southwind/Starter.cs): the single global entry that builds the
-// schema, binds the connector, registers each module's logic and completes.
+// The single global entry that builds the schema, binds the connector, registers each module's logic and
+// completes.
 //
-// Kept as THIN as Southwind's — one line per module — and ordered by DEPENDENCY: the framework first,
-// then each altea module after the ones it builds on, and the APP's own domains last. Every "why is this
-// call here and not there" note lives in **docs/Wiring.md**; read it before moving one. The trailing
-// `//<Name>` markers on a block's closing line are anchors for Modules.xml — Southwind's Starter.cs uses
-// the same convention.
+// Kept THIN — one line per module — and ordered by DEPENDENCY: the framework first, then each altea module
+// after the ones it builds on, and the APP's own domains last. Every "why is this call here and not there"
+// note lives in **docs/Wiring.md**; read it before moving one. The trailing `//<Name>` markers on a block's
+// closing line are anchors for Modules.xml.
 export namespace Starter {
     /** The built schema, kept so a host that DEFERRED initialization can run it later (see `initialize`). */
     let built: Schema | undefined;
 
     /**
-     * Signum's `Schema.Current.Initialize()` — read the persisted ids and warm the caches that need the
-     * database. Separate from `start` because WHEN it happens differs by host (docs/Wiring.md).
-     * Idempotent.
+     * Read the persisted ids and warm the caches that need the database. Separate from `start` because WHEN
+     * it happens differs by host (docs/Wiring.md). Idempotent.
      */
     export async function initialize(): Promise<void> {
         if (built == null)
@@ -169,15 +167,15 @@ export namespace Starter {
     }
 
     /**
-     * @param webBuilder  Signum's `sb.WebServerBuilder`: each module mounts its own HTTP surface through it.
-     *   A terminal / test omits it (no HTTP).
+     * @param webBuilder  Each module mounts its own HTTP surface through it. A terminal / test omits it
+     *   (no HTTP).
      * @param options.initialize  Run {@link initialize} as part of starting (the default). A TERMINAL passes
      *   false and initializes per command — see that method.
      */
     export async function start(connectionString: string, webBuilder?: WebBuilder,
         options?: { initialize?: boolean }): Promise<void> {
-        // Point eastwind at a database a SIGNUM application generated — a Southwind — and declare only what
-        // Southwind declares. Read FIRST because EntityOverrides needs it.
+        // Point eastwind at a database a LEGACY application generated, and declare only what that
+        // application declares. Read FIRST because EntityOverrides needs it.
         const legacyMode = isEnvTrue(process.env["LegacyMode"]);
 
         // Shared entity-model declarations (mixins / lite models / implementedBy overrides), applied
@@ -198,24 +196,21 @@ export namespace Starter {
         sb.settings.implementedByAllPkType("uuid");
         sb.settings.legacyMode = legacyMode;
 
-        // Two differences a legacy sync must not act on, plus the field ROUTES that emit no column in
-        // Southwind (Signum's `FieldAttributes(route).Add(new IgnoreAttribute())`). All of it must precede
-        // every `include` below, as it does in Signum's `Starter.OverrideAttributes`.
+        // What a legacy sync must not act on: the configuration columns, and the field ROUTES that emit no
+        // column there. All of it must precede every `include` below.
         if (legacyMode) {
-            ignoreSouthwindOnlyConfiguration();
-            ignoreRenamedEnumMembers();
+            ignoreConfigurationsForLegacyOnly();
 
-            // Southwind's `PredictorLogic.IgnorePinned(sb)` — Signum even ASSERTS the app called it.
             sb.settings.ignoreFieldRoute(PredictorEntity_Filter, "pinned");
             sb.settings.ignoreFieldRoute(PredictorSubQueryEntity_Filter, "pinned");
 
-            // The two DIRECTORY configurations Southwind does not declare (it declares AzureAD alone).
+            // The two DIRECTORY configurations a legacy database does not declare (AzureAD alone).
             sb.settings.ignoreFieldRoute(ApplicationConfigurationEntity, "openID");
             sb.settings.ignoreFieldRoute(ApplicationConfigurationEntity, "windowsAD");
         }//LegacyMode
 
-        // Southwind's ConfigureBigString — WHERE each log table's big text lives. Before any of those types
-        // is included, because registering a route is what drops the column its mode does not use.
+        // WHERE each log table's big text lives. Before any of those types is included, because registering
+        // a route is what drops the column its mode does not use.
         configureBigString(sb);
 
         // ==== The FRAMEWORK (@altea/altea) ============================================================
@@ -227,7 +222,6 @@ export namespace Starter {
             : undefined;
         CacheLogic.start(sb, { serverBroadcast });//Cache
 
-        // Framework logic (Signum's part of Starter.Start).
         ExceptionLogic.start(sb);
         SystemEventLogLogic.start(sb);
         CultureInfoLogic.start(sb);
@@ -243,20 +237,20 @@ export namespace Starter {
         // per module, compiled into the client — so this table is the whole stored part.
         ChangeLogLogic.start(sb);
 
-        // A search query for the TypeEntity system table (Signum ships one). Included by the schema core but
-        // never `.withQuery()`'d, so `/find/Type` reported "not allowed". Scoped to eastwind rather than the
+        // A search query for the TypeEntity system table: included by the schema core but never
+        // `.withQuery()`'d, so `/find/Type` reported "not allowed". Scoped to eastwind rather than the
         // framework, to avoid re-seeding the framework suite's query table.
         sb.include(TypeEntity).withQuery();
 
-        // The SqlMigration / CSharpMigration history tables + the LoadMethodLog every terminal load writes.
-        // Server-only (the runners live in the terminal); the tables must be in the schema for `sync` and
-        // the load menu to log into them. Before TokenMigrationLogic, which points at the same directory.
+        // The migration history tables + the LoadMethodLog every terminal load writes. Server-only (the
+        // runners live in the terminal); the tables must be in the schema for `sync` and the load menu to
+        // log into them. Before TokenMigrationLogic, which points at the same directory.
         MigrationLogic.start(sb);
 
         // ==== AUTHORIZATION (@altea/altea-auth) =======================================================
 
-        // Authentication + the five authorization dimensions. The two user names are Southwind's; the
-        // second is the app's unauthenticated posture (docs/Wiring.md).
+        // Authentication + the five authorization dimensions. The second user name is the app's
+        // unauthenticated posture (docs/Wiring.md).
         AuthLogic.start(sb, "System", "Anonymous");
         TypeAuthLogic.start(sb);
         PermissionAuthLogic.start(sb);
@@ -266,22 +260,21 @@ export namespace Starter {
         UserTicketLogic.start(sb);
         SessionLogLogic.start(sb);
 
-        // Southwind's "the row IS the current user" condition, which also scopes the USER ASSETS by owner
-        // further down; a symbol is registered per type, so both registrations are needed. (Its sibling,
+        // The "the row IS the current user" condition, which also scopes the USER ASSETS by owner further
+        // down; a symbol is registered per type, so both registrations are needed. (Its sibling,
         // `CurrentEmployee`, is about an app type and goes with the app's domains at the bottom.)
         TypeConditionLogic.registerCompile(UserEntity, EastwindTypeCondition.UserEntities,
             u => u.is(UserHolder.currentUserLite()));
 
         // ==== FILES (@altea/altea-files) ==============================================================
 
-        // Files + BigString (Southwind's FilePathEmbeddedLogic.Start + FileLogic.Start + BigStringLogic.Start).
         // After AuthLogic.start, so their routes are mounted behind the auth middleware (rule 2).
         FileLogic.start(sb);
         BigStringLogic.start(sb);
 
         // ==== DIRECTORY LOGIN (auth sub-modules; need auth + files) ===================================
 
-        // Directory login modules. AzureAD is started unconditionally (Southwind does), so its ADGroup /
+        // Directory login modules. AzureAD is started unconditionally, so its ADGroup /
         // CachedProfilePhoto tables are part of the schema whether or not a tenant is configured; OpenID and
         // WindowsAD contribute no tables and only REPLACE the installed authorizer.
         AzureADLogic.start(sb, {
@@ -291,7 +284,6 @@ export namespace Starter {
         });//AzureAD
         // The photo store; `CachedProfilePhotoLogic.start` registers the file type itself, so the app only
         // supplies the algorithm. `onlyImages` is what makes an Azure / S3 store serve these INLINE.
-        // Not in Southwind — see legacyMode.
         if (!legacyMode) {
             CachedProfilePhotoLogic.start(sb, EastwindFileStores.store("profile-photos", { onlyImages: true }));
         }//CachedProfilePhoto
@@ -312,8 +304,8 @@ export namespace Starter {
         SchedulerLogic.start(sb);
         ProcessLogic.start(sb);
         PackageLogic.start(sb);
-        // Not in Southwind — see legacyMode. Signum's ProcessAlgorithmSymbol is not an ITaskEntity, so
-        // there is no bridge and `scheduled_task.task` keeps its single implementation (gated to match in
+        // A legacy database has no bridge: its process-algorithm symbol is not a task entity, so
+        // `scheduled_task.task` keeps its single implementation there (gated to match in
         // entityOverrides.data.ts).
         if (!legacyMode)
             ProcessSchedulerBridge.start(sb);
@@ -321,7 +313,7 @@ export namespace Starter {
         // ==== EVAL (@altea/altea-eval) ================================================================
 
         // The COMPILER configuration plus the registry of what a stored script may import
-        // (eastwindEval.server.ts, the counterpart of Signum's EvalLogic.AddFullAssembly block). BEFORE
+        // (eastwindEval.server.ts). BEFORE
         // every module whose entities carry an EvalEmbedded: the templates' `applicable`, the workflow's eight.
         EastwindEval.start(sb);
 
@@ -332,7 +324,7 @@ export namespace Starter {
         TokenMigrationLogic.migrationsDirectory = () => SqlMigrationRunner.migrationsDirectory;
         TokenMigrationLogic.start(sb);//TokenMigration
 
-        // The user assets, and Southwind's row-level owner scoping on each: a role whose rule uses these
+        // The user assets, and the row-level owner scoping on each: a role whose rule uses these
         // conditions sees only its own + the shared/global assets.
         UserQueriesLogic.start(sb);
         UserQueriesLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
@@ -342,14 +334,14 @@ export namespace Starter {
         UserChartLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
         UserChartLogic.registerRoleTypeCondition(EastwindTypeCondition.RoleEntities);
         // `svgMapUrls` registers the opt-in SvgMap chart with the sample map served from public/ — a symbol
-        // ROW, so it goes with the rest of what Southwind does not declare.
+        // ROW, so it goes with the rest of what a legacy database does not declare.
         ChartLogic.start(sb, legacyMode ? undefined : ["/sample-maps/regions.svg"]);
         ColorPaletteLogic.start(sb);//Chart
 
         DashboardLogic.start(sb);
-        // The dashboard SNAPSHOT store (Signum passes `cachedQueryAlgorithm` into DashboardLogic.Start). A
+        // The dashboard SNAPSHOT store. A
         // snapshot is read far more often than written, hence a store the app can point at object storage.
-        CachedQueryLogic.start(sb, { fileTypeAlgorithm: EastwindFileStores.store("cached-queries") });
+        CachedQueryLogic.start(sb, { fileTypeAlgorithm: EastwindFileStores.store("cached-query") });
         DashboardLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
         DashboardLogic.registerRoleTypeCondition(EastwindTypeCondition.RoleEntities);//Dashboard
 
@@ -357,15 +349,15 @@ export namespace Starter {
         ToolbarLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
         ToolbarLogic.registerRoleTypeCondition(EastwindTypeCondition.RoleEntities);//Toolbar
 
-        // Guided in-app tours. Not in Southwind — see legacyMode.
+        // Guided in-app tours.
         if (!legacyMode) {
             TourLogic.start(sb);
         }//Tour
 
         // ==== COMMUNICATION (needs files, scheduler, processes, eval) =================================
 
-        // Not in Southwind — see legacyMode. Signum registers this file type only when the app PASSES an
-        // `attachment` algorithm, and Southwind passes none, so its templates cannot carry attachments at all.
+        // Registered only when the app passes an `attachment` algorithm, which a legacy database's
+        // templates do not, so they cannot carry attachments at all.
         if (!legacyMode)
             FileTypeLogic.register(EmailFileType.Attachment,
                 EastwindFileStores.store("email-attachments"));//EmailAttachment
@@ -373,21 +365,19 @@ export namespace Starter {
         // Self-service password reset — BEFORE EmailLogic.start, whose EmailModel table its two models seed.
         ResetPasswordRequestLogic.start(sb);//ResetPassword
 
-        // Email + templating. The app supplies only what is app-specific — Signum's `EmailLogic.Start(sb,
-        // () => Configuration.Value.Email, (template, target, message) => Configuration.Value.EmailSender)`.
+        // Email + templating. The app supplies only what is app-specific — the configuration and the sender.
         EmailLogic.start(sb, {
             getConfiguration: () => GlobalsLogic.configuration().email,
             getSenderConfiguration: async () => GlobalsLogic.configuration().emailSender,
         });
 
-        // The BATCH half (Signum.Mailing/Package). Not in Southwind — its Starter.cs REGISTERS the package
-        // mixin (so that database has `email_message.package_id`, and eastwind declares it either way) but
-        // never calls this, which is what adds the search page, the two process algorithms and ReSendEmails.
+        // The BATCH half. A legacy database REGISTERS the package mixin (so it has
+        // `email_message.package_id`, and eastwind declares it either way) but never starts this, which is
+        // what adds the search page, the two process algorithms and ReSendEmails.
         if (!legacyMode)
             EmailPackageLogic.start(sb);//EmailPackage
 
         // The scheduled task that sends a template to nothing / one target / every row of a user query.
-        // Not in Southwind — see legacyMode.
         if (!legacyMode) {
             SendEmailTaskLogic.start(sb);
         }//SendEmailTask
@@ -396,13 +386,12 @@ export namespace Starter {
         // sender registry; which one a message goes through is decided per EmailSenderConfiguration row, so
         // starting both costs nothing until one is configured. Both re-check that entityOverrides widened
         // `EmailSenderConfiguration.service` and fail loudly here rather than at the first send.
-        // Not in Southwind — see legacyMode.
         if (!legacyMode) {
             MailingExchangeWSLogic.start(sb);
         }//MailingExchangeWS
         MailingMicrosoftGraphLogic.start(sb);
 
-        // The INBOUND half. Not in Southwind — see legacyMode.
+        // The INBOUND half.
         if (!legacyMode) {
             Pop3ConfigurationLogic.start(sb);
             EmailReceptionLogic.start(sb);
@@ -410,26 +399,24 @@ export namespace Starter {
 
         // Browsing a user's real Outlook mailbox. OPT-IN: it registers a search page whose every row is a
         // live Microsoft Graph call, so without an Entra tenant it would only ever show an error.
-        // …and not in Southwind either — see legacyMode.
         if (!legacyMode && process.env["EASTWIND_REMOTE_EMAILS"] === "true")
             RemoteEmailsLogic.start(sb);//RemoteEmails
 
-        // `registerExpressionsFor` is Southwind's `AlertLogic.Start(sb, typeof(UserEntity), typeof(OrderEntity))`
-        // — those two types grow the `Alerts` / `MyActiveAlerts` sub-tokens. Notes get the same two.
+        // `registerExpressionsFor`: the types that grow the `Alerts` / `MyActiveAlerts` sub-tokens.
+        // Notes get the same two.
         // Naming an APP type here is fine before its domain is included: registering an expression stores a
         // ctor-keyed entry and touches no table.
         AlertLogic.start(sb, { registerExpressionsFor: [UserEntity, OrderEntity] });
         NoteLogic.start(sb, { registerExpressionsFor: [UserEntity, OrderEntity] });
 
-        // Its OPT-IN notification half (Signum's RegisterAlertNotificationMail): the e-mail model and the
+        // Its OPT-IN notification half: the e-mail model and the
         // ScheduledTask that mails each user their pending alerts.
-        // Not in Southwind — see legacyMode.
         if (!legacyMode) {
             AlertNotificationLogic.start(sb);
         }//AlertNotification
 
-        // SMS. `provider` is deliberately UNSET — Signum ships no gateway either. Its two OPT-IN halves
-        // stand down against a Southwind database: `SMSLogic.Start(sb, null, …)` reaches neither the
+        // SMS. `provider` is deliberately UNSET — no gateway ships with the module. Its two OPT-IN halves
+        // stand down against a legacy database, which reaches neither the
         // send / update-status processes nor the SMSModel registry. (The app's own SMS OWNERS are
         // registered with the app's domains at the bottom.)
         SMSModuleLogic.start(sb, {
@@ -440,12 +427,11 @@ export namespace Starter {
 
         // ==== DOCUMENTS (needs email, files) ==========================================================
 
-        // Office templates. Its ATTACHMENT half is off against a Southwind database: Signum has no caller
-        // for `WordAttachmentLogic.Start` and Southwind calls `WordTemplateLogic.Start(sb)` alone.
+        // Office templates. Its ATTACHMENT half is off against a legacy database, which has no caller
+        // for it.
         OfficeTemplateLogic.start(sb, { attachments: !legacyMode });//OfficeTemplate
 
-        // The three Signum.Excel halves, each its own starter so an app can offer export without import;
-        // Southwind starts all three with one `ExcelLogic.Start(sb, excelReport: true)`.
+        // The three Excel halves, each its own starter so an app can offer export without import.
         PlainExcelLogic.start(sb);
         ExcelImportLogic.start(sb);
         ExcelReportLogic.start(sb);//Excel
@@ -456,10 +442,10 @@ export namespace Starter {
 
         // ==== PRINT QUEUE AND RELEASE NOTES (need files, scheduler, processes) ========================
 
-        // Print queue. `PrintingLogic.print` is deliberately UNSET — its default throws, as Signum's does.
-        // The TEST file type IS supplied, so `CreateTest` has somewhere to upload (Southwind passes none).
-        // Not in Southwind — see legacyMode; the file type and the routes are INSIDE the gate, because a
-        // module Southwind does not start must contribute neither a symbol row nor a permission.
+        // Print queue. `PrintingLogic.print` is deliberately UNSET — its default throws.
+        // The TEST file type IS supplied, so `CreateTest` has somewhere to upload.
+        // The file type and the routes are INSIDE the gate, because a module a legacy database does not
+        // start must contribute neither a symbol row nor a permission.
         if (!legacyMode) {
             PrintingLogic.start(sb, { testFileType: EastwindFileType.PrintTest });
             FileTypeLogic.register(EastwindFileType.PrintTest,
@@ -469,7 +455,7 @@ export namespace Starter {
         }//Printing
 
         // Release notes. The PUBLISHED type condition is what makes a Draft invisible to a non-admin.
-        // Not in Southwind — see legacyMode; two file-type symbol rows and a TYPE CONDITION row are
+        // Two file-type symbol rows and a TYPE CONDITION row are
         // inside the gate for the same reason as Printing's.
         if (!legacyMode) {
             WhatsNewLogic.start(sb);
@@ -485,7 +471,7 @@ export namespace Starter {
         // ==== MACHINE LEARNING (needs processes, files, chart) ========================================
 
         PredictorLogic.start(sb, {
-            predictorFile: EastwindFileStores.store("predictor-files"),
+            predictorFile: EastwindFileStores.store("predictor-models"),
         });//Predictor
 
         // ==== DYNAMIC AND WORKFLOW (need eval, scheduler, processes, auth) ============================
@@ -500,15 +486,15 @@ export namespace Starter {
         });
         // `isolations` is opt-in and OFF by default: eastwind turns it on to exercise DynamicIsolation and
         // still never starts @altea/altea-isolation, so no app-wide commitment. Two sub-modules stand down
-        // against a Southwind database — its DynamicLogicStarter.cs starts eight by name and neither
-        // DynamicCSSOverrideLogic nor DynamicApiLogic is on the list.
+        // against a legacy database, which starts neither
+        // DynamicCSSOverrideLogic nor DynamicApiLogic.
         DynamicLogic.start(sb, {
             isolations: !legacyMode,
             cssOverrides: !legacyMode,
             apis: !legacyMode,
         });//Dynamic
 
-        // Workflow. Southwind starts the module but declares no main entity, so nothing could actually run
+        // Workflow. A legacy database starts the module but declares no main entity, so nothing could run
         // through it; eastwind makes ORDER one — with the app's domains at the bottom.
         WorkflowLogicStarter.start(sb, () => GlobalsLogic.configuration().workflow);//Workflow
 
@@ -517,17 +503,16 @@ export namespace Starter {
         // Omnibox, then the three modules that push a generator onto it.
         OmniboxLogic.start(sb);
         MapLogic.start(sb);
-        // The image store is the app's, exactly as Southwind's `GetFileTypeAlgorithm(p => p.HelpImagesFolder)`.
-        HelpModuleLogic.start(sb, EastwindFileStores.store("help-images", { onlyImages: true }));//Help
+        // The image store is the app's.
+        HelpModuleLogic.start(sb, EastwindFileStores.store("help-image", { onlyImages: true }));//Help
 
         // Tree owns no tree TYPE — the app's is DepartmentEntity, registered with the app's domains.
-        // Not in Southwind — see legacyMode.
         if (!legacyMode) {
             TreeModuleLogic.start(sb);
         }//Tree
 
         // The API-key table + its authenticator, and the replayable log of the public REST surface.
-        // Southwind starts the two halves as two calls; altea packages expose one start per module.
+        // The two halves (log + api key) are one start per module.
         RestModuleLogic.start(sb);
 
         // Live presence on an open entity, and the profiler pages. Both after the auth logics (the
@@ -545,7 +530,7 @@ export namespace Starter {
         AgentLogic.start(sb, EastwindAgent.chatbotSkill);
         AgentLogic.registerAgent(EastwindAgentUseCases.MCP, EastwindAgent.mcpSkill);//Agent
 
-        // `registerExpressionsFor` is Southwind's exact set — the three user assets whose search pages get
+        // `registerExpressionsFor` — the three user assets whose search pages get
         // the "who looked at this?" sub-tokens.
         ViewLogLogic.start(sb, {
             registerExpressionsFor: [
@@ -555,10 +540,10 @@ export namespace Starter {
             ],
         });//ViewLog
 
-        // Translations, both halves. Its REPLACEMENT half is off against a Southwind database: Signum has
-        // no caller for `TranslationReplacementLogic.Start` and Southwind is not one.
+        // Translations, both halves. Its REPLACEMENT half is off against a legacy database, which has
+        // no caller for it.
         //
-        // The two machine translators are Southwind's, and take their credentials as LAMBDAS over the
+        // The two machine translators take their credentials as LAMBDAS over the
         // configuration row, so rotating a key is a save rather than a restart. Either may be unset — each
         // answers null for a missing key, which the chain reads as "nothing to suggest" — and the
         // always-available AlreadyTranslatedTranslator is prepended by `start` itself.
@@ -573,7 +558,7 @@ export namespace Starter {
         });//Translation
 
         // The two modules that DECORATE the operation log, so they come after OperationLogic.start above.
-        // `registerAll` is Southwind's setting: dump EVERY entity type, not an opt-in list.
+        // `registerAll`: dump EVERY entity type, not an opt-in list.
         DiffLogLogic.start(sb, { registerAll: true });//DiffLog
         TimeMachineLogic.start(sb);
 
@@ -583,8 +568,7 @@ export namespace Starter {
             CacheServer.start(sb.webBuilder);
         if (sb.webBuilder) {
             ChatbotServer.start(sb.webBuilder);
-            // The MCP endpoint exposes the app's MCP agent's skill tree to an EXTERNAL host (Southwind does
-            // the same in Program.cs with `.WithSignumSkill(…MCP)`).
+            // The MCP endpoint exposes the app's MCP agent's skill tree to an EXTERNAL host.
             AgentMcpServer.start(sb.webBuilder, EastwindAgentUseCases.MCP);
         }//AgentServer
 
@@ -601,21 +585,20 @@ export namespace Starter {
         CustomersLogic.start(sb);
         OrdersLogic.start(sb);
         // The app's TREE type (the module itself is started above).
-        // Not in Southwind — see legacyMode.
         if (!legacyMode)
             DepartmentsLogic.start(sb);//Departments
 
-        // Southwind's second type condition: "the orders I handled" — `EmployeeEntity.current()` reads the
+        // The second type condition: "the orders I handled" — `EmployeeEntity.current()` reads the
         // claim UserEmployeeMixin fills. It grants nothing by itself; it exists so the SYMBOL does (a
-        // Southwind database holds the row).
+        // legacy database holds the row).
         TypeConditionLogic.registerCompile(OrderEntity, EastwindTypeCondition.CurrentEmployee,
             o => o.employee.is(EmployeeEntity.current()));
 
-        // ORDER as a workflow case main entity (orders/OrderWorkflow.server.ts) — Southwind declares none,
-        // so nothing could actually run through its workflow module.
+        // ORDER as a workflow case main entity (orders/OrderWorkflow.server.ts) — a legacy database declares
+        // none, so nothing could run through its workflow module.
         OrderWorkflow.registerOrderAsMainEntity(sb);
 
-        // eastwind's SMS owner: a CUSTOMER (Northwind's customers carry a phone) — Southwind registers none,
+        // The SMS owner: a CUSTOMER (Northwind's customers carry a phone) — a legacy database registers none,
         // so without this the module would have nothing to be about. The sub-token is registered PER
         // CONCRETE TYPE; the "send to all of these" OPERATION once, on the abstract base (docs/Wiring.md).
         SMSLogic.registerSMSOwner(PersonEntity);
@@ -625,17 +608,17 @@ export namespace Starter {
                 owner: c.toLite(), telephoneNumber: c.phone, culture: null,
             }));//SMSOwner
 
-        // Southwind's `RegisterPublication(MonthlySales, new PublicationSettings(typeof(OrderEntity)))`: the
+        // The publication: the
         // model published under this name predicts over the ORDER query. The registration also SEEDS the symbol row.
         PredictorLogic.registerPublication(ProductPredictorPublication.MonthlySales, { queryName: OrderEntity });
 
-        // The app's own GLOBALS (Southwind's Globals/GlobalsLogic.cs): the ApplicationConfiguration table
+        // The app's own GLOBALS: the ApplicationConfiguration table
         // every configuration lambda above reads through `GlobalsLogic.configuration()`. LAST of the
-        // includes, exactly where Southwind calls it — the row references and embeds the types every module
+        // includes — the row references and embeds the types every module
         // above created.
         GlobalsLogic.start(sb);
 
-        // The COMPILED half of altea-dynamic, in Signum's own order — all before `sb.complete()`, because a
+        // The COMPILED half of altea-dynamic — all before `sb.complete()`, because a
         // schema is built once. `registerExceptionIfAny` reports a compile failure loudly, including that a
         // `sync` would now script DROPs.
         await DynamicLogic.compileDynamicCode();
@@ -655,7 +638,7 @@ export namespace Starter {
         if (options?.initialize !== false)
             await initialize();
 
-        // The app's own REST surfaces (Southwind's Public/*Controller). After every module, so the RestLog
+        // The app's own REST surfaces. After every module, so the RestLog
         // middleware sits behind the auth middleware AuthLogic.start installed.
         if (sb.webBuilder) {
             // This deployment's MODE, for the app's own client — EntityOverrides runs on both tiers and
@@ -664,11 +647,11 @@ export namespace Starter {
             CatalogApi.start(sb.webBuilder);
             PublicCatalogApi.start(sb.webBuilder);
             // The ROLE a self-registered visitor is given is the app's decision, not the module's, so it is
-            // named here (Southwind hard-codes it inside the controller); it must be one createRoles seeds.
+            // named here rather than inside the controller; it must be one createRoles seeds.
             PublicLogic.start(sb.webBuilder, { registeredUserRoleName: "Standard user" });
         }//PublicApi
 
-        // The three BACKGROUND RUNNERS (Southwind.Server/Program.cs's `StartBackgroundProcesses`). A few
+        // The three BACKGROUND RUNNERS. A few
         // seconds after the schema is up, and only with a WEB host — a terminal run must not pick work up.
         if (sb.webBuilder) {
             ProcessRunner.startRunningProcessesAfter(5000);
@@ -676,7 +659,7 @@ export namespace Starter {
             AsyncEmailSender.startAsyncEmailSenderAfter(5000);
         }//BackgroundRunners
 
-        // The framework HTTP API LAST (Signum's SignumServer.Start): its JSON exception filter is Express
+        // The framework HTTP API LAST: its JSON exception filter is Express
         // error middleware, which must be registered after every route.
         if (sb.webBuilder)
             SignumServer.start(sb.webBuilder);
@@ -689,32 +672,28 @@ function isEnvTrue(value: string | undefined): boolean {
     return v === "true" || v === "1";
 }
 
-// Port of Southwind's `Starter.ConfigureBigString` — for each log table whose text can be large, whether
-// that text lives in its own column or in a FILE, decided PER PROPERTY ROUTE. Southwind picks `File` for
-// all five and one store each. See docs/Wiring.md before changing a mode: switching an existing database
+// For each log table whose text can be large, whether that text lives in its own column or in a FILE,
+// decided PER PROPERTY ROUTE. See docs/Wiring.md before changing a mode: switching an existing database
 // from Database to File is not just a `sync`.
 function configureBigString(sb: SchemaBuilder): void {
-    const mode: BigStringMode = "File";
-
-    const stores: [FileTypeSymbol, Type<Entity>, string][] = [
-        [BigStringFileType.Exceptions, ExceptionEntity, "exceptions"],
-        [BigStringFileType.OperationLog, OperationLogEntity, "operation-log"],
-        [BigStringFileType.ViewLog, ViewLogEntity, "view-log"],
-        [BigStringFileType.EmailMessage, EmailMessageEntity, "email-message"],
-        [BigStringFileType.RestLog, RestLogEntity, "rest-log"],
-    ];
-
-    for (const [fileType, type, storeName] of stores) {
-        FileTypeLogic.register(fileType, EastwindFileStores.store(storeName));
-        BigStringLogic.registerAll(sb, type, new BigStringConfiguration(mode, fileType));
-    }
+    registerBigString(sb, ExceptionEntity, BigStringFileType.Exceptions, "exceptions");
+    registerBigString(sb, OperationLogEntity, BigStringFileType.OperationLog, "operation-logs");
+    registerBigString(sb, ViewLogEntity, BigStringFileType.ViewLog, "view-logs");
+    registerBigString(sb, EmailMessageEntity, BigStringFileType.EmailMessage, "email-messages");
+    registerBigString(sb, RestLogEntity, BigStringFileType.RestLog, "rest-logs");
 }//ConfigureBigString
 
-// LEGACY MODE only. The columns Southwind's ApplicationConfigurationEntity stores and eastwind's
-// deliberately does not (Folders_* / Translation_* / AuthTokens_*). Left to itself the synchronizer offers
-// each as a RENAME of whatever model column sorts nearest by string distance and DROPs the declined ones —
-// both answers wrong. See docs/Wiring.md.
-function ignoreSouthwindOnlyConfiguration(): void {
+function registerBigString(sb: SchemaBuilder, type: Type<Entity>, fileType: FileTypeSymbol,
+    storeName: string, mode: BigStringMode = "File"): void {
+    FileTypeLogic.register(fileType, EastwindFileStores.store(storeName));
+    BigStringLogic.registerAll(sb, type, new BigStringConfiguration(mode, fileType));
+}
+
+// LEGACY MODE only. The columns the legacy ApplicationConfigurationEntity stores and this one deliberately
+// does not (Folders_* / Translation_* / AuthTokens_*). Left to itself the synchronizer offers each as a
+// RENAME of whatever model column sorts nearest by string distance and DROPs the declined ones — both
+// answers wrong. See docs/Wiring.md.
+function ignoreConfigurationsForLegacyOnly(): void {
     const prefixes = ["folders_", "translation_", "auth_tokens_"];
 
     simplifyDiffTables.push(databaseTables => {
@@ -728,19 +707,4 @@ function ignoreSouthwindOnlyConfiguration(): void {
             if (prefixes.some(p => name.startsWith(p)))
                 delete dif.columns[name];
     });
-}//ignoreSouthwindOnlyConfiguration
-
-// LEGACY MODE only. Enum members altea named better than Signum did, whose TABLE a Southwind database
-// therefore spells differently. BOTH sides are cleared, never one — a model member left behind with its
-// database row hidden is an INSERT, and it collides on the id that row still occupies. See docs/Wiring.md.
-function ignoreRenamedEnumMembers(): void {
-    const tables = ["exception_origin"];
-
-    simplifyDiffEnums.push((table, should, current) => {
-        if (!tables.includes(table.name.name))
-            return;
-
-        should.clear();
-        current.clear();
-    });
-}//ignoreRenamedEnumMembers
+}//ignoreConfigurationsForLegacyOnly

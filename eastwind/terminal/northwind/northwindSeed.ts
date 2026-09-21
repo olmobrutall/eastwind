@@ -7,7 +7,7 @@ import { terminalFile } from "../terminalFile";
 /**
  * Seed the Northwind SOURCE database — the demo data every `Load*` step reads through the `Nw*` views.
  *
- * Southwind has no counterpart: it assumes a Northwind database is already there (the SQL Server sample
+ * A port normally assumes a Northwind database is already there (the SQL Server sample
  * everyone had installed). eastwind runs on both dialects, so it ships both vendor scripts and seeds
  * whichever one matches `NORTHWIND_DB`:
  *

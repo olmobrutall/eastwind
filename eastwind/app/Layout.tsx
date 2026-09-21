@@ -20,7 +20,7 @@ const ChangeLogViewer = React.lazy(() => import("@altea/altea/client/Basics/Chan
 
 const ChatbotButton = React.lazy(() => import("@altea/altea-agent/client/ChatbotButton"));
 
-// The app shell (Southwind's Layout): a top navbar (with the sidebar toggle, the omnibox and the login/user
+// The app shell: a top navbar (with the sidebar toggle, the omnibox and the login/user
 // dropdown) + a SIDEBAR rendering the current "Side" toolbar + the routed page via <Outlet/>. Auth-aware only
 // in what it SHOWS — every navbar item that needs a user checks for one; there is no redirect guard (see the
 // note in the component). GlobalModalContainer stays mounted for every modal host.
@@ -39,7 +39,7 @@ function useRerenderOnUserChange(): void {
     }, []);
 }
 
-// Southwind's Layout keeps the sidebar mode in localStorage so it survives a reload; mobile starts hidden.
+// The sidebar mode is kept in localStorage so it survives a reload; mobile starts hidden.
 const SIDEBAR_MODE_KEY = "sidebarMode";
 
 function storedSidebarMode(): SidebarMode | null {
@@ -49,7 +49,7 @@ function storedSidebarMode(): SidebarMode | null {
 function useSidebarMode(isMobile: boolean): [SidebarMode, (mode: SidebarMode) => void] {
     const [mode, setMode] = React.useState<SidebarMode>(() => storedSidebarMode() ?? (isMobile ? "Hidden" : "Wide"));
 
-    // Southwind's Layout does exactly this, in an effect on [isMobile]: CROSSING the breakpoint re-decides
+    // An effect on [isMobile]: CROSSING the breakpoint re-decides
     // the mode — hidden on mobile, and back to the stored desktop choice on the way out. Without it the mode
     // is only ever decided on the first render, so a window that starts narrow (or a phone rotated to
     // landscape) keeps a hidden sidebar after there is room for it, until you toggle it by hand.
@@ -57,7 +57,7 @@ function useSidebarMode(isMobile: boolean): [SidebarMode, (mode: SidebarMode) =>
         setMode(isMobile ? "Hidden" : storedSidebarMode() ?? "Wide");
     }, [isMobile]);
 
-    // What is REMEMBERED is the desktop preference, as in Southwind (it writes the key only when !isMobile):
+    // What is REMEMBERED is the desktop preference (it writes the key only when !isMobile):
     // hiding the sidebar because the window got narrow must not overwrite the choice made when it was wide.
     return [mode, (m: SidebarMode) => {
         if (!isMobile)
@@ -73,7 +73,7 @@ export default function Layout(): React.JSX.Element {
     const isMobile = useBreakpoint() <= Breakpoints.sm;
     const [sidebarMode, setSidebarMode] = useSidebarMode(isMobile);
 
-    // NO login guard here, exactly as in Southwind's Layout. Client-side authorization is expressed by
+    // NO login guard here. Client-side authorization is expressed by
     // which routes EXIST: MainPublic only calls `startFull` for a real (non-anonymous) user, so an admin
     // path an anonymous visitor types falls through to NotFound and never renders. The real enforcement is
     // the server's role rules — the Anonymous role may read Category and Product and nothing else.
@@ -84,7 +84,7 @@ export default function Layout(): React.JSX.Element {
     const showSidebar = AppContext.currentUser != null && !isAuthRoute && sidebarMode !== "Hidden";
 
     return (
-        // Southwind's #site-content: the shell OWNS the viewport height (see site.css .sf-app-shell), so
+        // The shell OWNS the viewport height (see site.css .sf-app-shell), so
         // the document itself never scrolls — the sidebar and the page each scroll on their own.
         // `data-sidebar` is what lets the navbar's leading block be exactly as wide as the sidebar column
         // below it, so the omnibox starts where the page content starts — see site.css .sf-navbar-lead.

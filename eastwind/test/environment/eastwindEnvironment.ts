@@ -25,11 +25,11 @@ import { ChatbotConfigurationEmbedded } from "@altea/altea-agent/data/LanguageMo
 import { WorkflowConfigurationEmbedded } from "@altea/altea-workflow/data/Workflow";
 import { SMSConfigurationEmbedded } from "@altea/altea-sms/data/SMS";
 
-// Port of Southwind.Test.Environment/SouthwindEnvironment.cs — the data a TEST database is seeded with,
+// The data a TEST database is seeded with,
 // which is deliberately NOT what the terminal loads.
 //
 // It DUPLICATES the terminal's own seed steps (the configuration row, the roles) rather than calling
-// them, which is what Southwind does too: `SouthwindEnvironment.LoadBasics` writes its own
+// them: the environment writes its own
 // ApplicationConfiguration and its Terminal writes another. The two projects share the XML FILES and
 // nothing else — a test must not depend on the loading console, and the console must not depend on the
 // tests, so neither tsconfig references the other. Where they drift, they drift on purpose: this one is
@@ -45,11 +45,11 @@ import { SMSConfigurationEmbedded } from "@altea/altea-sms/data/SMS";
 export namespace EastwindEnvironment {
 
     /**
-     * Southwind's `LoadBasics`: the cultures this application ships translations for, and THE
+     * The cultures this application ships translations for, and THE
      * ApplicationConfiguration row every module's settings are read from (globals/GlobalsLogic).
      *
      * The values are a test's: e-mail OFF (nothing may leave the process), every credential empty — as
-     * Southwind seeds `AzureAD = null` — and a localhost SMTP sender so the mail module has somewhere to
+     * every directory member is null — and a localhost SMTP sender so the mail module has somewhere to
      * point. The terminal seeds its own row for a dev machine; this is the one a test runs against.
      */
     export async function loadBasics(): Promise<void> {
@@ -92,7 +92,7 @@ export namespace EastwindEnvironment {
     }
 
     /**
-     * The four roles AuthRules.xml then hangs its rules on — Signum's `AuthLogic.LoadRoles(xml)`, which
+     * The four roles AuthRules.xml then hangs its rules on, which
      * reads them out of the file; altea's importer expects the roles to exist, so they are named here.
      * The same four the terminal creates, and they have to be: the XML is shared.
      */
@@ -103,7 +103,7 @@ export namespace EastwindEnvironment {
         await ensureRole("Advanced user", MergeStrategy.Union, [standard]);
     }
 
-    /** Southwind's `LoadEmployees`: one region, two territories, and the three employees users map to. */
+    /** One region, two territories, and the three employees users map to. */
     export async function loadEmployees(): Promise<void> {
         if (await table(EmployeeEntity).count() > 0)
             return;
@@ -148,12 +148,12 @@ export namespace EastwindEnvironment {
     }
 
     /**
-     * Southwind's `LoadUsers`: one user per role, each with the name as its password (the dev seed's rule,
+     * One user per role, each with the name as its password (the dev seed's rule,
      * see eastwind's AGENTS.md) — so a browser test logs in as the role it wants to exercise.
      *
      * The employee link is what makes `Super` / `Advanced` / `Standard` usable for anything that reads
      * `EmployeeEntity.current()` — `OrderOperation.CreateOrderFromCustomer` does, so an order can only be
-     * created as one of those three, never as `System`. Southwind links them the same way.
+     * created as one of those three, never as `System`.
      */
     export async function loadUsers(): Promise<void> {
         const roles = new Map((await table(RoleEntity).toArray() as RoleEntity[]).map(r => [r.name, r]));
@@ -185,7 +185,7 @@ export namespace EastwindEnvironment {
         await create("Anonymous", "Anonymous");
     }
 
-    /** Southwind's `LoadProducts`: two suppliers, two categories, two products. */
+    /** Two suppliers, two categories, two products. */
     export async function loadProducts(): Promise<void> {
         if (await table(ProductEntity).count() > 0)
             return;
@@ -251,7 +251,7 @@ export namespace EastwindEnvironment {
         }).save();
     }
 
-    /** Southwind's `LoadCustomers`: two persons (flagged corrupt, as Southwind does) and one company. */
+    /** Two persons (both flagged corrupt) and one company. */
     export async function loadCustomers(): Promise<void> {
         if (await table(PersonEntity).count() > 0 || await table(CompanyEntity).count() > 0)
             return;
@@ -266,8 +266,7 @@ export namespace EastwindEnvironment {
                 fax: null,
                 address: address(seed),
             });
-            // Southwind's `SetMixin((CorruptMixin c) => c.Corrupt, true)`: the imported customer that is
-            // allowed to be incomplete.
+            // The imported customer that is allowed to be incomplete.
             person.mixin(CorruptMixin).corrupt = true;
             await person.save();
         }
@@ -282,7 +281,7 @@ export namespace EastwindEnvironment {
         }).save();
     }
 
-    /** Southwind's `LoadShippers`: the one shipper its test picks by label. */
+    /** The one shipper the test picks by label. */
     export async function loadShippers(): Promise<void> {
         if (await table(ShipperEntity).count() > 0)
             return;
@@ -293,7 +292,7 @@ export namespace EastwindEnvironment {
     // ---- Fixture helpers a test uses to arrange ------------------------------------------------------
 
     /**
-     * Southwind's `SouthwindExtensions.AddLine(order, productName, …)` — append a line priced at the
+     * Append a line priced at the
      * product's current unit price. The product is looked up by a substring of its name, so a test says
      * `addLine(order, "Sonic")`.
      */
@@ -312,8 +311,7 @@ export namespace EastwindEnvironment {
 
     /**
      * An XML seed that ships with the application: `terminal/AuthRules.xml`, `terminal/UserAssets.xml`.
-     * The FILES are shared with the terminal — Southwind's EnvironmentTest reads
-     * `..\..\..\..\Southwind.Terminal\AuthRules.xml` for the same reason — while the code that applies
+     * The FILES are shared with the terminal — while the code that applies
      * them is each project's own.
      *
      * Resolved off this module's location, not the cwd, so it does not matter where the generator was
@@ -365,8 +363,8 @@ async function ensureRole(name: string, strategy: MergeStrategy, inheritsFrom: R
     return role;
 }
 
-// Southwind's `RandomAddress(seed)` / `RandomPhone(seed)`: made-up but STABLE values, so a test that
-// asserts on one keeps passing. `new Random(seed)` is per-seed in C#; the same shape here is a tiny
+// Made-up but STABLE values, so a test that
+// asserts on one keeps passing. A per-seed generator; the same shape here is a tiny
 // deterministic generator rather than Math.random.
 function address(seed: number): AddressEmbedded {
     const next = random(seed);

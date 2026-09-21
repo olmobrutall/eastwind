@@ -7,7 +7,7 @@ import { EntityCombo } from '@altea/altea/client/Lines/EntityCombo'
 import { TypeContext } from '@altea/altea/client/TypeContext'
 import { OrderFilterModel } from './Order.data'
 
-// Faithful port of Southwind's Orders/OrderFilter.tsx — the Orders SIMPLE FILTER BUILDER. A simple filter
+// The Orders SIMPLE FILTER BUILDER. A simple filter
 // builder replaces the advanced filter grid with a compact form (customer / employee / order-date range)
 // whenever the incoming filters can be represented by it (see `extract` below); otherwise the search falls
 // back to the advanced builder. Registered via OrdersClient's `simpleFilterBuilder` (OrderClient.client.tsx).
@@ -55,7 +55,7 @@ export default class OrderFilter extends React.Component<{ ctx: TypeContext<Orde
 
   // Rebuild the model from the incoming (parsed) filters, CONSUMING each recognised filter. If any filter
   // is left over the query isn't representable by this form, so it returns undefined and the advanced
-  // builder is used instead. Mirrors Signum's `OrderFilter.extract`.
+  // builder is used instead.
   static extract(fos: FilterOptionParsed[]): OrderFilterModel | undefined {
     const filters = fos.clone();
 

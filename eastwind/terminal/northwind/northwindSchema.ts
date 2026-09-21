@@ -8,8 +8,8 @@ import { ObjectName, SchemaName, DatabaseName } from "@altea/altea/server/schema
 import type { FieldInfo, TypeInfo } from "@altea/altea/data/reflection";
 import { Connector } from "@altea/altea/server/connection/connector";
 
-// Port of Southwind.Terminal/NorthwindSchema.cs: one IView per Northwind table. altea's view classes
-// `extends View` (Signum's `: IView`) and are `@reflect` + `@tableName("dbo.X")` + `@viewPrimaryKey`
+// One IView per Northwind table. altea's view classes
+// `extends View` and are `@reflect` + `@tableName("dbo.X")` + `@viewPrimaryKey`
 // fields, with column name = FIELD NAME VERBATIM (viewBuilder.ts) — so these properties are PascalCase
 // to match the real Northwind columns.
 //
@@ -81,7 +81,7 @@ export class NwCategory extends View {
     @viewPrimaryKey CategoryID!: int;
     CategoryName!: string;
     Description!: string | null;
-    // `Picture` is NOT mapped — see the header. Southwind reads Northwind's OLE-wrapped bitmap out of this
+    // `Picture` is NOT mapped — see the header. Northwind's OLE-wrapped bitmap lives in this
     // column and strips its 78-byte header; here the loader reads image_categories/<CategoryName>.<ext>.
 }
 
@@ -196,7 +196,7 @@ function snakeCase(name: string): string {
 }
 
 // A separate connector for the Northwind SOURCE database (NORTHWIND_DB). Reads run under
-// Connector.withConnector(await Northwind.connector(), () => view(NwX).toArray()) — Signum's
+// Connector.withConnector(await Northwind.connector(), () => view(NwX).toArray()) — the
 // `Connector.Override(Northwind.Connector).Using(...)`.
 //
 // The DIALECT follows NORTHWIND_DB's own connection string, exactly as EASTWIND_DB's does: "postgres…" is

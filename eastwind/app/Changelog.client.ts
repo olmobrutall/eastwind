@@ -1,7 +1,6 @@
 import type { ChangeLogDic } from "@altea/altea/client/Basics/ChangeLogClient";
 
-// eastwind's own change log — Southwind's `Changelog.ts`, registered as the MAIN one by
-// `ChangeLogClient.start` in MainAdmin.
+// eastwind's own change log, registered as the MAIN one by `ChangeLogClient.start` in MainAdmin.
 //
 // This is the APPLICATION's deployment timeline, so its dates are DEPLOY dates. A line reading
 // `Update Altea` (optionally `Update Altea to <date>`) is not shown as written: the merge replaces it with

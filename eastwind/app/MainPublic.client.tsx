@@ -29,33 +29,32 @@ import PublicCatalog from "./publicApi/PublicCatalog";
 import { PublicClient } from "./publicApi/PublicClient.client";
 import NotFound from "./NotFound";
 
-// eastwind SPA bootstrap — Southwind's MainPublic, including its `reload()` shape: the route table and the
-// React ROOT are built from scratch on every credential change, because which routes EXIST depends on who
-// is logged in. That IS Signum's client-side authorization model; the divergences from Southwind's version
-// (and why each line is where it is) are recorded in **docs/Wiring.md**.
+// The SPA bootstrap. The route table and the React ROOT are built from scratch on every credential change,
+// because which routes EXIST depends on who is logged in — that IS the client-side authorization model.
+// Why each line is where it is is recorded in **docs/Wiring.md**.
 
-// Southwind's `library.add(fas, far)`, plus BRANDS — which it does not add although Signum declares the
-// package, so the two `["fab", …]` icons in the workspace rendered as an empty span.
+// The icon packs, BRANDS included — without it the two `["fab", …]` icons in the workspace render as an
+// empty span.
 library.add(fas, far, fab);
 
-// Wire the global error / unhandled-rejection handlers (Southwind's `ErrorModal.register()`).
+// Wire the global error / unhandled-rejection handlers.
 ErrorModal.register();
 
 // The user name of the server's configured ANONYMOUS USER (starter.server.ts: `AuthLogic.start(sb,
-// "System", "Anonymous")`), a literal here exactly as in Southwind's MainPublic.
+// "System", "Anonymous")`), a literal here.
 const ANONYMOUS_USER_NAME = "Anonymous";
 
 let root: Root | undefined = undefined;
 
-// Southwind's `reload()`: resolve who is logged in, build the route table for that user, then throw the
-// React root away and build a new one over the new router.
+// Resolve who is logged in, build the route table for that user, then throw the React root away and build
+// a new one over the new router.
 async function reload(): Promise<void> {
 
-    // Resolve the current user from a stored token before anything reads it (Signum's autoLogin).
+    // Resolve the current user from a stored token before anything reads it.
     await AuthClient.autoLogin();
 
-    // Signum's `AppContext.clearAllSettings()`, and it must come BEFORE the registration calls below:
-    // everything they register lives in the client state this drops.
+    // Must come BEFORE the registration calls below: everything they register lives in the client state
+    // this drops.
     AppContext.newClientState();
 
     const routes: RouteObject[] = [];
@@ -79,8 +78,8 @@ async function reload(): Promise<void> {
     ResetPasswordClient.startPublic(routes);
     OpenIDClient.startPublic(routes);
 
-    // Southwind's `isFull`. The anonymous user is excluded explicitly: with the server's anonymous user
-    // configured, a session could be authenticated AS it, and such a session is not an admin session.
+    // The anonymous user is excluded explicitly: with the server's anonymous user configured, a session
+    // could be authenticated AS it, and such a session is not an admin session.
     const user = AuthClient.currentUser();
     const isFull = user != null && user.userName != ANONYMOUS_USER_NAME;
 
@@ -108,8 +107,8 @@ async function reload(): Promise<void> {
     if (el == null)
         return;
 
-    // Southwind unmounts and re-creates the root here for the same reason: the router OBJECT is new, and
-    // RouterProvider does not accept a different router on a re-render.
+    // The root is unmounted and re-created because the router OBJECT is new, and RouterProvider does not
+    // accept a different router on a re-render.
     if (root)
         root.unmount();
     root = createRoot(el);
@@ -124,10 +123,9 @@ function App({ router }: { router: Parameters<typeof RouterProvider>[0]["router"
         AppContext.setResetUI(() => setKey(k => k + 1));
         return () => AppContext.setResetUI(() => { });
     }, []);
-    // ONE provider for react-widgets' own localization, wrapped around the whole router — Signum's shape
-    // (Southwind's MainPublic does the same). Each widget site used to wrap itself, which bought nothing
-    // and meant a newly added react-widgets control silently rendered its built-in English until someone
-    // remembered to wrap it.
+    // ONE provider for react-widgets' own localization, wrapped around the whole router. Each widget site
+    // used to wrap itself, which bought nothing and meant a newly added react-widgets control silently
+    // rendered its built-in English until someone remembered to wrap it.
     return (
         <ReactWidgetsLocalization>
             <RouterProvider key={key} router={router} />
@@ -135,8 +133,7 @@ function App({ router }: { router: Parameters<typeof RouterProvider>[0]["router"
     );
 }
 
-/** The stashed router Location → a url string. Signum's `navigate` takes react-router's `To`, so it can be
- *  handed the Location object directly; altea's takes a plain string. */
+/** The stashed router Location → a url string: altea's `navigate` takes a plain string, not a `To`. */
 function backUrl(loc: AppContext.RouterLocation | undefined): string | undefined {
     return loc?.pathname == null ? undefined : loc.pathname + (loc.search ?? "") + (loc.hash ?? "");
 }
@@ -153,24 +150,23 @@ async function boot(): Promise<void> {
 
     EntityOverrides.start({ legacyMode: mode.legacyMode });
 
-    // Route the ajax pending-request count to the Notify host (Signum's MainPublic wiring); the <Notify/>
-    // host is mounted in Layout.
+    // Route the ajax pending-request count to the Notify host; the <Notify/> host is mounted in Layout.
     NotifyPendingFilter.notifyPendingRequests = pending => Notify.getSingleton()?.notifyPendingRequest(pending);
 
     // Cross-tab session sharing: a NEW tab asks any other open tab for its sessionStorage, so the auth
     // token carries over. Before the auth wiring and before reload, and awaited (docs/Wiring.md).
     await SessionSharing.setAppNameAndRequestSessionStorage("eastwind");
 
-    // Host hooks for the auth module (Signum wires both to `reload`): a credential change changes which
-    // routes exist. onLogin rebuilds then navigates; onLogout navigates then rebuilds (docs/Wiring.md).
+    // Host hooks for the auth module: a credential change changes which routes exist. onLogin rebuilds
+    // then navigates; onLogout navigates then rebuilds (docs/Wiring.md).
     AuthClient.Options.onLogin = (back?: string) => {
         void reload().then(() => AppContext.navigate(backUrl(AppContext.location().state?.back) ?? (back || "/")));
     };
     AuthClient.Options.onLogout = async () => { AppContext.navigate("/"); await reload(); };
 
-    // DEV-ONLY password-less login (not in Signum): the form drops its password field and sends the user
-    // name as the password, which the dev seed hashes as each user's password. `import.meta.env.DEV` is
-    // statically replaced by Vite, so this is dead code in a production build.
+    // DEV-ONLY password-less login: the form drops its password field and sends the user name as the
+    // password, which the dev seed hashes as each user's password. `import.meta.env.DEV` is statically
+    // replaced by Vite, so this is dead code in a production build.
     AuthClient.Options.passwordIsUsername = import.meta.env.DEV && import.meta.env.VITE_PASSWORD_IS_USERNAME == "true";
 
     // The DIRECTORY authenticators, registered BEFORE the first reload and awaited (each asks the server

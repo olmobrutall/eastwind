@@ -19,7 +19,7 @@ export namespace EmployeesClient {
                 ],
             }));
 
-        // Southwind's EmployeesClient quick link — "register somebody who reports to THIS employee". The
+        // A quick link — "register somebody who reports to THIS employee". The
         // page it opens is ANONYMOUS (publicApi/RegisterUser.tsx), so the point of the link is the url an
         // employee copies out of it and hands to the new hire.
         QuickLinkClient.registerQuickLink(EmployeeEntity, new QuickLinkLink(

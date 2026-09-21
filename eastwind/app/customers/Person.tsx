@@ -5,7 +5,7 @@ import SearchControl from '@altea/altea/client/SearchControl/SearchControl'
 import { PersonEntity } from './Customer.data'
 import { OrderEntity } from '../orders/Order.data'
 
-// Ported from Southwind/Customers/Person.tsx. Divergence: Southwind's CorruptMixin checkbox is dropped
+// The person view. The CorruptMixin checkbox is dropped
 // (eastwind is mixin-free / extension-free).
 export default function Person(p: { ctx: TypeContext<PersonEntity> }): React.JSX.Element {
   const ctx = p.ctx;

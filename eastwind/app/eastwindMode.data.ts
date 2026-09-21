@@ -7,16 +7,16 @@
  */
 export interface EastwindMode {
     /**
-     * LEGACY MODE: declare and start only what SOUTHWIND does.
+     * LEGACY MODE: declare and start only what the LEGACY application does.
      *
-     * The app is pointed at a database a Signum application generated, so a `sync` should read as a
+     * The app is pointed at a database a legacy application generated, so a `sync` should read as a
      * MIGRATION of the tables both applications have rather than also creating a dozen this one invented.
      * It gates two different things, and both matter: the module `start` calls in the Starter, and the
      * `implementedBy` lists in EntityOverrides — a list decides what the editor offers AND which tables the
      * schema creates, so several of those lists are themselves the difference between the two shapes.
      *
      * It does NOT gate the places where altea's model simply differs INSIDE a module both apps run (the AD
-     * configurations altea persists as rows where Southwind keeps them in appsettings, the mail service
+     * configurations altea persists as rows where the legacy app keeps them in a settings file, the mail service
      * embeddeds it models as `@part` entities). Those are model decisions, not module registration.
      */
     legacyMode: boolean;

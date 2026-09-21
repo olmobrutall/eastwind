@@ -12,14 +12,11 @@ import { AddressEmbedded } from "../customers/Customer.data";
 import type { OrderLineEntity } from "../orders/Order.data";
 import type { PredictorPublicationSymbol } from "@altea/altea-machine-learning/data/Predictor";
 
-// Port of Southwind's Products domain (Southwind/Products/*.cs). CategoryEntity's Picture IS ported now that
-// @altea/altea-files exists; the ML PredictorPublication is still omitted. AdditionalInformation is an
-// [PreserveOrder] MList<AdditionalInformationEmbedded> → the owned part entity
+// The Products domain. A product's additional information is an ordered list of owned part rows
 // ProductEntity_AdditionalInformation (embedded fields flattened + @rowOrder).
 
 @entity("Main", "Master")
 export class SupplierEntity extends Entity {
-    // Southwind: `[UniqueIndex]` (Products/SupplierEntity.cs).
     @uniqueIndex
     @stringLengthValidator({ min: 3, max: 40 })
     companyName: string;
@@ -43,10 +40,8 @@ export namespace SupplierOperation {
 
 @entity("String", "Master")
 export class CategoryEntity extends Entity {
-    // Southwind marks both of these `[Translatable]` (Products/CategoryEntity.cs) — a category's name and
-    // blurb are the app's canonical example of text worth translating PER ROW, which is what
-    // @altea/altea-translations' instance half manages.
-    // Southwind: `[UniqueIndex]` (Products/CategoryEntity.cs).
+    // A category's name and blurb are the app's canonical example of text worth translating PER ROW,
+    // which is what @altea/altea-translations' instance half manages.
     @uniqueIndex
     @translatable
     @stringLengthValidator({ min: 3, max: 100 })
@@ -55,9 +50,8 @@ export class CategoryEntity extends Entity {
     @translatable
     @stringLengthValidator({ min: 3, multiLine: true })
     description: string;
-    // Southwind's `FileEmbedded? Picture` (Products/CategoryEntity.cs) — the bytes live in the row. Loaded
-    // from terminal/northwind/image_categories rather than Northwind's own Categories.Picture, which the two vendor
-    // scripts disagree about (see northwindSeed.ts).
+    // The bytes live in the row. Loaded from terminal/northwind/image_categories rather than Northwind's
+    // own Categories.Picture, which the two vendor scripts disagree about (see northwindSeed.ts).
     picture: FileEmbedded | null;
     @quoted toString(): string { return this.categoryName; }
 }
@@ -68,7 +62,6 @@ export namespace CategoryOperation {
 
 @entity("Main", "Master")
 export class ProductEntity extends Entity {
-    // Southwind: `[UniqueIndex]` (Products/ProductEntity.cs).
     @uniqueIndex
     @stringLengthValidator({ min: 3, max: 40 })
     productName: string;
@@ -77,17 +70,16 @@ export class ProductEntity extends Entity {
     @stringLengthValidator({ min: 3, max: 20 })
     quantityPerUnit: string;
     unitPrice: Decimal;
-    /** Southwind declares `short` — a stock count fits a smallint, and the column is one. */
+    /** A stock count fits a smallint, and the column is one. */
     unitsInStock: short;
     reorderLevel: int;
     discontinued: boolean;
-    // Signum's [PreserveOrder] MList<AdditionalInformationEmbedded> → owned part rows.
+    // Owned part rows, order preserved.
     @noRepeatValidator<ProductEntity_AdditionalInformation>(a => a.key)
     additionalInformation: ProductEntity_AdditionalInformation[];
 
-    // Signum's [AutoExpressionField] ValueInStock => UnitPrice * UnitsInStock. A PROPERTY there, so it is
-    // a route with a row — Southwind's database has a property rule on it. @legacyPropertyRoute is what
-    // keeps a legacy sync from removing both.
+    // ValueInStock = unitPrice * unitsInStock. A legacy database holds this as a PROPERTY route with a
+    // property rule on it, so @legacyPropertyRoute keeps a legacy sync from removing both.
     @legacyPropertyRoute
     @quoted valueInStock(): Decimal { return Decimal.mul(this.unitPrice, this.unitsInStock); }
 
@@ -98,12 +90,8 @@ export interface ProductEntity {
     lines(): IQuery<OrderLineEntity>;
 }
 
-// Owned child rows for ProductEntity.additionalInformation (per-row equivalent of Signum's
-// AdditionalInformationEmbedded).
-//
-// Southwind declares the unique index in its LOGIC layer — `WithUniqueIndexMList(a =>
-// a.AdditionalInformation, mle => new { mle.Parent, mle.Element.Key })` — because an MList element
-// has no class of its own to put it on. Here the row IS a class, so it goes where the columns are.
+// Owned child rows for ProductEntity.additionalInformation. The row IS a class, so its unique index goes
+// where the columns are rather than in the logic layer.
 @part
 @uniqueIndex((r: ProductEntity_AdditionalInformation) => [r.product, r.key])
 export class ProductEntity_AdditionalInformation extends Entity {
@@ -118,8 +106,8 @@ export namespace ProductOperation {
 }
 
 /**
- * Southwind's `[AutoInit] static class ProductPredictorPublication` (Products/ProductEntity.cs) — the
- * name under which the app's trained sales model is PUBLISHED: "of all the predictors ever trained, this
+ * The name under which the app's trained sales model is PUBLISHED: "of all the predictors ever trained,
+ * this
  * one is live for monthly sales". SalesEstimation reads through it rather than naming a predictor row,
  * so re-training and publishing swaps the model with no code change. Registered in starter.server.ts.
  */
@@ -127,8 +115,8 @@ export namespace ProductPredictorPublication {
     export const MonthlySales: PredictorPublicationSymbol = init();
 }
 
-// Southwind's `[AllowUnauthenticated] enum CatalogMessage` (Products/ProductEntity.cs) — the four column
-// captions of the ANONYMOUS public catalog page (publicApi/PublicCatalog.tsx). They are MESSAGES rather
+// The four column captions of the ANONYMOUS public catalog page (publicApi/PublicCatalog.tsx). They are
+// MESSAGES rather
 // than `ProductEntity.nicePropertyName(...)` reads because that page is reachable with no user, and a
 // property's nice name is part of the role-filtered metadata blob. altea needs no `[AllowUnauthenticated]`
 // counterpart: a message lives in the translation files, which the reflection endpoint already serves
@@ -140,13 +128,12 @@ export const CatalogMessage = {
     unitsInStock: msg(),
 };
 
-// Southwind's `ProductQuery.CurrentProducts` — the products still on sale. Signum names a query by an
-// ENUM MEMBER and projects an anonymous type; altea names one by its ROW MODEL, whose clean name IS the
-// query key (`CurrentProductsRowModel` → `CurrentProducts`, see data/registration's cleanTypeName), so
-// the anonymous projection becomes this model's members — the same columns, in Signum's order.
+// The products still on sale. A query is named by its ROW MODEL, whose clean name IS the query key
+// (`CurrentProductsRowModel` → `CurrentProducts`, see data/registration's cleanTypeName), and the model's
+// members are the columns.
 @reflect
 export class CurrentProductsRowModel extends ModelEntity {
-    /** The row identity: what the SearchControl navigates to and selects (Signum's `Entity = p`). */
+    /** The row identity: what the SearchControl navigates to and selects. */
     entity: Lite<ProductEntity>;
     id: int;
     productName: string;

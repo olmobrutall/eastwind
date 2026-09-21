@@ -11,26 +11,24 @@ import { GetUIContextSkill } from "@altea/altea-agent/server/Skills/GetUIContext
 import { ConfirmUISkill } from "@altea/altea-agent/server/Skills/ConfirmUISkill";
 import { ChartSkill } from "@altea/altea-agent/server/Skills/ChartSkill";
 
-// eastwind's side of the agent module — Southwind keeps exactly this in Starter.cs: the chatbot's SKILL TREE
+// eastwind's side of the agent module: the chatbot's SKILL TREE
 // and a second, all-lazy tree for the MCP endpoint.
 //
 // Two things that used to live here now belong to the module, because nothing about them is app-specific:
-// the list of skill CLASSES (altea-agent registers the ten it ships — Signum's `SkillCode` base constructor
-// auto-registers, so its apps never list them either) and `CurrentServerContextSkill.urlLeft`, which the
-// starter assigns in one line exactly as Signum's Starter.cs does.
+// the list of skill CLASSES (altea-agent registers the ten it ships) and
+// `CurrentServerContextSkill.urlLeft`, which the starter assigns in one line.
 //
-// The provider CREDENTIALS are not here either: they are the `chatbot` member of the ApplicationConfiguration
-// row, which the starter hands to the module as `() => GlobalsLogic.configuration().chatbot` — Signum's
-// `ChatbotLogic.Start(sb, () => Configuration.Value.Chatbot)`. With none set the module still starts: a model
-// row can be created and the panels work, and only the first actual call to a provider fails, naming the
-// missing key.
+// The provider CREDENTIALS are not here either: they are the `chatbot` member of the
+// ApplicationConfiguration row, which the starter hands to the module as
+// `() => GlobalsLogic.configuration().chatbot`. With none set the module still starts: a model row can be
+// created and the panels work, and only the first actual call to a provider fails, naming the missing key.
 export namespace EastwindAgent {
 
-    /** Southwind's chatbot tree: everything EAGER except charting, which the model unlocks with `Describe`. */
+    /** The chatbot tree: everything EAGER except charting, which the model unlocks with `Describe`. */
     export function chatbotSkill(): SkillCode {
         const search = new SearchSkill();
-        // The queries worth spelling out in the prompt rather than making the model go looking (Southwind
-        // names Order / Customer / Product / Employee / Category). eastwind's customer query is the
+        // The queries worth spelling out in the prompt rather than making the model go looking.
+        // eastwind's customer query is the
         // `CustomerRowModel` union over Person + Company — an unknown key here is silently skipped, so it
         // has to be the real one.
         search.inlineQueryName = new Set([
@@ -55,7 +53,7 @@ export namespace EastwindAgent {
     }
 
     /**
-     * Southwind's MCP tree: the same skills, all LAZY, and without the two UI tools (an external MCP host
+     * The MCP tree: the same skills, all LAZY, and without the two UI tools (an external MCP host
      * has no chat panel to answer them in — see AgentMcpServer, which filters them out anyway).
      */
     export function mcpSkill(): SkillCode {

@@ -2,9 +2,9 @@
 // underneath it has been replaced.
 //
 // The suite does NOT start the stack — `pnpm --filter eastwind stack local` does, in another terminal,
-// exactly as Signum's SouthwindTestClass assumes a running Southwind.Server. What the suite does is
+// exactly as the suite assumes a running API host. What the suite does is
 // restore the database before each test, and a server holding rows in memory has no way of noticing that:
-// hence {@link clearServerCaches}, the counterpart of Signum's `POST api/cache/invalidateAll`.
+// hence {@link clearServerCaches}.
 
 /** Where the application under test is served (the vite dev server by default). */
 export function baseUrl(): string {
@@ -19,7 +19,7 @@ function apiUrl(path: string): string {
 /**
  * Drop every cached table and global lazy in the RUNNING server, so it re-reads the restored database.
  *
- * Signum posts to `api/cache/invalidateAll`, its anonymous broadcast-peer endpoint, authenticated by a
+ * It posts to `api/cache/invalidateAll`, the anonymous broadcast-peer endpoint, authenticated by a
  * shared-secret hash. eastwind has no such peer (its broadcast is PostgreSQL LISTEN/NOTIFY, which has no
  * HTTP surface), so this uses the endpoint a human would: `POST /api/cache/clear`, gated by
  * `CachePermission.InvalidateCache` — hence the login.

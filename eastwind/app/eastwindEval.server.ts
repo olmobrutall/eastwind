@@ -14,8 +14,8 @@ import * as shipper from "./shippers/Shipper.data";
 // eastwind's side of @altea/altea-eval — WHAT a stored script may reach, beyond what the modules already
 // register themselves.
 //
-// Signum's counterpart is the `EvalLogic.AddFullAssembly(...)` block an app MAY write in its Starter —
-// Southwind writes none, because Signum's EvalLogic seeds the FRAMEWORK's own assemblies itself. altea now
+// The counterpart of the "add this assembly" block an app writes when its scripts need more than the
+// framework's own surface. altea now
 // does the same: @altea/altea's modules are seeded by altea-eval (EvalFrameworkModules) and altea-workflow
 // registers its three from its own start, so what is left here is what only THIS application can know:
 //
@@ -25,7 +25,7 @@ import * as shipper from "./shippers/Shipper.data";
 //  - the AUTH modules: altea-auth does not depend on altea-eval (a framework package must not depend on an
 //    optional one), so it cannot register itself — the app opts them in.
 //
-// A compiled script runs in process with the server's rights, exactly as Signum's Roslyn-compiled C# does.
+// A compiled script runs in process with the server's rights.
 
 export namespace EastwindEval {
 

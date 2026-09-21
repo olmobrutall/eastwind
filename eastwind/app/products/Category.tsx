@@ -4,7 +4,7 @@ import { TypeContext } from '@altea/altea/client/TypeContext'
 import { FileImageLine } from '@altea/altea-files/client/Components/FileImageLine'
 import { CategoryEntity } from './Product.data'
 
-// Ported from Southwind/Products/Category.tsx — including the Picture line now that @altea/altea-files is
+// The category view — including the Picture line now that @altea/altea-files is
 // ported. The picture is a FileEmbedded (bytes in the row), and FileImageLine is the line for exactly that:
 // the uploader while it is empty, then a thumbnail (click → full size) with a remove button over it. It reads
 // either the in-memory bytes (a file just picked) or the saved row's download URL, so the hand-rolled preview

@@ -10,10 +10,10 @@ import { ProductEntity } from "../../app/products/Product.data";
 import { ShipperEntity } from "../../app/shippers/Shipper.data";
 import { Northwind, NwShipper, NwOrder, NwOrderDetail, NwCustomer } from "./northwindSchema";
 
-// Port of Southwind.Terminal/OrderLoader.cs. Shippers preserve their Northwind ids; Orders preserve
+// Shippers preserve their Northwind ids; Orders preserve
 // OrderID and link to customers by ContactName (customers have fresh identity ids). Order dates are
 // rebased so the latest order is "yesterday", and the cancel rule (shipped && id % 7) applies —
-// exactly like Southwind. SimulateOrderSystemTime is omitted (no system-versioning; extension-free).
+// with their Northwind ids.
 export namespace OrderLoader {
     export async function loadShippers(): Promise<void> {
         const shippers = await Connector.withConnector(await Northwind.connector(), () => view(NwShipper).toArray());
@@ -25,8 +25,8 @@ export namespace OrderLoader {
     }
 
     export async function loadOrders(): Promise<void> {
-        // Correlate Northwind CustomerID → ContactName → the persisted CustomerEntity (Signum's
-        // `customers` dictionary keyed by ContactName / FirstName+LastName).
+        // Correlate Northwind CustomerID → ContactName → the persisted CustomerEntity (the `customers`
+        // dictionary keyed by ContactName / FirstName+LastName).
         const nwCustomers = await Connector.withConnector(await Northwind.connector(), () => view(NwCustomer).toArray());
         const nameById = new Map(nwCustomers.map(c => [c.CustomerID, c.ContactName ?? c.CompanyName]));
         const custByName = new Map<string, CustomerEntity>();
@@ -42,7 +42,7 @@ export namespace OrderLoader {
             detailsByOrder.set(d.OrderID, list);
         }
 
-        // Rebase dates: shift so the latest OrderDate lands on yesterday (Southwind's max.DaysTo(now)).
+        // Rebase dates: shift so the latest OrderDate lands on yesterday.
         const yesterday = Temporal.Now.plainDateISO().subtract({ days: 1 });
         let max: Temporal.PlainDate | null = null;
         for (const o of nwOrders) {
@@ -58,8 +58,7 @@ export namespace OrderLoader {
             if (customer == null || o.EmployeeID == null) return []; // skip orders missing a mapped customer/employee
 
             const orderDate = shift(o.OrderDate?.toPlainDate() ?? null) ?? Temporal.Now.plainDateISO();
-            // OrderLine details (Signum's Details MList) — the order back-reference + @rowOrder are
-            // wired by bulkInsert's cascade.
+            // OrderLine details — the order back-reference + @rowOrder are wired by bulkInsert's cascade.
             const details = (detailsByOrder.get(o.OrderID) ?? []).map(d => OrderLineEntity.create({
                 product: ProductEntity.newLite(d.ProductID),
                 unitPrice: d.UnitPrice,
@@ -85,7 +84,7 @@ export namespace OrderLoader {
                 state: o.ShippedDate != null ? OrderState.Shipped : OrderState.Ordered,
             });
             ord.id = o.OrderID;
-            // Southwind's cancel rule.
+            // The cancel rule.
             if (ord.state === OrderState.Shipped && Number(ord.id) % 7 === 0) {
                 ord.cancelationDate = ord.shippedDate;
                 ord.state = OrderState.Canceled;
@@ -93,7 +92,7 @@ export namespace OrderLoader {
             }
             return [ord];
         });
-        // Signum's `.BulkInsert(disableIdentity:true)`: preserved OrderIDs + the details MList cascade.
+        // Bulk insert with identity disabled: preserved OrderIDs + the details cascade.
         await BulkInserter.bulkInsert(orders);
     }
 }

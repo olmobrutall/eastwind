@@ -5,7 +5,7 @@ import { QueryString } from "@altea/altea/client/QueryString";
 import { ImportComponent } from "@altea/altea/client/ImportComponent";
 import type { RegisterUserModel } from "./RegisterUser.data";
 
-// Port of Southwind's `Public/PublicClient.tsx` — the PUBLIC (anonymous) routes and the two endpoints
+// The PUBLIC (anonymous) routes and the two endpoints
 // behind them. Called from MainPublic BEFORE the `isFull` branch, so the page exists for a visitor who has
 // never logged in; the server half is PublicLogic.server.ts.
 export namespace PublicClient {

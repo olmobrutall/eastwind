@@ -29,41 +29,34 @@ import { OrderLoader } from "./northwind/orderLoader";
 import { NorthwindSeed } from "./northwind/northwindSeed";
 import { terminalFile } from "./terminalFile";
 
-// Port of Southwind.Terminal/SouthwindMigrations.cs — the app's CODE MIGRATIONS: the ordered list of
-// TypeScript steps that bring a fresh database to a usable state, each recorded in
-// TypeScriptMigrationEntity — `CSharpMigration` against a Signum database — so it runs ONCE per database
-// (Southwind's `new CSharpMigrationRunner { … }.Run(autoRun)`).
+// The app's CODE MIGRATIONS: the ordered list of TypeScript steps that bring a fresh database to a usable
+// state, each recorded in TypeScriptMigrationEntity (`CSharpMigration` against a legacy database) so it
+// runs ONCE per database.
 //
-// This is NOT the terminal's "Load" menu: that one (Southwind's `Program.Load`) is a bag of RE-RUNNABLE
-// ad-hoc tools, logged to LoadMethodLog but never recorded as migrations — see terminal.ts.
+// This is NOT the terminal's "Load" menu: that one is a bag of RE-RUNNABLE ad-hoc tools, logged to
+// LoadMethodLog but never recorded as migrations — see terminal.ts.
 //
-// The individual steps mirror Southwind's:
-//   • createCulturesAndConfiguration — CreateCulturesAndConfiguration: the supported cultures + THE
-//                         ApplicationConfiguration row every module's settings live on.
-//   • createRoles       — CreateRoles (AuthLogic.LoadRoles): Anonymous, Standard user, Super user
-//                         (Intersection), Advanced user ⊃ Standard.
-//   • createSystemUser  — CreateSystemUser: the "System" (Super user) + "Anonymous" users.
-//   • the Northwind loaders — EmployeeLoader / ProductLoader / CustomerLoader / OrderLoader, in dependency
-//                         order (Southwind lists them in exactly this order).
-//   • importUserAssets  — ImportToolbar (UserAssetsImporter.Preview + Import over terminal/UserAssets.xml).
-//   • importAuthRules   — InitialAuthRulesImport (AuthLogic.AutomaticImportAuthRules over
-//                         terminal/AuthRules.xml). LAST, as in Southwind: the rules reference the types,
-//                         users and assets everything above created.
+// The steps:
+//   • createCulturesAndConfiguration — the supported cultures + THE ApplicationConfiguration row every
+//                         module's settings live on.
+//   • createRoles       — Anonymous, Standard user, Super user (Intersection), Advanced user ⊃ Standard.
+//   • createSystemUser  — the "System" (Super user) + "Anonymous" users.
+//   • the Northwind loaders — EmployeeLoader / ProductLoader / CustomerLoader / OrderLoader, in
+//                         dependency order.
+//   • importUserAssets  — UserAssetsImporter.preview + import over terminal/UserAssets.xml.
+//   • importAuthRules   — terminal/AuthRules.xml. LAST: the rules reference the types, users and assets
+//                         everything above created.
 //
-// Not ported (Southwind steps whose module does not exist here): SimulateOrderSystemTime,
-// ImportWordReportTemplateForOrder, ImportInstanceTranslations, ImportPredictor.
-// Passwords equal the username (Southwind's HashPassword(name, name)) — dev only. Every step is idempotent
-// on its own, so re-running one after deleting its TypeScriptMigration row is safe.
+// Passwords equal the username — dev only. Every step is idempotent on its own, so re-running one after
+// deleting its TypeScriptMigration row is safe.
 export namespace TypeScriptMigrations {
 
-    /** Southwind's `SouthwindMigrations.CSharpMigrations(autoRun)` — the terminal's `ts` command. */
+    /** The terminal's `ts` command. */
     export async function run(autoRun: boolean): Promise<void> {
         const runner = new TypeScriptMigrationRunner();
 
-        // The unique names are the MIGRATION IDENTITY in the database (renaming one re-runs it), so they are
-        // the C# method names Southwind used rather than the console captions.
-        // FIRST: every Load* step below reads the Northwind SOURCE database through the `Nw*` views, and
-        // Southwind simply assumes it is there (the SQL Server sample everyone had installed). eastwind ships
+        // The unique names are the MIGRATION IDENTITY in the database — renaming one re-runs it.
+        // Every Load* step below reads the Northwind SOURCE database through the `Nw*` views; eastwind ships
         // the vendor script for both dialects and seeds it, so `ts` is self-contained on a fresh machine.
         runner.add("CreateCulturesAndConfiguration", () => createCulturesAndConfiguration());
         runner.add("CreateRoles", () => createRoles());
@@ -79,11 +72,6 @@ export namespace TypeScriptMigrations {
         runner.add("LoadShippers", () => OrderLoader.loadShippers());
         runner.add("LoadOrders", () => OrderLoader.loadOrders());
         runner.add("CreateUsers", () => EmployeeLoader.createUsers());
-        // altea addition — no Southwind counterpart: its CreateUsers has always set the UserEmployeeMixin,
-        // while eastwind's did not exist until the mixin was ported. Re-running the same idempotent step
-        // under a new name links the users a database seeded before then already has; on a fresh database
-        // CreateUsers has just done it and this is a no-op.
-        runner.add("LinkUsersToEmployees", () => EmployeeLoader.createUsers());
         runner.add("LoadEmployeePassages", () => EmployeeLoader.loadEmployeePassages());
         runner.add("LoadDepartments", () => DepartmentLoader.loadDepartments());
         runner.add("ImportUserAssets", () => importUserAssets());
@@ -93,15 +81,14 @@ export namespace TypeScriptMigrations {
     }
 
     /**
-     * Southwind's `CreateCulturesAndConfiguration`: the cultures eastwind ships translations for, and the
-     * ONE ApplicationConfiguration row for this environment — what every module's configuration lambda reads
-     * (see globals/GlobalsLogic.server.ts). Idempotent: an existing row for this environment is left alone.
+     * The cultures eastwind ships translations for, and the ONE ApplicationConfiguration row for this
+     * environment — what every module's configuration lambda reads (see globals/GlobalsLogic.server.ts).
+     * Idempotent: an existing row for this environment is left alone.
      *
-     * The initial VALUES are plain DEFAULTS for a dev machine, as Southwind's literals are — not environment
-     * reads: the row is the source of truth from the first run, and what a deployment must decide BEFORE a
-     * row can be read stays in the environment (see .env.example). Every credential — the chatbot provider
-     * keys, the three DIRECTORY members — is seeded empty / null, exactly as Southwind seeds `AzureAD = null`:
-     * those are configured on the page, not by redeploying.
+     * The initial VALUES are plain DEFAULTS for a dev machine, not environment reads: the row is the source
+     * of truth from the first run, and what a deployment must decide BEFORE a row can be read stays in the
+     * environment (see .env.example). Every credential — the chatbot provider keys, the three DIRECTORY
+     * members — is seeded empty / null: those are configured on the page, not by redeploying.
      */
     export async function createCulturesAndConfiguration(): Promise<void> {
         await CultureInfoLogic.ensureCultures(["en", "es", "de"]);
@@ -114,8 +101,8 @@ export namespace TypeScriptMigrations {
             return;
         }
 
-        // Southwind seeds a localhost SMTP sender so the mail module has somewhere to point; with
-        // `sendEmails` false nothing actually leaves the process.
+        // A localhost SMTP sender, so the mail module has somewhere to point; with `sendEmails` false
+        // nothing actually leaves the process.
         const sender = EmailSenderConfigurationEntity.create({
             name: "localhost",
             service: SmtpEmailServiceEntity.create({
@@ -140,7 +127,7 @@ export namespace TypeScriptMigrations {
             }),
             emailSender: sender,
             // Every provider key is left EMPTY: a key is a credential, and the Chatbot tab is where one is
-            // pasted (Southwind seeds none either).
+            // pasted.
             chatbot: ChatbotConfigurationEmbedded.create({}),
             // Every field is an optional API key, so an empty one is the right seed — as for chatbot.
             // It is MANDATORY though (a non-null embedded), and this seed predates @altea/altea-translations
@@ -150,8 +137,7 @@ export namespace TypeScriptMigrations {
                 avoidExecutingScriptsOlderThan: null,
             }),
             sms: SMSConfigurationEmbedded.create({
-                // One of the cultures seeded just above (en / es / de); Southwind uses en-GB, which is
-                // not in eastwind's set.
+                // One of the cultures seeded just above (en / es / de).
                 defaultCulture: english,
             }),
             azureAD: null,
@@ -174,12 +160,11 @@ export namespace TypeScriptMigrations {
         await ensureUser("Anonymous", "Anonymous");
     }
 
-    // ---- the XML seeds (Southwind's InitialAuthRulesImport / ImportToolbar) -----------------------------
+    // ---- the XML seeds ---------------------------------------------------------------------------------
 
     /**
-     * Southwind's `InitialAuthRulesImport` → `AuthLogic.AutomaticImportAuthRules`: apply terminal/
-     * AuthRules.xml. Renames are asked on a real console; headless (no TTY) treats every ambiguous rename as
-     * no-rename (drop), logged.
+     * Apply terminal/AuthRules.xml. Renames are asked on a real console; headless (no TTY) treats every
+     * ambiguous rename as no-rename (drop), logged.
      */
     export async function importAuthRules(file?: string): Promise<void> {
         const fileName = file ?? seedFile("AuthRules.xml");
@@ -202,7 +187,7 @@ export namespace TypeScriptMigrations {
         console.log(`[import-auth] done (${fileName})`);
     }
 
-    /** The export half of Southwind's `AuthLogic.ImportExportAuthRules` menu entry. */
+    /** The export half. */
     export async function exportAuthRules(file?: string): Promise<void> {
         const fileName = file ?? "AuthRules.xml";
         fs.writeFileSync(fileName, await AuthImportExport.exportAuthRules(), "utf8");
@@ -210,9 +195,9 @@ export namespace TypeScriptMigrations {
     }
 
     /**
-     * Southwind's `ImportToolbar`: UserAssetsImporter.Preview over terminal/UserAssets.xml, then Import with
-     * that preview. The preview defaults every EXISTING asset to override (matched by guid), which is what a
-     * re-run of the seed should do; `keepExisting` flips that so only new assets are created.
+     * UserAssetsImporter.preview over terminal/UserAssets.xml, then import with that preview. The preview
+     * defaults every EXISTING asset to override (matched by guid), which is what a re-run of the seed should
+     * do; `keepExisting` flips that so only new assets are created.
      */
     export async function importUserAssets(file?: string, keepExisting = false): Promise<void> {
         const fileName = file ?? seedFile("UserAssets.xml");
@@ -234,9 +219,8 @@ export namespace TypeScriptMigrations {
     // ---- helpers ---------------------------------------------------------------------------------------
 
     /**
-     * The XML seed files that live next to this source (Southwind kept them next to Program.cs and reached
-     * them as "../../../AuthRules.xml" from the bin folder). See {@link terminalFile} for why they are
-     * resolved off the module's own location rather than the cwd.
+     * The XML seed files that live next to this source. See {@link terminalFile} for why they are resolved
+     * off the module's own location rather than the cwd.
      */
     export function seedFile(name: string): string {
         return terminalFile(name);
@@ -272,9 +256,8 @@ export namespace TypeScriptMigrations {
 }
 
 /**
- * The database a connection string points at — Signum's `Connector.Current.DatabaseName()`, which altea's
- * Connector has no counterpart for. Only the seed needs it, and only to fill
- * `ApplicationConfigurationEntity.databaseName`, which nothing reads (see that field): a URL's last path
+ * The database a connection string points at — altea's Connector exposes no such name. Only the seed needs
+ * it, and only to fill `ApplicationConfigurationEntity.databaseName` (see that field): a URL's last path
  * segment for PostgreSQL, the `Database=` / `Initial Catalog=` key for SQL Server. Falls back to the
  * environment name, so a string neither shape matches still satisfies the column's min length.
  */

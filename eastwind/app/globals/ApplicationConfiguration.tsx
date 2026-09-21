@@ -7,12 +7,12 @@ import { RenderEntity } from "@altea/altea/client/Lines/RenderEntity";
 import type { TypeContext } from "@altea/altea/client/TypeContext";
 import { ApplicationConfigurationEntity } from "./ApplicationConfiguration.data";
 
-// Port of Southwind's `Globals/ApplicationConfiguration.tsx` — one tab per module, each rendering that
+// One tab per module, each rendering that
 // module's own configuration view through RenderEntity (so a module owns how its settings look, and this
 // page only decides the order of the tabs).
 //
 // The three DIRECTORY tabs use EntityDetail rather than RenderEntity because those members are NULLABLE
-// (Southwind's `azureAD` is too): the line is what creates the embedded when an administrator decides to
+//: the line is what creates the embedded when an administrator decides to
 // configure that directory, and removes it again.
 export default function ApplicationConfiguration(p: { ctx: TypeContext<ApplicationConfigurationEntity> }): React.JSX.Element {
     const ctx = p.ctx;

@@ -1,4 +1,4 @@
-// The bootstrap's own failure screen. No Signum counterpart: everything in MainPublic's `boot()` runs
+// The bootstrap's own failure screen: everything in MainPublic's `boot()` runs
 // before React exists, so a throw there has no ErrorBoundary and no ErrorModal to land in — the page
 // would just keep showing index.html's splash. This is that screen: the FIRST error, rendered by hand.
 //

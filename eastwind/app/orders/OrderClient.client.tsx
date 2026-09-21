@@ -4,7 +4,7 @@ import { TypeContext } from "@altea/altea/client/TypeContext";
 import { OrderEntity } from "./Order.data";
 import OrderFilter from "./OrderFilter";
 
-// Orders domain client (Southwind's OrdersClient): registers Finder/Navigator settings for the Orders
+// Orders domain client: registers Finder/Navigator settings for the Orders
 // entities. Importing the entity module also registers its types on the client (token resolution).
 export namespace OrdersClient {
     export function start(cb: ClientBuilder): void {
@@ -17,13 +17,13 @@ export namespace OrdersClient {
                     token(a => a.employee),
                     token(a => a.orderDate),
                     token(a => a.state),
-                    // Southwind's OrdersClient shows TotalPrice as a column. `totalPrice` is a registered
+                    // TotalPrice is shown as a column. `totalPrice` is a registered
                     // expression (OrderLogic.server.ts) → a SERVER-only extension token. altea models expression
                     // members as @quoted methods, so the lambda navigation `a.totalPrice()` resolves it (the
                     // completer matches the "TotalPrice" key case-insensitively to the server token).
                     token(a => a.totalPrice()),
                 ],
-                // Southwind's OrdersClient `simpleFilterBuilder`: render the OrderFilter form (customer /
+                // The `simpleFilterBuilder`: render the OrderFilter form (customer /
                 // employee / order-date range) when the incoming filters are exactly representable by it —
                 // OrderFilter.extract consumes each one and returns undefined if any is left over, in which
                 // case the advanced filter builder is shown instead. A query with a simpleFilterBuilder

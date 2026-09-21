@@ -10,9 +10,8 @@ export namespace CustomersClient {
         cb.configure(PersonEntity)
             .withView(() => import("./Person"))
             .withQuerySettings(token => ({
-                // Mirrors Southwind's `Include<PersonEntity>().WithQuery(() => r => new { r.Id, r.FirstName,
-                // r.LastName, r.DateOfBirth, r.Phone, r.Fax, r.Address })` — altea sets the query's default
-                // display columns on the client (the server withQuery() is parameterless).
+                // altea sets the query's default display columns on the CLIENT (the server's
+                // `withQuery()` is parameterless).
                 defaultColumns: [
                     token(a => a.id),
                     token(a => a.firstName),
@@ -27,8 +26,7 @@ export namespace CustomersClient {
         cb.configure(CompanyEntity)
             .withView(() => import("./Company"))
             .withQuerySettings(token => ({
-                // Mirrors Southwind's `Include<CompanyEntity>().WithQuery(() => r => new { r.Id, r.CompanyName,
-                // r.ContactName, r.ContactTitle, r.Phone, r.Fax, r.Address })`.
+                // The company columns, on the client for the same reason as the person ones above.
                 defaultColumns: [
                     token(a => a.id),
                     token(a => a.companyName),
@@ -43,12 +41,12 @@ export namespace CustomersClient {
         cb.configure(AddressEmbedded)
             .withView(() => import("./Address"));
 
-        // Southwind's CustomersClient defaultFilters on the union query (CustomerQuery.Customer → altea's
-        // CustomerRowModel): the pinned "Search" box (Finder.filterGroupSearch). Southwind searched each
+        // The default filters on the union query (CustomerRowModel): the pinned "Search" box
+        // (Finder.filterGroupSearch). Upstream searched each
         // concrete type's ToString; the union already projects that into the `name` column (Person →
         // "first last", Company → company name), so a single Contains over `name` is the faithful
         // equivalent. filterGroupSearch supplies the pinned label + `splitValue` (word-splits the text) +
-        // `active: "WhenHasValue"` (altea's stand-in for Signum's `disableOnNull`). The generic id+text
+        // `active: "WhenHasValue"`. The generic id+text
         // default filter skips ModelEntity projections, so this is the only search here.
         cb.configure(CustomerRowModel)
             .withQuerySettings(token => ({

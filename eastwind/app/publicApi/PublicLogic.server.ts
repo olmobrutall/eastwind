@@ -13,42 +13,41 @@ import { AddressEmbedded } from "../customers/Customer.data";
 import { UserEmployeeMixin } from "../globals/UserEmployeeMixin.data";
 import { RegisterUserModel, RegisterUserMessage } from "./RegisterUser.data";
 
-// Port of Southwind's `Public/PublicLogic.cs` + `Public/PublicController.cs` — the two ANONYMOUS endpoints
+// The two ANONYMOUS endpoints
 // behind the self-service registration page (publicApi/RegisterUser.tsx).
 //
-// Signum's PublicLogic.Start does one thing, `ReflectionServer.RegisterLike(typeof(RegisterUserModel))`, and
+// The registration half does one thing, register the model for reflection, and
 // altea's counterpart is the `@reflect` on the model itself (see RegisterUser.data.ts) — so what is left
 // here is the controller, which altea writes as routes on the WebBuilder.
 //
-// Divergences from Southwind:
+// Worth knowing:
 //  - the ROLE the new user is given is a parameter, not the string literal `"Standard user"` buried in the
 //    controller. Which role a self-registered visitor gets is a deployment decision and the one thing here
 //    with a security consequence; the Starter passes it.
 //  - `[ValidateModelFilter]` becomes an explicit `entityIntegrityCheckAsync` + `res.modelState(...)`, which
 //    is what altea's own /api/validateEntity does. Without it the model's validators — including the
 //    password minimum — would only be enforced in the browser.
-//  - the password is salted with the name the user will actually LOG IN with. Southwind hashes with
+//  - the password is salted with the name the user will actually LOG IN with, rather than with
 //    `model.Username` while storing `UserName = model.EMail`, and the salt IS the user name
 //    (PasswordEncoding.hashPassword(usernameForSalt, …)) — so the hash it writes is one login can never
 //    reproduce, and every registered account is locked out of the front door it was just handed. Fixed
-//    rather than mirrored: `model.username` is kept as a member (it is part of Signum's model and its
+//    rather than mirrored: `model.username` is kept as a member (it is part of the model and its
 //    translations) but it is not what the account is keyed by.
-//  - the writes run as the SYSTEM user (Signum's `UserHolder.UserSession(AuthLogic.SystemUser!)`), so the
-//    rows are attributable; the reportsTo lookup runs with authorization DISABLED (Signum's
-//    `AuthLogic.Disable()`), because an anonymous visitor may not read employees.
+//  - the writes run as the SYSTEM user, so the
+//    rows are attributable; the reportsTo lookup runs with authorization DISABLED, because an anonymous
+//    visitor may not read employees.
 export namespace PublicLogic {
 
     export function start(ws: WebBuilder, options: { registeredUserRoleName: string }): void {
 
-        // Southwind: `[Route("api/getRegisterUser"), HttpPost, SignumAllowAnonymous]`. A POST with no body,
-        // as in Signum — it is a read, but keeping the verb keeps the two clients interchangeable.
+        // A POST with no body — it is a read, but keeping the verb keeps the two clients interchangeable.
         ws.post("/api/getRegisterUser",
             { res: RegisterUserModel, allowAnonymous: true },
             async (req, res) => {
                 const reportsToEmployeeId = req.query["reportsToEmployeeId"] as string | undefined;
 
                 // An anonymous visitor has no read access to employees, and the id came from a link an
-                // employee handed out — so the lookup is deliberately unauthorized, as Signum's is.
+                // employee handed out — so the lookup is deliberately unauthorized.
                 const reportsTo = await AuthLogic.withDisabled(async () =>
                     reportsToEmployeeId == null || reportsToEmployeeId === ""
                         ? null
@@ -60,13 +59,13 @@ export namespace PublicLogic {
                 }));
             });
 
-        // Southwind: `[Route("api/registerUser"), HttpPost, SignumAllowAnonymous, ValidateModelFilter]`.
+        // Anonymous, and model-validated before the handler runs.
         ws.post("/api/registerUser",
             { req: RegisterUserModel, allowAnonymous: true },
             async (req, res) => {
                 const model = await req.jsonTyped();
 
-                // Signum's [ValidateModelFilter]: validate exactly as a save would and answer a 400
+                // Validate exactly as a save would and answer a 400
                 // ModelState, which the page turns back into per-field errors.
                 const ic = await entityIntegrityCheckAsync(model, "Saving");
                 if (ic) { res.modelState(ic); return; }
@@ -100,7 +99,7 @@ export namespace PublicLogic {
                         state: UserState.Active,
                         role: role.toLite(),
                     });
-                    // altea inlines a mixin's fields onto the owner, so Signum's `InitiMixin` is a plain
+                    // altea inlines a mixin's fields onto the owner, so setting one is a plain
                     // assignment through the typed `mixin()` cast — the call employeeLoader already makes.
                     user.mixin(UserEmployeeMixin).employee = employee.toLite();
                     await Operations.execute(user, UserOperation.Save);

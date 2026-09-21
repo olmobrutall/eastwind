@@ -6,20 +6,20 @@ import { CategoryEntity } from "../products/Product.data";
 import { ProductsLogic } from "../products/ProductLogic.server";
 import type { CategoryWithProducts } from "./PublicCatalog.data";
 
-// Port of Southwind's `Public/CatalogController.cs` — the ANONYMOUS catalog the public landing page reads
-// (publicApi/PublicCatalog.tsx). Southwind's OTHER catalog controller, the API-key-authenticated one that
+// The ANONYMOUS catalog the public landing page reads
+// (publicApi/PublicCatalog.tsx). The OTHER catalog surface, the API-key-authenticated one that
 // @altea/altea-rest logs, is CatalogApi.server.ts beside this file.
 //
-// Divergences from Southwind:
+// Worth knowing:
 //  - the route is `/api/publicCatalog`, not `/api/catalog`. CatalogApi mounts its RestLog middleware on the
-//    `/api/catalog` PREFIX (an Express `use` covers the prefix itself), so keeping Southwind's path would
+//    `/api/catalog` PREFIX (an Express `use` covers the prefix itself), so keeping the upstream path would
 //    write a RestLog row for every anonymous page view — the opposite of what that log is for.
 //  - `PropertyRouteTranslationLogic.translatedField` takes three arguments here, not four: altea resolves
 //    the culture from the request scope (the `Accept-Language` tag every call carries) rather than from a
 //    `CultureInfo?` parameter.
 export namespace PublicCatalogApi {
 
-    // Southwind's two static PropertyRoutes. Built lazily rather than at module scope: a route resolves
+    // The two static PropertyRoutes. Built lazily rather than at module scope: a route resolves
     // through the reflection metadata, which is not stamped until the entity modules have loaded.
     let prCategoryName: PropertyRoute;
     let prDescription: PropertyRoute;
@@ -29,7 +29,7 @@ export namespace PublicCatalogApi {
         prCategoryName = PropertyRoute.root(CategoryEntity).addLambda(a => a.categoryName);
         prDescription = PropertyRoute.root(CategoryEntity).addLambda(a => a.description);
 
-        // Signum's `[SignumAllowAnonymous]`: the landing page shows this to a visitor who has never logged
+        // Allow-anonymous: the landing page shows this to a visitor who has never logged
         // in. Everything it returns is public product data.
         ws.get("/api/publicCatalog",
             { res: CustomType<CategoryWithProducts[]>(), allowAnonymous: true },
@@ -52,7 +52,7 @@ export namespace PublicCatalogApi {
     }
 
     // The category pictures are loaded from terminal/northwind/image_categories, whose files are PNG today — so the
-    // media type is read off the name rather than assumed (Southwind hard-codes image/jpeg).
+    // media type is read off the name rather than assumed.
     function mimeTypeOf(fileName: string): string {
         const ext = fileName.toLowerCase().tryAfterLast(".");
         switch (ext) {

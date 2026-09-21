@@ -5,9 +5,9 @@ import { BulkInserter } from "@altea/altea/server/bulkInserter";
 import { CompanyEntity, PersonEntity, AddressEmbedded } from "../../app/customers/Customer.data";
 import { Northwind, NwCustomer } from "./northwindSchema";
 
-// Port of Southwind.Terminal/CustomerLoader.cs. Splits Northwind Customers by ContactTitle "Owner"
+// Splits Northwind Customers by ContactTitle "Owner"
 // into Person vs Company. Plain BulkInsert (identity ids — Orders link back by ContactName). The
-// CorruptMixin is omitted (extension-free). NOTE: Southwind filters with a SQL `.Where(...Contains)`;
+// NOTE: the upstream loader filters with a SQL `.Where(...Contains)`;
 // here the split is done in memory to avoid a nullable-string LIKE translation on the view read.
 export namespace CustomerLoader {
     export async function loadCompanies(): Promise<void> {

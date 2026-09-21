@@ -7,25 +7,24 @@ import { PersonEntity, CustomerEntity } from "../../app/customers/Customer.data"
 import { ProductEntity } from "../../app/products/Product.data";
 import { browse, hasStack, TestUser } from "./setup";
 
-// Port of Southwind.Test.React/OrderReactTest.cs, step for step. The point of this suite — and what
+// The point of this suite — and what
 // separates it from test/logic/order.test.ts, which calls the same operations directly — is that the
 // order is BUILT BY CLICKING: found through a search page, constructed from its customer, filled in line
 // by line, and saved, exactly as a user would. Anything the UI wires wrongly fails here and nowhere else.
 //
-// Every page and modal is a SCOPE, and `.scoped(...)` is Signum's `Task.Then(async x => …)` — the closure
+// Every page and modal is a SCOPE, and `.scoped(...)` runs a closure over it — the closure
 // owns the thing, and leaving it closes the modal and waits for whatever opened it.
 describe.skipIf(!hasStack)("OrderReactTest", () => {
 
     test("OrderWebTestExample", async () => {
-        // Arranged through the domain, because the ASSERTION needs them, not the clicking: Southwind
+        // Arranged through the domain, because the ASSERTION needs them, not the clicking: the suite
         // queries the same two rows the same way.
         const sonic = await table(ProductEntity).single(p => p.productName.includes("Sonic"));
         const shipName = `Playwright ${Date.now()}`;
 
-        // Signum's `BrowseAsync(…)`: the browser belongs to this closure, and leaving it closes the
-        // browser however the test ends.
+        // The browser belongs to this closure, and leaving it closes the browser however the test ends.
         //
-        // SUPER where Southwind browses as Standard — eastwind's AuthRules seed does not grant the
+        // SUPER rather than Standard — eastwind's AuthRules seed does not grant the
         // Standard role CreateOrderFromCustomer, so the construct button is simply not on the page for
         // it (test/logic/order.test.ts hits the same wall as an outright UnauthorizedAccessException).
         // Super has an EMPLOYEE linked too, which the operation needs to fill the order's employee.
@@ -38,9 +37,9 @@ describe.skipIf(!hasStack)("OrderReactTest", () => {
 
                 // Opened AS the customer base type: CreateOrderFromCustomer is declared From<CustomerEntity>
                 // (eastwind has Person and Company under one customer), and the operation's own type is what
-                // the frame has to agree with. Southwind names PersonEntity here because that IS its customer.
+                // the frame has to agree with: PersonEntity, because that IS the customer type.
                 return await persons.results.entityClickModal(1, CustomerEntity).scoped(async john => {
-                    // `{ groupId: "create" }` is Signum's second argument to ConstructFromAsync, and it is
+                    // `{ groupId: "create" }` names the operation group, and it is
                     // not decoration: construct-from operations live behind a "Create…" DROPDOWN, so the
                     // button does not exist in the DOM until that dropdown is opened.
                     return await john.constructFrom(OrderOperation.CreateOrderFromCustomer, OrderEntity, { groupId: "create" })
@@ -59,7 +58,7 @@ describe.skipIf(!hasStack)("OrderReactTest", () => {
 
                             // One row, one product — the table's own row container, so the line is created
                             // the way the button creates it.
-                            // eastwind's order lines are a @part ROW table (OrderLineEntity), not Signum's
+                            // eastwind's order lines are a @part ROW table (OrderLineEntity), not an
                             // OrderDetailEmbedded — so createRow hands back the row's container directly
                             // rather than a scope to leave.
                             const line = await order.lines.entityTable(o => o.details).createRow();
@@ -87,8 +86,7 @@ describe.skipIf(!hasStack)("OrderReactTest", () => {
             assert.notEqual(lite, null);
 
             // Re-opened from its own URL, the saved order shows what the database holds — the last
-            // thing Southwind checks, and the one that proves the write landed rather than just the
-            // screen.
+            // thing worth checking, and the one that proves the write landed rather than just the screen.
             const saved = await table(OrderEntity).single(o => o.id == lite!.id);
             await b.framePage(lite!).scoped(async order => {
                 await waitTotalPrice(order, saved.totalPrice().toString());
@@ -98,7 +96,7 @@ describe.skipIf(!hasStack)("OrderReactTest", () => {
 });
 
 /**
- * Southwind's `OrderExtensions.WaitTotalPrice` — the total is a read-only input the client recomputes,
+ * The total is a read-only input the client recomputes,
  * so the assertion is a WAIT on its value rather than a read: polling is what makes it independent of
  * how long the recompute takes.
  */

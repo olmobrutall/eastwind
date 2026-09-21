@@ -70,15 +70,15 @@ import { DynamicViewClient } from "@altea/altea-dynamic/client/DynamicViewClient
 import { DynamicClient } from "@altea/altea-dynamic/client/DynamicClient";
 import { EvalClient } from "@altea/altea-eval/client/EvalClient";
 
-// The full (admin) registration bundle — Southwind's MainAdmin.startFull. One `ClientBuilder` (`cb`) owns
-// the routes and is threaded through every module's `start(cb)`, mirroring the server's single
-// SchemaBuilder. Importing a *Client module is also what registers its entity types on the client (needed
+// The full (admin) registration bundle. One `ClientBuilder` (`cb`) owns the routes and is threaded through
+// every module's `start(cb)`, mirroring the server's single SchemaBuilder. Importing a *Client module is
+// also what registers its entity types on the client (needed
 // for token resolution and operation→type mapping).
 //
-// Kept as THIN as Southwind's — one line per module — and ordered by DEPENDENCY, the same way the Starter
-// is: the framework first, then each altea module after the ones whose registries it writes into, and the
-// APP's own domains last. Every ordering constraint is recorded in **docs/Wiring.md**; read it before
-// moving a call. `legacyMode` gates the modules Southwind does not install, in step with the server.
+// Kept THIN — one line per module — and ordered by DEPENDENCY, the same way the Starter is: the framework
+// first, then each altea module after the ones whose registries it writes into, and the APP's own domains
+// last. Every ordering constraint is recorded in **docs/Wiring.md**; read it before moving a call.
+// `legacyMode` gates the modules a legacy database does not install, in step with the server.
 export function startFull(routes: RouteObject[], legacyMode = false): void {
     const cb = new ClientBuilder(routes);
     cb.startFramework();
@@ -99,7 +99,7 @@ export function startFull(routes: RouteObject[], legacyMode = false): void {
     HtmlEditorClient.start();
     MarkdownClient.start();
 
-    // The query settings for the three migration history tables. Signum has no client module for them.
+    // The query settings for the three migration history tables.
     MigrationsClient.start(cb);
 
     // ==== AUTHORIZATION (@altea/altea-auth) =========================================================
@@ -109,7 +109,7 @@ export function startFull(routes: RouteObject[], legacyMode = false): void {
     AuthAdminClient.start(cb, { types: true, permissions: true, operations: true, queries: true, properties: true });
 
     // "Invite a user from the directory": gates itself on ActiveDirectoryPermission.InviteUsersFromAD,
-    // which no role holds by default. (Southwind passes false — it uses no directory at all.)
+    // which no role holds by default.
     ActiveDirectoryClient.start({ inviteUsers: true });
 
     // `profilePhotos: "cached"` serves avatars from the local CachedProfilePhoto copy rather than calling
@@ -148,13 +148,12 @@ export function startFull(routes: RouteObject[], legacyMode = false): void {
 
     // ==== COMMUNICATION =============================================================================
 
-    // Southwind's `MailingClient.start({ routes, contextual: true, queryButton: true })`. AFTER
-    // UserQueriesClient: the template editor's filter builder is altea-user-queries' FilterBuilderEmbedded.
+    // AFTER UserQueriesClient: the template editor's filter builder is altea-user-queries'
+    // FilterBuilderEmbedded.
     MailingClient.start(cb, { contextual: true, queryButton: true });
 
     // The extra SENDER / reception service editors — each is one `cb.configure(T).withView(…)`, which is
     // also what registers the type so the polymorphic `service` picker can offer it.
-    // Not in Southwind — see legacyMode.
     if (!legacyMode)
         MailingExchangeWSClient.start(cb);
     MailingMicrosoftGraphClient.start(cb);
@@ -181,12 +180,12 @@ export function startFull(routes: RouteObject[], legacyMode = false): void {
 
     // ==== PRINT QUEUE AND RELEASE NOTES =============================================================
 
-    // Print queue. Not in Southwind — see legacyMode; gated in step with the server, since a client that
-    // registered these pages against a server that never started the module would 404 on every call.
+    // Print queue. Gated in step with the server, since a client that registered these pages against a
+    // server that never started the module would 404 on every call.
     if (!legacyMode)
         PrintClient.start(cb);//Printing
 
-    // Release notes. Not in Southwind — see legacyMode.
+    // Release notes.
     if (!legacyMode)
         WhatsNewClient.start(cb);//WhatsNew
 
@@ -229,17 +228,15 @@ export function startFull(routes: RouteObject[], legacyMode = false): void {
 
     // AFTER DashboardClient / UserQueriesClient, whose registries it writes into. The app's tree TYPE is
     // configured separately, by DepartmentsClient below.
-    // Not in Southwind — see legacyMode.
     if (!legacyMode)
         TreeClient.start(cb);
 
     // AFTER DashboardClient / UserQueriesClient, whose extension points it pushes onto.
-    // Not in Southwind — see legacyMode.
     if (!legacyMode)
         TourClient.start(cb);
 
     // `registerAuthenticator` is what lets `?apiKey=…` in the address bar log a caller in. A separate call
-    // in Signum too, because a host may want the key ENTITY without that; eastwind opts in, as Southwind does.
+    // because a host may want the key ENTITY without that; eastwind opts in.
     RestClient.start(cb);
     RestApiKeyClient.start(cb);
     RestApiKeyClient.registerAuthenticator();//Rest
@@ -265,17 +262,16 @@ export function startFull(routes: RouteObject[], legacyMode = false): void {
     CustomersClient.start(cb);
     OrdersClient.start(cb);
     // The app's TREE type (the module itself is started above).
-    // Not in Southwind — see legacyMode.
     if (!legacyMode)
         DepartmentsClient.start(cb);//Departments
 
-    // The app GLOBALS (Southwind's GlobalsClient): the ApplicationConfiguration page — one tab per module,
+    // The app GLOBALS: the ApplicationConfiguration page — one tab per module,
     // each rendering that module's own configuration view — plus the UserEmployeeMixin line on the User
     // view. AFTER AuthAdminClient, which registers UserEntity's own EntitySettings (docs/Wiring.md).
     GlobalsClient.start(cb);
 
     // eastwind declares CaseActivityMixin on EmailMessageEntity, so the mixin's read-only line goes on the
-    // email view after its `target` — Signum hard-codes that pair in WorkflowClient.start.
+    // email view after its `target`.
     if (CaseActivityMixin.isDeclaredOn(EmailMessageEntity))
         WorkflowClient.overrideCaseActivityMixinView(EmailMessageEntity, a => a.target);//Workflow
 }

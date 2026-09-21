@@ -6,8 +6,7 @@ import * as url from "node:url";
  * the root, and everything the demo data is made of under `northwind/` (the two `Northwind.*.sql`
  * scripts, `passagesWithEmbeddings.json`, the `image_*` folders), named with that first segment.
  *
- * Signum reads these relative to the CWD (Southwind.Terminal names them "../../../AuthRules.xml" from its
- * bin folder). Here they are resolved off this module's own location instead, so the cwd does not matter:
+ * They are resolved off this module's own location rather than the CWD, so the cwd does not matter:
  * the compiled module sits in `dist/terminal/`, hence `../../terminal`. `import.meta.url` — and not
  * `import.meta.dirname` — because that is the spelling the terminal bundle's `pinImportMetaUrl` rewrites
  * back to this file's pre-bundle location (see vite.emittedJs.ts); a bundled read would otherwise resolve

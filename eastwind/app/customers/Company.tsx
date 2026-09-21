@@ -5,7 +5,6 @@ import SearchControl from '@altea/altea/client/SearchControl/SearchControl'
 import { CompanyEntity } from './Customer.data'
 import { OrderEntity } from '../orders/Order.data'
 
-// Ported from Southwind/Customers/Company.tsx (faithful).
 export default function Company(p: { ctx: TypeContext<CompanyEntity> }): React.JSX.Element {
   const ctx = p.ctx;
   return (

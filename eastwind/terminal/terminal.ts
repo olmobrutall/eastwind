@@ -32,9 +32,8 @@ import { TypeScriptMigrations } from "./typeScriptMigrations";
 import { TranslationConverter } from "@altea/altea-translations/server/TranslationConverter";
 import { TranslationStubs } from "@altea/altea-translations/server/TranslationStubs";
 
-// Port of Southwind.Terminal (old/Southwind.Terminal/Program.cs): a console host that boots the engine
-// (Starter.start) then dispatches ONE command (Signum takes args.First() only) or, with no args, an
-// interactive ConsoleSwitch menu. The commands mirror Southwind's, and so does the split between them:
+// A console host that boots the engine (Starter.start) then dispatches ONE command or, with no args, an
+// interactive ConsoleSwitch menu. The commands split three ways:
 //   • `ts`     — the ONCE-per-database code steps (roles, users, the Northwind data, the XML seeds),
 //                recorded in TypeScriptMigrationEntity (`CSharpMigration` in legacy mode) →
 //                TypeScriptMigrations.run.
@@ -52,10 +51,10 @@ async function main(): Promise<void> {
 
     const connStr = requireConnStr();
 
-    // Build the schema WITHOUT touching the database — Signum's terminal does the same: `Starter.Start`
-    // then the menu, and only the commands that read data call `Schema.Current.Initialize()`. Initializing
-    // here instead would run every startup cache against the schema that `sync` exists to repair, printing
-    // a wall of mismatch warnings and a pile of queries in FRONT of the command that would fix them.
+    // Build the schema WITHOUT touching the database: only the commands that read data initialize.
+    // Initializing here instead would run every startup cache against the schema that `sync` exists to
+    // repair, printing a wall of mismatch warnings and a pile of queries in FRONT of the command that
+    // would fix them.
     await Starter.start(connStr, undefined, { initialize: false }); // binds Connector.default
 
     try {
@@ -94,14 +93,14 @@ async function main(): Promise<void> {
 }
 
 /**
- * Initialize the schema for a command that READS data — Signum's `Schema.Current.Initialize()`, called from
- * `Load` and `CSharpMigrations` and from nowhere else.
+ * Initialize the schema for a command that READS data — called from `load` and from the code migrations,
+ * and from nowhere else.
  *
  * The terminal is the tool that BRINGS the schema up to date, so it must survive a database that trails the
- * code — otherwise the mismatch `sync` exists to fix would stop `sync` from running. Signum's
- * StartParameters.IgnoredDatabaseMismatches does exactly this: the startup caches (TypeLogic / SymbolLogic
- * / EmailModelLogic, all built with `joinRelaxed`) COLLECT their mismatches instead of throwing, and they
- * are reported once, here. The WEB HOST keeps the strict default, so a stale schema there fails loudly.
+ * code — otherwise the mismatch `sync` exists to fix would stop `sync` from running. So the startup
+ * caches (TypeLogic / SymbolLogic / EmailModelLogic, all built with `joinRelaxed`) COLLECT their
+ * mismatches instead of throwing, and they are reported once, here. The WEB HOST keeps the strict
+ * default, so a stale schema there fails loudly.
  *
  * Runs at most once per process.
  */
@@ -132,8 +131,8 @@ function formatErrorRed(err: unknown): string {
     return chalk.bold.redBright(`[FAILED] ${head}`) + (rest.length > 0 ? "\n" + chalk.red(rest.join("\n")) : "");
 }
 
-// The interactive main menu (Southwind.Terminal's `new ConsoleSwitch<…>{…}.Choose()` loop). Runs until
-// the user enters nothing; an action's error is printed but keeps the menu alive.
+// The interactive main menu. Runs until the user enters nothing; an action's error is printed but keeps
+// the menu alive.
 async function interactive(): Promise<void> {
     for (; ;) {
         const action = await new ConsoleSwitch<() => Promise<void>>("..:: Welcome to the Eastwind Loading Application ::..")
@@ -156,21 +155,14 @@ async function interactive(): Promise<void> {
 }
 
 /**
- * Southwind's `Program.Load(args)` — the AD-HOC TOOLS menu: a ChooseMultipleWithDescription of one-off
- * utilities, each run through `MigrationLogic.ExecuteLoadProcess` (so it lands in LoadMethodLog with its
- * timing and exception) and each RE-RUNNABLE — nothing here is recorded as a migration.
+ * The AD-HOC TOOLS menu: a ChooseMultipleWithDescription of one-off utilities, each run through
+ * `MigrationLogic.executeLoadProcess` (so it lands in LoadMethodLog with its timing and exception) and
+ * each RE-RUNNABLE — nothing here is recorded as a migration.
  *
- * The data loading is NOT here: that is the CODE MIGRATIONS list (`ts`, see TypeScriptMigrations.run),
- * exactly as in Southwind.
- *
- * Southwind's entries were AR (import/export auth rules), HL (help), TP (train predictor), SO (show order)
- * and EE (export embeddings). Help / MachineLearning are not ported, and there is no embeddings EXPORT here
- * (only the loader), so those three are out; AR is split into its two halves and the user-asset import — the
- * sibling of AR, and the other file-based seed — is added. SN is new: Southwind assumes a Northwind database
- * is already installed, eastwind ships the vendor script for both dialects and seeds it.
+ * The data loading is NOT here: that is the CODE MIGRATIONS list (`ts`, see TypeScriptMigrations.run).
  */
 async function load(args: string[]): Promise<void> {
-    await ensureInitialized(); // Signum's `Load` opens with Schema.Current.Initialize()
+    await ensureInitialized();
     for (; ;) {
         const selected = await new ConsoleSwitch<() => Promise<void>>("Load processes (e.g. SN,EA,IA):")
             .add("SN", "Seed Northwind (the demo-data SOURCE database)", () => NorthwindSeed.seed())
@@ -192,8 +184,8 @@ async function load(args: string[]): Promise<void> {
 }
 
 /**
- * Southwind's `Program.ShowOrder`: the most expensive order that has a discounted line. A tiny end-to-end
- * exercise of the LINQ provider from the console (Signum's own debugging entry).
+ * The most expensive order that has a discounted line — a tiny end-to-end exercise of the LINQ provider
+ * from the console.
  */
 async function showOrder(): Promise<void> {
     const order = await table(OrderEntity)
@@ -213,21 +205,19 @@ async function showOrder(): Promise<void> {
 }//showOrder
 
 /**
- * Southwind's `csharp` command / `CS` menu entry → `SouthwindMigrations.CSharpMigrations(autoRun)`: the
- * ordered, once-per-database code steps (roles, users, the Northwind loaders, the XML seeds). Named for
- * the language they are actually written in; the TABLE behind them keeps Signum's name.
+ * The ordered, once-per-database code steps (roles, users, the Northwind loaders, the XML seeds). Named
+ * for the language they are written in; the TABLE behind them keeps the legacy name.
  */
 async function typeScriptMigrations(args: string[]): Promise<void> {
-    await ensureInitialized(); // Signum's `SouthwindMigrations.CSharpMigrations` opens with it too
+    await ensureInitialized();
     await TypeScriptMigrations.run(/* autoRun */ args.includes("--auto") || !process.stdin.isTTY);
 }
 
-// Southwind's `SqlMigrationRunner.SqlMigrations()` (its Program.cs "SQL" option): the versioned .sql files in
-// eastwind/migrations are the schema's source of truth — apply what is pending, or write the next migration
-// from the synchronization script.
+// The versioned .sql files in eastwind/migrations are the schema's source of truth — apply what is
+// pending, or write the next migration from the synchronization script.
 async function migrations(args: string[]): Promise<void> {
-    // Signum's SqlMigrationRunner does not initialize, but its TokenMigrationRunner does — and altea wires
-    // the token migrations onto `afterMigrationsCompleted` below, so this command may reach them.
+    // The token migrations are wired onto `afterMigrationsCompleted` below and they initialize, so this
+    // command may reach them.
     await ensureInitialized();
     SqlMigrationRunner.migrationsDirectory = migrationsDir();
     wireTokenMigrations();
@@ -235,10 +225,9 @@ async function migrations(args: string[]): Promise<void> {
 }
 
 /**
- * The three hooks that make TOKEN migrations part of the ordinary schema workflow — Signum registers them
- * inside `TokenMigrationLogic.Start`, but @altea/altea-user-assets must not depend on
- * @altea/altea-migrations (a user-assets app need not have migrations at all), so the APP wires them.
- * The terminal is the right place: it is what owns both, and both are console workflows.
+ * The three hooks that make TOKEN migrations part of the ordinary schema workflow. @altea/altea-user-assets
+ * must not depend on @altea/altea-migrations (a user-assets app need not have migrations at all), so the
+ * APP wires them. The terminal is the right place: it owns both, and both are console workflows.
  *
  * Idempotent, because `migrations` and `sync` can both run in one interactive session.
  */
@@ -257,8 +246,8 @@ function wireTokenMigrations(): void {
 }
 
 // eastwind/terminal/sync — where `sync` drops the script it asks you to review. Beside the terminal's own
-// data files rather than in the cwd (Signum writes to the working directory, so the script lands wherever
-// the terminal happened to be launched from), and gitignored as a whole: a synchronization script is a
+// data files rather than in the cwd (where the script would land wherever the terminal happened to be
+// launched from), and gitignored as a whole: a synchronization script is a
 // throwaway artefact of ONE database's drift, never source. A migration you mean to KEEP is a different
 // thing and goes to eastwind/migrations through the `sql` command.
 const syncDirectory = terminalFile("sync");
@@ -286,8 +275,8 @@ async function synchronize(args: string[] = []): Promise<void> {
     const replacements = new Replacements();
     replacements.interactive = Boolean(process.stdin.isTTY); // prompt for renames only on a real console
     // Headless (no TTY): we can't prompt, so instead of ABORTING on an ambiguous column/table rename, treat
-    // every one as no-rename → drop + add (Signum's AutoReplacement pattern), logging each decision. This is
-    // the safe CI/dev default; a real rename with data to preserve should be run on an interactive console.
+    // every one as no-rename → drop + add, logging each decision. This is the safe CI/dev default; a real
+    // rename with data to preserve should be run on an interactive console.
     if (!replacements.interactive)
         replacements.autoReplacement = ({ oldValue, replacementKey }) => {
             console.log(`[sync] no-rename (drop+add): '${oldValue}' in ${replacementKey}`);
@@ -301,15 +290,15 @@ async function synchronize(args: string[] = []): Promise<void> {
     const script = await Schema.current.synchronizationScript(replacements);
     if (script == null) {
         console.log("[sync] database already in sync");
-        // Signum fires the hook with (null, null) here: an already-synchronized SCHEMA can still have
-        // pending TOKEN work, so the pass must be offered rather than skipped. Only on a real console —
-        // it prompts, and a headless caller has nobody to answer.
+        // The hook fires with (null, null) here: an already-synchronized SCHEMA can still have pending
+        // TOKEN work, so the pass must be offered rather than skipped. Only on a real console — it
+        // prompts, and a headless caller has nobody to answer.
         if (replacements.interactive)
             await Administrator.onAfterSynchronize(null, null);
         return;
     }
-    // Signum's Administrator.SynchronizeSchema: SAVE the script, print it and its path, then ask
-    // run / open / exit — never apply it unasked. Applying it is ONE transaction, so a mid-script failure
+    // SAVE the script, print it and its path, then ask run / open / exit — never apply it unasked.
+    // Applying it is ONE transaction, so a mid-script failure
     // (a PK-type migration that fails partway) rolls back rather than leaving the database half-migrated.
     if (apply) {
         const fileName = join(resolve(syncDirectory), syncFileName(new Date()));
@@ -335,8 +324,8 @@ async function synchronize(args: string[] = []): Promise<void> {
     await Schema.current.initialize();
     console.log("[sync] applied");
 
-    // Signum's `AfterSynchronize?.Invoke(fileName, rep)` — with the Replacements this sync collected,
-    // which is where the renames that invalidated stored tokens are. Interactive only (it prompts).
+    // The after-synchronize hook, with the Replacements this sync collected — which is where the renames
+    // that invalidated stored tokens are. Interactive only (it prompts).
     if (replacements.interactive)
         await Administrator.onAfterSynchronize(fileName, replacements);
 }
@@ -396,7 +385,7 @@ function requireConnStr(): string {
 }
 
 // Touch the database so a bad host/credential fails here with a clear message and the server banner is
-// surfaced (mirrors MusicStarter's connect probe + Southwind.Terminal's coloured env banner).
+// surfaced.
 async function connectBanner(connStr: string): Promise<void> {
     const connector = Connector.current();
     const label = connector.isPostgres ? "PostgreSQL" : "SQL Server";

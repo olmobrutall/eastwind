@@ -8,7 +8,7 @@ import { DepartmentEntity } from "./Department.data";
 // (Children / Parent / Descendants / Ascendants) and all seven operations.
 //
 // `copy` is what makes TreeOperation.Copy exist — the module cannot know how to duplicate a row of a type
-// it has never seen, so a tree type that wants Copy says so here (Signum's same optional argument).
+// it has never seen, so a tree type that wants Copy says so here.
 export namespace DepartmentsLogic {
     export function start(sb: SchemaBuilder): void {
         TreeLogic.withTree(sb.include(DepartmentEntity), {

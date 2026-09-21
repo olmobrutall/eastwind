@@ -11,18 +11,18 @@ import { ProductEntity } from "../../app/products/Product.data";
 import { EastwindEnvironment } from "../environment/eastwindEnvironment";
 import { hasDb, startEngine } from "../environment/testDatabase";
 
-// Port of Southwind.Test.Logic/OrderTest.cs — the DOMAIN half of the order story, with no browser
+// The DOMAIN half of the order story, with no browser
 // anywhere. The React suite (test/playwright) drives the same operations by clicking; this one calls
 // them directly, so a failure here is the application's, not the page's.
 //
-// Southwind's `using (Transaction.Test())` is `Transaction.noCommit` here: the writes happen and the
+// `Transaction.noCommit`: the writes happen and the
 // body sees them, but nothing survives the test — which is why a test may create rows freely and never
 // clean up, and why this suite does not need the snapshot restore the browser one does.
 describe.skipIf(!hasDb)("OrderTest", () => {
     beforeAll(async () => { await startEngine(); });
 
     test("OrderTestExample", async () => {
-        // Signum's `AuthLogic.UnsafeUserSession("Standard")`. Not decoration: CreateOrderFromCustomer
+        // An unsafe user session. Not decoration: CreateOrderFromCustomer
         // fills the order's employee from the ambient user's claim, and the row-level type conditions
         // gate on it — so arranging as nobody would take a different path than the UI does.
         await asSuper(async () => {
@@ -31,7 +31,7 @@ describe.skipIf(!hasDb)("OrderTest", () => {
 
                 const order = await john.constructFrom(OrderOperation.CreateOrderFromCustomer);
 
-                // eastwind requires a freight; Southwind defaults it. The value is irrelevant to what
+                // A freight is required here. The value is irrelevant to what
                 // this test asserts — the TOTAL is the lines — but the order will not save without one.
                 order.freight = new Decimal(0);
 
@@ -42,7 +42,7 @@ describe.skipIf(!hasDb)("OrderTest", () => {
                 const saved = await order.execute(OrderOperation.Save);
 
                 // One line of one unit, so the order's total IS the product's price — the same assertion
-                // Southwind makes, and the one the React suite watches the `total-price` input reach.
+                // and the one the browser suite watches the `total-price` input reach.
                 assert.equal(saved.totalPrice().toString(), sonic.unitPrice.toString());
             });
         });

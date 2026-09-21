@@ -5,10 +5,10 @@ import { formatError } from "@altea/altea/server/formatError";
 import { SystemEventServer } from "@altea/altea/server/systemEventServer";
 import { Starter } from "./starter.server";
 
-// eastwind web host (Southwind.Server/Program.cs). Creates the WebBuilder and hands it to Starter.start;
+// The eastwind web host. Creates the WebBuilder and hands it to Starter.start;
 // Starter sets it on the SchemaBuilder so each module's `XxxLogic.start` mounts its own HTTP surface
 // (auth middleware + /api/auth + /api/authAdmin from AuthLogic.start, the framework API from
-// SignumServer.start), then the host just listens. The host no longer re-lists the server modules.
+// SignumServer.start), then the host just listens.
 // Run: node --import @altea/altea/register.mjs --env-file=.env.postgres dist/webServer.server.js
 async function main(): Promise<void> {
     const connStr = process.env["EASTWIND_DB"] ?? process.env["ALTEA_TEST_DB"];
@@ -21,7 +21,7 @@ async function main(): Promise<void> {
     const label = Connector.current().isPostgres ? "PostgreSQL" : "SQL Server";
     console.log(`[eastwind] engine started (${label}: ${Connector.redactConnectionString(connStr)})`);
 
-    // Default 3001 (not 3000): a local Southwind (Signum) dev host commonly occupies 3000, so eastwind
+    // Default 3001 (not 3000): a local legacy dev host commonly occupies 3000, so eastwind
     // sits alongside it. Override with PORT; the vite client proxy default (VITE_API_TARGET) matches.
     const port = Number(process.env["PORT"] ?? 3001);
     const server = ws.app.listen(port, () => console.log(`[eastwind] API listening on http://localhost:${port}`));
@@ -33,7 +33,7 @@ async function main(): Promise<void> {
     // so the process just drains and exits code 0 — a phantom "clean" exit that reads as success. Surface it.
     server.on("error", err => fail(err));
 
-    // Southwind.Server/Program.cs's `SystemEventServer.LogStartStop(app.Lifetime)` — record that this
+    // Record that this
     // process came up, and arrange for it to record its own shutdown. AFTER listen, so a boot that cannot
     // even bind its port is not filed as a successful start; and awaited, so the row exists before the
     // host is considered up. See server/systemEventServer for what a MISSING stop row means.

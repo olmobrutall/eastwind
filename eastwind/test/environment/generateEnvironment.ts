@@ -12,21 +12,19 @@ import { Starter } from "../../app/starter.server";
 import { EastwindEnvironment } from "./eastwindEnvironment";
 import { requireConnectionString } from "./testDatabase";
 
-// Port of Southwind.Test.Environment/EnvironmentTest.cs `GenerateTestEnvironment` — build the database
+// Build the database
 // every browser test starts from, and leave a SNAPSHOT of it behind.
 //
-// Signum writes this as an xUnit [Fact] you run by hand; here it is a script, because Playwright is the
-// test runner and a "test" that drops the database has no business in the suite it would run inside.
-// Everything else is the same, in the same order:
+// It is a script rather than a test, because Playwright is the test runner and a "test" that drops the
+// database has no business in the suite it would run inside. The order is:
 //
 //   generation → schema initialize → (auth off) roles + AuthRules.xml → the test data → UserAssets.xml
 //
 // all of it inside `withSnapshotOrTemplateDatabase`, which is what turns the result into something
 // `restoreSnapshotOrDatabase` can rewind to before every test (see test/setup.ts).
 //
-// The two XML seeds are applied through the FRAMEWORK's own importers, exactly as Signum's EnvironmentTest
-// calls `AuthLogic.ImportAuthRules` and `UserAssetsImporter.ImportAll` rather than going through
-// Southwind.Terminal. Only the files are shared (EastwindEnvironment.seedFile); no code is.
+// The two XML seeds are applied through the FRAMEWORK's own importers rather than going through the
+// terminal. Only the files are shared (EastwindEnvironment.seedFile); no code is.
 //
 //   pnpm --filter eastwind gen:environment local
 //
@@ -85,7 +83,7 @@ export async function generateTestEnvironment(): Promise<void> {
         await Schema.current.generationScript()?.executeNonQuery();
         await Schema.current.initialize();
 
-        // Signum's `using (AuthLogic.Disable())` + `OperationLogic.AllowSaveGlobally = true`: the seed
+        // Authorization off + saves allowed globally: the seed
         // runs as trusted framework code, with no logged-in user to authorize it.
         await ExecutionMode.global(async () => {
             console.log("[generate] cultures + the application configuration");
@@ -112,7 +110,7 @@ export async function generateTestEnvironment(): Promise<void> {
 }
 
 /**
- * Signum's `AuthLogic.ImportAuthRules(authRules, interactive: false)`. Non-interactive is the whole point
+ * Import the auth rules NON-interactively. That is the whole point
  * here: a generation has nobody to ask, so an ambiguous rename is answered "no rename" (the rule is
  * dropped) and logged, instead of blocking on a prompt.
  */
@@ -134,7 +132,7 @@ async function importAuthRules(): Promise<void> {
         console.log(`  [auth] SKIPPED (no role after rename): ${result.skippedRoles.join(", ")}`);
 }
 
-/** Signum's `UserAssetsImporter.ImportAll(path)` — the preview says "override everything", which on a
+/** Import every user asset — the preview says "override everything", which on a
  *  database this script just generated means "create everything". */
 async function importUserAssets(): Promise<void> {
     const xml = fs.readFileSync(EastwindEnvironment.seedFile("UserAssets.xml"), "utf8");
@@ -147,7 +145,7 @@ async function importUserAssets(): Promise<void> {
 }
 
 // Run as a SCRIPT (`pnpm --filter eastwind gen:environment <environment>`). The same body is also the
-// environment suite's single test — see environment.test.ts — which is Signum's shape exactly: one
+// environment suite's single test — see environment.test.ts: one
 // [Fact] that builds the database every other suite starts from.
 if (process.argv[1] != null && import.meta.url === pathToFileURL(process.argv[1]).href)
     generateTestEnvironment().catch(e => { console.error(e); process.exit(1); });

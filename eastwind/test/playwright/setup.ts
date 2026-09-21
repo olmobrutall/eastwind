@@ -19,8 +19,7 @@ import { baseUrl, clearServerCaches } from "./appStack";
 //     });
 //
 // Playwright is used as a LIBRARY, never `@playwright/test`: the suites are vitest like everything
-// else, so one runner covers logic and browser alike — and that is the shape Signum has, where the
-// browser work is a library called from the same xUnit as the rest.
+// else, so one runner covers logic and browser alike.
 
 /**
  * Whether a stack is actually serving — the browser counterpart of `hasDb`, and resolved at MODULE LOAD
@@ -54,7 +53,7 @@ let started: Promise<void> | undefined;
  * suite's `before` pays this once per FILE.
  *
  * No `headless` option: headless is the default, and a run you want to WATCH is `headless: false` with
- * `slowMo` here — the replacement for Signum's CDP debug mode.
+ * `slowMo` here — the debug knob.
  */
 export function start(): Promise<void> {
     return (started ??= (async () => {
@@ -68,19 +67,19 @@ export function start(): Promise<void> {
     })());
 }
 
-// Signum's `SouthwindEnvironment.StartAndInitialize()` in the test class's constructor, plus its lazy
+// Start and initialize the engine once, plus the lazy
 // `DefaultBrowser`: both are ready before any test body runs, and both outlive every one of them.
 // `browse` deliberately does NOT do this — the per-test restore below needs a connector too, so the
 // engine cannot wait for the first browser.
 beforeAll(async () => { await start(); });
 
-// Signum's `InitializeAsync`: the per-test reset, and nothing about the browser — that is `browse`'s.
+// The per-test reset, and nothing about the browser — that is `browse`'s.
 beforeEach(async () => {
     if (!hasStack)
         return;
 
     // What makes a test independent: whatever the last one created, filtered, renamed or deleted is gone
-    // and the seed is back exactly as `gen:environment` left it. Signum's
+    // and the seed is back exactly as `gen:environment` left it. The
     // `Administrator.RestoreSnapshotOrDatabase()`, and the reason a suite may create rows freely and
     // never clean up.
     await Administrator.restoreSnapshotOrDatabase();
@@ -99,8 +98,7 @@ afterAll(async () => {
 });
 
 /**
- * Signum's `SouthwindTestClass.BrowseAsync(username, action)` — open a browser AS someone, hand it to
- * the closure, and close it however the closure ends.
+ * Open a browser AS someone, hand it to the closure, and close it however the closure ends.
  *
  * The proxy is created here and owned by the CLOSURE, not by a hook: a test says which user it is, its
  * browser lives exactly as long as its body, and the `finally` closes it on a failure as surely as on a
@@ -111,7 +109,7 @@ afterAll(async () => {
  */
 export async function browse(userName: TestUserName, action: (b: EastwindBrowser) => Promise<void>): Promise<void> {
     const context: BrowserContext = await browser!.newContext({ viewport: { width: 1280, height: 900 } });
-    // Signum's `page.SetDefaultTimeout(10000)`: a locator that never resolves should fail the test, not
+    // A locator that never resolves should fail the test, not
     // hang the run.
     context.setDefaultTimeout(10_000);
     try {
@@ -141,7 +139,7 @@ export const TestUser = {
 export type TestUserName = typeof TestUser[keyof typeof TestUser];
 
 /**
- * Run server-side work AS one of the seeded users — Signum's `AuthLogic.UnsafeUserSession(userName)`.
+ * Run server-side work AS one of the seeded users.
  *
  * A suite arranges its data through the real domain (an operation, a save), and those read the ambient
  * user: the row-level type conditions gate on it, and `OrderOperation.CreateOrderFromCustomer` fills the

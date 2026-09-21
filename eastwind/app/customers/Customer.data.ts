@@ -8,9 +8,9 @@ import { Temporal } from "@altea/altea/data/basics";
 import type { ExecuteSymbol } from "@altea/altea/data/operations";
 import type { SMSOwnerData } from "@altea/altea-sms/data/SMS";
 
-// Port of Southwind's Customers domain (Southwind/Customers/*.cs). CustomerEntity is an ABSTRACT base
-// (like the music model's AwardEntity) with two concrete subclasses — Person and Company — reached
-// polymorphically. AddressEmbedded lives here (it's a customer concept); Orders imports it.
+// The Customers domain. CustomerEntity is an ABSTRACT base with two concrete subclasses — Person and
+// Company — reached polymorphically. AddressEmbedded lives here (it's a customer concept); Orders imports
+// it.
 
 @reflect
 export class AddressEmbedded extends EmbeddedEntity {
@@ -20,9 +20,9 @@ export class AddressEmbedded extends EmbeddedEntity {
     city: string;
     @stringLengthValidator({ min: 2, max: 15 })
     region: string | null;
-    // Southwind's `AddressEmbedded.PropertyValidation`: a postal code is mandatory everywhere except
-    // Ireland, which has (had) none. The field stays NULLABLE — the rule is about the country, not about
-    // the column — so it is a `@validate`, not a `@notNullValidator`.
+    // A postal code is mandatory everywhere except Ireland, which has (had) none. The field stays
+    // NULLABLE — the rule is about the country, not about the column — so it is a `@validate`, not a
+    // `@notNullValidator`.
     @validate<AddressEmbedded>((a, fi) => (a.postalCode ?? "") === "" && a.country !== "Ireland"
         ? ValidationMessage._0IsNotSet.niceToString(fi.niceToString())
         : null)
@@ -31,7 +31,7 @@ export class AddressEmbedded extends EmbeddedEntity {
     @stringLengthValidator({ min: 2, max: 15 })
     country: string;
 
-    // Signum's AddressEmbedded.Clone() — a fresh copy (an order snapshots the customer's address).
+    // A fresh copy: an order snapshots the customer's address.
     clone(): AddressEmbedded {
         return AddressEmbedded.create({
             address: this.address, city: this.city, region: this.region,
@@ -42,11 +42,12 @@ export class AddressEmbedded extends EmbeddedEntity {
     @quoted toString(): string { return `${this.address}\n ${this.postalCode} ${this.city} (${this.country})`; }
 }
 
-// Signum's abstract CustomerEntity — the shared shape of Person + Company. Never `include`d directly
-// (only its concrete subclasses get tables); reached via @implementedBy from OrderEntity.customer.
-// Signum's `[PrimaryKey(typeof(Guid))]`: the whole customer hierarchy keys on a GUID (Person/Company
-// tables + the OrderEntity.customer FK columns become uuid). Set on the abstract base so both concrete
-// subclasses inherit it (their TypeInfo copies this `id` field once this decorator has run).
+// The shared shape of Person + Company. Never `include`d directly (only its concrete subclasses get
+// tables); reached via @implementedBy from OrderEntity.customer.
+//
+// The whole customer hierarchy keys on a GUID (Person/Company tables + the OrderEntity.customer FK columns
+// become uuid). Set on the abstract base so both concrete subclasses inherit it (their TypeInfo copies
+// this `id` field once this decorator has run).
 @reflect
 @primaryKey("uuid")
 export abstract class CustomerEntity extends Entity {
@@ -60,8 +61,7 @@ export abstract class CustomerEntity extends Entity {
 
     /**
      * Who to text, at which number, in which language — @altea/altea-sms's `SMSOwnerData`. This is the
-     * member a query-based SMSTemplate's `to` token points at, and it is exactly the shape Signum's own
-     * DynamicType snippet generates (`SMSOwnerDataExpression = @this => new SMSOwnerData { … }`).
+     * member a query-based SMSTemplate's `to` token points at.
      *
      * `@quoted`, so it is a real query TOKEN the template editor can pick and the renderer can select.
      */
@@ -71,11 +71,9 @@ export abstract class CustomerEntity extends Entity {
 }
 
 @entity("Shared", "Transactional")
-// Southwind's `[Mixin(typeof(CorruptMixin))]` (Customers/PersonEntity.cs) — the person is the app's one
-// example of a row that may be saved INVALID (an imported legacy customer with no title or birth date),
-// which is what the mixin's `corrupt` flag records. Southwind's own `IsApplicableValidator(p =>
-// Corruption.Strict)` on Title / DateOfBirth is the other half; altea has no Corruption scope, so the
-// column is carried and the escape hatch is not.
+// The person is the app's one example of a row that may be saved INVALID (an imported legacy customer
+// with no title or birth date), which is what the mixin's `corrupt` flag records. altea has no Corruption
+// SCOPE, so the column is carried and the per-property escape hatch is not.
 @mixin(() => [CorruptMixin])
 export class PersonEntity extends CustomerEntity {
     @stringLengthValidator({ min: 3, max: 40 })
@@ -86,9 +84,8 @@ export class PersonEntity extends CustomerEntity {
     title: string | null;
     dateOfBirth: Temporal.PlainDate | null;
 
-    // NOT `@quoted`: Southwind writes a plain `ToString()` here (not an [AutoExpressionField]), so the
-    // display string is STORED in a `to_str` column rather than expanded into every query. Company's
-    // `As.Expression(() => CompanyName)` right below is the other case, and keeps its @quoted.
+    // NOT `@quoted`: the display string is STORED in a `to_str` column rather than expanded into every
+    // query. Company's right below is the other case, and keeps its @quoted.
     toString(): string { return `${this.firstName} ${this.lastName}`; }
 }
 
@@ -104,15 +101,13 @@ export class CompanyEntity extends CustomerEntity {
     @quoted toString(): string { return this.companyName; }
 }
 
-// Signum's `[AutoInit] static class CustomerOperation { static ExecuteSymbol<CustomerEntity> Save; }`
-// (Southwind/Customers/CustomerEntity.cs). ONE Save symbol typed on the abstract CustomerEntity —
-// registered once and shared by both concrete customers (Person + Company), matching Southwind's
-// `.WithSave(CustomerOperation.Save)` on each. Wired in CustomerLogic.server.ts.
+// ONE Save symbol typed on the abstract CustomerEntity — registered once and shared by both concrete
+// customers (Person + Company). Wired in CustomerLogic.server.ts.
 export namespace CustomerOperation {
     export const Save: ExecuteSymbol<CustomerEntity> = init();
 }
 
-// The row shape of the manual union query (Signum's anonymous Select projection over Person+Company).
+// The row shape of the manual union query over Person + Company.
 // A ModelEntity, so it's a reflected-but-not-persisted query shape; its fields are the query columns.
 @reflect
 export class CustomerRowModel extends ModelEntity {

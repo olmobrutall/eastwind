@@ -5,8 +5,8 @@ import { EntityTable } from '@altea/altea/client/Lines/EntityTable'
 import { TypeContext } from '@altea/altea/client/TypeContext'
 import { ProductEntity } from './Product.data'
 
-// Ported from Southwind/Products/Product.tsx. Divergences: the ML SalesEstimation panel + PredictorEntity
-// (Signum.MachineLearning) are dropped; Southwind's AdditionalInformation MList is an owned part-array in
+// The product view. The ML SalesEstimation panel + PredictorEntity are dropped; AdditionalInformation is
+// an owned part-array in
 // eastwind (ProductEntity_AdditionalInformation), so it's rendered as an EntityTable of key/value rows.
 export default function Product(p: { ctx: TypeContext<ProductEntity> }): React.JSX.Element {
   const ctx = p.ctx;

@@ -15,10 +15,10 @@ export namespace ProductsClient {
                     token(a => a.category),
                     token(a => a.unitPrice),
                 ],
-                // Southwind's ProductsClient defaultFilters: the pinned "Search" Or-group searching the
+                // The default filters: the pinned "Search" Or-group searching the
                 // product name and the (dereferenced) supplier/category names in one box. Finder.
                 // filterGroupSearch supplies the pinned label + `splitValue` (words applied across the
-                // group) + `active: "WhenHasValue"` (altea's stand-in for Signum's `disableOnNull`).
+                // group) + `active: "WhenHasValue"`.
                 defaultFilters: [Finder.filterGroupSearch([
                     { token: token(a => a.productName), operation: "Contains" },
                     { token: token(a => a.supplier.entity.companyName), operation: "Contains" },

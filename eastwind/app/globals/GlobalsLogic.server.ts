@@ -9,26 +9,24 @@ import {
     ApplicationConfigurationEntity, ApplicationConfigurationOperation, currentEnvironment,
 } from "./ApplicationConfiguration.data";
 
-// Port of Southwind's `Globals/GlobalsLogic.cs`: include the ApplicationConfiguration table, and publish THIS
-// environment's row as the lazy every module's configuration lambda reads (Signum's
-// `Starter.Configuration = sb.GlobalLazy(…, new InvalidateWith(typeof(ApplicationConfigurationEntity)))`).
+// Include the ApplicationConfiguration table, and publish THIS environment's row as the lazy every
+// module's configuration lambda reads.
 //
-// TWO altea divergences, both forced by the same thing — altea's ResetLazy is ASYNC (`value()` returns a
-// Promise) while every module's configuration getter is SYNCHRONOUS:
+// altea's ResetLazy is ASYNC (`value()` returns a Promise) while every module's configuration getter is
+// SYNCHRONOUS, which forces two things:
 //
 //  1. the lazy is mirrored into a SYNC snapshot (`warm`), filled by `warmUp()` after the schema is ready.
-//     The framework keeps no such mirror any more — its readers ask for what they need (TypeLogic.caches(),
+//     The framework keeps no such mirror — its readers ask for what they need (TypeLogic.caches(),
 //     SymbolLogic.cache(), CultureInfoLogic.lookup()) — but a module configuration getter is synchronous by
 //     contract, so this one stays. It cannot go stale: point 2.
 //  2. the snapshot is refreshed on the `saved` event rather than only by the lazy's invalidation, because a
 //     sync reader cannot await a reload. The lazy is still registered with `invalidateWith`, so the async
-//     readers (and the cache panel) see the same invalidation Signum's does.
+//     readers (and the cache panel) see the same invalidation.
 //
-// Started LATE (Southwind calls `GlobalsLogic.Start(sb)` near the end of its Starter): the entity references
-// types the mail module owns, so those includes must already exist.
+// Started LATE: the entity references types the mail module owns, so those includes must already exist.
 export namespace GlobalsLogic {
 
-    /** Signum's `Starter.Configuration`. Prefer the sync {@link configuration} — this is for async callers. */
+    /** Prefer the sync {@link configuration} — this is for async callers. */
     export let configurationLazy: ResetLazy<ApplicationConfigurationEntity> = null!;
 
     let started = false;
@@ -37,10 +35,10 @@ export namespace GlobalsLogic {
     /**
      * WHICH configuration row this process runs as — `DB_ENVIRONMENT`, defaulting to "Development".
      *
-     * This is the counterpart of Signum's `a.DatabaseName == Connector.Current.DatabaseName()`: one row per
-     * environment, chosen by the deployment rather than by the database's own name. It is also what the
-     * migration seeds the row's `environment` with, so a fresh database matches without configuring anything.
-     * The value itself lives in the DATA layer, because the entity's `isActive` expression compares against it.
+     * One row per environment, chosen by the deployment rather than by the database's own name. It is also
+     * what the migration seeds the row's `environment` with, so a fresh database matches without
+     * configuring anything. The value itself lives in the DATA layer, because the entity's `isActive`
+     * expression compares against it.
      */
     export function environment(): string {
         return currentEnvironment;
@@ -55,7 +53,7 @@ export namespace GlobalsLogic {
             .withSave(ApplicationConfigurationOperation.Save)
             .withQuery();
 
-        // The "is this the live row?" column of the search page (Signum's QueryLogic.Expressions.Register).
+        // The "is this the live row?" column of the search page.
         QueryLogic.expressions.register(ApplicationConfigurationEntity, a => a.isActive(),
             { niceName: () => ApplicationConfigurationEntity.nicePropertyName(a => a.isActive()) });
 
@@ -86,8 +84,8 @@ export namespace GlobalsLogic {
     }
 
     /**
-     * The application's configuration — Signum's `Starter.Configuration.Value`, and what every module's
-     * `getConfiguration` lambda reads. Throws until {@link warmUp} has run, which is deliberate: answering a
+     * The application's configuration — what every module's `getConfiguration` lambda reads. Throws until
+     * {@link warmUp} has run, which is deliberate: answering a
      * module with half a configuration (or an env-var fallback) would hide a database that was never seeded.
      */
     export function configuration(): ApplicationConfigurationEntity {

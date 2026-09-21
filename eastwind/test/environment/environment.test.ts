@@ -2,7 +2,7 @@ import { describe, test } from "vitest";
 import { generateTestEnvironment } from "./generateEnvironment";
 import { hasDb } from "./testDatabase";
 
-// Port of Southwind.Test.Environment/EnvironmentTest.cs — the one [Fact] that BUILDS the database every
+// The one test that BUILDS the database every
 // other suite starts from: total generation, schema initialize, roles + AuthRules.xml, the seed data,
 // then UserAssets.xml, all inside a snapshot the browser suite rewinds to before each test.
 //

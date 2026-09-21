@@ -121,9 +121,9 @@ string, a process / scheduler exception line's element info, a scheduled task lo
 `Database` purely to stop the mixin giving them file columns nothing wanted. Signum declares all five a
 plain `string?`, so they are plain strings here now and the question does not arise.
 
-### The two legacy-only diff simplifications
+### The legacy-only diff simplification
 
-`ignoreSouthwindOnlyConfiguration` — the columns Southwind's `ApplicationConfigurationEntity` stores and
+`ignoreConfigurationsForLegacyOnly` — the columns a legacy `ApplicationConfigurationEntity` stores and
 eastwind's deliberately does not: `Folders_*` (here a store's folder is derived from the store's own NAME,
 so the paths cannot drift from the code that names the stores), `Translation_*` (altea-translations reads
 its two translator credentials from the environment) and `AuthTokens_*` (altea's counterpart is a
@@ -132,14 +132,11 @@ RENAME of whatever model column sorts nearest by string distance — `folders_vi
 `open_id_scopes` was a real offer — and DROPs whatever the developer declines. Both answers are wrong: the
 columns are not misnamed, and they hold what a Signum deployment configured.
 
-`ignoreRenamedEnumMembers` — `basics.exception_origin` holds `Backend_DotNet` / `Frontend_React` where
-altea's model says `Backend` / `Frontend`. A rename is not wrong the way the columns above are (one UPDATE
-per row, nothing lost) but it is not eastwind's to make: Signum is taking the same two names, so the table
-converges on its own, and a legacy sync that renamed them would be a Southwind database's rows moving
-under it because a second application happened to look. BOTH sides are cleared, never one — a model member
-left behind with its database row hidden is an INSERT, and it collides on the id that row still occupies.
+It is a NORMAL-mode no-op: there the database is one altea generated, so it has no such columns.
 
-Both are NORMAL-mode no-ops: there the database is one altea generated, so it has no such columns or rows.
+There used to be a second one, `ignoreRenamedEnumMembers`, for `basics.exception_origin` holding
+`Backend_DotNet` / `Frontend_React`. Signum has since taken altea's two names (`Backend` / `Frontend`), so
+the table converges on its own and the seam is gone.
 
 ## Client modules (`MainAdmin.client.ts`)
 

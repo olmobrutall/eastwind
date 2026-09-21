@@ -3,7 +3,7 @@ import { table } from "@altea/altea/server/table";
 import { TreeLogic } from "@altea/altea-tree/server/TreeLogic";
 import { DepartmentEntity } from "../../app/departments/Department.data";
 
-// Seeds the tree demo. There is no Southwind counterpart (Southwind does not use Signum.Tree) and no
+// Seeds the tree demo. There is no Northwind source table for it and no
 // Northwind table to read: a department hierarchy is the app's own demo data, so it is written out here.
 //
 // Each node goes through `TreeLogic.treeEntitySave` — the body of TreeOperation.Save — rather than a bare

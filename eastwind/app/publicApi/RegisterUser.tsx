@@ -17,14 +17,14 @@ import { RegisterUserModel, RegisterUserMessage } from "./RegisterUser.data";
 import { PublicClient } from "./PublicClient.client";
 import Address from "../customers/Address";
 
-// Port of Southwind's `Public/RegisterUser.tsx` — the ANONYMOUS self-service registration page. The route
+// The ANONYMOUS self-service registration page. The route
 // is pushed by PublicClient.startPublic (from MainPublic, before the `isFull` branch), so it exists for a
 // visitor who has never logged in; both endpoints behind it are `allowAnonymous` (PublicLogic.server.ts).
 //
 // altea divergences:
-//  - `AutoLine` → `TextBoxLine` throughout, which is what upstream Southwind now writes too: the lines here
+//  - `AutoLine` → `TextBoxLine` throughout: the lines here
 //    are all plain strings and naming the editor skips the dispatch entirely.
-//  - Signum's `onSubmit` has its handler commented out and the Register button is a plain <button> inside a
+//  - upstream leaves `onSubmit` commented out and the Register button a plain <button> inside a
 //    <form>, i.e. it submits AND handles — a double action. Here the button is `type="submit"` and the FORM
 //    is what registers, so Enter in any field works as it looks like it should.
 export default function RegisterUser(): React.JSX.Element {

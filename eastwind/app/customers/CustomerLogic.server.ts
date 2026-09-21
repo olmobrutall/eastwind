@@ -10,8 +10,7 @@ import "@altea/altea/server/fluentOperations"; // FluentInclude.withSave / withD
 import { CustomerEntity, PersonEntity, CompanyEntity, CustomerRowModel, CustomerOperation } from "./Customer.data";
 import { Graph } from "@altea/altea/server/graph";
 
-// Port of Southwind's CustomersLogic.Start (Southwind/Customers/CustomersLogic.cs). The highlight is
-// the MANUAL union query (Signum's DynamicQueryCore.Manual): a single "Customer" query whose rows are
+// The customers registration. The highlight is the MANUAL union query: a single "Customer" query whose rows are
 // Person + Company projected to a common shape (CustomerRowModel) and concatenated in memory.
 export namespace CustomersLogic {
     export function start(sb: SchemaBuilder): void {
@@ -19,14 +18,14 @@ export namespace CustomersLogic {
         sb.include(PersonEntity).withQuery();
         sb.include(CompanyEntity).withQuery();
 
-        // Southwind's three registrations on the ABSTRACT base (CustomersLogic.cs):
+        // Three registrations on the ABSTRACT base:
         //   QueryLogic.Expressions.Register((CustomerEntity c) => c.Address) …Phone …Fax
         // A polymorphic `Lite<CustomerEntity>` (an order's `customer`) offers only its `(Company)` /
-        // `(Person)` casts — that is Signum's rule and altea's — so the three members CustomerEntity
+        // casts to a concrete type — so the three members CustomerEntity
         // itself declares are reachable off it only because they are registered here. It is what makes
-        // Southwind's stored `Customer.Address.Country` chart resolve, and the reason the app decides
+        // a stored `Customer.Address.Country` chart resolve, and the reason the app decides
         // which of a base's members are worth a column rather than the framework guessing.
-        // Signum's `ForcePropertyRoute` has no counterpart: altea derives the route from the
+        // No route override is needed: altea derives the route from the
         // expression's own Meta, which already lands on `(CustomerEntity).address`.
         QueryLogic.expressions.register(CustomerEntity, (c: CustomerEntity) => c.address,
             { key: "Address", niceName: () => CustomerEntity.nicePropertyName(c => c.address) });
@@ -46,7 +45,7 @@ export namespace CustomersLogic {
         QueryLogic.expressions.register(CustomerEntity, (c: CustomerEntity) => c.smsOwnerData(),
             { key: "SMSOwnerData", niceName: () => CustomerEntity.nicePropertyName(c => c.smsOwnerData()) });
 
-        // Southwind calls `.WithSave(CustomerOperation.Save)` on BOTH Person and Company. altea's operation
+        // The Save operation is registered on BOTH Person and Company. altea's operation
         // registry is keyed by the symbol alone (one implementation per symbol), so the shared Save is
         // registered ONCE — owned by the ABSTRACT base, which is what makes both concrete customers inherit
         // it (OperationLogic.operationsForType walks the prototype chain). `.withSave()` can't express this:
@@ -58,18 +57,17 @@ export namespace CustomersLogic {
             execute: () => { }, // the operation's implicit save persists it
         }).register();
 
-        // Signum: `QueryLogic.Queries.Register(CustomerQuery.Customer, () => DynamicQueryCore.Manual(...))`.
+        // A MANUAL dynamic query.
         // altea registers a ManualDynamicQueryCore under the row-shape model (its query name). The
         // executor projects each source to CustomerRowModel, runs the request's filters/orders against
         // each (SQL-side), materialises them, concatenates, then orders + paginates in memory — exactly
-        // Signum's `persons.Concat(companies).OrderBy(request.Orders).TryPaginate(request.Pagination)`.
+        // Concat, order by the request's orders, then paginate.
         QueryLogic.queries.register(CustomerRowModel, () => new ManualDynamicQueryCore(CustomerRowModel, async (request) => {
             const columns = request.columns.map(c => c.token);
 
             // One source → a DEnumerable of CustomerRowModel rows: run the request's operations
             // (filter/order/select) SQL-side but WITHOUT pagination (forConcat), since we paginate the
-            // combined result. Signum's `.ToDQueryable(descriptions).AllQueryOperationsAsync(request,
-            // token, forConcat: true)`.
+            // combined result: every query operation is applied to the in-memory rows.
             const source = (query: Query<CustomerRowModel>) =>
                 query.toDQueryable().allQueryOperationsAsync(request, /* forConcat */ true);
 

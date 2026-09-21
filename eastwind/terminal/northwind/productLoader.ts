@@ -8,7 +8,7 @@ import { AddressEmbedded } from "../../app/customers/Customer.data";
 import { Northwind, NwSupplier, NwCategory, NwProduct } from "./northwindSchema";
 import { NorthwindImages } from "./northwindImages";
 
-// Port of Southwind.Terminal/ProductLoader.cs (SupplierFaxes.csv, Category.Picture and the EAN/diet
+// The product loader (SupplierFaxes.csv, Category.Picture and the EAN/diet
 // AdditionalInformation rules are simplified/extension-free). Ids are preserved so Product's Supplier
 // and Category lites resolve inline via Type.newLite(id).
 export namespace ProductLoader {
@@ -38,7 +38,7 @@ export namespace ProductLoader {
             const e = CategoryEntity.create({
                 categoryName: c.CategoryName,
                 description: c.Description ?? "",
-                // Southwind's `Picture = new FileEmbedded { … RemoveOlePrefix(s.Picture) }` reads Northwind's
+                // Northwind's own Categories.Picture is an OLE-wrapped bitmap; this reads
                 // own Categories.Picture — an OLE-wrapped bitmap behind a 78-byte header. That column is the
                 // one place the two vendor scripts disagree, so the seed drops it and the picture comes off
                 // disk instead (northwindImages.ts).
@@ -52,7 +52,7 @@ export namespace ProductLoader {
     export async function loadProducts(): Promise<void> {
         const products = await Connector.withConnector(await Northwind.connector(), () => view(NwProduct).toArray());
 
-        // Signum's `.BulkInsert(disableIdentity:true)`: preserved ids + the AdditionalInformation MList
+        // Bulk insert with identity disabled: preserved ids + the AdditionalInformation
         // cascade. The product back-reference + @rowOrder are wired by the cascade.
         await BulkInserter.bulkInsert(products.map(s => {
             const info: ProductEntity_AdditionalInformation[] = [];

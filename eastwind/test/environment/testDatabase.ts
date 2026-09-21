@@ -31,7 +31,7 @@ export function requireConnectionString(): string {
 let started: Promise<void> | undefined;
 
 /**
- * Build the schema and bind the connector, once per process — Signum's `SouthwindEnvironment.
+ * Build the schema and bind the connector, once per process — the counterpart of `EastwindEnvironment.
  * StartAndInitialize()`, which its test base class calls from every constructor.
  *
  * No web builder: this process talks to the database, never over HTTP. `Schema.initialize` runs as part

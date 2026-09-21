@@ -24,16 +24,16 @@ ProductEntity.prototype.lines = withQuoted(function (this: ProductEntity): Query
     return table(OrderLineEntity).filter(ol => ol.product.id == this.id);
 });
 
-// Port of Southwind's ProductsLogic.Start. The ProductEntity_AdditionalInformation part rows are
+// The products registration. The ProductEntity_AdditionalInformation part rows are
 // pulled in transitively via ProductEntity.additionalInformation.
 export namespace ProductsLogic {
 
     /**
-     * Southwind's `ProductsLogic.ActiveProducts` — every non-discontinued product, grouped by its category.
+     * Every non-discontinued product, grouped by its category.
      * What the anonymous public catalog (publicApi/PublicCatalog.server.ts) renders, which is why it is a
      * lazy: that page is reachable with no user and would otherwise re-query on every visit.
      *
-     * Signum's is a `FrozenDictionary<CategoryEntity, List<ProductEntity>>`. Here it is an ARRAY of pairs:
+     * An ARRAY of pairs rather than a dictionary:
      * altea gives each query its own Retriever, so two reads of the same row are two objects and an
      * identity-keyed Map would group nothing (the accommodation @altea/altea-workflow documents).
      */
@@ -55,12 +55,12 @@ export namespace ProductsLogic {
             // type's own cached table through a back-reference index — altea has no MList table).
             .withCache()
             .withSave(ProductOperation.Save)
-            // Southwind exposes ProductEntity's order lines; altea registers ProductEntity.lines() as a
+            // ProductEntity's order lines: altea registers ProductEntity.lines() as a
             // queryable expression token (`ProductEntity.lines` → the OrderLines whose product is this one).
             .withExpressionTo(p => p.lines())
             .withQuery();
 
-        // Southwind's `QueryLogic.Queries.Register(ProductQuery.CurrentProducts, …)`. A projection, so
+        // The CurrentProducts query. A projection, so
         // it is an AutoDynamicQueryCore over the projected Query rather than a `withQuery()` — which
         // takes no projection — and its NAME is the row model (see CurrentProductsRowModel).
         QueryLogic.queries.register(CurrentProductsRowModel, () => new AutoDynamicQueryCore(() =>
@@ -80,7 +80,7 @@ export namespace ProductsLogic {
         activeProducts = sb.globalLazy(async () => {
             const products = await table(ProductEntity).filter(p => !p.discontinued).toArray() as ProductEntity[];
             const byCategory = products.groupToObject(p => p.category.key());
-            // Signum projects `p.Category.Entity` inside the query; altea reads the categories separately
+            // The category could be projected inside the query; altea reads the categories separately
             // (they are eight cached rows) and joins on the lite KEY — see the note on activeProducts.
             const categories = await table(CategoryEntity).toArray() as CategoryEntity[];
             return categories
@@ -88,7 +88,7 @@ export namespace ProductsLogic {
                 .filter(cp => cp.products.length > 0);
         }, { invalidateWith: [ProductEntity, CategoryEntity] });
 
-        // Southwind also keeps `AdditionalInformationKeys` here, feeding its
+        // `AdditionalInformationKeys` also lives here, feeding the
         // `WithExpressionWithParameter(ProductMessage.AdditionalInfo, …)` product query token. altea has no
         // parameterized expression token, so neither the lazy nor the token is ported.
     }

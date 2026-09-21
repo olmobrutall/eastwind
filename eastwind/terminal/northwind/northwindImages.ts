@@ -24,7 +24,7 @@ export namespace NorthwindImages {
 
     /** `image_photos/<FirstName> <LastName>.<ext>` — Northwind's own employee names, verbatim. A
      *  FileEntity (a row), because that is what EmployeeEntity.photo references; a category picture is
-     *  a FileEmbedded, which is what Southwind holds there too. */
+     *  a FileEmbedded. */
     export function employeePhoto(firstName: string, lastName: string): FileEntity | null {
         const bytes = readBytes("image_photos", sanitize(`${firstName} ${lastName}`));
         return bytes == null ? null : FileEntity.create({ fileName: bytes.fileName, binaryFile: bytes.binaryFile });

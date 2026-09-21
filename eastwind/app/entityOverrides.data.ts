@@ -1,8 +1,8 @@
 // EntityOverrides — the shared client+server home for static, per-model declarations that BOTH tiers
 // must apply before any entity is (de)serialized or any schema/UI is built:
-//   - mixin registration          (Signum's MixinDeclarations.Register)
-//   - lite-model constructors      (Signum's [LiteModel] / registerCustomLite)
-//   - implementedBy overrides      (Signum's [ImplementedBy] override / OverrideAttributes)
+//   - mixin registration
+//   - lite-model constructors
+//   - implementedBy overrides
 //
 // These are NOT shipped by the /api/reflection/metadata endpoint: they are identical for every user and
 // culture, and the entity serializer needs mixins + implementedBy to reconstruct graphs — so they must
@@ -11,6 +11,13 @@
 //
 // Today: four mixins (three of them a module's, plus the app's own UserEmployeeMixin), every lite model
 // is the default, and implementedBy is declared inline via @implementedBy on OrderEntity.customer.
+//
+// MOST of the `overrideImplementedBy` calls below are one pattern: a framework package declares a
+// reference with an EMPTY implementation list — it must not name a type that belongs to an application or
+// to a package that depends on IT — and the application widens the list to what it actually installs. The
+// list decides both what the editor offers and which TABLES and FK columns the schema creates, and each
+// module's `Logic.start` re-checks its own entry and fails loudly if this file is missing it. Only the
+// calls that do something ELSE carry a comment of their own.
 import { overrideImplementedBy } from "@altea/altea/data/decorators";
 import { renameSymbolContainer, setLegacyMode } from "@altea/altea/data/reflection";
 import { setLegacyPropertyPaths } from "@altea/altea/data/propertyRoute";
@@ -80,17 +87,17 @@ import { UserEmployeeMixin } from "./globals/UserEmployeeMixin.data";
 
 export namespace EntityOverrides {
     /**
-     * @param options.legacyMode  Declare only what SOUTHWIND declares. An `implementedBy` list decides both what
-     *   the editor offers and which TABLES the schema creates, so a few of these lists are the difference
-     *   between a Southwind-shaped database and this one — see the marked entries. Set from LegacyMode by
-     *   the Starter, and by the client from `/api/eastwind/appMode` (this runs on both tiers).
+     * @param options.legacyMode  Declare only what the LEGACY application declares. An `implementedBy` list
+     *   decides both what the editor offers and which TABLES the schema creates, so a few of these lists
+     *   are the difference between a legacy database and this one — see the marked entries. Set from
+     *   LegacyMode by the Starter, and by the client from `/api/eastwind/appMode` (both tiers).
      */
     export function start(options?: { legacyMode?: boolean }): void {
         const legacyMode = options?.legacyMode === true;
 
         // The two symbol containers this app renamed when it was ported. A symbol's KEY is
         // `<Container>.<Member>` and it is the `key` column of that symbol's table, so against a
-        // Southwind database `EastwindTypeCondition.UserEntities` reads as a symbol that does not
+        // legacy database `EastwindTypeCondition.UserEntities` reads as a symbol that does not
         // exist and `SouthwindTypeCondition.UserEntities` as one that is gone — a rename the sync
         // offers per symbol, whose wrong answer DELETEs the row and re-inserts it with a new id,
         // orphaning every auth rule that points at it.
@@ -107,13 +114,13 @@ export namespace EntityOverrides {
             renameSymbolContainer(EastwindTypeCondition, "SouthwindTypeCondition");
             renameSymbolContainer(EastwindAgentUseCases, "SouthwindAgentUseCases");
 
-            // @altea/altea-office-template renamed Signum.Word's Word* to Office* — the TYPES (whose clean name
+            // @altea/altea-office-template renamed the legacy Word* to Office* — the TYPES (whose clean name
             // is a query key and a basics.type row) and the symbol containers alike. That mapping is the
             // MODULE's own knowledge, so it owns the call; this app only knows which database it is on.
             useLegacyWordNames();
 
-            // And a stored PROPERTY ROUTE is spelled Signum's way — PascalCase members. altea's member
-            // is the TypeScript field name, so `basics.property_route.path` held `id` where a Signum
+            // And a stored PROPERTY ROUTE is spelled the legacy way — PascalCase members. altea's member
+            // is the TypeScript field name, so `basics.property_route.path` held `id` where a legacy
             // database holds `Id`, and every stored route read as a different one.
             setLegacyPropertyPaths(true);
         }//LegacySymbolNames
@@ -122,40 +129,30 @@ export namespace EntityOverrides {
         // RECEIVED message carry its server uid, its raw MIME and its reception row. Declaring it adds those
         // columns to the EmailMessage table — and, through that reference, pulls the whole reception schema
         // in — so it belongs here, on both tiers, before any (de)serialization.
-        // NOT IN SOUTHWIND: its Starter.cs registers four mixins and this is not one of them.
+        // A legacy database does not declare it.
         if (!legacyMode)
             EmailReceptionMixin.declare();
 
-        // The package mixin on EmailMessageEntity (Signum's `MixinDeclarations.Register<EmailMessageEntity,
-        // EmailMessagePackageMixin>()`, asserted by EmailPackageLogic.start): which batch a message belongs to.
-        // Declaring it adds the `package_id` column to the EmailMessage table, so it belongs here too.
+        // The package mixin on EmailMessageEntity (asserted by EmailPackageLogic.start): which batch a
+        // message belongs to. Declaring it adds the `package_id` column to the EmailMessage table.
         EmailMessagePackageMixin.declare();
 
-        // The diff mixin on OperationLogEntity (Signum's MixinDeclarations.Register<OperationLogEntity,
-        // DiffLogMixin>() in Southwind's Starter.cs, asserted by DiffLogLogic.start): the two dumps an
-        // operation brackets. Declaring it adds those columns to the OperationLog table, so it belongs
-        // here — both tiers, before any (de)serialization.
+        // The diff mixin on OperationLogEntity (asserted by DiffLogLogic.start): the two dumps an
+        // operation brackets. Declaring it adds those columns to the OperationLog table.
         DiffLogMixin.declare();
 
-        // The file mixin on BigStringEmbedded (Signum's
-        // `MixinDeclarations.Register<BigStringEmbedded, BigStringMixin>()`, which Southwind also calls
-        // from its Starter): it is what lets a BigString route keep its text in a file instead of the
-        // row. Which routes do, and where, is Starter.configureBigString. Both tiers, because the
+        // The file mixin on BigStringEmbedded: what lets a BigString route keep its text in a file instead
+        // of the row. Which routes do, and where, is Starter.configureBigString. Both tiers, because the
         // declaration is what tells the serializer the `file` member exists.
         BigStringMixin.declare();
 
-        // The isolation mixin on DynamicTypeEntity (Signum's
-        // `MixinDeclarations.Register<DynamicTypeEntity, DynamicIsolationMixin>()`, which its APP calls
-        // too — nothing in Signum.Dynamic does): which isolation strategy a dynamically defined type uses,
-        // which @altea/altea-dynamic then generates an `Isolation.register` call from.
+        // The isolation mixin on DynamicTypeEntity: which isolation strategy a dynamically defined type
+        // uses, which @altea/altea-dynamic then generates an `Isolation.register` call from.
         //
         // eastwind declares it to EXERCISE the feature, not because eastwind is multi-tenant: it never
         // calls `IsolationLogic.start`, and that is where the app-wide assertion lives ("every table must
         // declare a strategy"). Declaring the mixin adds one column to `dynamic_type`; marking a dynamic
         // type Isolated then adds an `isolation` column to THAT type's table.
-        //
-        // Not in Southwind — see legacyMode. It declares no isolation mixin, so `dynamic_type` has no
-        // `isolation_strategy` column there.
         if (!legacyMode)
             DynamicIsolationMixin.declare();
 
@@ -165,30 +162,23 @@ export namespace EntityOverrides {
         overrideImplementedBy(SystemEventLogEntity, s => s.user, () => [UserEntity]);
         overrideImplementedBy(ChangeLogViewLogEntity, c => c.user, () => [UserEntity]);
 
-        // The three directory configurations are EMBEDDEDs on ApplicationConfigurationEntity (as in
-        // Signum), so each one's roleMapping rows belong to THIS entity — an embedded is flattened onto
-        // its owner's row and has no id to point at. The row types live in framework packages, which must
-        // not name an app type, so each declares an empty @implementedBy the app widens here. It must
-        // resolve to exactly one owner, which SchemaBuilder verifies; in legacy mode the column is
-        // Signum's ParentID.
+        // The three directory configurations are EMBEDDEDs on ApplicationConfigurationEntity, so each
+        // one's roleMapping rows belong to THIS entity — an embedded is flattened onto its owner's row and
+        // has no id to point at. It must resolve to exactly one owner, which SchemaBuilder verifies.
         overrideImplementedBy(AzureADRoleMappingEntity, a => a.configuration, () => [ApplicationConfigurationEntity]);
         overrideImplementedBy(OpenIDRoleMappingEntity, o => o.configuration, () => [ApplicationConfigurationEntity]);
         overrideImplementedBy(WindowsADRoleMappingEntity, w => w.configuration, () => [ApplicationConfigurationEntity]);
 
-        // An email template's ATTACHMENT kinds. The LIST is what decides the row's columns — one FK per
-        // implementation — so it belongs to the model rather than to module registration: Southwind offers
-        // ImageAttachment alone, and its `email_template_attachments` carries that one column, NOT NULL
-        // because a single implementation is not polymorphic. altea-email's own list adds
-        // FileTokenAttachment, and @altea/altea-office-template widens it to three when its attachment half
-        // starts (which is off in legacy mode — see OfficeTemplateLogic's `attachments`).
+        // An email template's ATTACHMENT kinds. A legacy database offers ImageAttachment alone, and its
+        // `email_template_attachments` carries that one column, NOT NULL because a single implementation
+        // is not polymorphic. altea-email's own list adds FileTokenAttachment, and
+        // @altea/altea-office-template widens it to three when its attachment half starts (off in legacy
+        // mode — see OfficeTemplateLogic's `attachments`).
         if (legacyMode)
             overrideImplementedBy(EmailTemplateEntity_Attachment, a => a.attachment, () => [ImageAttachmentEntity]);
 
-        // ProcessEntity.data / ProcessExceptionLineEntity.line — Signum types both against an INTERFACE
-        // (IProcessDataEntity / IEntity) and its schema builder gives one column per implementor in the
-        // schema; altea has no runtime interface, so the app names the implementors its modules install.
-        // Exactly Southwind's five, because altea-printing (whose PrintPackage is NOT process data here)
-        // is the only extra process module eastwind starts.
+        // ProcessEntity.data / ProcessExceptionLineEntity.line — the app names the implementors its
+        // modules install (altea-printing's PrintPackage is NOT process data here).
         overrideImplementedBy(ProcessEntity, p => p.data, () => [
             PackageEntity,
             PackageOperationEntity,
@@ -198,40 +188,31 @@ export namespace EntityOverrides {
         ]);
         overrideImplementedBy(ProcessExceptionLineEntity, l => l.line, () => [PackageLineEntity]);
 
-        // PredictorEntity.user — same accommodation as the log entities above.
         overrideImplementedBy(PredictorEntity, p => p.user, () => [UserEntity]);
 
-        // PredictorEntity.algorithmSettings — @altea/altea-machine-learning declares
-        // `IPredictorAlgorithmSettings` as an INTERFACE with an empty @implementedBy, so the app names the
-        // concrete settings types it installs. Exactly the shape the mail services use, and for the same
-        // reason: a module cannot know which algorithms an application ships.
-        //
-        // This is also what brings NeuralNetworkSettingsEntity (and its hidden-layer rows) into the
-        // schema — without it the module's own algorithm has no table for its settings.
+        // Also what brings NeuralNetworkSettingsEntity (and its hidden-layer rows) into the schema —
+        // without it the module's own algorithm has no table for its settings.
         overrideImplementedBy(PredictorEntity, p => p.algorithmSettings, () => [NeuralNetworkSettingsEntity]);
 
-        // The workflow mixin on EmailMessageEntity (Signum's
-        // `MixinDeclarations.Register<EmailMessageEntity, CaseActivityMixin>()`): an email produced INSIDE a
-        // case activity carries the activity it came from, so a message can be traced back to its step. Both
-        // tiers, because the client needs the PropertyRoute for the read-only line WorkflowClient adds; the
-        // SERVER also asks for the stamping (`sb.include(EmailMessageEntity).withCaseActivityMixin()` in
+        // The workflow mixin on EmailMessageEntity: an email produced INSIDE a case activity carries the
+        // activity it came from, so a message can be traced back to its step. Both tiers, because the
+        // client needs the PropertyRoute for the read-only line WorkflowClient adds; the SERVER also asks
+        // for the stamping (`sb.include(EmailMessageEntity).withCaseActivityMixin()` in
         // eastwindWorkflow.server.ts), which is the half that fills it.
         //
-        // Not in Southwind — see legacyMode. Signum's own CaseActivityLogic only reacts to the mixin
-        // (`MixinDeclarations.IsDeclared(typeof(EmailMessageEntity), typeof(CaseActivityMixin))`) and never
-        // declares it, and Southwind's Starter does not either — so `email_message` has no
-        // `case_activity_id` column there.
+        // The workflow module only REACTS to the mixin and never declares it, so a legacy `email_message`
+        // has no `case_activity_id` column.
         if (!legacyMode)
             CaseActivityMixin.declareOn(EmailMessageEntity);
 
-        // The employee behind a login — Southwind writes exactly this in its Starter.cs. Declaring it adds
-        // `employee_id` to the User table, so it belongs here: both tiers, before any (de)serialization.
+        // The employee behind a login. Declaring it adds `employee_id` to the User table, so it belongs
+        // here: both tiers, before any (de)serialization.
         MixinDeclarations.register(UserEntity, UserEmployeeMixin);
 
-        // …and the CLAIM that goes with it (Southwind fills it in EmployeesLogic, i.e. server-only). Here it
-        // is one data-layer filler for both tiers — the server runs it when a request's user is resolved,
-        // the client when someone logs in — which is what makes `EmployeeEntity.current()` a single accessor
-        // instead of a server one and a client one. It rides in the auth token from there (AuthTokenServer).
+        // …and the CLAIM that goes with it — one data-layer filler for both tiers: the server runs it when
+        // a request's user is resolved, the client when someone logs in, which is what makes
+        // `EmployeeEntity.current()` a single accessor instead of a server one and a client one. It rides
+        // in the auth token from there (AuthTokenServer).
         // NOTE the client's copy is only as good as what the user entity carries: a role that may not READ
         // `employee` gets null there, while the server (which fills the claim from the row) still sees it.
         UserWithClaims.fillClaims.push((uwc, user) => {
@@ -241,23 +222,15 @@ export namespace EntityOverrides {
         // MixinDeclarations.register(EmployeeEntity, ColaboratorsMixin);
         // registerCustomLite(EmployeeEntity, EmployeeLite, e => EmployeeLite.create({ ... }), /*isDefault*/ true);
 
-        // implementedBy overrides (Signum's OverrideAttributes): the framework's ExceptionEntity /
-        // OperationLogEntity declare `user` with NO implementations (so altea core needn't reference
-        // altea-auth); the app points them at its concrete UserEntity. Runs on both tiers before any
-        // (de)serialization or schema build.
-        // A ScheduledTask may point at a SimpleTaskSymbol (the scheduler's own kind) OR at a
+        // What a ScheduledTask may point at: a SimpleTaskSymbol (the scheduler's own kind), a
         // ProcessAlgorithmSymbol (the scheduler → processes bridge: the entry creates and QUEUES a process
-        // instead of running inline). An override REPLACES the declared list, so SimpleTaskSymbol is passed
-        // back in explicitly. Both tiers run this, which is the point of it living here.
-        // A ScheduledTask may also point at an EMAIL RECEPTION CONFIGURATION (altea-email makes it an
-        // ITaskEntity, as Signum does): scheduling "poll THIS mailbox" needs no task symbol of its own.
-        // …or at altea-alert's SendNotificationEmailTask ("mail everyone their pending alerts"), which
-        // AlertNotificationLogic.start re-checks and fails on if it is missing here.
+        // instead of running inline), an EMAIL RECEPTION CONFIGURATION ("poll THIS mailbox", which needs no
+        // task symbol of its own), or altea-alert's SendNotificationEmailTask. An override REPLACES the
+        // declared list, so SimpleTaskSymbol is passed back in explicitly.
         //
         // Under legacyMode the override is SKIPPED ENTIRELY, leaving the scheduler's own declared
-        // `[SimpleTaskSymbol]`: Signum's ProcessAlgorithmSymbol is a plain Symbol and NOT an ITaskEntity —
-        // the "a scheduled task can BE a process" bridge is altea's addition — so Signum's
-        // `ScheduledTaskEntity.Task` stays single-implementation and its column is NOT NULL. The server
+        // `[SimpleTaskSymbol]`: the "a scheduled task can BE a process" bridge is altea's addition, so
+        // there `scheduled_task.task` stays single-implementation and its column is NOT NULL. The server
         // half is gated to match (ProcessSchedulerBridge.start in starter.server.ts).
         if (!legacyMode)
             ProcessSchedulerBridgeOverrides.overrideTaskImplementations([
@@ -266,21 +239,17 @@ export namespace EntityOverrides {
                 SendNotificationEmailTaskEntity,
             ]);
 
-        // How this app SENDS mail. altea-email declares only its own SMTP service, so the two extra sender
-        // packages are added here (Signum's per-module `AssertImplementedBy`, which each module's
-        // `Logic.start` re-checks and fails on if this list is missing it). The list decides both the pickable
-        // service types in the editor and which service TABLES the schema creates.
+        // How this app SENDS mail: altea-email declares only its own SMTP service, so the two extra sender
+        // packages are added here. A legacy database's list is exactly Smtp + MicrosoftGraph.
         overrideImplementedBy(EmailSenderConfigurationEntity, e => e.service, () => [
             SmtpEmailServiceEntity,
-            // NOT IN SOUTHWIND, whose list is exactly Smtp + MicrosoftGraph.
             ...(legacyMode ? [] : [ExchangeWebServiceEmailServiceEntity]),
             MicrosoftGraphEmailServiceEntity,
         ]);
 
-        // …and how it RECEIVES: POP3 is the one protocol ported (altea-email's reception half declares an
-        // EMPTY implementedBy on purpose — it ships no protocol of its own).
-        // NOT IN SOUTHWIND: it receives no mail, so it names no reception service (and the empty list
-        // altea-email declares then creates no service table).
+        // …and how it RECEIVES: POP3 is the one protocol shipped (altea-email's reception half declares an
+        // EMPTY implementedBy on purpose). A legacy database receives no mail, so it names no reception
+        // service and the empty list creates no service table.
         if (!legacyMode)
             overrideImplementedBy(EmailReceptionConfigurationEntity, e => e.service, () => [
                 Pop3EmailReceptionServiceEntity,
@@ -290,7 +259,7 @@ export namespace EntityOverrides {
         overrideImplementedBy(OperationLogEntity, o => o.user, () => [UserEntity]);
         overrideImplementedBy(RestLogEntity, r => r.user, () => [UserEntity]);
         overrideImplementedBy(ViewLogEntity, v => v.user, () => [UserEntity]);
-        // Same shape in the MODULES whose user references Signum also declares `Lite<IUserEntity>`:
+        // Same shape in the MODULES that name a user:
         // an alert names who raised it, who it is for and who attended it; a note names who wrote it.
         overrideImplementedBy(AlertEntity, a => a.createdBy, () => [UserEntity]);
         overrideImplementedBy(AlertEntity, a => a.recipient, () => [UserEntity]);
@@ -306,28 +275,20 @@ export namespace EntityOverrides {
         overrideImplementedBy(ScheduledTaskLogEntity, s => s.user, () => [UserEntity]);
         overrideImplementedBy(CaseTagEntity, c => c.createdBy, () => [UserEntity]);
 
-        // Which user assets a dashboard SNAPSHOT can cover (Signum's `[ImplementedBy()]` empty list on
-        // CachedQueryEntity.UserAssets, widened by the app): @altea/altea-dashboard cannot name them,
+        // Which user assets a dashboard SNAPSHOT can cover: @altea/altea-dashboard cannot name them,
         // because altea-user-queries and altea-chart depend on IT.
         overrideImplementedBy(CachedQueryEntity_UserAsset, c => c.userAsset, () => [UserQueryEntity, UserChartEntity]);
 
-        // The dashboard PART types this app offers (Southwind did exactly this in Starter.cs:
-        // `FieldAttributes((DashboardEntity a) => a.Parts.First().Content).Replace(new ImplementedByAttribute(
-        // …))`). The list decides both the pickable part types in the editor and which part TABLES the schema
-        // creates — @altea/altea-dashboard declares only its own five, so the modules' parts are added here.
-        // The dashboard PARTS Southwind does not declare, hoisted into a name so that removing the
-        // legacy-mode machinery is one substitution: `legacyMode ? [] : eastwindOnlyParts` → the list.
-        // (Modules.xml has to be able to express that; a multi-line conditional spread it cannot.)
-        const eastwindOnlyParts = [
-            TextPartEntity,
-            ImagePartEntity,
-            SeparatorPartEntity,
-            HealthCheckPartEntity,
-            CustomPartEntity,
-        ];
-
+        // The dashboard PART types this app offers. @altea/altea-dashboard declares only its own five, so
+        // the modules' parts are added here. The first group is what a legacy database does not declare.
         overrideImplementedBy(DashboardEntity_Part, d => d.content, () => [
-            ...(legacyMode ? [] : eastwindOnlyParts),
+            ...(legacyMode ? [] : [
+                TextPartEntity,
+                ImagePartEntity,
+                SeparatorPartEntity,
+                HealthCheckPartEntity,
+                CustomPartEntity,
+            ]),//LegacyOnlyParts
             UserQueryPartEntity,
             ValueUserQueryListPartEntity,
             BigValuePartEntity,
@@ -336,14 +297,12 @@ export namespace EntityOverrides {
             ToolbarMenuPartEntity,
         ]);
 
-        // What a TOOLBAR ELEMENT may point at (Signum's `[ImplementedBy()]` empty list, widened by each
-        // module's `AssertImplementedBy` from its own Logic.Start). The list decides the pickable content
-        // types in the editor, the FK columns of both element tables, AND — in altea — which types get the
+        // What a TOOLBAR ELEMENT may point at. Beyond the usual, this list also decides which types get the
         // "delete the elements pointing at me" cascade (see ToolbarLogic.start). Declared on the ABSTRACT
         // base: both concrete element rows inherit that one field, so one call covers ToolbarEntity_Element
-        // and ToolbarMenuEntity_Element.
-        // (`overrideImplementedBy` asks for a concrete Type<T>; the base is abstract, which matters only to
-        // the type-checker — the FieldInfo it mutates is the very one both element rows inherit.)
+        // and ToolbarMenuEntity_Element. (`overrideImplementedBy` asks for a concrete Type<T>; the base is
+        // abstract, which matters only to the type-checker — the FieldInfo it mutates is the one both
+        // element rows inherit.)
         overrideImplementedBy(ToolbarElementBaseEntity, t => t.content, () => [
             QueryEntity,
             PermissionSymbol,
@@ -353,13 +312,13 @@ export namespace EntityOverrides {
             UserQueryEntity,
             UserChartEntity,
             DashboardEntity,
-            // Signum's Starter.cs adds WorkflowEntity to both toolbar implementedBy lists: a toolbar element
+            // WorkflowEntity belongs in both toolbar implementedBy lists: a toolbar element
             // pointing at a workflow STARTS a case of it (WorkflowToolbarConfig), and the whole workflow menu
             // rides on one PermissionSymbol element (WorkflowToolbarMenuConfig, already covered above).
             WorkflowEntity,
         ]);
 
-        // Package / folder defaults (Signum's assembly [DefaultAssemblyCulture] + default schema). Written
+        // Package / folder defaults. Written
         // as bare calls that the quote-transformer stamps with the file's __fileInfo, so they know the
         // package + directory they were declared in:
         //   setDefaultCulture("en");           // the language this package's code-declared strings are in

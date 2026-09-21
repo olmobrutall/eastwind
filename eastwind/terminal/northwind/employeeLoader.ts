@@ -17,12 +17,11 @@ import { NorthwindImages } from "./northwindImages";
 import { FileEntity } from "@altea/altea-files/data/Files";
 import { terminalFile } from "../terminalFile";
 
-// Port of Southwind.Terminal/EmployeeLoader.cs. Reads Northwind through IView classes under a second
-// connector (Signum's Connector.Override(...).Using), and bulk-inserts eastwind entities preserving the
-// Northwind ids (Signum's .SetId(id) + BulkInsert(disableIdentity:true) — here `entity.id = id` +
+// Reads Northwind through IView classes under a second
+// connector, and bulk-inserts eastwind entities preserving the Northwind ids (here `entity.id = id` +
 // BulkInserter.bulkInsertTable). Because ids are preserved, FK targets (reportsTo, territory) are set
 // inline with Type.newLite(id), and owned collections are inserted as a second bulkInsertTable
-// (altea's bulkInsertTable is single-table — it does not cascade owned rows the way Signum's does).
+// (altea's bulkInsertTable is single-table — it does not cascade owned rows).
 export namespace EmployeeLoader {
     export async function loadRegions(): Promise<void> {
         const regions = await Connector.withConnector(await Northwind.connector(), () => view(NwRegion).toArray());
@@ -34,7 +33,7 @@ export namespace EmployeeLoader {
     }
 
     export async function loadTerritories(): Promise<void> {
-        // Signum's `regionDic = Database.RetrieveAll<RegionEntity>().ToDictionary(Id)` — TerritoryEntity.region
+        // The regions by id — TerritoryEntity.region
         // is a full RegionEntity reference (regions were inserted with their Northwind ids preserved).
         const regionDic = new Map((await table(RegionEntity).toArray()).map(r => [Number(r.id), r]));
         const territories = await Connector.withConnector(await Northwind.connector(), () => view(NwTerritory).toArray());
@@ -47,11 +46,11 @@ export namespace EmployeeLoader {
             return e;
         });
 
-        // Signum's `entities.Duplicates(a => a.Description).ForEach(t => t.Description += " (Dup)")`.
-        // NOT optional and not a nicety: `TerritoryEntity.description` is `@uniqueIndex` (Southwind declares
+        // Suffix every duplicate description with " (Dup)".
+        // NOT optional and not a nicety: `TerritoryEntity.description` is `@uniqueIndex` (the entity declares
         // the same `[UniqueIndex]`), and Northwind's own data has TWO territories described "New York" —
         // zip 10019 and zip 10038, in both vendor scripts — so without this the load dies on
-        // `uix_territory_description`. `Duplicates` (Signum.Utilities) yields every element whose key was
+        // `uix_territory_description`. `duplicates` yields every element whose key was
         // ALREADY seen, so the first "New York" keeps its name and the second becomes "New York (Dup)".
         // Written out rather than added to altea's arrayExtensions: one consumer, and one line.
         const seen = new Set<string>();
@@ -69,7 +68,7 @@ export namespace EmployeeLoader {
         const nwEmployees = await Connector.withConnector(await Northwind.connector(), () => view(NwEmployee).toArray());
         const nwEmpTerr = await Connector.withConnector(await Northwind.connector(), () => view(NwEmployeeTerritory).toArray());
 
-        // Territories junction rows grouped by employee (Signum's MList<TerritoryEntity>). The
+        // Territories junction rows grouped by employee. The
         // employee back-reference is wired by bulkInsert's cascade — only the @valueField is set here.
         const terrByEmp = new Map<number, EmployeeEntity_Territory[]>();
         for (const et of nwEmpTerr) {
@@ -79,7 +78,7 @@ export namespace EmployeeLoader {
         }
 
         // The photos are ROWS (files.file), and bulkInsert cascades owned COLLECTIONS but not
-        // references — so they are saved first and the employees carry the saved entities. Southwind
+        // references — so they are saved first and the employees carry the saved entities. The upstream loader
         // gets away with a fat lite of an unsaved FileEntity because its BulkInsert walks the graph.
         const photoByEmployee = new Map<number, FileEntity>();
         for (const e of nwEmployees) {
@@ -108,7 +107,7 @@ export namespace EmployeeLoader {
                 // ids are preserved, so the self-reference resolves inline (no second SaveList pass).
                 reportsTo: e.ReportsTo != null ? EmployeeEntity.newLite(e.ReportsTo) : null,
                 photoPath: e.PhotoPath,
-                // Southwind reads Northwind's own Employees.Photo (an OLE-wrapped bitmap) — the column the
+                // Northwind's own Employees.Photo is an OLE-wrapped bitmap — the column the
                 // seed drops, so the photo comes off disk instead (northwindImages.ts).
                 photo: photoByEmployee.get(e.EmployeeID) ?? null,
                 territories: terrByEmp.get(e.EmployeeID) ?? [],
@@ -116,11 +115,11 @@ export namespace EmployeeLoader {
             emp.id = e.EmployeeID;
             return emp;
         });
-        // Signum's `.BulkInsert(disableIdentity:true)`: preserved ids + the territories MList cascade.
+        // Bulk insert with identity disabled: preserved ids + the territories cascade.
         await BulkInserter.bulkInsert(employees);
     }
 
-    // Port of Southwind's EmployeeLoader passage step + EmployeesLogic.GeneratePassages: chunk each
+    // Chunk each
     // employee (a title sentence + their notes split on '\r' / '\n' / '.'), look each chunk's 768-dim
     // embedding up in passagesWithEmbeddings.json (a { chunkText: float[] } dictionary), and bulk-insert
     // the EmployeePassageEntity rows with their Vector embedding. Requires the employees to be loaded
@@ -136,8 +135,8 @@ export namespace EmployeeLoader {
         await BulkInserter.bulkInsert(passages);
     }
 
-    // The { chunkText: float[] } embeddings dictionary shipped alongside the loader (Southwind's
-    // passagesWithEmbeddings.json). Returns undefined (embeddings skipped) if the file is missing.
+    // The { chunkText: float[] } embeddings dictionary shipped alongside the loader
+    // (passagesWithEmbeddings.json). Returns undefined (embeddings skipped) if the file is missing.
     function readEmbeddings(): Record<string, number[]> | undefined {
         const file = terminalFile("northwind", "passagesWithEmbeddings.json");
         if (!fs.existsSync(file)) {
@@ -147,7 +146,7 @@ export namespace EmployeeLoader {
         return JSON.parse(fs.readFileSync(file, "utf8")) as Record<string, number[]>;
     }
 
-    // Signum's GeneratePassages: a title chunk (index 0) plus one chunk per non-empty note fragment,
+    // A title chunk (index 0) plus one chunk per non-empty note fragment,
     // each assigned its embedding from the dictionary (looked up by the exact chunk text).
     function generatePassages(employee: EmployeeEntity, dic: Record<string, number[]> | undefined): EmployeePassageEntity[] {
         const title = (employee.title ?? "Employee");
@@ -175,10 +174,10 @@ export namespace EmployeeLoader {
         return passages;
     }
 
-    // Port of Southwind's EmployeeLoader.CreateUsers: one user per employee (UserName = FirstName,
+    // One user per employee (UserName = FirstName,
     // password = FirstName), role by index over employees ordered by Notes length descending —
     // `i < 2 ? "Super user" : i < 5 ? "Advanced user" : "Standard user"`, each linked back to its employee
-    // through the UserEmployeeMixin (Southwind's `.SetMixin((UserEmployeeMixin e) => e.Employee,
+    // through the UserEmployeeMixin (see entityOverrides
     // employee.ToLite())`). Run AFTER loadEmployees and after the roles exist
     // (TypeScriptMigrations.createRoles). Idempotent: an existing username is left alone, except that a
     // user with no employee linked yet gets one (a database seeded before the mixin existed).
@@ -212,7 +211,7 @@ export namespace EmployeeLoader {
                 state: UserState.Active,
                 passwordHash: PasswordEncoding.hashPassword(userName, userName),
             });
-            // altea inlines a mixin's fields onto the owner, so Signum's SetMixin is a plain assignment
+            // altea inlines a mixin's fields onto the owner, so setting one is a plain assignment
             // through the typed `mixin()` cast.
             user.mixin(UserEmployeeMixin).employee = employee;
             await user.save();

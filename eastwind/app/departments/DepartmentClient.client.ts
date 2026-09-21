@@ -17,7 +17,7 @@ export namespace DepartmentsClient {
                 ],
             }));
 
-        // The four tree opt-ins at once (Signum's TreeClient.configure): hide the engine's own fields from
+        // The four tree opt-ins at once: hide the engine's own fields from
         // the generated view, make Find open the TREE instead of a search modal, autocomplete by name
         // through the tree's own endpoint, and order by fullName so a list view reads depth-first.
         // AFTER `cb.configure`, which is what creates the type's client TypeInfo.

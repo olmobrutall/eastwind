@@ -4,7 +4,6 @@ import { TypeContext } from '@altea/altea/client/TypeContext'
 import { useForceUpdate } from '@altea/altea/client/Hooks'
 import { AddressEmbedded } from './Customer.data'
 
-// Ported from Southwind/Customers/Address.tsx (faithful — AddressEmbedded maps 1:1 in eastwind).
 export default function Address(p: { ctx: TypeContext<AddressEmbedded>, inheritStyle?: boolean }): React.JSX.Element {
   const ctx = p.inheritStyle ? p.ctx : p.ctx.subCtx({ formGroupStyle: "SrOnly", placeholderLabels: true });
   const forceUpdate = useForceUpdate();

@@ -16,8 +16,8 @@ import { toNumberFormat } from '@altea/altea/client/numberFormat'
 import { CustomerEntity } from '../customers/Customer.data'
 import { OrderEntity, OrderLineEntity, OrderState } from './Order.data'
 
-// Ported from Southwind/Orders/Order.tsx. Divergences:
-//   - `details` is a plain OrderLineEntity[] (not MList<OrderDetailEmbedded>) — no `.element`; the row's
+// The order view. Worth knowing:
+//   - `details` is a plain OrderLineEntity[] of owned rows — no `.element`; the row's
 //     subtotal / order total come from the entity methods subTotalPrice() / totalPrice().
 //   - OrderDetailMixin (discountCode column) is omitted in eastwind → that column is dropped.
 //   - the subtotal column's header reads the translated member (OrderLineEntity.nicePropertyName) rather
@@ -38,7 +38,7 @@ export default function Order(p: { ctx: TypeContext<OrderEntity> }): React.JSX.E
   function handleProductChange(detail: OrderLineEntity): void {
     detail.quantity = 1 as int;
     detail.unitPrice = new Decimal(0);
-    // Southwind does not set this and does not have to: its Discount is a C# decimal, so a new line is
+    // A discount has no initializer, so a new line is
     // born with 0. Here the field is undefined until something writes it, and it is MANDATORY — so a row
     // created through the UI failed validation with "Discount is not set" and the order could never be
     // saved. Same reason quantity and unitPrice are seeded on the two lines above.

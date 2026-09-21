@@ -8,12 +8,12 @@ import { LoginAuthMessage } from "@altea/altea-auth/data/AuthMessages";
 import { CatalogMessage } from "../products/Product.data";
 import type { CategoryWithProducts } from "./PublicCatalog.data";
 
-// Port of Southwind's `Public/PublicCatalog.tsx` — the ANONYMOUS shop window: every active product grouped
+// The ANONYMOUS shop window: every active product grouped
 // by its category, reachable with no user (the landing page sends a logged-out visitor here).
 //
-// Divergences from Southwind:
+// Worth knowing:
 //  - the endpoint is `/api/publicCatalog` (see PublicCatalog.server.ts for why).
-//  - the call-to-action is LOG IN, not REGISTER. Southwind links to its `/registerUser` self-service page
+//  - the call-to-action is LOG IN, not REGISTER. The `/registerUser` self-service page
 //    (Public/RegisterUser.tsx + RegisterUserModel), which is not ported — so the honest counterpart of that
 //    button is the login page. `RegisterUserMessage.Register` goes with it.
 export default function PublicCatalog(): React.JSX.Element {

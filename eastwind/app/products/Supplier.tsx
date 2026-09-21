@@ -4,7 +4,6 @@ import { EntityDetail } from '@altea/altea/client/Lines/EntityDetail'
 import { TypeContext } from '@altea/altea/client/TypeContext'
 import { SupplierEntity } from './Product.data'
 
-// Ported from Southwind/Products/Supplier.tsx (faithful — SupplierEntity maps 1:1).
 export default function Supplier(p: { ctx: TypeContext<SupplierEntity> }): React.JSX.Element {
   const ctx = p.ctx;
   return (
