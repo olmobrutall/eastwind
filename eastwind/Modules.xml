@@ -86,7 +86,7 @@
 			<RemoveFiles Path="eastwind/.env.postgres"/>
 			<RemoveFiles Path="eastwind/.env.sqlserver"/>
 			<RemoveFiles Path="eastwind/.env.swpostgres"/>
-			<RemoveLine Path="AGENTS.md" From="## The port ledger" To="above."/>
+			<RemoveLine Path="AGENTS.md" From="## The port ledger" To="`Modules.xml`, which removes code at scaffold time."/>
 			<RemoveLine Path="AGENTS.md" Line="| `Port` (and `LegacyMode`, which depends on it) | everything eastwind carries only because it was ported |"/>
 			<RemoveLine Path="eastwind/.gitignore" From="`.env.test`, `.env.live` and (while the port lasts)" To="`.env.test`, `.env.live` and (while the port lasts)"/>
 
@@ -316,7 +316,7 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { OpenIDRoleMappingEntity } from &quot;@altea/altea-auth-openid/data/OpenID&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(OpenIDRoleMappingEntity, o => o.configuration, () => [ApplicationConfigurationEntity]);"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="openID: OpenIDConfigurationEmbedded | null;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="sb.settings.ignoreFieldRoute(ApplicationConfigurationEntity, &quot;openID&quot;);"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" Line="sb.settings.ignoreFieldRoute(ApplicationConfigurationEntity, a =&gt; a.openID);"/>
 			<RemoveSpanInLines Path="eastwind/app/eastwindAuthAD.server.ts" Span="&quot;openid&quot; | "/>
 		</Module>
 
@@ -332,7 +332,7 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { WindowsADRoleMappingEntity } from &quot;@altea/altea-auth-windowsad/data/WindowsAD&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(WindowsADRoleMappingEntity, w => w.configuration, () => [ApplicationConfigurationEntity]);"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="windowsAD: WindowsADConfigurationEmbedded | null;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="sb.settings.ignoreFieldRoute(ApplicationConfigurationEntity, &quot;windowsAD&quot;);"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" Line="sb.settings.ignoreFieldRoute(ApplicationConfigurationEntity, a =&gt; a.windowsAD);"/>
 			<RemoveSpanInLines Path="eastwind/app/eastwindAuthAD.server.ts" Span=" | &quot;windowsad&quot;"/>
 			<RemoveLine Path="eastwind/.env.example" From="VITE_WINDOWS_AUTH=" To="VITE_WINDOWS_AUTH="/>
 		</Module>
@@ -756,7 +756,7 @@
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { ProductPredictorPublication } from &quot;./products/Product.data&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="PredictorLogic.start(sb, {" To="});//Predictor"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// The publication: the" To="PredictorLogic.registerPublication(ProductPredictorPublication.MonthlySales, { queryName: OrderEntity });"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" From="sb.settings.ignoreFieldRoute(PredictorEntity_Filter, &quot;pinned&quot;);" To="sb.settings.ignoreFieldRoute(PredictorSubQueryEntity_Filter, &quot;pinned&quot;);"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" From="sb.settings.ignoreFieldRoute(PredictorEntity_Filter, f =&gt; f.pinned);" To="sb.settings.ignoreFieldRoute(PredictorSubQueryEntity_Filter, f =&gt; f.pinned);"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { MachineLearningClient } from &quot;@altea/altea-machine-learning/client/MachineLearningClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// AFTER ChartClient — the `Full` result saver" To="MachineLearningClient.start(cb, routes);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { AutoconfigureNeuralNetworkEntity } from &quot;@altea/altea-machine-learning/data/NeuralNetworkSettings&quot;;"/>

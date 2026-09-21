@@ -194,12 +194,12 @@ export namespace Starter {
         if (legacyMode) {
             ignoreConfigurationsForLegacyOnly();
 
-            sb.settings.ignoreFieldRoute(PredictorEntity_Filter, "pinned");
-            sb.settings.ignoreFieldRoute(PredictorSubQueryEntity_Filter, "pinned");
+            sb.settings.ignoreFieldRoute(PredictorEntity_Filter, f => f.pinned);
+            sb.settings.ignoreFieldRoute(PredictorSubQueryEntity_Filter, f => f.pinned);
 
             // The two DIRECTORY configurations a legacy database does not declare (AzureAD alone).
-            sb.settings.ignoreFieldRoute(ApplicationConfigurationEntity, "openID");
-            sb.settings.ignoreFieldRoute(ApplicationConfigurationEntity, "windowsAD");
+            sb.settings.ignoreFieldRoute(ApplicationConfigurationEntity, a => a.openID);
+            sb.settings.ignoreFieldRoute(ApplicationConfigurationEntity, a => a.windowsAD);
         }//LegacyMode
 
         // WHERE each log table's big text lives. Before any of those types is included, because registering
