@@ -87,10 +87,26 @@
 			<RemoveFiles Path="eastwind/.env.sqlserver"/>
 			<RemoveFiles Path="eastwind/.env.swpostgres"/>
 			<RemoveLine Path="AGENTS.md" From="## The port ledger" To="`eastwind/docs/Wiring.md`."/>
+			<RemoveLine Path="AGENTS.md" Line="| `Port` (and `LegacyMode`, which depends on it) | everything eastwind carries only because it was ported |"/>
 			<RemoveLine Path="eastwind/.gitignore" From="`.env.test`, `.env.live` and (while the port lasts)" To="`.env.test`, `.env.live` and (while the port lasts)"/>
-			<!-- The Signum sources and the workspace entry for them: a new application ports from nothing. -->
-			<RemoveFiles Path="old"/>
-			<RemoveLine Path=".gitmodules" From="[submodule &quot;old&quot;]" To="url = https://github.com/signumsoftware/southwind"/>
+
+			<!--
+			  `convert-translations` reads the LEGACY application's translation files out of `old/`, so it
+			  is port machinery and goes with the rest of it. `stub-translations` stays: it generates stubs
+			  from this application's own code and is useful in any application.
+			-->
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="import { TranslationConverter } from &quot;@altea/altea-translations/server/TranslationConverter&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" From="// PORT ONLY: reads the legacy application&apos;s own translation files" To="}); break;//ConvertTranslations"/>
+			<RemoveSpanInLines Path="eastwind/terminal/terminal.ts" Span="convert-translations, "/>
+			<RemoveFiles Path="eastwind/terminal/translationFiles.txt"/>
+			<RemoveFiles Path="eastwind/terminal/translationRenames.txt"/>
+
+			<!--
+			  `old/` itself is NOT listed: altea-clone never copies it. git reports a submodule as one entry
+			  with no contents and `.gitmodules` is the single file the clone never carries, so a new
+			  application arrives without it and writes its own `.gitmodules` naming only `altea`. An
+			  application that is ITSELF a port adds its own `old` submodule by hand.
+			-->
 		</Module>
 		<!-- ==== The demo domain =================================================================== -->
 
@@ -286,7 +302,8 @@
 			<RemoveSpanInLines Path="eastwind/app/eastwindAuthAD.server.ts" Span="&quot;azuread&quot; | "/>
 		</Module>
 
-		<Module Name="OpenID" DependsOn="Auth">
+		<Module Name="OpenID" DependsOn="Auth" optional="true">
+			<RemoveLine Path="AGENTS.md" Line="| `OpenID` | login through an OpenID Connect provider |"/>
 			<RemovePackageReference Name="@altea/altea-auth-openid"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { OpenIDLogic } from &quot;@altea/altea-auth-openid/server/OpenIDLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="OpenIDLogic.start(sb, () => EastwindAuthAD.openIDConfiguration()," To="{ installAuthorizer: EastwindAuthAD.provider() === &quot;openid&quot; });//OpenID"/>
@@ -303,7 +320,8 @@
 			<RemoveSpanInLines Path="eastwind/app/eastwindAuthAD.server.ts" Span="&quot;openid&quot; | "/>
 		</Module>
 
-		<Module Name="WindowsAD" DependsOn="Auth">
+		<Module Name="WindowsAD" DependsOn="Auth" optional="true">
+			<RemoveLine Path="AGENTS.md" Line="| `WindowsAD` | login through Windows integrated authentication |"/>
 			<RemovePackageReference Name="@altea/altea-auth-windowsad"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { WindowsADLogic } from &quot;@altea/altea-auth-windowsad/server/WindowsADLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="if (EastwindAuthAD.provider() === &quot;windowsad&quot;)" To="});//WindowsAD"/>
@@ -340,12 +358,33 @@
 			<RemoveLine Path="eastwind/.env.example" From="EASTWIND_FILE_STORE=" To="EASTWIND_FILE_STORE="/>
 		</Module>
 
-		<Module Name="Files_Cloud" DependsOn="Files">
+		<!--
+		  The two CLOUD backends of the file stores, one module each: an application that wants S3 has no
+		  reason to carry the Azure SDK. Both are optional — a fresh clone keeps the LOCAL folder backend,
+		  which needs no credentials and no account.
+
+		  Each removes its entry from `STORE_KINDS`, which is the single list the FileStoreKind type, the
+		  `kind()` check and its error message all read from.
+		-->
+		<Module Name="Files_Azure" DependsOn="Files" optional="true">
+			<RemoveLine Path="AGENTS.md" Line="| `Files_Azure` | the Azure Blob Storage file-store backend |"/>
 			<RemovePackageReference Name="@altea/altea-files-azure"/>
-			<RemovePackageReference Name="@altea/altea-files-s3"/>
+			<RemoveTsProjectReference Path="eastwind/tsconfig.server.json" Reference="../altea/altea-files-azure/tsconfig.server.json"/>
 			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="AzureBlobStorageFileTypeAlgorithm, AzureWebDownload," To="} from &quot;@altea/altea-files-azure/server/AzureBlobStorageConfiguration&quot;;"/>
+			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" Line="&quot;azure&quot;,//AzureKind"/>
+			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="case &quot;azure&quot;:" To="});//AzureStore"/>
+			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="function azureConfiguration(): AzureBlobStorageConfiguration {" To="}//AzureConfiguration"/>
+			<RemoveLine Path="eastwind/.env.example" From="# Azure Blob Storage (@altea/altea-files-azure)" To="# EASTWIND_AZURE_STORAGE_CONNECTION_STRING="/>
+		</Module>
+		<Module Name="Files_S3" DependsOn="Files" optional="true">
+			<RemoveLine Path="AGENTS.md" Line="| `Files_S3` | the S3 / MinIO file-store backend |"/>
+			<RemovePackageReference Name="@altea/altea-files-s3"/>
+			<RemoveTsProjectReference Path="eastwind/tsconfig.server.json" Reference="../altea/altea-files-s3/tsconfig.server.json"/>
 			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="import { S3FileTypeAlgorithm, S3WebDownload }" To="import { S3Storage, resolveEndpoint, type S3Configuration }"/>
-			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="case &quot;azure&quot;:" To="case &quot;s3&quot;:"/>
+			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" Line="&quot;s3&quot;,//S3Kind"/>
+			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="case &quot;s3&quot;:" To="});//S3Store"/>
+			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="function s3Configuration(): S3Configuration {" To="}//S3Configuration"/>
+			<RemoveLine Path="eastwind/.env.example" From="# S3 / MinIO (@altea/altea-files-s3)" To="# EASTWIND_S3_FORCE_PATH_STYLE=true"/>
 		</Module>
 
 		<!-- ==== User assets ======================================================================== -->
@@ -444,11 +483,11 @@
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { ProcessLogic } from &quot;@altea/altea-processes/server/ProcessLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { PackageLogic } from &quot;@altea/altea-processes/server/PackageLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { ProcessSchedulerBridge } from &quot;@altea/altea-processes/server/ProcessSchedulerBridge&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { ProcessRunner } from &quot;@altea/altea-processes/server/ProcessRunner&quot;;"/>
+			<RemoveLine Path="eastwind/app/webServer.server.ts" Line="import { ProcessRunner } from &quot;@altea/altea-processes/server/ProcessRunner&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="ProcessLogic.start(sb);"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="PackageLogic.start(sb);"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// A legacy database has no bridge" To="ProcessSchedulerBridge.start(sb);"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="ProcessRunner.startRunningProcessesAfter(5000);"/>
+			<RemoveLine Path="eastwind/app/webServer.server.ts" Line="ProcessRunner.startRunningProcessesAfter(5000);"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { ProcessClient } from &quot;@altea/altea-processes/client/ProcessClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="ProcessClient.start(cb);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="import { ProcessEntity, ProcessExceptionLineEntity }" To="import { PackageEntity, PackageOperationEntity, PackageLineEntity }"/>
@@ -461,9 +500,9 @@
 			<RemovePackageReference Name="@altea/altea-scheduler"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { SchedulerLogic } from &quot;@altea/altea-scheduler/server/SchedulerLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { SimpleTaskLogic } from &quot;@altea/altea-scheduler/server/SimpleTaskLogic&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { ScheduleTaskRunner } from &quot;@altea/altea-scheduler/server/ScheduleTaskRunner&quot;;"/>
+			<RemoveLine Path="eastwind/app/webServer.server.ts" Line="import { ScheduleTaskRunner } from &quot;@altea/altea-scheduler/server/ScheduleTaskRunner&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// The two symbol tables here are seeded from a THUNK" To="SchedulerLogic.start(sb);"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="ScheduleTaskRunner.startScheduledTasksAfter(5000);"/>
+			<RemoveLine Path="eastwind/app/webServer.server.ts" Line="ScheduleTaskRunner.startScheduledTasksAfter(5000);"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { SchedulerClient } from &quot;@altea/altea-scheduler/client/SchedulerClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="SchedulerClient.start(cb);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { SimpleTaskSymbol, ScheduledTaskEntity, ScheduledTaskLogEntity } from &quot;@altea/altea-scheduler/data/Scheduler&quot;;"/>
@@ -478,10 +517,10 @@
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { EmailReceptionLogic } from &quot;@altea/altea-email/server/EmailReceptionLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { EmailFileType } from &quot;@altea/altea-email/data/Email&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { EmailMessageEntity } from &quot;@altea/altea-email/data/EmailMessage&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { AsyncEmailSender } from &quot;@altea/altea-email/server/AsyncEmailSender&quot;;"/>
+			<RemoveLine Path="eastwind/app/webServer.server.ts" Line="import { AsyncEmailSender } from &quot;@altea/altea-email/server/AsyncEmailSender&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Registered only when the app passes an `attachment` algorithm" To="EastwindFileStores.store(&quot;email-attachments&quot;));//EmailAttachment"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Email + templating. The app supplies only what is app-specific" To="RemoteEmailsLogic.start(sb);//RemoteEmails"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="AsyncEmailSender.startAsyncEmailSenderAfter(5000);"/>
+			<RemoveLine Path="eastwind/app/webServer.server.ts" Line="AsyncEmailSender.startAsyncEmailSenderAfter(5000);"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="registerBigString(sb, EmailMessageEntity, BigStringFileType.EmailMessage, &quot;email-messages&quot;);"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { MailingClient } from &quot;@altea/altea-email/client/MailingClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { MailingReceptionClient } from &quot;@altea/altea-email/client/MailingReceptionClient&quot;;"/>
@@ -832,6 +871,19 @@
 		  The CHANGE LOG: one Changelog.ts per module compiled into the client, plus a per-user "when did I
 		  last read it" row. Removing it leaves each module's own Changelog in place, unread.
 		-->
+		<!--
+		  The navbar PALETTE picker: any of the 26 bootswatch themes, loaded from their CDN. A demo
+		  affordance rather than an application feature — a real deployment bakes its own theme into the
+		  bootstrap import in main.client.ts — so it is optional and a fresh clone drops it. The
+		  light / dark / auto selector beside it is the FRAMEWORK's and stays either way.
+		-->
+		<Module Name="ThemeSelector" optional="true">
+			<RemoveLine Path="AGENTS.md" Line="| `ThemeSelector` | the bootswatch palette picker in the navbar |"/>
+			<RemoveFiles Path="eastwind/app/ThemeSelector.tsx"/>
+			<RemoveLine Path="eastwind/app/Layout.tsx" Line="import { ThemeSelector } from &quot;./ThemeSelector&quot;;"/>
+			<RemoveLine Path="eastwind/app/Layout.tsx" From="{/* The PALETTE picker: any bootswatch theme, or plain bootstrap. */}" To="&lt;ThemeSelector />"/>
+		</Module>
+
 		<Module Name="ChangeLog">
 			<RemoveFiles Path="eastwind/app/Changelog.client.ts"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { ChangeLogLogic } from &quot;@altea/altea/server/changeLogLogic&quot;;"/>
@@ -839,7 +891,7 @@
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { ChangeLogClient } from &quot;@altea/altea/client/Basics/ChangeLogClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// The navbar button and its unread badge." To="ChangeLogClient.start({ applicationName: &quot;Eastwind&quot;,"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="const ChangeLogViewer = React.lazy(() => import(&quot;@altea/altea/client/Basics/ChangeLogViewer&quot;));"/>
-			<RemoveLine Path="eastwind/app/Layout.tsx" From="The change log (Southwind puts" To="&lt;ChangeLogViewer />&lt;/React.Suspense>}"/>
+			<RemoveLine Path="eastwind/app/Layout.tsx" From="The change log: what changed in" To="&lt;ChangeLogViewer />&lt;/React.Suspense>}"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { ChangeLogViewLogEntity } from &quot;@altea/altea/data/changeLog&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(ChangeLogViewLogEntity, c => c.user, () => [UserEntity]);"/>
 		</Module>
@@ -853,6 +905,21 @@
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// AFTER OmniboxClient, whose special-action registry it pushes onto." To="TranslatedInstanceClient.start(cb);//Translation"/>
 			<!-- The per-package XML files stay: they are what a module SHIPS. Only the app's own go. -->
 			<RemoveFiles Path="eastwind/translations"/>
+
+			<!-- The terminal's two translation commands. `convert-translations` is ALSO removed by Port,
+			     which is fine: a directive that finds nothing to remove is a no-op. -->
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="import { TranslationConverter } from &quot;@altea/altea-translations/server/TranslationConverter&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="import { TranslationStubs } from &quot;@altea/altea-translations/server/TranslationStubs&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" From="// PORT ONLY: reads the legacy application&apos;s own translation files" To="}); break;//ConvertTranslations"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="case &quot;stub-translations&quot;: TranslationStubs.runCommand(args.slice(1), { cultures: [&quot;de&quot;, &quot;es&quot;] }); break;"/>
+			<RemoveSpanInLines Path="eastwind/terminal/terminal.ts" Span=", convert-translations, stub-translations"/>
+			<RemoveFiles Path="eastwind/terminal/translationFiles.txt"/>
+			<RemoveFiles Path="eastwind/terminal/translationRenames.txt"/>
+			<!-- The configuration member and its embedded (seeded by the ts migration). -->
+			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="import { TranslationConfigurationEmbedded } from &quot;@altea/altea-translations/data/Translation&quot;;"/>
+			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" From="/*Translation — the machine translators&apos; keys." To="translation: TranslationConfigurationEmbedded;"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="import { TranslationConfigurationEmbedded } from &quot;@altea/altea-translations/data/Translation&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" From="// Every field is an optional API key" To="translation: TranslationConfigurationEmbedded.create({}),"/>
 		</Module>
 
 		<!--

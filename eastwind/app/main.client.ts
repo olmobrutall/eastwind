@@ -14,4 +14,4 @@ import "@altea/altea/client/Basics/VisualTipIcon.css";
 // The app's own stylesheet: the full-bleed hero the
 // landing page and the public catalog render into. Last, so it wins over bootstrap.
 import "./site.css";
-import "./MainPublic.client"; // self-boots (Southwind's main.tsx -> MainPublic)
+import "./MainPublic.client"; // self-boots

@@ -161,10 +161,26 @@ pnpm --filter northbreeze build
 ```
 
 `altea-clone` creates a fresh git repository, adds the `altea` submodule pinned to the same commit this
-workspace has, and copies the application renamed in file names AND in content. `altea-simplify` then
-removes the optional modules, following `eastwind/Modules.xml` — including the `port` module, which is
-`optional="true"` and therefore dropped by default. Both live in `altea/cli/`; see
-[`altea/cli/README.md`](altea/cli/README.md).
+workspace has, and copies the application renamed in file names AND in content. It does NOT carry `old/`
+over: git reports a submodule as one entry with no contents, and `.gitmodules` is the single file the clone
+never copies, so a new application arrives without the Signum sources and writes its own `.gitmodules`
+naming only `altea`.
+
+`altea-simplify` then removes the OPTIONAL modules, following `eastwind/Modules.xml`. Those are the ones a
+fresh clone drops unless the developer ticks them back on:
+
+| | |
+| --- | --- |
+| `Port` (and `LegacyMode`, which depends on it) | everything eastwind carries only because it was ported |
+| `OpenID` | login through an OpenID Connect provider |
+| `WindowsAD` | login through Windows integrated authentication |
+| `Files_Azure` | the Azure Blob Storage file-store backend |
+| `Files_S3` | the S3 / MinIO file-store backend |
+| `ThemeSelector` | the bootswatch palette picker in the navbar |
+
+The local FOLDER file store, and AzureAD as the directory login, stay either way.
+
+Both CLIs live in `altea/cli/`; see [`altea/cli/README.md`](altea/cli/README.md).
 
 ## The port ledger
 

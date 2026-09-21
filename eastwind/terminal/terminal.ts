@@ -76,10 +76,11 @@ async function main(): Promise<void> {
                 case "import-auth": await importAuth(args.slice(1)); break;
                 case "import-assets": await importAssets(args.slice(1)); break;
                 case "seed-northwind": await NorthwindSeed.seed(); break;
+                // PORT ONLY: reads the legacy application's own translation files out of `old/`.
                 case "convert-translations": await TranslationConverter.runCommand(args.slice(1), {
                     files: "terminal/translationFiles.txt", renames: "terminal/translationRenames.txt",
                     sourceRoot: "../old", targetRoot: "..", cultures: ["de", "es"],
-                }); break;
+                }); break;//ConvertTranslations
                 case "stub-translations": TranslationStubs.runCommand(args.slice(1), { cultures: ["de", "es"] }); break;
                 case "migrations":
                 case "sql": await migrations(args.slice(1)); break;

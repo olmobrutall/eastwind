@@ -44,9 +44,6 @@ import { CachedQueryLogic } from "@altea/altea-dashboard/server/CachedQueryLogic
 import { FileLogic } from "@altea/altea-files/server/FileLogic";
 import { SchedulerLogic } from "@altea/altea-scheduler/server/SchedulerLogic";
 import { SimpleTaskLogic } from "@altea/altea-scheduler/server/SimpleTaskLogic";
-import { ScheduleTaskRunner } from "@altea/altea-scheduler/server/ScheduleTaskRunner";
-import { ProcessRunner } from "@altea/altea-processes/server/ProcessRunner";
-import { AsyncEmailSender } from "@altea/altea-email/server/AsyncEmailSender";
 import { ProcessLogic } from "@altea/altea-processes/server/ProcessLogic";
 import { PackageLogic } from "@altea/altea-processes/server/PackageLogic";
 import { ProcessSchedulerBridge } from "@altea/altea-processes/server/ProcessSchedulerBridge";
@@ -650,14 +647,6 @@ export namespace Starter {
             // named here rather than inside the controller; it must be one createRoles seeds.
             PublicLogic.start(sb.webBuilder, { registeredUserRoleName: "Standard user" });
         }//PublicApi
-
-        // The three BACKGROUND RUNNERS. A few
-        // seconds after the schema is up, and only with a WEB host — a terminal run must not pick work up.
-        if (sb.webBuilder) {
-            ProcessRunner.startRunningProcessesAfter(5000);
-            ScheduleTaskRunner.startScheduledTasksAfter(5000);
-            AsyncEmailSender.startAsyncEmailSenderAfter(5000);
-        }//BackgroundRunners
 
         // The framework HTTP API LAST: its JSON exception filter is Express
         // error middleware, which must be registered after every route.

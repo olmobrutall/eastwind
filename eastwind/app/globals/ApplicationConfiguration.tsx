@@ -19,7 +19,7 @@ export default function ApplicationConfiguration(p: { ctx: TypeContext<Applicati
     return (
         <div>
             <AutoLine ctx={ctx.subCtx(a => a.environment)} />
-            {/* Southwind does not render `databaseName` — its value comes from the seed and is the
+            {/* `databaseName` is deliberately not rendered — its value comes from the seed and is the
                 row's identity, so there is nothing to edit. Here nothing reads it and the seed is the
                 only writer, so a row that predates the column (the sync defaults it to '') could not
                 be repaired at all without a line: the next save of ANY setting would fail its

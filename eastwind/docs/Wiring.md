@@ -100,7 +100,7 @@ through a thunk.
 | `GlobalsLogic` | LAST of the includes, exactly where Southwind calls it — rule 6. |
 | `DynamicLogic.compileDynamicCode` … `startDynamicModules` | Before `sb.complete()`, because a schema is built once. A compile failure is recorded rather than thrown (the server must boot so a bad definition can be fixed) and `registerExceptionIfAny` says so loudly — including that a `sync` would now script DROPs. |
 | `Starter.initialize` | Everything that READS the database. Separate from `start` because WHEN it happens differs by host: the web host initializes at boot, the TERMINAL does not (its menu appears first and only data commands initialize). Initializing before `sync` means a wall of mismatch warnings in front of the command that would fix them. |
-| The three background runners | Southwind.Server's `StartBackgroundProcesses`. A few seconds after the schema is up, and only with a WEB host — a terminal run must not pick work up. |
+| The three background runners | **Not in the Starter at all** — they live in `webServer.server.ts`, a few seconds after the host is listening. Picking work up is the WEB HOST's job: a terminal command or a test builds the very same schema and must not start executing processes, scheduled tasks and queued mail behind itself. |
 | `SignumServer.start` | Last (rule 2). |
 
 ### `configureBigString`

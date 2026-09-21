@@ -29,9 +29,18 @@ import { S3Storage, resolveEndpoint, type S3Configuration } from "@altea/altea-f
 // Azure needs EASTWIND_AZURE_STORAGE_CONNECTION_STRING — one credential, one variable (the module also
 // accepts an account + key pair, which eastwind does not use); S3 needs EASTWIND_S3_ENDPOINT / _ACCESS_KEY / _SECRET_KEY
 // (a local MinIO — see @altea/altea-files-s3's docker-compose.yml.example) or an AWS region + credentials.
-// NEVER commit real values: they belong in eastwind/.env.postgres, like the connection string.
+// NEVER commit real values: they belong in an untracked eastwind/.env.<environment>, like the
+// connection string.
 
-export type FileStoreKind = "folder" | "azure" | "s3";
+// The backends this application can point a store at. One line each, because removing a cloud backend is
+// removing its line — the type, the check and the error message all read from here.
+const STORE_KINDS = [
+    "folder",
+    "azure",//AzureKind
+    "s3",//S3Kind
+] as const;
+
+export type FileStoreKind = typeof STORE_KINDS[number];
 
 export namespace EastwindFileStores {
 
@@ -72,10 +81,10 @@ export namespace EastwindFileStores {
 
     export function kind(): FileStoreKind {
         const value = (process.env["EASTWIND_FILE_STORE"] ?? "folder").toLowerCase();
-        if (value === "folder" || value === "azure" || value === "s3")
-            return value;
+        if ((STORE_KINDS as readonly string[]).includes(value))
+            return value as FileStoreKind;
 
-        throw new Error(`EASTWIND_FILE_STORE='${value}' is not one of folder / azure / s3`);
+        throw new Error(`EASTWIND_FILE_STORE='${value}' is not one of ${STORE_KINDS.join(" / ")}`);
     }
 
     /**
@@ -109,7 +118,7 @@ export namespace EastwindFileStores {
                     // enforces type / row authorization), so no public URL is handed out.
                     webDownload: () => AzureWebDownload.None,
                     ...options,
-                });
+                });//AzureStore
 
             case "s3":
                 return new S3FileTypeAlgorithm({
@@ -121,7 +130,7 @@ export namespace EastwindFileStores {
                     createBucketIfNotExists: true,
                     webDownload: () => S3WebDownload.None,
                     ...options,
-                });
+                });//S3Store
 
             default:
                 return new FileTypeAlgorithm({
@@ -136,7 +145,7 @@ export namespace EastwindFileStores {
         return {
             connectionString: process.env["EASTWIND_AZURE_STORAGE_CONNECTION_STRING"] ?? null,
         };
-    }
+    }//AzureConfiguration
 
     function s3Configuration(): S3Configuration {
         return {
@@ -147,5 +156,5 @@ export namespace EastwindFileStores {
             sharedBucketName: process.env["EASTWIND_S3_BUCKET"] ?? null,
             forcePathStyle: process.env["EASTWIND_S3_FORCE_PATH_STYLE"] !== "false",
         };
-    }
+    }//S3Configuration
 }

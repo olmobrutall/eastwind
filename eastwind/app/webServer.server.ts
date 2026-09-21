@@ -3,6 +3,9 @@ import { createWebServer } from "@altea/altea/server/webApi";
 import { Connector, ConsoleSqlLogger } from "@altea/altea/server/connection/connector";
 import { formatError } from "@altea/altea/server/formatError";
 import { SystemEventServer } from "@altea/altea/server/systemEventServer";
+import { ProcessRunner } from "@altea/altea-processes/server/ProcessRunner";
+import { ScheduleTaskRunner } from "@altea/altea-scheduler/server/ScheduleTaskRunner";
+import { AsyncEmailSender } from "@altea/altea-email/server/AsyncEmailSender";
 import { Starter } from "./starter.server";
 
 // The eastwind web host. Creates the WebBuilder and hands it to Starter.start;
@@ -38,6 +41,13 @@ async function main(): Promise<void> {
     // even bind its port is not filed as a successful start; and awaited, so the row exists before the
     // host is considered up. See server/systemEventServer for what a MISSING stop row means.
     await SystemEventServer.logStartStop();
+
+    // The three BACKGROUND RUNNERS, a few seconds after the host is up. They live HERE and not in the
+    // Starter because picking work up is the WEB HOST's job: a terminal command or a test builds the very
+    // same schema and must not start executing processes, scheduled tasks and queued mail behind itself.
+    ProcessRunner.startRunningProcessesAfter(5000);
+    ScheduleTaskRunner.startScheduledTasksAfter(5000);
+    AsyncEmailSender.startAsyncEmailSenderAfter(5000);
 }
 
 // Both exits print through formatError, never `err.message`: the message of the error a dead database
