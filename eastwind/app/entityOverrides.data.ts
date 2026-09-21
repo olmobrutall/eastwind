@@ -178,7 +178,7 @@ export namespace EntityOverrides {
             overrideImplementedBy(EmailTemplateEntity_Attachment, a => a.attachment, () => [ImageAttachmentEntity]);
 
         // ProcessEntity.data / ProcessExceptionLineEntity.line — the app names the implementors its
-        // modules install (altea-printing's PrintPackage is NOT process data here).
+        // modules install.
         overrideImplementedBy(ProcessEntity, p => p.data, () => [
             PackageEntity,
             PackageOperationEntity,

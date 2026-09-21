@@ -32,7 +32,7 @@ are built from, so no functional folder is a sibling of the tooling.
 ```
 eastwind/
   app/            THE APPLICATION — what a browser and the API host run
-    <domain>/       one folder per domain — customers, employees, orders, products, shippers, departments
+    <domain>/       one folder per domain — customers, employees, orders, products, shippers
                       <Domain>.data.ts          entities, enums, operation symbols, messages
                       <Domain>Logic.server.ts   sb.include(…) / queries / operations / tasks
                       <Domain>Client.client.ts  cb.configure(…) client registration
@@ -88,7 +88,7 @@ like noise and are **load-bearing**: they are the anchors `Modules.xml` spans ma
 
 Northwind: **Customers** (`Person` / `Company`, polymorphic under an abstract `CustomerEntity`),
 **Orders** (state machine: New → Ordered → Shipped | Canceled, with `OrderLine` rows), **Products** (with
-`Category` and `Supplier`), **Employees**, **Shippers**, **Departments** (a tree).
+`Category` and `Supplier`), **Employees**, **Shippers**.
 `ApplicationConfigurationEntity` is the global settings singleton, one row per environment.
 
 ## Build, run and test

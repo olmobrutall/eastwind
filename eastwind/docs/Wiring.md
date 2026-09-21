@@ -15,7 +15,7 @@ Both `starter.server.ts` and `MainAdmin.client.ts` read top to bottom as a depen
 separated tiers:
 
 > framework (`@altea/altea`) → authorization → files → directory login → scheduling and processes →
-> eval → user assets → communication → documents → print/news → machine learning → dynamic and workflow
+> eval → user assets → communication → documents → release notes → machine learning → dynamic and workflow
 > → cross-cutting (navigation, docs, logs, presence) → **the app (eastwind)**
 
 Nothing depends on the application, so its own domains come LAST — which also means a module start that
@@ -35,7 +35,7 @@ through a thunk.
    it is whatever DECORATES the operation log — `DiffLogLogic`, `TimeMachineLogic`.
 2. **Express matches handlers in REGISTRATION order.** A module whose routes are mounted before
    `AuthLogic.start` never sees an authenticated user — every call answers "Not user logged". Hence
-   `FileLogic`, the directory modules, `CacheServer`, `ChatbotServer`, `PrintingServer` and
+   `FileLogic`, the directory modules, `CacheServer`, `ChatbotServer` and
    `WhatsNewServer` all come after it, and `SignumServer.start` is last of everything (its JSON exception
    filter is Express error middleware, which must be last).
 3. **A model decision must precede the schema build.** `EntityOverrides.start` (mixins, lite models,
@@ -88,9 +88,8 @@ through a thunk.
 | Excel (`PlainExcelLogic` / `ExcelImportLogic` / `ExcelReportLogic`) | Three separate starters so an app can offer export without import; Southwind starts all three with one `ExcelLogic.Start(sb, excelReport: true)`. `ExcelReportLogic` needs QueryLogic running (the entity has a `QueryEntity` FK). |
 | `DynamicLogic` | The COMPILER is configured first — a `DynamicType` is generated as TypeScript, compiled with the quote-transformer and loaded. `codeGenDirectory` is Signum's CodeGen folder; `typesRoots` points at the app's **dist**, because nothing depends on an app so there is no node_modules entry for TypeScript to follow (pointing at the SOURCE type-checks and then fails at load). |
 | `WorkflowLogicStarter` | After scheduler (timeout sweep is a SimpleTask), processes (the timeout process algorithm) and auth (a lane's actors are users/roles). Southwind starts the module but declares no main entity, so nothing could run through it; eastwind makes ORDER one. |
-| `OmniboxLogic` → `MapLogic` → `HelpModuleLogic` → `TreeModuleLogic` | Each of the last three pushes a generator onto `OmniboxParser.generators`. The array is read per request, so the order is only for readability — the same order Southwind uses. The tree TYPE (`DepartmentsLogic`) is separate and sits with the app domains. |
+| `OmniboxLogic` → `MapLogic` → `HelpModuleLogic` | The last two push a generator onto `OmniboxParser.generators`. The array is read per request, so the order is only for readability. |
 | `SMSModuleLogic` | `provider` is deliberately UNSET — Signum ships no gateway and Southwind passes null, so sending answers "No ISMSProvider set" until an app supplies one. The `SMSMessages` sub-token is registered PER CONCRETE TYPE; the "send to all of these" OPERATION is registered ONCE on the abstract base (an operation is keyed by its symbol and a subclass inherits it). |
-| `PrintingLogic` | After `SchedulerLogic` (a SimpleTask). `PrintingLogic.print` is deliberately UNSET — its default throws, as Signum's does, because what "print" means is an app decision. The TEST file type IS supplied, so `CreateTest` has somewhere to upload; Southwind passes none. |
 | `WhatsNewLogic` | The two FILE TYPES are the module's own; eastwind points both at one folder. The PUBLISHED type condition is what makes a Draft invisible to a non-admin. |
 | `ViewLogLogic` | `registerExpressionsFor` is Southwind's exact set — the three user assets. The two subscriptions it installs are core seams, so nothing else needs to know it is here. |
 | `TranslationLogic` | Default translator chain is the offline "already translated elsewhere" one, so no API key is needed. |
@@ -161,7 +160,6 @@ registers its entity types on the client (needed for token resolution and operat
 | `WorkflowClient` | After `ToolbarClient` / `DynamicClient` — the configs it registers land in registries those own, and its designer views must be the last word on the workflow types. eastwind also declares `CaseActivityMixin` on `EmailMessageEntity`, so the mixin's read-only line goes on the email view after its `target`; Signum hard-codes that pair inside `WorkflowClient.start`, altea takes it per type. |
 | `DiffLogClient` | LAST word on `OperationLogEntity`. |
 | `TimeMachineClient` | After `DiffLogClient`, whose `DiffDocument` the page's data tab uses. |
-| `TreeClient` | After `DashboardClient` / `UserQueriesClient`, whose registries it writes into. The tree TYPE is configured separately by `DepartmentsClient`. |
 | `RestApiKeyClient.registerAuthenticator` | A separate call in Signum too, because a host may want the key ENTITY without letting `?apiKey=…` in the address bar log anyone in. eastwind opts in, as Southwind does. |
 | `TourClient` | After `DashboardClient` / `UserQueriesClient`, whose extension points it pushes onto. |
 | `MachineLearningClient` | After `ChartClient` — the `Full` result saver links to a Punchcard / Scatterplot chart whose script keys must already be registered. |

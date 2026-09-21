@@ -832,25 +832,6 @@
 
 		<!-- ==== eastwind additions (no Southwind counterpart) ====================================== -->
 
-		<Module Name="Tree">
-			<RemovePackageReference Name="@altea/altea-tree"/>
-			<RemoveTsProjectReference Path="eastwind/tsconfig.client.json" Reference="../altea/altea-tree/tsconfig.client.json"/>
-			<RemoveTsProjectReference Path="eastwind/tsconfig.data.json" Reference="../altea/altea-tree/tsconfig.data.json"/>
-			<RemoveTsProjectReference Path="eastwind/tsconfig.server.json" Reference="../altea/altea-tree/tsconfig.server.json"/>
-			<RemoveFiles Path="eastwind/app/departments"/>
-			<RemoveFiles Path="eastwind/terminal/northwind/departmentLoader.ts"/>
-			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="import { DepartmentLoader } from &quot;./northwind/departmentLoader&quot;;"/>
-			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" From="runner.add(&quot;LoadDepartments&quot;" To="runner.add(&quot;LoadDepartments&quot;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { TreeModuleLogic } from &quot;@altea/altea-tree/server/TreeModuleLogic&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { DepartmentsLogic } from &quot;./departments/DepartmentLogic.server&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Tree owns no tree TYPE" To="}//Tree"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" From="// The app&apos;s TREE type (the module itself is started above)." To="DepartmentsLogic.start(sb);//Departments"/>
-			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { TreeClient } from &quot;@altea/altea-tree/client/TreeClient&quot;;"/>
-			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { DepartmentsClient } from &quot;./departments/DepartmentClient.client&quot;;"/>
-			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// AFTER DashboardClient / UserQueriesClient, whose registries it writes into." To="TreeClient.start(cb);"/>
-			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// The app&apos;s TREE type (the module itself is started above)." To="DepartmentsClient.start(cb);//Departments"/>
-		</Module>
-
 		<Module Name="Tour" DependsOn="Dashboard,UserQuery" optional="true">
 			<RemoveLine Path="AGENTS.md" Line="| `Tour` | guided in-app tours |"/>
 			<RemovePackageReference Name="@altea/altea-tour"/>
@@ -860,29 +841,13 @@
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// AFTER DashboardClient / UserQueriesClient, whose extension points it pushes onto." To="TourClient.start(cb);"/>
 		</Module>
 
-		<Module Name="Printing" DependsOn="Files,Scheduler,Process">
-			<RemovePackageReference Name="@altea/altea-printing"/>
-			<RemoveTsProjectReference Path="eastwind/tsconfig.client.json" Reference="../altea/altea-printing/tsconfig.client.json"/>
-			<RemoveTsProjectReference Path="eastwind/tsconfig.data.json" Reference="../altea/altea-printing/tsconfig.data.json"/>
-			<RemoveTsProjectReference Path="eastwind/tsconfig.server.json" Reference="../altea/altea-printing/tsconfig.server.json"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { PrintingLogic } from &quot;@altea/altea-printing/server/PrintingLogic&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { PrintingServer } from &quot;@altea/altea-printing/server/PrintingServer&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Print queue. `PrintingLogic.print` is deliberately UNSET" To="}//Printing"/>
-			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { PrintClient } from &quot;@altea/altea-printing/client/PrintClient&quot;;"/>
-			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// Print queue. Gated in step with the server" To="PrintClient.start(cb);//Printing"/>
-			<!-- `EastwindFileType` exists ONLY for the print-test store, so the whole namespace goes with
-			     the module, and the Starter's import of it with that. -->
-			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" From="// The app&apos;s own file types." To="}//EastwindFileType"/>
-			<RemoveSpanInLines Path="eastwind/app/starter.server.ts" Span="EastwindFileType, "/>
-		</Module>
-
 		<Module Name="WhatsNew" DependsOn="Files,Auth" optional="true">
 			<RemoveLine Path="AGENTS.md" Line="| `WhatsNew` | in-app release notes |"/>
 			<RemovePackageReference Name="@altea/altea-whats-new"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { WhatsNewLogic } from &quot;@altea/altea-whats-new/server/WhatsNewLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { WhatsNewServer } from &quot;@altea/altea-whats-new/server/WhatsNewServer&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { WhatsNewFileType } from &quot;@altea/altea-whats-new/data/WhatsNew&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Release notes. The PUBLISHED type condition" To="}//WhatsNew"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" From="// The PUBLISHED type condition is what makes a Draft invisible" To="}//WhatsNew"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { WhatsNewClient } from &quot;@altea/altea-whats-new/client/WhatsNewClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// Release notes." To="WhatsNewClient.start(cb);//WhatsNew"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="import WhatsNewDropdown from &quot;@altea/altea-whats-new/client/WhatsNewDropdown&quot;;"/>

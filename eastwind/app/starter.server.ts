@@ -433,12 +433,11 @@ export namespace Starter {
         // or the translation sync cannot see them (see HtmlEditorLogic).
         HtmlEditorLogic.start(sb);//HtmlEditor
 
-        // ==== PRINT QUEUE AND RELEASE NOTES (need files, scheduler, processes) ========================
+        // ==== RELEASE NOTES (needs files) ============================================================
 
-
-        // Release notes. The PUBLISHED type condition is what makes a Draft invisible to a non-admin.
-        // Two file-type symbol rows and a TYPE CONDITION row are
-        // inside the gate for the same reason as Printing's.
+        // The PUBLISHED type condition is what makes a Draft invisible to a non-admin. Two file-type
+        // symbol rows and a TYPE CONDITION row are INSIDE the gate, because a module a legacy database
+        // does not start must contribute neither a symbol row nor a permission.
         if (!legacyMode) {
             WhatsNewLogic.start(sb);
             FileTypeLogic.register(WhatsNewFileType.WhatsNewPreviewFileType,
@@ -487,7 +486,6 @@ export namespace Starter {
         MapLogic.start(sb);
         // The image store is the app's.
         HelpModuleLogic.start(sb, EastwindFileStores.store("help-image", { onlyImages: true }));//Help
-
 
         // The API-key table + its authenticator, and the replayable log of the public REST surface.
         // The two halves (log + api key) are one start per module.

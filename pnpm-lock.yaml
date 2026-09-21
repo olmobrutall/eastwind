@@ -1296,9 +1296,6 @@ importers:
       '@altea/altea-playwright':
         specifier: workspace:*
         version: link:../altea/altea-playwright
-      '@altea/altea-printing':
-        specifier: workspace:*
-        version: link:../altea/altea-printing
       '@altea/altea-processes':
         specifier: workspace:*
         version: link:../altea/altea-processes
@@ -1329,9 +1326,6 @@ importers:
       '@altea/altea-translations':
         specifier: workspace:*
         version: link:../altea/altea-translations
-      '@altea/altea-tree':
-        specifier: workspace:*
-        version: link:../altea/altea-tree
       '@altea/altea-user-assets':
         specifier: workspace:*
         version: link:../altea/altea-user-assets
@@ -3742,10 +3736,6 @@ packages:
 
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
-
-  picomatch@4.0.4:
-    resolution: {integrity: sha512-QP88BAKvMam/3NxH6vj2o21R6MjxZUAd6nlwAS/pnGvN9IVLocLHxGYIzFhg6fUQ+5th6P4dv4eW9jX3DSIj7A==}
-    engines: {node: '>=12'}
 
   picomatch@4.0.7:
     resolution: {integrity: sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==}
@@ -6543,9 +6533,9 @@ snapshots:
       strnum: 2.4.1
       xml-naming: 0.3.0
 
-  fdir@6.5.0(picomatch@4.0.4):
+  fdir@6.5.0(picomatch@4.0.7):
     optionalDependencies:
-      picomatch: 4.0.4
+      picomatch: 4.0.7
 
   fflate@0.8.3: {}
 
@@ -7372,8 +7362,6 @@ snapshots:
 
   picocolors@1.1.1: {}
 
-  picomatch@4.0.4: {}
-
   picomatch@4.0.7: {}
 
   pkce-challenge@5.0.1: {}
@@ -7835,8 +7823,8 @@ snapshots:
 
   tinyglobby@0.2.17:
     dependencies:
-      fdir: 6.5.0(picomatch@4.0.4)
-      picomatch: 4.0.4
+      fdir: 6.5.0(picomatch@4.0.7)
+      picomatch: 4.0.7
 
   tlds@1.261.0: {}
 
@@ -7951,8 +7939,8 @@ snapshots:
   vite@7.3.5(@types/node@25.9.1):
     dependencies:
       esbuild: 0.27.7
-      fdir: 6.5.0(picomatch@4.0.4)
-      picomatch: 4.0.4
+      fdir: 6.5.0(picomatch@4.0.7)
+      picomatch: 4.0.7
       postcss: 8.5.15
       rollup: 4.62.2
       tinyglobby: 0.2.17
