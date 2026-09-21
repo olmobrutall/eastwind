@@ -1,6 +1,6 @@
 import { Entity } from "@altea/altea/data/entity";
 import { entity, quoted } from "@altea/altea/data/decorators";
-import { reflect, init } from "@altea/altea/data/reflection";
+import { init } from "@altea/altea/data/reflection";
 import { stringLengthValidator } from "@altea/altea/data/validators";
 import type { ExecuteSymbol } from "@altea/altea/data/operations";
 import type { TypeConditionSymbol } from "@altea/altea-auth/data/Rules";

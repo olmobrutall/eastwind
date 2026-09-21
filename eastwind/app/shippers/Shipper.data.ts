@@ -1,7 +1,7 @@
 import { stringLengthValidator } from "@altea/altea/data/validators";
 import { Entity } from "@altea/altea/data/entity";
 import { entity, quoted, uniqueIndex } from "@altea/altea/data/decorators";
-import { reflect, init } from "@altea/altea/data/reflection";
+import { init } from "@altea/altea/data/reflection";
 import type { ExecuteSymbol } from "@altea/altea/data/operations";
 
 // Port of Southwind's Shippers domain (Southwind/Shippers/ShipperEntity.cs).
