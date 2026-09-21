@@ -192,9 +192,7 @@
 		<Module Name="Cache">
 			<RemovePackageReference Name="@altea/altea-cache"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { CacheLogic } from &quot;@altea/altea-cache/server/CacheLogic&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { CacheServer } from &quot;@altea/altea-cache/server/CacheServer&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Cache module — FIRST of all module starts" To="CacheLogic.start(sb, { serverBroadcast });//Cache"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" From="// The admin HTTP surfaces of the modules whose logic had to start earlier" To="CacheServer.start(sb.webBuilder);"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { CacheClient } from &quot;@altea/altea-cache/client/CacheClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="CacheClient.start(cb);"/>
 			<!-- `.withCache()` on the two demo types that use it. -->
@@ -777,12 +775,12 @@
 		<Module Name="Agent" DependsOn="Auth">
 			<RemovePackageReference Name="@altea/altea-agent"/>
 			<RemoveFiles Path="eastwind/app/eastwindAgent.server.ts"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" From="import { ChatbotLogic }" To="import { ChatbotServer }"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" From="import { ChatbotLogic }" To="import { AgentMcpServer }"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { EastwindAgent } from &quot;./eastwindAgent.server&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { CurrentServerContextSkill } from &quot;@altea/altea-agent/server/Skills/CurrentServerContextSkill&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { IntroductionSkill } from &quot;@altea/altea-agent/server/Skills/IntroductionSkill&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Agent module: skill classes, then the chatbot's own agent" To="AgentLogic.registerAgent(EastwindAgentUseCases.MCP, EastwindAgent.mcpSkill);//Agent"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" From="ChatbotServer.start(sb.webBuilder);" To="}//AgentServer"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" From="// The MCP endpoint exposes the app&apos;s MCP agent&apos;s skill tree" To="AgentMcpServer.start(sb.webBuilder, EastwindAgentUseCases.MCP);//AgentServer"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="import { AgentClient }" To="import { GetUIContextUITool }"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// The two UI TOOLS are what makes the server-declared" To="ChatbotClient.registerUITool(new GetUIContextUITool());//Agent"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="const ChatbotButton = React.lazy(() => import(&quot;@altea/altea-agent/client/ChatbotButton&quot;));"/>
@@ -850,7 +848,6 @@
 			<RemoveLine Path="AGENTS.md" Line="| `WhatsNew` | in-app release notes |"/>
 			<RemovePackageReference Name="@altea/altea-whats-new"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { WhatsNewLogic } from &quot;@altea/altea-whats-new/server/WhatsNewLogic&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { WhatsNewServer } from &quot;@altea/altea-whats-new/server/WhatsNewServer&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { WhatsNewFileType } from &quot;@altea/altea-whats-new/data/WhatsNew&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// The PUBLISHED type condition is what makes a Draft invisible" To="}//WhatsNew"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { WhatsNewClient } from &quot;@altea/altea-whats-new/client/WhatsNewClient&quot;;"/>

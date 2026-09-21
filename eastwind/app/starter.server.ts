@@ -105,7 +105,6 @@ import { VisualTipLogic } from "@altea/altea/server/visualTipLogic";
 import { ChangeLogLogic } from "@altea/altea/server/changeLogLogic";
 import { ApplicationConfigurationEntity, EastwindTypeCondition, EastwindAgentUseCases,  BigStringFileType } from "./globals/ApplicationConfiguration.data";
 import { WhatsNewLogic } from "@altea/altea-whats-new/server/WhatsNewLogic";
-import { WhatsNewServer } from "@altea/altea-whats-new/server/WhatsNewServer";
 import { WhatsNewFileType } from "@altea/altea-whats-new/data/WhatsNew";
 import { GlobalsLogic } from "./globals/GlobalsLogic.server";
 import { CacheLogic } from "@altea/altea-cache/server/CacheLogic";
@@ -113,7 +112,6 @@ import { ConcurrentUserLogic } from "@altea/altea-concurrent-user/server/Concurr
 import { ChatbotLogic } from "@altea/altea-agent/server/ChatbotLogic";
 import { AgentLogic } from "@altea/altea-agent/server/AgentLogic";
 import { AgentMcpServer } from "@altea/altea-agent/server/AgentMcpServer";
-import { ChatbotServer } from "@altea/altea-agent/server/ChatbotServer";
 import { EastwindAgent } from "./eastwindAgent.server";
 import { AzureADLogic } from "@altea/altea-auth-azuread/server/AzureADLogic";
 import { CachedProfilePhotoLogic } from "@altea/altea-auth-azuread/server/CachedProfilePhotoLogic";
@@ -126,7 +124,6 @@ import { IntroductionSkill } from "@altea/altea-agent/server/Skills/Introduction
 import { AlertLogic } from "@altea/altea-alert/server/AlertLogic";
 import { NoteLogic } from "@altea/altea-notes/server/NoteLogic";
 import { AlertNotificationLogic } from "@altea/altea-alert/server/AlertNotificationLogic";
-import { CacheServer } from "@altea/altea-cache/server/CacheServer";
 import type { Schema } from "@altea/altea/server/schema";
 import { EastwindModeServer } from "./eastwindMode.server";
 
@@ -442,8 +439,6 @@ export namespace Starter {
             FileTypeLogic.register(WhatsNewFileType.WhatsNewAttachmentFileType,
                 EastwindFileStores.store("whats-new"));
             WhatsNewLogic.registerPublishedTypeCondition(EastwindTypeCondition.PublishedNews);
-            if (sb.webBuilder)
-                WhatsNewServer.start(sb.webBuilder);
         }//WhatsNew
 
         // ==== MACHINE LEARNING (needs processes, files, chart) ========================================
@@ -535,15 +530,11 @@ export namespace Starter {
         DiffLogLogic.start(sb, { registerAll: true });//DiffLog
         TimeMachineLogic.start(sb);
 
-        // The admin HTTP surfaces of the modules whose logic had to start earlier — mounted HERE so they
-        // sit behind the auth middleware (AGENTS.md, rule 2).
+        // The MCP endpoint exposes the app's MCP agent's skill tree to an EXTERNAL host. The APP mounts
+        // this one because the agent it exposes is the app's own; every MODULE mounts its own surface
+        // from its own start.
         if (sb.webBuilder)
-            CacheServer.start(sb.webBuilder);
-        if (sb.webBuilder) {
-            ChatbotServer.start(sb.webBuilder);
-            // The MCP endpoint exposes the app's MCP agent's skill tree to an EXTERNAL host.
-            AgentMcpServer.start(sb.webBuilder, EastwindAgentUseCases.MCP);
-        }//AgentServer
+            AgentMcpServer.start(sb.webBuilder, EastwindAgentUseCases.MCP);//AgentServer
 
         // ==== THE APP (eastwind) ======================================================================
         //
