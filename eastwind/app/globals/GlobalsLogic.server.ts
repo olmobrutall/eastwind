@@ -13,15 +13,9 @@ import {
 // module's configuration lambda reads.
 //
 // altea's ResetLazy is ASYNC (`value()` returns a Promise) while every module's configuration getter is
-// SYNCHRONOUS, which forces two things:
-//
-//  1. the lazy is mirrored into a SYNC snapshot (`warm`), filled by `warmUp()` after the schema is ready.
-//     The framework keeps no such mirror — its readers ask for what they need (TypeLogic.caches(),
-//     SymbolLogic.cache(), CultureInfoLogic.lookup()) — but a module configuration getter is synchronous by
-//     contract, so this one stays. It cannot go stale: point 2.
-//  2. the snapshot is refreshed on the `saved` event rather than only by the lazy's invalidation, because a
-//     sync reader cannot await a reload. The lazy is still registered with `invalidateWith`, so the async
-//     readers (and the cache panel) see the same invalidation.
+// SYNCHRONOUS by contract. The bridge is the lazy's OWN synchronous peek, `valueOrUndefined` — the same
+// one the framework's hot-path readers use (TypeLogic.typeToId). There is no second copy of the value
+// here to keep in step with the first, and so no way for the two to disagree.
 //
 // Started LATE: the entity references types the mail module owns, so those includes must already exist.
 export namespace GlobalsLogic {
@@ -30,7 +24,6 @@ export namespace GlobalsLogic {
     export let configurationLazy: ResetLazy<ApplicationConfigurationEntity> = null!;
 
     let started = false;
-    let warm: ApplicationConfigurationEntity | undefined;
 
     /**
      * WHICH configuration row this process runs as — `DB_ENVIRONMENT`, defaulting to "Development".
@@ -72,15 +65,20 @@ export namespace GlobalsLogic {
             },
             { invalidateWith: [ApplicationConfigurationEntity] });
 
-        // Keep the sync snapshot current when the row is edited (see the header). The handler runs inside the
-        // save transaction with the saved entity in hand, so no reload is needed.
-        sb.schema.entityEvents(ApplicationConfigurationEntity).saved.push(e => { warm = e; });
+        // A save INVALIDATES the lazy, which empties the synchronous peek until something reloads it — and a
+        // sync reader cannot await. So reload straight away, in the background: the window in which
+        // `configuration()` would throw is one microtask rather than "until the next async reader".
+        //
+        // Fire-and-forget on purpose. The handler runs inside the save transaction and must not make the
+        // save wait on a read; a failure here is the one the next reader would have met anyway, and
+        // `ResetLazy` self-evicts a rejection, so it is retried rather than cached.
+        sb.schema.entityEvents(ApplicationConfigurationEntity).saved.push(() => { void configurationLazy.value(); });
     }
 
-    /** Load the configuration into the sync snapshot. Call once at startup, after the schema is ready. */
+    /** Load the configuration. Call once at startup, after the schema is ready. */
     export async function warmUp(): Promise<void> {
         if (started)
-            warm = await configurationLazy.value();
+            await configurationLazy.value();
     }
 
     /**
@@ -89,13 +87,14 @@ export namespace GlobalsLogic {
      * module with half a configuration (or an env-var fallback) would hide a database that was never seeded.
      */
     export function configuration(): ApplicationConfigurationEntity {
-        if (warm == null)
+        const value = configurationLazy?.valueOrUndefined;
+        if (value == null)
             throw new Error("The ApplicationConfiguration is not loaded yet."
                 + " GlobalsLogic.warmUp() runs at startup, after schema.initialize();"
                 + ` on a fresh database, seed the row for environment '${environment()}' with \`terminal ts\`.`);
-        return warm;
+        return value;
     }
 
     /** Whether the configuration is loaded — for a caller that must not throw (a health check, a startup log). */
-    export function isWarm(): boolean { return warm != null; }
+    export function isWarm(): boolean { return configurationLazy?.valueOrUndefined != null; }
 }
