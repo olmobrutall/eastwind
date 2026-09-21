@@ -101,7 +101,6 @@ import { MigrationLogic } from "@altea/altea-migrations/server/MigrationLogic";
 import { SqlMigrationRunner } from "@altea/altea-migrations/server/SqlMigrationRunner";
 import { TokenMigrationLogic } from "@altea/altea-user-assets/server/TokenMigrationLogic";
 import { PredictorLogic } from "@altea/altea-machine-learning/server/PredictorLogic";
-import { PredictorEntity_Filter, PredictorSubQueryEntity_Filter } from "@altea/altea-machine-learning/data/Predictor";
 import { VisualTipLogic } from "@altea/altea/server/visualTipLogic";
 import { ChangeLogLogic } from "@altea/altea/server/changeLogLogic";
 import { ApplicationConfigurationEntity, EastwindTypeCondition, EastwindAgentUseCases,  BigStringFileType } from "./globals/ApplicationConfiguration.data";
@@ -193,9 +192,6 @@ export namespace Starter {
         // column there. All of it must precede every `include` below.
         if (legacyMode) {
             ignoreConfigurationsForLegacyOnly();
-
-            sb.settings.ignoreFieldRoute(PredictorEntity_Filter, f => f.pinned);
-            sb.settings.ignoreFieldRoute(PredictorSubQueryEntity_Filter, f => f.pinned);
 
             // The two DIRECTORY configurations a legacy database does not declare (AzureAD alone).
             sb.settings.ignoreFieldRoute(ApplicationConfigurationEntity, a => a.openID);

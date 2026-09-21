@@ -752,11 +752,9 @@
 		<Module Name="Predictor" DependsOn="Files,Process">
 			<RemovePackageReference Name="@altea/altea-machine-learning"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { PredictorLogic } from &quot;@altea/altea-machine-learning/server/PredictorLogic&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { PredictorEntity_Filter, PredictorSubQueryEntity_Filter } from &quot;@altea/altea-machine-learning/data/Predictor&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { ProductPredictorPublication } from &quot;./products/Product.data&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="PredictorLogic.start(sb, {" To="});//Predictor"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// The publication: the" To="PredictorLogic.registerPublication(ProductPredictorPublication.MonthlySales, { queryName: OrderEntity });"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" From="sb.settings.ignoreFieldRoute(PredictorEntity_Filter, f =&gt; f.pinned);" To="sb.settings.ignoreFieldRoute(PredictorSubQueryEntity_Filter, f =&gt; f.pinned);"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { MachineLearningClient } from &quot;@altea/altea-machine-learning/client/MachineLearningClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// AFTER ChartClient — the `Full` result saver" To="MachineLearningClient.start(cb, routes);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { AutoconfigureNeuralNetworkEntity } from &quot;@altea/altea-machine-learning/data/NeuralNetworkSettings&quot;;"/>
