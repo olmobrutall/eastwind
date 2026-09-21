@@ -1,4 +1,6 @@
-# AI agent instructions for eastwind
+| `eastwind/Modules.xml` | Which modules are optional and exactly how to remove each one. |
+
+### The three bootstrap files# AI agent instructions for eastwind
 
 **Read [`altea/AGENTS.md`](altea/AGENTS.md) first** — it holds every altea framework convention (entities,
 queries, operations, registration, React components, localization, build and test).
@@ -46,7 +48,7 @@ eastwind/
   test/           environment / logic / playwright     (Southwind.Test.*)
   migrations/     the versioned .sql files — empty in a template application
   translations/   the app's own Eastwind.<culture>.xml — read from the package root at boot
-  docs/           Wiring.md (why each module start is where it is) + Port.md (see below)
+  docs/           Port.md — the ledger of what this application carries only because it was ported
   scripts/        withEnv.mjs and friends, the entry point of every package.json script
   public/         vite's static directory — must sit beside index.html
   index.html      the SPA document; a build entry, like the vite and tsconfig files beside it
@@ -70,19 +72,71 @@ singular even where the exported namespace is plural (`OrdersLogic`).
 | `eastwind/app/Layout.tsx` | The application shell (navbar, sidebar, modals). |
 | `eastwind/app/globals/ApplicationConfiguration.data.ts` | The settings singleton every module's configuration lambda reads. |
 | `eastwind/Modules.xml` | Which modules are optional and exactly how to remove each one. |
-| `eastwind/docs/Wiring.md` | Why each module start is where it is. **Read before moving one.** |
-
 ### The three bootstrap files stay THIN
 
 `starter.server.ts`, `MainAdmin.client.ts` and `MainPublic.client.tsx` are one line per module, in
-DEPENDENCY ORDER (framework → each altea module after the ones it builds on → this app's own domains
-last), in banner-separated tiers, with at most a couple of comment lines each. The long-form "why is this
-call here" rationale lives in [`eastwind/docs/Wiring.md`](eastwind/docs/Wiring.md) — add to that file
-rather than growing the call sites back.
+DEPENDENCY ORDER, in banner-separated tiers:
+
+> framework → authorization → files → directory login → scheduling and processes → eval → user assets →
+> communication → documents → release notes → machine learning → dynamic and workflow → cross-cutting
+> (navigation, docs, logs, presence) → **the app**
+
+Nothing depends on the application, so its own domains come LAST. A module start that takes an app type
+as an argument therefore runs before that domain's `include`, which is fine — see rule 1.
 
 Each multi-line module block ends with a trailing `//<ModuleName>` comment on its closing line. Those look
 like noise and are **load-bearing**: they are the anchors `Modules.xml` spans match on. Run
 `pnpm --filter eastwind check:modules` after touching any of those files.
+
+#### The five rules that decide the order
+
+1. **A symbol registry is read through a THUNK, so registration order does not matter.** An operation, a
+   scheduled task, a process algorithm or a file type registered *after* its module's `start` is still
+   seeded: the list is read when the table is generated / synchronized / loaded, long after the schema is
+   built. This is why `OperationLogic.start` sits at the top rather than after the graphs. What genuinely
+   must follow it is whatever DECORATES the operation log — `DiffLogLogic`, `TimeMachineLogic`.
+2. **Express matches handlers in REGISTRATION order.** A module mounted before `AuthLogic.start` never
+   sees an authenticated user; every call answers "Not user logged". `SignumServer.start` is last of
+   everything, because its JSON exception filter is Express error middleware.
+3. **A model decision must precede the schema build.** `EntityOverrides.start`, `sb.settings.*`,
+   `configureBigString` and `ignoreFieldRoute` all run before the first `include`: each decides which
+   COLUMNS a table has.
+4. **`CacheLogic.start` is first of all module starts.** It swaps the global-lazy invalidation strategy,
+   which must happen before any `sb.globalLazy`, and `.withCache()` on an include needs it.
+5. **`GlobalsLogic.start` is last of the includes.** The `ApplicationConfiguration` row references and
+   embeds the types every module above it created.
+
+#### The ones that cost someone a day
+
+- **`AuthAdminClient` before `GlobalsClient`.** Overriding a view whose `EntitySettings` the builder has
+  not created yet throws "Key User already added".
+- **`DynamicLogic`'s `typesRoots` points at the app's `dist`, not its source.** Nothing depends on an
+  application, so there is no `node_modules` entry for TypeScript to follow; source type-checks and then
+  fails at load.
+- **`DynamicViewClient` is load-bearing beyond its own editors.** It installs a `ViewDispatcher` that
+  prefers a view stored in the DATABASE over the compiled one, for every type.
+- **`MainPublic` applies the metadata blob AFTER building the routes.** `applyMetadata` runs each loaded
+  module's hooks, and importing those modules is exactly what `startFull` does.
+- **`onLogin` rebuilds then navigates** (the target route does not exist until `startFull` has run);
+  **`onLogout` navigates then rebuilds** (avoids a `NotFound` flash).
+- **Switching an existing database's BigString route from `Database` to `File` is not just a `sync`** —
+  the sync drops the text column and the rows lose their text. Deploy once with
+  `Migrating_FromDatabase_ToFile` (both columns exist, every save moves the text across), run
+  `BigStringLogic.migrateBigStrings(T)`, then switch.
+
+### `legacyMode` is not `Modules.xml`
+
+Two levers that look alike and are not:
+
+- **`legacyMode`** is a RUNTIME switch (the `LegacyMode` environment variable) for pointing THIS build at
+  a database a Signum application generated. Every gated module stays in the source and stands down at
+  boot, so one build serves both.
+- **`Modules.xml`** is a SCAFFOLD-time spec: how to REMOVE a module from a copy of eastwind entirely, for
+  a new application built from it. Nothing reads it at runtime.
+
+A module the legacy application does not install appears in both — gated by `legacyMode` here, listed as
+its own `<Module>` there. Not duplication: one answers "can this build read that database", the other
+"does this new application want the module at all".
 
 ## Domain model
 
@@ -196,5 +250,5 @@ and the legacy `.env.*` files); it is `optional="true"`, so a new application bu
 by default.
 
 `LegacyMode=true` in the environment points this build at a database a SIGNUM application generated, so
-`terminal sync` reads as a migration rather than a rebuild. It is a RUNTIME switch and unrelated to
-`Modules.xml`, which removes code at scaffold time — see the last section of `eastwind/docs/Wiring.md`.
+`terminal sync` reads as a migration rather than a rebuild — see **`legacyMode` is not `Modules.xml`**
+above.

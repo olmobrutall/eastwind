@@ -8,7 +8,7 @@ than the framework's — the framework's are in
 Everything in this FILE exists because eastwind was PORTED. A new application built from eastwind does
 not need it, which is why `Modules.xml` has a `port` module that removes it (plus the legacy-mode
 environment files) — unticked by default, so a fresh clone drops it. It sits in `docs/` beside
-`Wiring.md` rather than in a `port/` directory of its own — the app-level counterpart of the submodule's
+`docs/` rather than in a `port/` directory of its own — the app-level counterpart of the submodule's
 `altea/port/` — because one file is not a directory.
 
 The one-off checks a port wrote against a real database live in `terminal/probes/` and are GITIGNORED:

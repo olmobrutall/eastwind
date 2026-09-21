@@ -31,7 +31,7 @@ import NotFound from "./NotFound";
 
 // The SPA bootstrap. The route table and the React ROOT are built from scratch on every credential change,
 // because which routes EXIST depends on who is logged in — that IS the client-side authorization model.
-// Why each line is where it is is recorded in **docs/Wiring.md**.
+// Why each line is where it is is recorded in the repo AGENTS.md.
 
 // The icon packs, BRANDS included — without it the two `["fab", …]` icons in the workspace render as an
 // empty span.
@@ -154,11 +154,11 @@ async function boot(): Promise<void> {
     NotifyPendingFilter.notifyPendingRequests = pending => Notify.getSingleton()?.notifyPendingRequest(pending);
 
     // Cross-tab session sharing: a NEW tab asks any other open tab for its sessionStorage, so the auth
-    // token carries over. Before the auth wiring and before reload, and awaited (docs/Wiring.md).
+    // token carries over. Before the auth wiring and before reload, and awaited.
     await SessionSharing.setAppNameAndRequestSessionStorage("eastwind");
 
     // Host hooks for the auth module: a credential change changes which routes exist. onLogin rebuilds
-    // then navigates; onLogout navigates then rebuilds (docs/Wiring.md).
+    // then navigates; onLogout navigates then rebuilds.
     AuthClient.Options.onLogin = (back?: string) => {
         void reload().then(() => AppContext.navigate(backUrl(AppContext.location().state?.back) ?? (back || "/")));
     };

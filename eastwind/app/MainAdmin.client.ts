@@ -74,7 +74,7 @@ import { EvalClient } from "@altea/altea-eval/client/EvalClient";
 //
 // Kept THIN — one line per module — and ordered by DEPENDENCY, the same way the Starter is: the framework
 // first, then each altea module after the ones whose registries it writes into, and the APP's own domains
-// last. Every ordering constraint is recorded in **docs/Wiring.md**; read it before moving a call.
+// last. The ordering rules are in the repo AGENTS.md; read them before moving a call.
 // `legacyMode` gates the modules a legacy database does not install, in step with the server.
 export function startFull(routes: RouteObject[], legacyMode = false): void {
     const cb = new ClientBuilder(routes);
@@ -133,7 +133,7 @@ export function startFull(routes: RouteObject[], legacyMode = false): void {
     SchedulerClient.start(cb);
     ProcessClient.start(cb);
 
-    // ==== USER ASSETS (each reads a registry the previous ones write into — docs/Wiring.md) =========
+    // ==== USER ASSETS (each reads a registry the previous ones write into) =======================
 
     TokenMigrationClient.start(cb);
     UserQueriesClient.start(cb);
@@ -253,7 +253,7 @@ export function startFull(routes: RouteObject[], legacyMode = false): void {
 
     // The app GLOBALS: the ApplicationConfiguration page — one tab per module,
     // each rendering that module's own configuration view — plus the UserEmployeeMixin line on the User
-    // view. AFTER AuthAdminClient, which registers UserEntity's own EntitySettings (docs/Wiring.md).
+    // view. AFTER AuthAdminClient, which registers UserEntity's own EntitySettings.
     GlobalsClient.start(cb);
 
     // eastwind declares CaseActivityMixin on EmailMessageEntity, so the mixin's read-only line goes on the

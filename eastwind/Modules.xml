@@ -9,7 +9,7 @@
 
   Not to be confused with the `legacyMode` switch (the `LegacyMode` environment variable), which is a RUNTIME
   switch for pointing THIS build at a database a Signum application generated — every module gated by it
-  stays in the source and merely stands down at boot. See eastwind/docs/Wiring.md, last section.
+  stays in the source and merely stands down at boot. See the repo AGENTS.md.
 
   STATUS: INITIAL. Written by reading the sources, not by running a tool — no wizard exists in this
   repository yet. Treat every directive as a starting point to verify the first time the removal is
@@ -86,7 +86,7 @@
 			<RemoveFiles Path="eastwind/.env.postgres"/>
 			<RemoveFiles Path="eastwind/.env.sqlserver"/>
 			<RemoveFiles Path="eastwind/.env.swpostgres"/>
-			<RemoveLine Path="AGENTS.md" From="## The port ledger" To="`eastwind/docs/Wiring.md`."/>
+			<RemoveLine Path="AGENTS.md" From="## The port ledger" To="above."/>
 			<RemoveLine Path="AGENTS.md" Line="| `Port` (and `LegacyMode`, which depends on it) | everything eastwind carries only because it was ported |"/>
 			<RemoveLine Path="eastwind/.gitignore" From="`.env.test`, `.env.live` and (while the port lasts)" To="`.env.test`, `.env.live` and (while the port lasts)"/>
 

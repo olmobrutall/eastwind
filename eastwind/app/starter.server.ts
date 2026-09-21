@@ -136,7 +136,7 @@ import { EastwindModeServer } from "./eastwindMode.server";
 //
 // Kept THIN — one line per module — and ordered by DEPENDENCY: the framework first, then each altea module
 // after the ones it builds on, and the APP's own domains last. Every "why is this call here and not there"
-// note lives in **docs/Wiring.md**; read it before moving one. The trailing `//<Name>` markers on a block's
+// note lives in the repo AGENTS.md; read it before moving one. The trailing `//<Name>` markers on a block's
 // closing line are anchors for Modules.xml.
 export namespace Starter {
     /** The built schema, kept so a host that DEFERRED initialization can run it later (see `initialize`). */
@@ -144,7 +144,7 @@ export namespace Starter {
 
     /**
      * Read the persisted ids and warm the caches that need the database. Separate from `start` because WHEN
-     * it happens differs by host (docs/Wiring.md). Idempotent.
+     * it happens differs by host. Idempotent.
      */
     export async function initialize(): Promise<void> {
         if (built == null)
@@ -208,7 +208,7 @@ export namespace Starter {
 
         // ==== The FRAMEWORK (@altea/altea) ============================================================
 
-        // Cache module — FIRST of all module starts (docs/Wiring.md, rule 4). `PostgresBroadcast` is loaded
+        // Cache module — FIRST of all module starts (AGENTS.md, rule 4). `PostgresBroadcast` is loaded
         // lazily for the same reason the connector is: a static import would pull `pg` into a SQL Server host.
         const serverBroadcast = connector.isPostgres
             ? new (await import("@altea/altea-cache/server/Broadcast/PostgresBroadcast")).PostgresBroadcast()
@@ -243,7 +243,7 @@ export namespace Starter {
         // ==== AUTHORIZATION (@altea/altea-auth) =======================================================
 
         // Authentication + the five authorization dimensions. The second user name is the app's
-        // unauthenticated posture (docs/Wiring.md).
+        // unauthenticated posture.
         AuthLogic.start(sb, "System", "Anonymous");
         TypeAuthLogic.start(sb);
         PermissionAuthLogic.start(sb);
@@ -312,7 +312,7 @@ export namespace Starter {
 
         // ==== USER ASSETS =============================================================================
 
-        // Token migrations — FIRST of the user-asset modules (docs/Wiring.md). Its directory is the SQL
+        // Token migrations — FIRST of the user-asset modules. Its directory is the SQL
         // migrations' one: a `.tokens.json` sits beside the `.sql` whose renames caused it.
         TokenMigrationLogic.migrationsDirectory = () => SqlMigrationRunner.migrationsDirectory;
         TokenMigrationLogic.start(sb);//TokenMigration
@@ -460,7 +460,7 @@ export namespace Starter {
         // Dynamic module. The COMPILER is configured first — a DynamicType is generated as TypeScript,
         // compiled with the quote-transformer and loaded. `typesRoots` points at the app's DIST, not its
         // source: one directory serves type-checking and loading, exactly as a published package does
-        // (see docs/Wiring.md).
+        //.
         DynamicCodeCompiler.configure({
             codeGenDirectory: path.join(process.cwd(), "CodeGen"),
             typesRoots: { eastwind: path.join(process.cwd(), "dist") },
@@ -539,7 +539,7 @@ export namespace Starter {
         TimeMachineLogic.start(sb);
 
         // The admin HTTP surfaces of the modules whose logic had to start earlier — mounted HERE so they
-        // sit behind the auth middleware (docs/Wiring.md, rule 2).
+        // sit behind the auth middleware (AGENTS.md, rule 2).
         if (sb.webBuilder)
             CacheServer.start(sb.webBuilder);
         if (sb.webBuilder) {
@@ -573,7 +573,7 @@ export namespace Starter {
 
         // The SMS owner: a CUSTOMER (Northwind's customers carry a phone) — a legacy database registers none,
         // so without this the module would have nothing to be about. The sub-token is registered PER
-        // CONCRETE TYPE; the "send to all of these" OPERATION once, on the abstract base (docs/Wiring.md).
+        // CONCRETE TYPE; the "send to all of these" OPERATION once, on the abstract base.
         SMSLogic.registerSMSOwner(PersonEntity);
         SMSLogic.registerSMSOwner(CompanyEntity);
         if (!legacyMode)
@@ -638,7 +638,7 @@ function isEnvTrue(value: string | undefined): boolean {
 }
 
 // For each log table whose text can be large, whether that text lives in its own column or in a FILE,
-// decided PER PROPERTY ROUTE. See docs/Wiring.md before changing a mode: switching an existing database
+// decided PER PROPERTY ROUTE. See AGENTS.md before changing a mode: switching an existing database
 // from Database to File is not just a `sync`.
 function configureBigString(sb: SchemaBuilder): void {
     registerBigString(sb, ExceptionEntity, BigStringFileType.Exceptions, "exceptions");
@@ -657,7 +657,7 @@ function registerBigString(sb: SchemaBuilder, type: Type<Entity>, fileType: File
 // LEGACY MODE only. The columns the legacy ApplicationConfigurationEntity stores and this one deliberately
 // does not (Folders_* / Translation_* / AuthTokens_*). Left to itself the synchronizer offers each as a
 // RENAME of whatever model column sorts nearest by string distance and DROPs the declined ones — both
-// answers wrong. See docs/Wiring.md.
+// answers wrong.
 function ignoreConfigurationsForLegacyOnly(): void {
     const prefixes = ["folders_", "translation_", "auth_tokens_"];
 

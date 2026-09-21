@@ -2,7 +2,7 @@
 // before React exists, so a throw there has no ErrorBoundary and no ErrorModal to land in — the page
 // would just keep showing index.html's splash. This is that screen: the FIRST error, rendered by hand.
 //
-// Two things it must do, both learned the hard way (see docs/Wiring.md):
+// Two things it must do, both learned the hard way:
 //  - render an ELEMENT and take the splash down explicitly — assigning `textContent` did not trip the
 //    splash's observer, so a failing /api call at boot showed a spinner that never stopped;
 //  - read the error WITHOUT assuming `Error`. altea's ajax layer throws a `ServiceError`, a plain class
