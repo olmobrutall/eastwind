@@ -650,22 +650,47 @@ function registerBigString(sb: SchemaBuilder, type: Type<Entity>, fileType: File
     BigStringLogic.registerAll(sb, type, new BigStringConfiguration(mode, fileType));
 }
 
-// LEGACY MODE only. The columns the legacy ApplicationConfigurationEntity stores and this one deliberately
-// does not (Folders_* / Translation_* / AuthTokens_*). Left to itself the synchronizer offers each as a
-// RENAME of whatever model column sorts nearest by string distance and DROPs the declined ones — both
-// answers wrong.
+// LEGACY MODE only. Columns a legacy database HAS that this application's model deliberately does not.
+// Left to itself the synchronizer offers each as a RENAME of whatever model column sorts nearest by string
+// distance — `folders_view_log_folder` → `open_id_scopes` was a real offer — and DROPs whatever the
+// developer declines. Both answers are wrong: the columns are not misnamed, and they hold what the legacy
+// deployment configured.
+//
+// Hiding them from the DATABASE side of the diff is what makes the synchronizer leave them alone: it never
+// sees a column the model does not declare, so it neither renames nor drops.
+//
+// Names are matched with the separators stripped and the case folded, because the two dialects spell both
+// halves differently — `email_template_filters` / `EmailTemplate_Filters`, `pinned_has_value` /
+// `Pinned_HasValue` — and this must hold on either.
+const legacyOnlyColumns: Record<string, string[]> = {
+    // ApplicationConfiguration. `Folders`: a store's folder is derived from the store's own NAME here, so
+    // there is nothing to configure (see eastwindFileStores.server.ts). `AuthTokens`: altea's counterpart
+    // is a server-side interface with one field, taken eagerly from the host, so there is nothing to
+    // store. `Translation` is NOT in this list — that member exists on both sides with the same three
+    // keys, so its columns match and hiding them would make the sync ADD columns that are already there.
+    applicationconfiguration: ["folders", "authtokens"],
+
+    // The two TEMPLATE filter tables. A pinned filter is a SearchControl affordance and a dashboard
+    // behaviour is a dashboard interaction; a template's filters are neither, so those eight columns are
+    // gone from the model (see altea's QueryFilterPinnedBaseEntity). A legacy database has them, because
+    // Signum gives every owner one shared QueryFilterEmbedded.
+    emailtemplatefilters: ["pinned", "dashboardbehaviour"],
+    wordtemplatefilters: ["pinned", "dashboardbehaviour"],
+};
+
 function ignoreConfigurationsForLegacyOnly(): void {
-    const prefixes = ["folders_", "translation_", "auth_tokens_"];
+    const fold = (name: string): string => name.replace(/_/g, "").toLowerCase();
 
     simplifyDiffTables.push(databaseTables => {
-        // Found by BARE name: whether the key carries the default schema is a dialect / catalog-reader
-        // detail, and this table is in the default schema on both.
-        const dif = [...databaseTables.values()].find(t => t.name.name === "application_configuration");
-        if (dif == null)
-            return;
+        for (const dif of databaseTables.values()) {
+            // Found by BARE name: whether the key carries the schema is a dialect / catalog-reader detail.
+            const prefixes = legacyOnlyColumns[fold(dif.name.name)];
+            if (prefixes == undefined)
+                continue;
 
-        for (const name of Object.keys(dif.columns))
-            if (prefixes.some(p => name.startsWith(p)))
-                delete dif.columns[name];
+            for (const name of Object.keys(dif.columns))
+                if (prefixes.some(p => fold(name).startsWith(p)))
+                    delete dif.columns[name];
+        }
     });
 }//ignoreConfigurationsForLegacyOnly
