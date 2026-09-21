@@ -4,7 +4,6 @@ import { ClientBuilder } from "@altea/altea/client/ClientBuilder";
 import { EmployeesClient } from "./employees/EmployeeClient.client";
 import { ProductsClient } from "./products/ProductClient.client";
 import { ShippersClient } from "./shippers/ShipperClient.client";
-import { DepartmentsClient } from "./departments/DepartmentClient.client";
 import { CustomersClient } from "./customers/CustomerClient.client";
 import { OrdersClient } from "./orders/OrderClient.client";
 import { GlobalsClient } from "./globals/GlobalsClient.client";
@@ -50,14 +49,12 @@ import { OfficeClient } from "@altea/altea-office-template/client/OfficeClient";
 import { ExcelClient } from "@altea/altea-office-template/client/ExcelClient";
 import { HtmlEditorClient } from "@altea/altea-html-editor/client/HtmlEditorClient";
 import { MarkdownClient } from "@altea/altea-markdown/client/MarkdownClient";
-import { PrintClient } from "@altea/altea-printing/client/PrintClient";
 import { WhatsNewClient } from "@altea/altea-whats-new/client/WhatsNewClient";
 import { WorkflowClient } from "@altea/altea-workflow/client/WorkflowClient";
 import { CaseActivityMixin } from "@altea/altea-workflow/data/CaseActivity";
 import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
 import { DiffLogClient } from "@altea/altea-diff-log/client/DiffLogClient";
 import { TimeMachineClient } from "@altea/altea-time-machine/client/TimeMachineClient";
-import { TreeClient } from "@altea/altea-tree/client/TreeClient";
 import { RestClient } from "@altea/altea-rest/client/RestClient";
 import { RestApiKeyClient } from "@altea/altea-rest/client/RestApiKeyClient";
 import { ViewLogClient } from "@altea/altea-view-log/client/ViewLogClient";
@@ -180,10 +177,6 @@ export function startFull(routes: RouteObject[], legacyMode = false): void {
 
     // ==== PRINT QUEUE AND RELEASE NOTES =============================================================
 
-    // Print queue. Gated in step with the server, since a client that registered these pages against a
-    // server that never started the module would 404 on every call.
-    if (!legacyMode)
-        PrintClient.start(cb);//Printing
 
     // Release notes.
     if (!legacyMode)
@@ -226,10 +219,6 @@ export function startFull(routes: RouteObject[], legacyMode = false): void {
     // description editor).
     HelpClient.start(cb);
 
-    // AFTER DashboardClient / UserQueriesClient, whose registries it writes into. The app's tree TYPE is
-    // configured separately, by DepartmentsClient below.
-    if (!legacyMode)
-        TreeClient.start(cb);
 
     // AFTER DashboardClient / UserQueriesClient, whose extension points it pushes onto.
     if (!legacyMode)
@@ -261,9 +250,6 @@ export function startFull(routes: RouteObject[], legacyMode = false): void {
     ShippersClient.start(cb);
     CustomersClient.start(cb);
     OrdersClient.start(cb);
-    // The app's TREE type (the module itself is started above).
-    if (!legacyMode)
-        DepartmentsClient.start(cb);//Departments
 
     // The app GLOBALS: the ApplicationConfiguration page — one tab per module,
     // each rendering that module's own configuration view — plus the UserEmployeeMixin line on the User

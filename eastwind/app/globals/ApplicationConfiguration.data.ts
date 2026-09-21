@@ -120,11 +120,6 @@ export namespace EastwindTypeCondition {
     export const PublishedNews: TypeConditionSymbol = init();
 }
 
-// The app's own file types. `PrintingLogic.start(sb, { testFileType })` takes the type from the
-// APPLICATION, so one is declared here for `PrintLineOperation.CreateTest` to upload to.
-export namespace EastwindFileType {
-    export const PrintTest: FileTypeSymbol = init();
-}//EastwindFileType
 
 // One store per log table whose BigString text lives in a FILE rather than in the row (see
 // Starter.configureBigString). Separate symbols because they are separate stores: a deployment can put the

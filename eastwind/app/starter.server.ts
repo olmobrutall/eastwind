@@ -16,7 +16,6 @@ import { EntityOverrides } from "./entityOverrides.data";
 import { EmployeesLogic } from "./employees/EmployeeLogic.server";
 import { ProductsLogic } from "./products/ProductLogic.server";
 import { ShippersLogic } from "./shippers/ShipperLogic.server";
-import { DepartmentsLogic } from "./departments/DepartmentLogic.server";
 import { CustomersLogic } from "./customers/CustomerLogic.server";
 import { OrdersLogic } from "./orders/OrderLogic.server";
 import { OrderEntity } from "./orders/Order.data";
@@ -52,7 +51,6 @@ import { MapLogic } from "@altea/altea-map/server/MapLogic";
 import { HelpModuleLogic } from "@altea/altea-help/server/HelpModuleLogic";
 import { DiffLogLogic } from "@altea/altea-diff-log/server/DiffLogLogic";
 import { TimeMachineLogic } from "@altea/altea-time-machine/server/TimeMachineLogic";
-import { TreeModuleLogic } from "@altea/altea-tree/server/TreeModuleLogic";
 import { RestModuleLogic } from "@altea/altea-rest/server/RestModuleLogic";
 import { ViewLogLogic } from "@altea/altea-view-log/server/ViewLogLogic";
 import { SMSModuleLogic } from "@altea/altea-sms/server/SMSModuleLogic";
@@ -106,9 +104,7 @@ import { PredictorLogic } from "@altea/altea-machine-learning/server/PredictorLo
 import { PredictorEntity_Filter, PredictorSubQueryEntity_Filter } from "@altea/altea-machine-learning/data/Predictor";
 import { VisualTipLogic } from "@altea/altea/server/visualTipLogic";
 import { ChangeLogLogic } from "@altea/altea/server/changeLogLogic";
-import { ApplicationConfigurationEntity, EastwindTypeCondition, EastwindAgentUseCases, EastwindFileType, BigStringFileType } from "./globals/ApplicationConfiguration.data";
-import { PrintingLogic } from "@altea/altea-printing/server/PrintingLogic";
-import { PrintingServer } from "@altea/altea-printing/server/PrintingServer";
+import { ApplicationConfigurationEntity, EastwindTypeCondition, EastwindAgentUseCases,  BigStringFileType } from "./globals/ApplicationConfiguration.data";
 import { WhatsNewLogic } from "@altea/altea-whats-new/server/WhatsNewLogic";
 import { WhatsNewServer } from "@altea/altea-whats-new/server/WhatsNewServer";
 import { WhatsNewFileType } from "@altea/altea-whats-new/data/WhatsNew";
@@ -439,17 +435,6 @@ export namespace Starter {
 
         // ==== PRINT QUEUE AND RELEASE NOTES (need files, scheduler, processes) ========================
 
-        // Print queue. `PrintingLogic.print` is deliberately UNSET — its default throws.
-        // The TEST file type IS supplied, so `CreateTest` has somewhere to upload.
-        // The file type and the routes are INSIDE the gate, because a module a legacy database does not
-        // start must contribute neither a symbol row nor a permission.
-        if (!legacyMode) {
-            PrintingLogic.start(sb, { testFileType: EastwindFileType.PrintTest });
-            FileTypeLogic.register(EastwindFileType.PrintTest,
-                EastwindFileStores.store("print-test"));
-            if (sb.webBuilder)
-                PrintingServer.start(sb.webBuilder);
-        }//Printing
 
         // Release notes. The PUBLISHED type condition is what makes a Draft invisible to a non-admin.
         // Two file-type symbol rows and a TYPE CONDITION row are
@@ -503,10 +488,6 @@ export namespace Starter {
         // The image store is the app's.
         HelpModuleLogic.start(sb, EastwindFileStores.store("help-image", { onlyImages: true }));//Help
 
-        // Tree owns no tree TYPE — the app's is DepartmentEntity, registered with the app's domains.
-        if (!legacyMode) {
-            TreeModuleLogic.start(sb);
-        }//Tree
 
         // The API-key table + its authenticator, and the replayable log of the public REST surface.
         // The two halves (log + api key) are one start per module.
@@ -581,9 +562,6 @@ export namespace Starter {
         ShippersLogic.start(sb);
         CustomersLogic.start(sb);
         OrdersLogic.start(sb);
-        // The app's TREE type (the module itself is started above).
-        if (!legacyMode)
-            DepartmentsLogic.start(sb);//Departments
 
         // The second type condition: "the orders I handled" — `EmployeeEntity.current()` reads the
         // claim UserEmployeeMixin fills. It grants nothing by itself; it exists so the SYMBOL does (a

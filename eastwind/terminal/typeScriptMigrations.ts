@@ -21,7 +21,6 @@ import { ChatbotConfigurationEmbedded } from "@altea/altea-agent/data/LanguageMo
 import { WorkflowConfigurationEmbedded } from "@altea/altea-workflow/data/Workflow";
 import { ApplicationConfigurationEntity, currentEnvironment } from "../app/globals/ApplicationConfiguration.data";
 import { EmployeeLoader } from "./northwind/employeeLoader";
-import { DepartmentLoader } from "./northwind/departmentLoader";
 import { SMSConfigurationEmbedded } from "@altea/altea-sms/data/SMS";
 import { ProductLoader } from "./northwind/productLoader";
 import { CustomerLoader } from "./northwind/customerLoader";
@@ -73,7 +72,6 @@ export namespace TypeScriptMigrations {
         runner.add("LoadOrders", () => OrderLoader.loadOrders());
         runner.add("CreateUsers", () => EmployeeLoader.createUsers());
         runner.add("LoadEmployeePassages", () => EmployeeLoader.loadEmployeePassages());
-        runner.add("LoadDepartments", () => DepartmentLoader.loadDepartments());
         runner.add("ImportUserAssets", () => importUserAssets());
         runner.add("ImportAuthRules", () => importAuthRules());
 
