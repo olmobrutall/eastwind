@@ -627,7 +627,8 @@
 
 		<!-- ==== Documents ========================================================================== -->
 
-		<Module Name="HtmlEditor">
+		<Module Name="HtmlEditor" optional="true">
+			<RemoveLine Path="AGENTS.md" Line="| `HtmlEditor` | the rich-text editing control |"/>
 			<RemovePackageReference Name="@altea/altea-html-editor"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { HtmlEditorClient } from &quot;@altea/altea-html-editor/client/HtmlEditorClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="HtmlEditorClient.start();"/>
@@ -656,6 +657,18 @@
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="ExcelClient.start(cb, { plainExcel: true, importFromExcel: true, excelReport: true });"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { useLegacyWordNames } from &quot;@altea/altea-office-template/data/OfficeTemplate&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="useLegacyWordNames();"/>
+		</Module>
+
+		<!--
+		  The IMPORT half of the Excel module, on its own: reading a spreadsheet back INTO rows is a much
+		  rarer want than exporting one, and it is the half that needs a mapping per type. Optional, so a
+		  fresh clone keeps plain export + the report templates and drops this.
+		-->
+		<Module Name="ExcelImport" DependsOn="OfficeTemplate" optional="true">
+			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { ExcelImportLogic } from &quot;@altea/altea-office-template/server/excel/ExcelImportLogic&quot;;"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" Line="ExcelImportLogic.start(sb);"/>
+			<RemoveSpanInLines Path="eastwind/app/MainAdmin.client.ts" Span="importFromExcel: true, "/>
+			<RemoveLine Path="AGENTS.md" Line="| `ExcelImport` | reading a spreadsheet back into rows; plain export and report templates stay |"/>
 		</Module>
 
 		<!-- ==== Logs and history =================================================================== -->
@@ -834,7 +847,8 @@
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// The app&apos;s TREE type (the module itself is started above)." To="DepartmentsClient.start(cb);//Departments"/>
 		</Module>
 
-		<Module Name="Tour" DependsOn="Dashboard,UserQuery">
+		<Module Name="Tour" DependsOn="Dashboard,UserQuery" optional="true">
+			<RemoveLine Path="AGENTS.md" Line="| `Tour` | guided in-app tours |"/>
 			<RemovePackageReference Name="@altea/altea-tour"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { TourLogic } from &quot;@altea/altea-tour/server/TourLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Guided in-app tours." To="}//Tour"/>
@@ -852,7 +866,8 @@
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="export const PrintTest: FileTypeSymbol = init();"/>
 		</Module>
 
-		<Module Name="WhatsNew" DependsOn="Files,Auth">
+		<Module Name="WhatsNew" DependsOn="Files,Auth" optional="true">
+			<RemoveLine Path="AGENTS.md" Line="| `WhatsNew` | in-app release notes |"/>
 			<RemovePackageReference Name="@altea/altea-whats-new"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { WhatsNewLogic } from &quot;@altea/altea-whats-new/server/WhatsNewLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { WhatsNewServer } from &quot;@altea/altea-whats-new/server/WhatsNewServer&quot;;"/>

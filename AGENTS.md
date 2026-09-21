@@ -177,6 +177,10 @@ fresh clone drops unless the developer ticks them back on:
 | `Files_Azure` | the Azure Blob Storage file-store backend |
 | `Files_S3` | the S3 / MinIO file-store backend |
 | `ThemeSelector` | the bootswatch palette picker in the navbar |
+| `HtmlEditor` | the rich-text editing control |
+| `ExcelImport` | reading a spreadsheet back into rows; plain export and report templates stay |
+| `WhatsNew` | in-app release notes |
+| `Tour` | guided in-app tours |
 
 The local FOLDER file store, and AzureAD as the directory login, stay either way.
 
