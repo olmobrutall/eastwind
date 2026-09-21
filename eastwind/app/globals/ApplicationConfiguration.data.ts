@@ -11,6 +11,7 @@ import { ChatbotConfigurationEmbedded } from "@altea/altea-agent/data/LanguageMo
 import { WorkflowConfigurationEmbedded } from "@altea/altea-workflow/data/Workflow";
 import { SMSConfigurationEmbedded } from "@altea/altea-sms/data/SMS";
 import { TranslationConfigurationEmbedded } from "@altea/altea-translations/data/Translation";
+import { AuthTokenConfigurationEmbedded } from "@altea/altea-auth/data/AuthToken";
 import { FileTypeSymbol } from "@altea/altea-files/data/Files";
 import { AzureADConfigurationEmbedded } from "@altea/altea-auth-azuread/data/AzureAD";
 import { OpenIDConfigurationEmbedded } from "@altea/altea-auth-openid/data/OpenID";
@@ -84,6 +85,10 @@ export class ApplicationConfigurationEntity extends Entity {
     /*Translation — the machine translators' keys. Empty is normal: both answer "nothing to suggest". */
     translation: TranslationConfigurationEmbedded;
 
+    /*Auth — how long a bearer token stays fresh. The KEY it is signed with is not here: it is needed to
+      read the very first request, before any row can be loaded, so it stays in AUTH_TOKEN_KEY. */
+    authTokens: AuthTokenConfigurationEmbedded;
+
     /*Auth — at most one directory owns the login flow; see eastwindAuthAD.server.ts */
     azureAD: AzureADConfigurationEmbedded | null;
     openID: OpenIDConfigurationEmbedded | null;
@@ -119,7 +124,6 @@ export namespace EastwindTypeCondition {
     /** A @altea/altea-whats-new item that is PUBLISHED — what an ordinary user may see of the news. */
     export const PublishedNews: TypeConditionSymbol = init();
 }
-
 
 // One store per log table whose BigString text lives in a FILE rather than in the row (see
 // Starter.configureBigString). Separate symbols because they are separate stores: a deployment can put the

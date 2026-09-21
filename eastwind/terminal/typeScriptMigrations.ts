@@ -1,5 +1,6 @@
 import "@altea/altea/server"; // installs save()/toLite()
 import { TranslationConfigurationEmbedded } from "@altea/altea-translations/data/Translation";
+import { AuthTokenConfigurationEmbedded } from "@altea/altea-auth/data/AuthToken";
 import * as fs from "node:fs";
 import { table } from "@altea/altea/server/table";
 import { PasswordEncoding } from "@altea/altea/server/passwordEncoding";
@@ -131,6 +132,8 @@ export namespace TypeScriptMigrations {
             // It is MANDATORY though (a non-null embedded), and this seed predates @altea/altea-translations
             // adding it, so a fresh `new` + `ts` failed on "Translation is not set" until now.
             translation: TranslationConfigurationEmbedded.create({}),
+            // The defaults are the module's (refresh a token every 30 minutes, no cut-off).
+            authTokens: AuthTokenConfigurationEmbedded.create({}),
             workflow: WorkflowConfigurationEmbedded.create({
                 avoidExecutingScriptsOlderThan: null,
             }),

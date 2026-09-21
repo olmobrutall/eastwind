@@ -240,7 +240,8 @@ export namespace Starter {
 
         // Authentication + the five authorization dimensions. The second user name is the app's
         // unauthenticated posture.
-        AuthLogic.start(sb, "System", "Anonymous");
+        AuthLogic.start(sb, "System", "Anonymous",
+            { getTokenConfiguration: () => GlobalsLogic.configuration().authTokens });
         TypeAuthLogic.start(sb);
         PermissionAuthLogic.start(sb);
         OperationAuthLogic.start(sb);
@@ -663,12 +664,14 @@ function registerBigString(sb: SchemaBuilder, type: Type<Entity>, fileType: File
 // halves differently — `email_template_filters` / `EmailTemplate_Filters`, `pinned_has_value` /
 // `Pinned_HasValue` — and this must hold on either.
 const legacyOnlyColumns: Record<string, string[]> = {
-    // ApplicationConfiguration. `Folders`: a store's folder is derived from the store's own NAME here, so
-    // there is nothing to configure (see eastwindFileStores.server.ts). `AuthTokens`: altea's counterpart
-    // is a server-side interface with one field, taken eagerly from the host, so there is nothing to
-    // store. `Translation` is NOT in this list — that member exists on both sides with the same three
-    // keys, so its columns match and hiding them would make the sync ADD columns that are already there.
-    applicationconfiguration: ["folders", "authtokens"],
+    // ApplicationConfiguration. `Folders` only: a store's folder is derived from the store's own NAME
+    // here, so there is nothing to configure (see eastwindFileStores.server.ts).
+    //
+    // `Translation` and `AuthTokens` were both on this list and are not any more — each is a member on
+    // this side now, spelling its columns exactly as a legacy row does, so they MATCH. Hiding a matching
+    // column is worse than not hiding it: the synchronizer then believes the database lacks it and
+    // scripts an ADD for a column that is already there.
+    applicationconfiguration: ["folders"],
 
     // The two TEMPLATE filter tables. A pinned filter is a SearchControl affordance and a dashboard
     // behaviour is a dashboard interaction; a template's filters are neither, so those eight columns are

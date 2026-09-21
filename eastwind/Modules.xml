@@ -262,6 +262,13 @@
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="&lt;LoginDropdown />"/>
 			<RemoveFiles Path="eastwind/terminal/AuthRules.xml"/>
 			<RemoveLine Path="eastwind/terminal/terminal.ts" From=".add(&quot;EA&quot;" To=".add(&quot;IA&quot;"/>
+			<!-- The token settings: the configuration member, and the two seeds that fill it. -->
+			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="import { AuthTokenConfigurationEmbedded } from &quot;@altea/altea-auth/data/AuthToken&quot;;"/>
+			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" From="/*Auth — how long a bearer token stays fresh." To="authTokens: AuthTokenConfigurationEmbedded;"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="import { AuthTokenConfigurationEmbedded } from &quot;@altea/altea-auth/data/AuthToken&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" From="// The defaults are the module&apos;s (refresh a token every 30 minutes, no cut-off)." To="authTokens: AuthTokenConfigurationEmbedded.create({}),"/>
+			<RemoveLine DependsOn="Test" Path="eastwind/test/environment/eastwindEnvironment.ts" Line="import { AuthTokenConfigurationEmbedded } from &quot;@altea/altea-auth/data/AuthToken&quot;;"/>
+			<RemoveLine DependsOn="Test" Path="eastwind/test/environment/eastwindEnvironment.ts" Line="authTokens: AuthTokenConfigurationEmbedded.create({}),"/>
 		</Module>
 
 		<Module Name="Auth_UserTicket" DependsOn="Auth">

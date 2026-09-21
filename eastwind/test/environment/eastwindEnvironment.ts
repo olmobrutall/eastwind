@@ -24,6 +24,8 @@ import {
 import { ChatbotConfigurationEmbedded } from "@altea/altea-agent/data/LanguageModel";
 import { WorkflowConfigurationEmbedded } from "@altea/altea-workflow/data/Workflow";
 import { SMSConfigurationEmbedded } from "@altea/altea-sms/data/SMS";
+import { TranslationConfigurationEmbedded } from "@altea/altea-translations/data/Translation";
+import { AuthTokenConfigurationEmbedded } from "@altea/altea-auth/data/AuthToken";
 
 // The data a TEST database is seeded with,
 // which is deliberately NOT what the terminal loads.
@@ -85,6 +87,10 @@ export namespace EastwindEnvironment {
             chatbot: ChatbotConfigurationEmbedded.create({}),
             workflow: WorkflowConfigurationEmbedded.create({ avoidExecutingScriptsOlderThan: null }),
             sms: SMSConfigurationEmbedded.create({ defaultCulture: english }),
+            // Both are MANDATORY embeddeds with every member optional, so an empty one is the right seed —
+            // and leaving either out fails the save with "… is not set".
+            translation: TranslationConfigurationEmbedded.create({}),
+            authTokens: AuthTokenConfigurationEmbedded.create({}),
             azureAD: null,
             openID: null,
             windowsAD: null,
