@@ -1,5 +1,6 @@
 import "@altea/altea/server/context.node"; // register server context storage first
 import { createWebServer } from "@altea/altea/server/webApi";
+import { useExceptionFilter } from "@altea/altea/server/filters/exceptionFilter";
 import { Connector, ConsoleSqlLogger } from "@altea/altea/server/connection/connector";
 import { formatError } from "@altea/altea/server/formatError";
 import { SystemEventServer } from "@altea/altea/server/systemEventServer";
@@ -10,8 +11,8 @@ import { Starter } from "./starter.server";
 
 // The eastwind web host. Creates the WebBuilder and hands it to Starter.start;
 // Starter sets it on the SchemaBuilder so each module's `XxxLogic.start` mounts its own HTTP surface
-// (auth middleware + /api/auth + /api/authAdmin from AuthLogic.start, the framework API from
-// SignumServer.start), then the host just listens.
+// (the framework API from SignumServer.start, /api/auth + /api/authAdmin from AuthLogic.start), then the
+// host closes the pipeline and listens.
 // Run: node --import @altea/altea/register.mjs --env-file=.env.postgres dist/webServer.server.js
 async function main(): Promise<void> {
     const connStr = process.env["EASTWIND_DB"] ?? process.env["ALTEA_TEST_DB"];
@@ -20,6 +21,11 @@ async function main(): Promise<void> {
 
     const ws = createWebServer();
     await Starter.start(connStr, ws); // builds schema, binds Connector.default, mounts all HTTP
+    // The JSON error funnel, and it belongs to the HOST because it must be registered after EVERY route in
+    // the process — Express error middleware only catches what was registered before it. Without it a
+    // failed request answers Express's HTML stack page instead of the `HttpError` the client's
+    // ThrowErrorFilter parses, so errors stop surfacing as error modals.
+    useExceptionFilter(ws);
     if (process.env["SQL_LOG"]) Connector.currentLogger = new ConsoleSqlLogger();
     const label = Connector.current().isPostgres ? "PostgreSQL" : "SQL Server";
     console.log(`[eastwind] engine started (${label}: ${Connector.redactConnectionString(connStr)})`);

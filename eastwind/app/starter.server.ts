@@ -201,6 +201,12 @@ export namespace Starter {
 
         // ==== The FRAMEWORK (@altea/altea) ============================================================
 
+        // The framework HTTP API, first — where Signum's Starter calls it. Nothing about a route depends on
+        // WHEN it was registered (the WebBuilder mounts the user scope itself; the authorization and
+        // culture seams are read per request), and the JSON error funnel is the host's last act.
+        if (sb.webBuilder)
+            SignumServer.start(sb.webBuilder);
+
         // Cache module — FIRST of all module starts (AGENTS.md, rule 4). `PostgresBroadcast` is loaded
         // lazily for the same reason the connector is: a static import would pull `pg` into a SQL Server host.
         const serverBroadcast = connector.isPostgres
@@ -611,11 +617,6 @@ export namespace Starter {
             // named here rather than inside the controller; it must be one createRoles seeds.
             PublicLogic.start(sb.webBuilder, { registeredUserRoleName: "Standard user" });
         }//PublicApi
-
-        // The framework HTTP API LAST: its JSON exception filter is Express
-        // error middleware, which must be registered after every route.
-        if (sb.webBuilder)
-            SignumServer.start(sb.webBuilder);
     }
 }
 
