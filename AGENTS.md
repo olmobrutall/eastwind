@@ -186,6 +186,11 @@ Both CLIs live in `altea/cli/`; see [`altea/cli/README.md`](altea/cli/README.md)
 
 ## The port ledger
 
+**Porting a CLIENT's Signum application onto altea is
+[`altea/AlteaPortLegacy.md`](altea/AlteaPortLegacy.md)** — the C# → TypeScript translation table, what
+parity means, and the `@legacy*` names that keep the port running against the database the Signum
+application left. eastwind is the worked example of everything in it.
+
 [`eastwind/docs/Port.md`](eastwind/docs/Port.md) holds what this application carries only because it was
 ported from Southwind — the ledger of app-level divergences, and the reasoning behind the legacy-mode
 machinery. It is the app-level counterpart of the submodule's [`altea/port/`](altea/port), which keeps one
