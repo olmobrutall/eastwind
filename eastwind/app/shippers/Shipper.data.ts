@@ -1,5 +1,7 @@
 import { stringLengthValidator } from "@altea/altea/data/validators";
 import { Entity } from "@altea/altea/data/entity";
+import type { IQuery } from "@altea/altea/data/iquery";
+import type { OrderEntity } from "../orders/Order.data";
 import { entity, quoted, uniqueIndex } from "@altea/altea/data/decorators";
 import { init } from "@altea/altea/data/reflection";
 import type { ExecuteSymbol } from "@altea/altea/data/operations";
@@ -13,6 +15,11 @@ export class ShipperEntity extends Entity {
     @stringLengthValidator({ min: 3, max: 24 })
     phone: string;
     @quoted toString(): string { return this.companyName; }
+}
+
+// Cross-entity navigation declared here, implemented in the logic layer (where `table(T)` lives).
+export interface ShipperEntity {
+    orders(): IQuery<OrderEntity>;
 }
 
 export namespace ShipperOperation {
