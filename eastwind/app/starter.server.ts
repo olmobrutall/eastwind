@@ -238,7 +238,7 @@ export namespace Starter {
         // Authentication + the five authorization dimensions. The second user name is the app's
         // unauthenticated posture.
         AuthLogic.start(sb, "System", "Anonymous",
-            { getTokenConfiguration: () => GlobalsLogic.configuration().authTokens });
+            { getTokenConfiguration: () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.authTokens) });
         TypeAuthLogic.start(sb);
         PermissionAuthLogic.start(sb);
         OperationAuthLogic.start(sb);
@@ -354,8 +354,8 @@ export namespace Starter {
 
         // Email + templating. The app supplies only what is app-specific — the configuration and the sender.
         EmailLogic.start(sb, {
-            getConfiguration: () => GlobalsLogic.configuration().email,
-            getSenderConfiguration: async () => GlobalsLogic.configuration().emailSender,
+            getConfiguration: () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.email),
+            getSenderConfiguration: () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.emailSender),
         });
 
         // The BATCH half. A legacy database REGISTERS the package mixin (so it has
@@ -407,7 +407,7 @@ export namespace Starter {
         // send / update-status processes nor the SMSModel registry. (The app's own SMS OWNERS are
         // registered with the app's domains at the bottom.)
         SMSModuleLogic.start(sb, {
-            getConfiguration: () => GlobalsLogic.configuration().sms,
+            getConfiguration: () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.sms),
             processes: !legacyMode,
             models: !legacyMode,
         });//SMS
@@ -469,7 +469,7 @@ export namespace Starter {
 
         // Workflow. A legacy database starts the module but declares no main entity, so nothing could run
         // through it; eastwind makes ORDER one — with the app's domains at the bottom.
-        WorkflowLogicStarter.start(sb, () => GlobalsLogic.configuration().workflow);//Workflow
+        WorkflowLogicStarter.start(sb, () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.workflow));//Workflow
 
         // ==== CROSS-CUTTING: navigation, docs, logs, presence =========================================
 
@@ -493,7 +493,7 @@ export namespace Starter {
         // chart module — the ChartSkill reads ChartScriptLogic's registered scripts.
         CurrentServerContextSkill.urlLeft = () => GlobalsLogic.configuration().email.urlLeft;
         IntroductionSkill.applicationName = "eastwind";
-        ChatbotLogic.start(sb, () => GlobalsLogic.configuration().chatbot);
+        ChatbotLogic.start(sb, () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.chatbot));
         ChatbotLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
         AgentLogic.start(sb, EastwindAgent.chatbotSkill);
         AgentLogic.registerAgent(EastwindAgentUseCases.MCP, EastwindAgent.mcpSkill);//Agent
@@ -519,9 +519,9 @@ export namespace Starter {
             replacements: !legacyMode,
             translators: [
                 new AzureTranslator(
-                    () => GlobalsLogic.configuration().translation.azureCognitiveServicesAPIKey,
-                    () => GlobalsLogic.configuration().translation.azureCognitiveServicesRegion),
-                new DeepLTranslator(() => GlobalsLogic.configuration().translation.deepLAPIKey),
+                    () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.translation.azureCognitiveServicesAPIKey),
+                    () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.translation.azureCognitiveServicesRegion)),
+                new DeepLTranslator(() => GlobalsLogic.configurationLazy.value().thenTyped(c => c.translation.deepLAPIKey)),
             ],
         });//Translation
 

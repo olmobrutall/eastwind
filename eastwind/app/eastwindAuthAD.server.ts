@@ -1,6 +1,7 @@
 import type { AzureADConfigurationEmbedded } from "@altea/altea-auth-azuread/data/AzureAD";
 import type { OpenIDConfigurationEmbedded } from "@altea/altea-auth-openid/data/OpenID";
 import type { WindowsADConfigurationEmbedded } from "@altea/altea-auth-windowsad/data/WindowsAD";
+import type { StablePromise } from "@altea/altea/server/stablePromise";
 import { GlobalsLogic } from "./globals/GlobalsLogic.server";
 
 // eastwind's side of the three DIRECTORY LOGIN modules (@altea/altea-auth-azuread, -openid, -windowsad).
@@ -31,18 +32,23 @@ export namespace EastwindAuthAD {
         return value === "openid" || value === "windowsad" ? value : "azuread";
     }
 
+    // Each is the configuration cache's own promise PROJECTED onto its member (`thenTyped`), so it stays
+    // stable and typed: a module can await it, and a query could read it through `.$v`. Re-read per call
+    // rather than captured — a captured promise keeps the value it was stamped with and would go stale at
+    // the first invalidation.
+
     /** Entra ID / Azure AD — `azureAD` on the configuration row. */
-    export function azureADConfiguration(): AzureADConfigurationEmbedded | null {
-        return GlobalsLogic.configuration().azureAD;
+    export function azureADConfiguration(): StablePromise<AzureADConfigurationEmbedded | null> {
+        return GlobalsLogic.configurationLazy.value().thenTyped(c => c.azureAD);
     }
 
     /** OpenID Connect — `openID` on the configuration row. */
-    export function openIDConfiguration(): OpenIDConfigurationEmbedded | null {
-        return GlobalsLogic.configuration().openID;
+    export function openIDConfiguration(): StablePromise<OpenIDConfigurationEmbedded | null> {
+        return GlobalsLogic.configurationLazy.value().thenTyped(c => c.openID);
     }
 
     /** Windows AD over LDAP — `windowsAD` on the configuration row. */
-    export function windowsADConfiguration(): WindowsADConfigurationEmbedded | null {
-        return GlobalsLogic.configuration().windowsAD;
+    export function windowsADConfiguration(): StablePromise<WindowsADConfigurationEmbedded | null> {
+        return GlobalsLogic.configurationLazy.value().thenTyped(c => c.windowsAD);
     }
 }
