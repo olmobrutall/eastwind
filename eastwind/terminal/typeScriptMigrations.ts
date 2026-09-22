@@ -14,10 +14,7 @@ import { EntityAction } from "@altea/altea-user-assets/data/UserAssets";
 import { TypeScriptMigrationRunner } from "@altea/altea-migrations/server/TypeScriptMigrationRunner";
 import { CultureInfoLogic } from "@altea/altea/server/cultureInfoLogic";
 import { EmailConfigurationEmbedded } from "@altea/altea-email/data/Email";
-import {
-    EmailSenderConfigurationEntity, SmtpEmailServiceEntity, SmtpNetworkDeliveryEmbedded,
-    SmtpDeliveryFormat, SmtpDeliveryMethod,
-} from "@altea/altea-email/data/EmailSenderConfiguration";
+import { EmailSenderConfigurationEntity, SmtpEmailServiceEntity, SmtpNetworkDeliveryEmbedded, SmtpDeliveryFormat, SmtpDeliveryMethod } from "@altea/altea-email/data/EmailSenderConfiguration";
 import { ChatbotConfigurationEmbedded } from "@altea/altea-agent/data/LanguageModel";
 import { WorkflowConfigurationEmbedded } from "@altea/altea-workflow/data/Workflow";
 import { ApplicationConfigurationEntity, currentEnvironment } from "../app/globals/ApplicationConfiguration.data";
@@ -77,7 +74,7 @@ export namespace TypeScriptMigrations {
         runner.add("ImportAuthRules", () => importAuthRules());
 
         await runner.run(autoRun);
-    }
+    }//run
 
     /**
      * The cultures eastwind ships translations for, and the ONE ApplicationConfiguration row for this
@@ -147,7 +144,7 @@ export namespace TypeScriptMigrations {
         }).save();
 
         console.log(`[configuration] created '${currentEnvironment}'`);
-    }
+    }//createCulturesAndConfiguration
 
     export async function createRoles(): Promise<void> {
         await ensureRole("Anonymous", MergeStrategy.Union, []);

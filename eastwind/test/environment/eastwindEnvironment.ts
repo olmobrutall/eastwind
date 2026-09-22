@@ -17,10 +17,7 @@ import { ShipperEntity } from "../../app/shippers/Shipper.data";
 import { OrderEntity, OrderLineEntity } from "../../app/orders/Order.data";
 import { ApplicationConfigurationEntity, currentEnvironment } from "../../app/globals/ApplicationConfiguration.data";
 import { EmailConfigurationEmbedded } from "@altea/altea-email/data/Email";
-import {
-    EmailSenderConfigurationEntity, SmtpEmailServiceEntity, SmtpNetworkDeliveryEmbedded,
-    SmtpDeliveryFormat, SmtpDeliveryMethod,
-} from "@altea/altea-email/data/EmailSenderConfiguration";
+import { EmailSenderConfigurationEntity, SmtpEmailServiceEntity, SmtpNetworkDeliveryEmbedded, SmtpDeliveryFormat, SmtpDeliveryMethod } from "@altea/altea-email/data/EmailSenderConfiguration";
 import { ChatbotConfigurationEmbedded } from "@altea/altea-agent/data/LanguageModel";
 import { WorkflowConfigurationEmbedded } from "@altea/altea-workflow/data/Workflow";
 import { SMSConfigurationEmbedded } from "@altea/altea-sms/data/SMS";

@@ -28,8 +28,13 @@ export namespace EastwindAuthAD {
 
     /** Which directory owns the interactive login (see the header). */
     export function provider(): ADProvider {
-        const value = (process.env["EASTWIND_AD_PROVIDER"] ?? "azuread").toLowerCase();
-        return value === "openid" || value === "windowsad" ? value : "azuread";
+        // One CASE per directory module, so removing a module is removing its line — and what is left,
+        // down to the plain `return "azuread"`, still reads as the whole choice.
+        switch ((process.env["EASTWIND_AD_PROVIDER"] ?? "azuread").toLowerCase()) {
+            case "openid": return "openid";//OpenIDProvider
+            case "windowsad": return "windowsad";//WindowsADProvider
+            default: return "azuread";
+        }
     }
 
     // Each is the configuration cache's own promise PROJECTED onto its member (`thenTyped`), so it stays
@@ -45,10 +50,10 @@ export namespace EastwindAuthAD {
     /** OpenID Connect — `openID` on the configuration row. */
     export function openIDConfiguration(): StablePromise<OpenIDConfigurationEmbedded | null> {
         return GlobalsLogic.configurationLazy.value().thenTyped(c => c.openID);
-    }
+    }//OpenIDConfiguration
 
     /** Windows AD over LDAP — `windowsAD` on the configuration row. */
     export function windowsADConfiguration(): StablePromise<WindowsADConfigurationEmbedded | null> {
         return GlobalsLogic.configurationLazy.value().thenTyped(c => c.windowsAD);
-    }
+    }//WindowsADConfiguration
 }

@@ -103,7 +103,7 @@ import { TokenMigrationLogic } from "@altea/altea-user-assets/server/TokenMigrat
 import { PredictorLogic } from "@altea/altea-machine-learning/server/PredictorLogic";
 import { VisualTipLogic } from "@altea/altea/server/visualTipLogic";
 import { ChangeLogLogic } from "@altea/altea/server/changeLogLogic";
-import { ApplicationConfigurationEntity, EastwindTypeCondition, EastwindAgentUseCases,  BigStringFileType } from "./globals/ApplicationConfiguration.data";
+import { ApplicationConfigurationEntity, EastwindTypeCondition, EastwindAgentUseCases, BigStringFileType } from "./globals/ApplicationConfiguration.data";
 import { WhatsNewLogic } from "@altea/altea-whats-new/server/WhatsNewLogic";
 import { WhatsNewFileType } from "@altea/altea-whats-new/data/WhatsNew";
 import { GlobalsLogic } from "./globals/GlobalsLogic.server";
@@ -640,7 +640,7 @@ function registerBigString(sb: SchemaBuilder, type: Type<Entity>, fileType: File
     storeName: string, mode: BigStringMode = "File"): void {
     FileTypeLogic.register(fileType, EastwindFileStores.store(storeName));
     BigStringLogic.registerAll(sb, type, new BigStringConfiguration(mode, fileType));
-}
+}//registerBigString
 
 // LEGACY MODE only. Columns a legacy database HAS that this application's model deliberately does not.
 // Left to itself the synchronizer offers each as a RENAME of whatever model column sorts nearest by string

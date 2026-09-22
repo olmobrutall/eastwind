@@ -42,24 +42,16 @@ import { MixinDeclarations } from "@altea/altea/data/mixinDeclarations";
 import { UserWithClaims } from "@altea/altea/data/security";
 import { SimpleTaskSymbol, ScheduledTaskEntity, ScheduledTaskLogEntity } from "@altea/altea-scheduler/data/Scheduler";
 import { AlertEntity, SendNotificationEmailTaskEntity } from "@altea/altea-alert/data/Alert";
-import {
-    EmailSenderConfigurationEntity, SmtpEmailServiceEntity,
-} from "@altea/altea-email/data/EmailSenderConfiguration";
-import {
-    EmailReceptionConfigurationEntity, EmailReceptionMixin,
-} from "@altea/altea-email/data/EmailReception";
+import { EmailSenderConfigurationEntity, SmtpEmailServiceEntity } from "@altea/altea-email/data/EmailSenderConfiguration";
+import { EmailReceptionConfigurationEntity, EmailReceptionMixin } from "@altea/altea-email/data/EmailReception";
 import { EmailMessagePackageMixin } from "@altea/altea-email/data/EmailPackage";
 import { ExchangeWebServiceEmailServiceEntity } from "@altea/altea-mailing-exchange/data/MailingExchangeWS";
 import { MicrosoftGraphEmailServiceEntity } from "@altea/altea-mailing-microsoft-graph/data/MailingMicrosoftGraph";
 import { Pop3EmailReceptionServiceEntity } from "@altea/altea-mailing-pop3/data/MailingPop3";
 import { ProcessSchedulerBridgeOverrides } from "@altea/altea-processes/data/ProcessSchedulerBridge";
 import { DashboardEntity_Part } from "@altea/altea-dashboard/data/Dashboard";
-import {
-    TextPartEntity, ImagePartEntity, SeparatorPartEntity, HealthCheckPartEntity, CustomPartEntity, ToolbarMenuPartEntity,
-} from "@altea/altea-dashboard/data/Parts";
-import {
-    UserQueryPartEntity, ValueUserQueryListPartEntity, BigValuePartEntity,
-} from "@altea/altea-user-queries/data/DashboardParts";
+import { TextPartEntity, ImagePartEntity, SeparatorPartEntity, HealthCheckPartEntity, CustomPartEntity, ToolbarMenuPartEntity } from "@altea/altea-dashboard/data/Parts";
+import { UserQueryPartEntity, ValueUserQueryListPartEntity, BigValuePartEntity } from "@altea/altea-user-queries/data/DashboardParts";
 import { UserChartPartEntity, CombinedUserChartPartEntity } from "@altea/altea-chart/data/DashboardParts";
 import { UserQueryEntity } from "@altea/altea-user-queries/data/UserQuery";
 import { UserChartEntity } from "@altea/altea-chart/data/UserChart";
@@ -70,9 +62,7 @@ import { PermissionSymbol } from "@altea/altea/data/permissionSymbol";
 import { WorkflowEntity } from "@altea/altea-workflow/data/Workflow";
 import { CaseTagEntity } from "@altea/altea-workflow/data/Case";
 import { DynamicSqlMigrationEntity } from "@altea/altea-dynamic/data/DynamicSqlMigration";
-import {
-    ToolbarElementBaseEntity, ToolbarEntity, ToolbarMenuEntity, ToolbarSwitcherEntity,
-} from "@altea/altea-toolbar/data/Toolbar";
+import { ToolbarElementBaseEntity, ToolbarEntity, ToolbarMenuEntity, ToolbarSwitcherEntity } from "@altea/altea-toolbar/data/Toolbar";
 import { DiffLogMixin } from "@altea/altea-diff-log/data/DiffLog";
 import { DynamicIsolationMixin } from "@altea/altea-dynamic/data/DynamicIsolation";
 import { VisualTipConsumedEntity } from "@altea/altea/data/visualTip";

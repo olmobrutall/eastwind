@@ -212,7 +212,7 @@ async function showOrder(): Promise<void> {
 async function typeScriptMigrations(args: string[]): Promise<void> {
     await ensureInitialized();
     await TypeScriptMigrations.run(/* autoRun */ args.includes("--auto") || !process.stdin.isTTY);
-}
+}//typeScriptMigrations
 
 // The versioned .sql files in eastwind/migrations are the schema's source of truth — apply what is
 // pending, or write the next migration from the synchronization script.
@@ -223,15 +223,13 @@ async function migrations(args: string[]): Promise<void> {
     SqlMigrationRunner.migrationsDirectory = migrationsDir();
     wireTokenMigrations();
     await SqlMigrationRunner.sqlMigrations(/* autoRun */ args.includes("--auto") || !process.stdin.isTTY);
-}
+}//migrations
 
-/**
- * The three hooks that make TOKEN migrations part of the ordinary schema workflow. @altea/altea-user-assets
- * must not depend on @altea/altea-migrations (a user-assets app need not have migrations at all), so the
- * APP wires them. The terminal is the right place: it owns both, and both are console workflows.
- *
- * Idempotent, because `migrations` and `sync` can both run in one interactive session.
- */
+// The three hooks that make TOKEN migrations part of the ordinary schema workflow. @altea/altea-user-assets
+// must not depend on @altea/altea-migrations (a user-assets app need not have migrations at all), so the
+// APP wires them. The terminal is the right place: it owns both, and both are console workflows.
+//
+// Idempotent, because `migrations` and `sync` can both run in one interactive session.
 function wireTokenMigrations(): void {
     if (SqlMigrationRunner.afterMigrationsCompleted.includes(TokenMigrationRunner.tokenMigrations))
         return;
@@ -244,7 +242,7 @@ function wireTokenMigrations(): void {
     // After a schema `sync`: the renames it just resolved are exactly the ones that invalidate stored
     // tokens, so offer to record them while they are still in hand.
     Administrator.afterSynchronize.push(TokenMigrationRunner.afterSynchronize);
-}
+}//wireTokenMigrations
 
 // eastwind/terminal/sync — where `sync` drops the script it asks you to review. Beside the terminal's own
 // data files rather than in the cwd (where the script would land wherever the terminal happened to be
@@ -256,7 +254,7 @@ const syncDirectory = terminalFile("sync");
 // eastwind/migrations — resolved off this module so the cwd does not matter (dist/terminal → ../../migrations).
 function migrationsDir(): string {
     return path.resolve(url.fileURLToPath(new URL(".", import.meta.url)), "../../migrations");
-}
+}//migrationsDir
 
 async function create(): Promise<void> {
     console.log("[new] cleaning database");
@@ -352,7 +350,7 @@ async function importAssets(args: string[]): Promise<void> {
 async function check(): Promise<void> {
     await ensureInitialized();
     const count = async (label: string, rows: Promise<unknown[]>): Promise<string> => `${label}=${(await rows).length}`;
-    const parts = [
+    const parts: string[] = [
         await count("Regions", table(RegionEntity).toArray()),
         await count("Territories", table(TerritoryEntity).toArray()),
         await count("Employees", table(EmployeeEntity).toArray()),

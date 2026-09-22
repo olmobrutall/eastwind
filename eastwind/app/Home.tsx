@@ -9,8 +9,6 @@ import { AuthClient } from "@altea/altea-auth/client/AuthClient";
 //  • otherwise          → the hero below.
 // Re-rendered on login/logout because MainPublic remounts the tree on resetUI.
 //
-// The dashboard module is reached through a DYNAMIC import: the home page must keep working when
-// @altea/altea-dashboard isn't registered, and the dashboard chunk stays out of the initial bundle.
 export default function Home(): React.JSX.Element | null {
 
     const [loaded, setLoaded] = React.useState(false);
@@ -23,19 +21,7 @@ export default function Home(): React.JSX.Element | null {
             return;
         }
 
-        import("@altea/altea-dashboard/client/DashboardClient")
-            .then(mod => mod.DashboardClient.home())
-            .then(home => {
-                if (cancelled)
-                    return;
-                // `replace` so the browser Back button leaves the app instead of bouncing off this redirect.
-                if (home)
-                    AppContext.navigate(`/dashboard/${home.id}`, { replace: true });
-                else
-                    setLoaded(true);
-            },
-                // No dashboard module / not authorized for ViewDashboard → just show the hero.
-                () => { if (!cancelled) setLoaded(true); });
+        redirectToHomeDashboard(() => { if (!cancelled) setLoaded(true); });//Dashboard
 
         return () => { cancelled = true; };
     }, []);
@@ -84,3 +70,19 @@ export default function Home(): React.JSX.Element | null {
         </div>
     );
 }
+
+// The dashboard module is reached through a DYNAMIC import: the home page must keep working when
+// @altea/altea-dashboard isn't registered, and the dashboard chunk stays out of the initial bundle.
+// `otherwise` is the "show the hero" continuation — taken when there is no home dashboard, and also when
+// the module is absent or the user may not view dashboards.
+function redirectToHomeDashboard(otherwise: () => void): void {
+    void import("@altea/altea-dashboard/client/DashboardClient")
+        .then(mod => mod.DashboardClient.home())
+        .then(home => {
+            // `replace` so the browser Back button leaves the app instead of bouncing off this redirect.
+            if (home)
+                AppContext.navigate(`/dashboard/${home.id}`, { replace: true });
+            else
+                otherwise();
+        }, otherwise);
+}//redirectToHomeDashboard

@@ -142,7 +142,8 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { UserEmployeeMixin } from &quot;./globals/UserEmployeeMixin.data&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="MixinDeclarations.register(UserEntity, UserEmployeeMixin);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="uwc.claims[&quot;Employee&quot;]" To="uwc.claims[&quot;Employee&quot;]"/>
-			<RemoveLine Path="eastwind/app/globals/GlobalsClient.client.tsx" From="u.mixin(UserEmployeeMixin).employee" To="u.mixin(UserEmployeeMixin).employee"/>
+			<RemoveLine Path="eastwind/app/globals/GlobalsClient.client.tsx" Line="import { UserEmployeeMixin } from &quot;./UserEmployeeMixin.data&quot;;"/>
+			<RemoveLine Path="eastwind/app/globals/GlobalsClient.client.tsx" From="// Override the User view to insert the mixin line after `role`." To="});"/>
 
 			<!-- Demo data + the domain's terminal tools. -->
 			<RemoveFiles Path="eastwind/terminal/northwind/customerLoader.ts"/>
@@ -151,6 +152,17 @@
 			<RemoveFiles Path="eastwind/terminal/northwind/productLoader.ts"/>
 			<RemoveLine Path="eastwind/terminal/terminal.ts" From=".add(&quot;SO&quot;, &quot;Show Order" To=".add(&quot;SO&quot;, &quot;Show Order"/>
 			<RemoveLine Path="eastwind/terminal/terminal.ts" From="async function showOrder()" To="}//showOrder"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="import { RegionEntity, TerritoryEntity, EmployeeEntity } from &quot;../app/employees/Employee.data&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="import { SupplierEntity, CategoryEntity, ProductEntity } from &quot;../app/products/Product.data&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="import { ShipperEntity } from &quot;../app/shippers/Shipper.data&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="import { OrderEntity, OrderLineEntity } from &quot;../app/orders/Order.data&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="import { PersonEntity, CompanyEntity } from &quot;../app/customers/Customer.data&quot;;"/>
+			<!-- The row counts `check` prints are this domain's tables. -->
+			<RemoveLine Path="eastwind/terminal/terminal.ts" From="await count(&quot;Regions&quot;" To="await count(&quot;OrderLines&quot;"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="import { EmployeeLoader } from &quot;./northwind/employeeLoader&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="import { ProductLoader } from &quot;./northwind/productLoader&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="import { CustomerLoader } from &quot;./northwind/customerLoader&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="import { OrderLoader } from &quot;./northwind/orderLoader&quot;;"/>
 
 			<!-- Both halves of the order story: the logic suite calls the operations, the browser one clicks them. -->
 			<RemoveFiles Path="eastwind/test/logic/order.test.ts"/>
@@ -169,9 +181,28 @@
 			<!-- The token-migration files live beside the SQL ones; with no SQL runner there is no directory. -->
 			<RemoveLine DependsOn="UserAssets" Path="eastwind/app/starter.server.ts" Line="TokenMigrationLogic.migrationsDirectory = () => SqlMigrationRunner.migrationsDirectory;"/>
 			<RemoveFiles Path="eastwind/migrations"/>
-			<RemoveFiles Path="eastwind/terminal/sync"/>
 			<RemoveLine Path="eastwind/terminal/terminal.ts" From=".add(&quot;SQL&quot;" To=".add(&quot;SQL&quot;"/>
 			<RemoveLine Path="eastwind/terminal/terminal.ts" From=".add(&quot;TS&quot;" To=".add(&quot;TS&quot;"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="import { MigrationLogic } from &quot;@altea/altea-migrations/server/MigrationLogic&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="import { SqlMigrationRunner } from &quot;@altea/altea-migrations/server/SqlMigrationRunner&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="case &quot;typescript&quot;:"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="case &quot;ts&quot;: await typeScriptMigrations(args.slice(1)); break;"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="case &quot;migrations&quot;:"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="case &quot;sql&quot;: await migrations(args.slice(1)); break;"/>
+			<RemoveSpanInLines Path="eastwind/terminal/terminal.ts" Span="sql, ts, "/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" From="async function typeScriptMigrations(args: string[]): Promise&lt;void> {" To="}//typeScriptMigrations"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" From="// The versioned .sql files in eastwind/migrations are the schema&apos;s source of truth" To="}//migrations"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" From="// eastwind/migrations — resolved off this module" To="}//migrationsDir"/>
+			<!-- The ad-hoc tools keep their menu; only the LoadMethodLog wrapper around each is the module's. -->
+			<ReplaceSpanInLines Path="eastwind/terminal/terminal.ts" Span="await MigrationLogic.executeLoadProcess(step.value, step.description, &quot;EastwindTerminal&quot;);" With="await step.value();"/>
+			<!-- `run` is the runner; the individual steps stay callable from the Load menu. -->
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="import { TypeScriptMigrationRunner } from &quot;@altea/altea-migrations/server/TypeScriptMigrationRunner&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" From="/** The terminal&apos;s `ts` command. */" To="}//run"/>
+			<!-- Token migrations hang off the SQL runner, so they go with it. -->
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="import { TokenMigrationLogic } from &quot;@altea/altea-user-assets/server/TokenMigrationLogic&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="import { TokenMigrationRunner } from &quot;@altea/altea-user-assets/server/TokenMigrationRunner&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" From="// The three hooks that make TOKEN migrations part of the ordinary schema workflow" To="}//wireTokenMigrations"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" From="// Token migrations hang off `Administrator.afterSynchronize`" To="wireTokenMigrations();"/>
 		</Module>
 
 		<Module Name="LoadNorthwind" DependsOn="ExampleEntities,Migrations">
@@ -185,6 +216,12 @@
 			<RemoveLine Path="eastwind/terminal/terminal.ts" From=".add(&quot;SN&quot;, &quot;Seed Northwind database&quot;" To=".add(&quot;SN&quot;, &quot;Seed Northwind database&quot;"/>
 			<RemoveLine Path="eastwind/terminal/terminal.ts" From=".add(&quot;SN&quot;, &quot;Seed Northwind (the demo-data SOURCE database)&quot;" To=".add(&quot;SN&quot;, &quot;Seed Northwind (the demo-data SOURCE database)&quot;"/>
 			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" From="runner.add(&quot;LoadRegions&quot;" To="runner.add(&quot;LoadEmployeePassages&quot;"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="import { NorthwindSeed } from &quot;./northwind/northwindSeed&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="import { Northwind } from &quot;./northwind/northwindSchema&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="import { NorthwindSeed } from &quot;./northwind/northwindSeed&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="await Northwind.close();"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="case &quot;seed-northwind&quot;: await NorthwindSeed.seed(); break;"/>
+			<RemoveSpanInLines Path="eastwind/terminal/terminal.ts" Span=", seed-northwind"/>
 			<RemoveLine Path="eastwind/.env.example" From="NORTHWIND_DB=Server=" To="NORTHWIND_DB=Server="/>
 			<RemoveLine Path="eastwind/.env.example" From="# NORTHWIND_DB=postgresql" To="# NORTHWIND_DB=postgresql"/>
 		</Module>
@@ -247,6 +284,8 @@
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="import { AuthLogic }" To="import { UserHolder }"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Authentication + the five authorization dimensions." To="u => u.is(UserHolder.currentUserLite()));"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// The second type condition" To="o => o.employee.is(EmployeeEntity.current()));"/>
+			<RemoveLine Path="eastwind/app/globals/GlobalsClient.client.tsx" Line="import { UserEntity } from &quot;@altea/altea-auth/data/User&quot;;"/>
+			<RemoveLine Path="eastwind/app/globals/GlobalsClient.client.tsx" From="// Override the User view to insert the mixin line after `role`." To="});"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { AuthAdminClient } from &quot;@altea/altea-auth/client/admin/AuthAdminClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { ActiveDirectoryClient } from &quot;@altea/altea-auth/client/admin/ActiveDirectoryClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// The User/Role admin views + rule-pack admin." To="AuthAdminClient.start(cb, { types: true,"/>
@@ -255,7 +294,13 @@
 			<RemoveLine Path="eastwind/app/MainPublic.client.tsx" From="// Resolve the current user from a stored token" To="await AuthClient.autoLogin();"/>
 			<RemoveLine Path="eastwind/app/MainPublic.client.tsx" From="// Public auth routes (login / change password)" To="AuthClient.registerUserTicketAuthenticator();"/>
 			<RemoveLine Path="eastwind/app/MainPublic.client.tsx" From="// Host hooks for the auth module" To="AuthClient.Options.passwordIsUsername ="/>
-			<RemoveSpanInLines Path="eastwind/app/MainPublic.client.tsx" Span="user != null &amp;&amp; user.userName != ANONYMOUS_USER_NAME"/>
+			<!-- With no auth module every session is a full one, so the guard folds to true rather than away. -->
+			<ReplaceSpanInLines Path="eastwind/app/MainPublic.client.tsx" Span="user != null &amp;&amp; user.userName != ANONYMOUS_USER_NAME" With="true"/>
+			<RemoveLine Path="eastwind/app/MainPublic.client.tsx" Line="const user = AuthClient.currentUser();"/>
+			<RemoveLine Path="eastwind/app/MainPublic.client.tsx" Line="const ANONYMOUS_USER_NAME = &quot;Anonymous&quot;;"/>
+			<!-- The three DIRECTORY getters and the provider switch are all this module's. -->
+			<RemoveFiles Path="eastwind/app/eastwindAuthAD.server.ts"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { EastwindAuthAD } from &quot;./eastwindAuthAD.server&quot;;"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="import LoginDropdown from &quot;@altea/altea-auth/client/public/LoginDropdown&quot;;"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="&lt;LoginDropdown />"/>
 			<RemoveFiles Path="eastwind/terminal/AuthRules.xml"/>
@@ -304,6 +349,9 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { AzureADRoleMappingEntity } from &quot;@altea/altea-auth-azuread/data/AzureAD&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(AzureADRoleMappingEntity, a => a.configuration, () => [ApplicationConfigurationEntity]);"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="azureAD: AzureADConfigurationEmbedded | null;"/>
+			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.tsx" From="&lt;Tab eventKey=&quot;azureAD&quot;" To="&lt;/Tab>"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="azureAD: null,"/>
+			<RemoveLine DependsOn="Test" Path="eastwind/test/environment/eastwindEnvironment.ts" Line="azureAD: null,"/>
 			<RemoveSpanInLines Path="eastwind/app/eastwindAuthAD.server.ts" Span="&quot;azuread&quot; | "/>
 		</Module>
 
@@ -322,7 +370,13 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(OpenIDRoleMappingEntity, o => o.configuration, () => [ApplicationConfigurationEntity]);"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="openID: OpenIDConfigurationEmbedded | null;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="sb.settings.ignoreFieldRoute(ApplicationConfigurationEntity, a =&gt; a.openID);"/>
-			<RemoveSpanInLines Path="eastwind/app/eastwindAuthAD.server.ts" Span="&quot;openid&quot; | "/>
+			<RemoveLine Path="eastwind/app/eastwindAuthAD.server.ts" Line="import type { OpenIDConfigurationEmbedded } from &quot;@altea/altea-auth-openid/data/OpenID&quot;;"/>
+			<RemoveSpanInLines Path="eastwind/app/eastwindAuthAD.server.ts" Span=" | &quot;openid&quot;"/>
+			<RemoveLine Path="eastwind/app/eastwindAuthAD.server.ts" Line="case &quot;openid&quot;: return &quot;openid&quot;;//OpenIDProvider"/>
+			<RemoveLine Path="eastwind/app/eastwindAuthAD.server.ts" From="/** OpenID Connect — `openID` on the configuration row. */" To="}//OpenIDConfiguration"/>
+			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.tsx" From="&lt;Tab eventKey=&quot;openID&quot;" To="&lt;/Tab>"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="openID: null,"/>
+			<RemoveLine Path="eastwind/test/environment/eastwindEnvironment.ts" Line="openID: null,"/>
 		</Module>
 
 		<Module Name="WindowsAD" DependsOn="Auth" optional="true">
@@ -338,7 +392,13 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(WindowsADRoleMappingEntity, w => w.configuration, () => [ApplicationConfigurationEntity]);"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="windowsAD: WindowsADConfigurationEmbedded | null;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="sb.settings.ignoreFieldRoute(ApplicationConfigurationEntity, a =&gt; a.windowsAD);"/>
+			<RemoveLine Path="eastwind/app/eastwindAuthAD.server.ts" Line="import type { WindowsADConfigurationEmbedded } from &quot;@altea/altea-auth-windowsad/data/WindowsAD&quot;;"/>
 			<RemoveSpanInLines Path="eastwind/app/eastwindAuthAD.server.ts" Span=" | &quot;windowsad&quot;"/>
+			<RemoveLine Path="eastwind/app/eastwindAuthAD.server.ts" Line="case &quot;windowsad&quot;: return &quot;windowsad&quot;;//WindowsADProvider"/>
+			<RemoveLine Path="eastwind/app/eastwindAuthAD.server.ts" From="/** Windows AD over LDAP — `windowsAD` on the configuration row. */" To="}//WindowsADConfiguration"/>
+			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.tsx" From="&lt;Tab eventKey=&quot;windowsAD&quot;" To="&lt;/Tab>"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="windowsAD: null,"/>
+			<RemoveLine Path="eastwind/test/environment/eastwindEnvironment.ts" Line="windowsAD: null,"/>
 			<RemoveLine Path="eastwind/.env.example" From="VITE_WINDOWS_AUTH=" To="VITE_WINDOWS_AUTH="/>
 		</Module>
 
@@ -356,6 +416,7 @@
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// After AuthLogic.start, so their routes are mounted behind" To="BigStringLogic.start(sb);"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// WHERE each log table&apos;s big text lives." To="configureBigString(sb);"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// For each log table whose text can be large" To="}//ConfigureBigString"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" From="function registerBigString(sb: SchemaBuilder, type: Type&lt;Entity>, fileType: FileTypeSymbol," To="}//registerBigString"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { FilesClient } from &quot;@altea/altea-files/client/FilesClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="FilesClient.start(cb);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { BigStringMixin } from &quot;@altea/altea-files/data/BigString&quot;;"/>
@@ -375,7 +436,7 @@
 			<RemoveLine Path="AGENTS.md" Line="| `Files_Azure` | the Azure Blob Storage file-store backend |"/>
 			<RemovePackageReference Name="@altea/altea-files-azure"/>
 			<RemoveTsProjectReference Path="eastwind/tsconfig.server.json" Reference="../altea/altea-files-azure/tsconfig.server.json"/>
-			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="AzureBlobStorageFileTypeAlgorithm, AzureWebDownload," To="} from &quot;@altea/altea-files-azure/server/AzureBlobStorageConfiguration&quot;;"/>
+			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="import { AzureBlobStorageFileTypeAlgorithm, AzureWebDownload }" To="import { AzureBlobStorage, type AzureBlobStorageConfiguration }"/>
 			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" Line="&quot;azure&quot;,//AzureKind"/>
 			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="case &quot;azure&quot;:" To="});//AzureStore"/>
 			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="function azureConfiguration(): AzureBlobStorageConfiguration {" To="}//AzureConfiguration"/>
@@ -413,7 +474,7 @@
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { UserQueriesClient } from &quot;@altea/altea-user-queries/client/UserQueriesClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="UserQueriesClient.start(cb);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { UserQueryEntity } from &quot;@altea/altea-user-queries/data/UserQuery&quot;;"/>
-			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="UserQueryPartEntity, ValueUserQueryListPartEntity, BigValuePartEntity," To="} from &quot;@altea/altea-user-queries/data/DashboardParts&quot;;"/>
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { UserQueryPartEntity, ValueUserQueryListPartEntity, BigValuePartEntity } from &quot;@altea/altea-user-queries/data/DashboardParts&quot;;"/>
 			<RemoveSpanInLines Path="eastwind/app/entityOverrides.data.ts" Span="UserQueryEntity, "/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="UserQueryPartEntity,"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="ValueUserQueryListPartEntity,"/>
@@ -456,13 +517,15 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { DashboardEntity_Part } from &quot;@altea/altea-dashboard/data/Dashboard&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { DashboardEntity } from &quot;@altea/altea-dashboard/data/Dashboard&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { CachedQueryEntity_UserAsset } from &quot;@altea/altea-dashboard/data/CachedQuery&quot;;"/>
-			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="TextPartEntity, ImagePartEntity, SeparatorPartEntity," To="} from &quot;@altea/altea-dashboard/data/Parts&quot;;"/>
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { TextPartEntity, ImagePartEntity, SeparatorPartEntity, HealthCheckPartEntity, CustomPartEntity, ToolbarMenuPartEntity } from &quot;@altea/altea-dashboard/data/Parts&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="overrideImplementedBy(CachedQueryEntity_UserAsset" To="overrideImplementedBy(CachedQueryEntity_UserAsset"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="overrideImplementedBy(DashboardEntity_Part, d => d.content, () => [" To="]);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="DashboardEntity,"/>
 			<!-- Home already tolerates the module being absent: it reaches DashboardClient through a dynamic
 			     import and falls back to the hero panel. Only the import line has to go. -->
-			<RemoveLine Path="eastwind/app/Home.tsx" From="import(&quot;@altea/altea-dashboard/client/DashboardClient&quot;)" To=".then(mod => mod.DashboardClient.home())"/>
+			<!-- No dashboard module, no home dashboard to redirect to: the hero is all this page does. -->
+			<ReplaceSpanInLines Path="eastwind/app/Home.tsx" Span="redirectToHomeDashboard(() => { if (!cancelled) setLoaded(true); });//Dashboard" With="setLoaded(true);"/>
+			<RemoveLine Path="eastwind/app/Home.tsx" From="// The dashboard module is reached through a DYNAMIC import" To="}//redirectToHomeDashboard"/>
 		</Module>
 
 		<Module Name="Toolbar" DependsOn="UserAssets">
@@ -471,7 +534,7 @@
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="ToolbarLogic.start(sb);" To="ToolbarLogic.registerRoleTypeCondition(EastwindTypeCondition.RoleEntities);//Toolbar"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { ToolbarClient } from &quot;@altea/altea-toolbar/client/ToolbarClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="ToolbarClient.start(cb);"/>
-			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="ToolbarElementBaseEntity, ToolbarEntity, ToolbarMenuEntity," To="} from &quot;@altea/altea-toolbar/data/Toolbar&quot;;"/>
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { ToolbarElementBaseEntity, ToolbarEntity, ToolbarMenuEntity, ToolbarSwitcherEntity } from &quot;@altea/altea-toolbar/data/Toolbar&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="overrideImplementedBy(ToolbarElementBaseEntity, t => t.content, () => [" To="]);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="ToolbarMenuPartEntity,"/>
 			<!-- The Layout's SIDEBAR is the toolbar renderer; with no toolbar the page is just the navbar
@@ -479,6 +542,14 @@
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="import { LayoutMessage } from &quot;@altea/altea-toolbar/data/Toolbar&quot;;"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" From="import { SidebarContainer" To="import ToolbarRenderer"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" From="&lt;SidebarToggleItem" To="&lt;SidebarToggleItem"/>
+			<!-- With no toolbar there is no sidebar: the shell keeps its navbar and renders the page directly. -->
+			<RemoveLine Path="eastwind/app/Layout.tsx" From="// The sidebar mode is kept in localStorage so it survives a reload" To="}//useSidebarMode"/>
+			<RemoveLine Path="eastwind/app/Layout.tsx" Line="const [sidebarMode, setSidebarMode] = useSidebarMode(isMobile);"/>
+			<RemoveLine Path="eastwind/app/Layout.tsx" From="// The sidebar only exists for a logged-in user" To="const showSidebar = AppContext.currentUser != null"/>
+			<ReplaceSpanInLines Path="eastwind/app/Layout.tsx" Span="data-sidebar={showSidebar ? sidebarMode.toLowerCase() : &quot;hidden&quot;}" With="data-sidebar=&quot;hidden&quot;"/>
+			<RemoveLine Path="eastwind/app/Layout.tsx" From="{/* Skip-link: the first tab stop jumps past the" To="{LayoutMessage.JumpToMainContent.niceToString()}&lt;/a>"/>
+			<RemoveLine Path="eastwind/app/Layout.tsx" From="&lt;SidebarContainer" To=": undefined}>"/>
+			<RemoveLine Path="eastwind/app/Layout.tsx" Line="&lt;/SidebarContainer>"/>
 		</Module>
 
 		<!-- ==== Processes / scheduling ============================================================= -->
@@ -499,6 +570,7 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { ProcessSchedulerBridgeOverrides } from &quot;@altea/altea-processes/data/ProcessSchedulerBridge&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="overrideImplementedBy(ProcessEntity, p => p.data, () => [" To="overrideImplementedBy(ProcessExceptionLineEntity, l => l.line, () => [PackageLineEntity]);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="ProcessSchedulerBridgeOverrides.overrideTaskImplementations([" To="]);"/>
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(ProcessEntity, p =&gt; p.user, () =&gt; [UserEntity]);"/>
 		</Module>
 
 		<Module Name="Scheduler" DependsOn="Process">
@@ -511,6 +583,8 @@
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { SchedulerClient } from &quot;@altea/altea-scheduler/client/SchedulerClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="SchedulerClient.start(cb);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { SimpleTaskSymbol, ScheduledTaskEntity, ScheduledTaskLogEntity } from &quot;@altea/altea-scheduler/data/Scheduler&quot;;"/>
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(ScheduledTaskEntity, s =&gt; s.user, () =&gt; [UserEntity]);"/>
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(ScheduledTaskLogEntity, s =&gt; s.user, () =&gt; [UserEntity]);"/>
 		</Module>
 
 		<!-- ==== Communication ====================================================================== -->
@@ -532,8 +606,8 @@
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { EmailMessageEntity } from &quot;@altea/altea-email/data/EmailMessage&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// AFTER UserQueriesClient: the template editor's filter builder" To="RemoteEmailsClient.start(cb);//Mailing"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="import { EmailTemplateEntity_Attachment, ImageAttachmentEntity }" To="import { EmailTemplateEntity_Attachment, ImageAttachmentEntity }"/>
-			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="EmailSenderConfigurationEntity, SmtpEmailServiceEntity," To="} from &quot;@altea/altea-email/data/EmailSenderConfiguration&quot;;"/>
-			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="EmailReceptionConfigurationEntity, EmailReceptionMixin," To="} from &quot;@altea/altea-email/data/EmailReception&quot;;"/>
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { EmailSenderConfigurationEntity, SmtpEmailServiceEntity } from &quot;@altea/altea-email/data/EmailSenderConfiguration&quot;;"/>
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { EmailReceptionConfigurationEntity, EmailReceptionMixin } from &quot;@altea/altea-email/data/EmailReception&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { EmailMessagePackageMixin } from &quot;@altea/altea-email/data/EmailPackage&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { EmailPackageEntity } from &quot;@altea/altea-email/data/EmailPackage&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { EmailMessageEntity } from &quot;@altea/altea-email/data/EmailMessage&quot;;"/>
@@ -542,7 +616,19 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="EmailPackageEntity,"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="overrideImplementedBy(EmailSenderConfigurationEntity, e => e.service, () => [" To="]);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="overrideImplementedBy(EmailReceptionConfigurationEntity, e => e.service, () => [" To="]);"/>
-			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="overrideImplementedBy(EmailTemplateEntity_Attachment" To="overrideImplementedBy(EmailTemplateEntity_Attachment"/>
+			<!-- The legacy-only attachment list, guard and comment: all three are this module's. -->
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="mode — see OfficeTemplateLogic&apos;s `attachments`)." To="overrideImplementedBy(EmailTemplateEntity_Attachment"/>
+			<!-- The mail settings on the configuration row, and the two seeds that fill them. -->
+			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.tsx" From="&lt;Tab eventKey=&quot;email&quot;" To="&lt;/Tab>"/>
+			<RemoveLine Path="eastwind/app/globals/GlobalsClient.client.tsx" From="token(a => a.email.sendEmails)," To="token(a => a.email.urlLeft),"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="import { EmailConfigurationEmbedded } from &quot;@altea/altea-email/data/Email&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="import { EmailSenderConfigurationEntity, SmtpEmailServiceEntity, SmtpNetworkDeliveryEmbedded, SmtpDeliveryFormat, SmtpDeliveryMethod } from &quot;@altea/altea-email/data/EmailSenderConfiguration&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" From="// A localhost SMTP sender, so the mail module has somewhere to point" To="await sender.save();"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" From="email: EmailConfigurationEmbedded.create({" To="emailSender: sender,"/>
+			<RemoveLine DependsOn="Test" Path="eastwind/test/environment/eastwindEnvironment.ts" Line="import { EmailConfigurationEmbedded } from &quot;@altea/altea-email/data/Email&quot;;"/>
+			<RemoveLine DependsOn="Test" Path="eastwind/test/environment/eastwindEnvironment.ts" Line="import { EmailSenderConfigurationEntity, SmtpEmailServiceEntity, SmtpNetworkDeliveryEmbedded, SmtpDeliveryFormat, SmtpDeliveryMethod } from &quot;@altea/altea-email/data/EmailSenderConfiguration&quot;;"/>
+			<RemoveLine DependsOn="Test" Path="eastwind/test/environment/eastwindEnvironment.ts" From="const sender = EmailSenderConfigurationEntity.create({" To="await sender.save();"/>
+			<RemoveLine DependsOn="Test" Path="eastwind/test/environment/eastwindEnvironment.ts" From="email: EmailConfigurationEmbedded.create({" To="emailSender: sender,"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="email: EmailConfigurationEmbedded;"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="emailSender: EmailSenderConfigurationEntity;"/>
 		</Module>
@@ -592,6 +678,11 @@
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { SMSClient } from &quot;@altea/altea-sms/client/SMSClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="SMSClient.start(cb);"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="sms: SMSConfigurationEmbedded;"/>
+			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.tsx" From="&lt;Tab eventKey=&quot;sms&quot;" To="&lt;/Tab>"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="import { SMSConfigurationEmbedded } from &quot;@altea/altea-sms/data/SMS&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" From="sms: SMSConfigurationEmbedded.create({" To="}),"/>
+			<RemoveLine DependsOn="Test" Path="eastwind/test/environment/eastwindEnvironment.ts" Line="import { SMSConfigurationEmbedded } from &quot;@altea/altea-sms/data/SMS&quot;;"/>
+			<RemoveLine DependsOn="Test" Path="eastwind/test/environment/eastwindEnvironment.ts" Line="sms: SMSConfigurationEmbedded.create({ defaultCulture: english }),"/>
 			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/app/customers/Customer.data.ts" From="@quoted smsOwnerData()" To="@quoted smsOwnerData()"/>
 		</Module>
 
@@ -609,13 +700,12 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(AlertEntity, a => a.attendedBy, () => [UserEntity]);"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="import AlertDropdown from &quot;@altea/altea-alert/client/AlertDropdown&quot;;"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="{AppContext.currentUser &amp;&amp; &lt;AlertDropdown />}"/>
-			<RemoveSpanInLines DependsOn="ExampleEntities" Path="eastwind/app/starter.server.ts" Span=", OrderEntity"/>
 		</Module>
 
 		<Module Name="Notes" DependsOn="Auth">
 			<RemovePackageReference Name="@altea/altea-notes"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { NoteLogic } from &quot;@altea/altea-notes/server/NoteLogic&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="NoteLogic.start(sb, { registerExpressionsFor: [UserEntity, OrderEntity] });"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" From="NoteLogic.start(sb," To="NoteLogic.start(sb,"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { NotesClient } from &quot;@altea/altea-notes/client/NotesClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="NotesClient.start(cb);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { NoteEntity } from &quot;@altea/altea-notes/data/Notes&quot;;"/>
@@ -672,7 +762,8 @@
 		<Module Name="ExcelImport" DependsOn="OfficeTemplate" optional="true">
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { ExcelImportLogic } from &quot;@altea/altea-office-template/server/excel/ExcelImportLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="ExcelImportLogic.start(sb);"/>
-			<RemoveSpanInLines Path="eastwind/app/MainAdmin.client.ts" Span="importFromExcel: true, "/>
+			<!-- The flag is REQUIRED by ExcelClient.start (Signum's signature), so it turns false, not away. -->
+			<ReplaceSpanInLines Path="eastwind/app/MainAdmin.client.ts" Span="importFromExcel: true" With="importFromExcel: false"/>
 			<RemoveLine Path="AGENTS.md" Line="| `ExcelImport` | reading a spreadsheet back into rows; plain export and report templates stay |"/>
 		</Module>
 
@@ -788,6 +879,14 @@
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="chatbot: ChatbotConfigurationEmbedded;"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" From="export namespace EastwindAgentUseCases" To="}//EastwindAgentUseCases"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="renameSymbolContainer(EastwindAgentUseCases, &quot;SouthwindAgentUseCases&quot;);"/>
+			<RemoveSpanInLines Path="eastwind/app/entityOverrides.data.ts" Span=", EastwindAgentUseCases"/>
+			<RemoveSpanInLines Path="eastwind/app/starter.server.ts" Span="EastwindAgentUseCases, "/>
+			<!-- The chatbot settings on the configuration row, and the two seeds that fill them. -->
+			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.tsx" From="&lt;Tab eventKey=&quot;chatbot&quot;" To="&lt;/Tab>"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="import { ChatbotConfigurationEmbedded } from &quot;@altea/altea-agent/data/LanguageModel&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" From="// Every provider key is left EMPTY: a key is a credential" To="chatbot: ChatbotConfigurationEmbedded.create({}),"/>
+			<RemoveLine DependsOn="Test" Path="eastwind/test/environment/eastwindEnvironment.ts" Line="import { ChatbotConfigurationEmbedded } from &quot;@altea/altea-agent/data/LanguageModel&quot;;"/>
+			<RemoveLine DependsOn="Test" Path="eastwind/test/environment/eastwindEnvironment.ts" Line="chatbot: ChatbotConfigurationEmbedded.create({}),"/>
 		</Module>
 
 		<Module Name="Eval">
@@ -802,7 +901,6 @@
 		<Module Name="Dynamic" DependsOn="Eval">
 			<RemovePackageReference Name="@altea/altea-dynamic"/>
 			<RemovePackageReference Name="@altea/altea-isolation"/>
-			<RemoveFiles Path="eastwind/CodeGen"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { DynamicLogic } from &quot;@altea/altea-dynamic/server/DynamicLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { DynamicCodeCompiler } from &quot;@altea/altea-dynamic/server/DynamicCodeCompiler&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import path from &quot;node:path&quot;;"/>
@@ -831,6 +929,11 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="CaseActivityMixin.declareOn(EmailMessageEntity);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="WorkflowEntity,"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="workflow: WorkflowConfigurationEmbedded;"/>
+			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.tsx" From="&lt;Tab eventKey=&quot;workflow&quot;" To="&lt;/Tab>"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="import { WorkflowConfigurationEmbedded } from &quot;@altea/altea-workflow/data/Workflow&quot;;"/>
+			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" From="workflow: WorkflowConfigurationEmbedded.create({" To="}),"/>
+			<RemoveLine DependsOn="Test" Path="eastwind/test/environment/eastwindEnvironment.ts" Line="import { WorkflowConfigurationEmbedded } from &quot;@altea/altea-workflow/data/Workflow&quot;;"/>
+			<RemoveLine DependsOn="Test" Path="eastwind/test/environment/eastwindEnvironment.ts" Line="workflow: WorkflowConfigurationEmbedded.create({ avoidExecutingScriptsOlderThan: null }),"/>
 		</Module>
 
 		<!-- ==== eastwind additions (no Southwind counterpart) ====================================== -->
@@ -853,7 +956,8 @@
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { WhatsNewClient } from &quot;@altea/altea-whats-new/client/WhatsNewClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// Release notes." To="WhatsNewClient.start(cb);//WhatsNew"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="import WhatsNewDropdown from &quot;@altea/altea-whats-new/client/WhatsNewDropdown&quot;;"/>
-			<RemoveLine Path="eastwind/app/Layout.tsx" From="{AppContext.currentUser &amp;&amp; !currentMode().legacyMode &amp;&amp; &lt;WhatsNewDropdown />}" To="{AppContext.currentUser &amp;&amp; !currentMode().legacyMode &amp;&amp; &lt;WhatsNewDropdown />}"/>
+			<!-- Anchored on the COMPONENT, not on the legacy guard in front of it: LegacyMode may have taken that. -->
+			<RemoveLine Path="eastwind/app/Layout.tsx" From="&lt;WhatsNewDropdown />}" To="&lt;WhatsNewDropdown />}"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="export const PublishedNews: TypeConditionSymbol = init();"/>
 		</Module>
 
@@ -910,6 +1014,7 @@
 			<!-- The configuration member and its embedded (seeded by the ts migration). -->
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="import { TranslationConfigurationEmbedded } from &quot;@altea/altea-translations/data/Translation&quot;;"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" From="/*Translation — the machine translators&apos; keys." To="translation: TranslationConfigurationEmbedded;"/>
+			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.tsx" From="&lt;Tab eventKey=&quot;translation&quot;" To="&lt;/Tab>"/>
 			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="import { TranslationConfigurationEmbedded } from &quot;@altea/altea-translations/data/Translation&quot;;"/>
 			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" From="// Every field is an optional API key" To="translation: TranslationConfigurationEmbedded.create({}),"/>
 		</Module>

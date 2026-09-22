@@ -64,7 +64,7 @@ function useSidebarMode(isMobile: boolean): [SidebarMode, (mode: SidebarMode) =>
             localStorage.setItem(SIDEBAR_MODE_KEY, m);
         setMode(m);
     }];
-}
+}//useSidebarMode
 
 export default function Layout(): React.JSX.Element {
     const location = useLocation();

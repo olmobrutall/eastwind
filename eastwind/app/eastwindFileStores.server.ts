@@ -1,11 +1,7 @@
 import * as path from "node:path";
 import { FileTypeAlgorithm, type IFileTypeAlgorithm } from "@altea/altea-files/server/FileTypeAlgorithm";
-import {
-    AzureBlobStorageFileTypeAlgorithm, AzureWebDownload,
-} from "@altea/altea-files-azure/server/AzureBlobStorageFileTypeAlgorithm";
-import {
-    AzureBlobStorage, type AzureBlobStorageConfiguration,
-} from "@altea/altea-files-azure/server/AzureBlobStorageConfiguration";
+import { AzureBlobStorageFileTypeAlgorithm, AzureWebDownload } from "@altea/altea-files-azure/server/AzureBlobStorageFileTypeAlgorithm";
+import { AzureBlobStorage, type AzureBlobStorageConfiguration } from "@altea/altea-files-azure/server/AzureBlobStorageConfiguration";
 import { S3FileTypeAlgorithm, S3WebDownload } from "@altea/altea-files-s3/server/S3FileTypeAlgorithm";
 import { S3Storage, resolveEndpoint, type S3Configuration } from "@altea/altea-files-s3/server/S3Configuration";
 
