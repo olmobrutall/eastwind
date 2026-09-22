@@ -497,7 +497,9 @@ export namespace Starter {
 
         // Agent module: skill classes, then the chatbot's own agent, then the app's MCP agent. AFTER the
         // chart module — the ChartSkill reads ChartScriptLogic's registered scripts.
-        CurrentServerContextSkill.urlLeft = () => GlobalsLogic.configuration().email.urlLeft;
+        // Through the mail module's own SYNCHRONOUS seam, not the configuration row directly: the skill's
+        // `urlLeft` is read from inside a skill body, which is sync the whole way down.
+        CurrentServerContextSkill.urlLeft = () => EmailLogic.configurationLoaded().urlLeft;
         IntroductionSkill.applicationName = "eastwind";
         ChatbotLogic.start(sb, () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.chatbot));
         ChatbotLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
@@ -579,10 +581,9 @@ export namespace Starter {
         // model published under this name predicts over the ORDER query. The registration also SEEDS the symbol row.
         PredictorLogic.registerPublication(ProductPredictorPublication.MonthlySales, { queryName: OrderEntity });
 
-        // The app's own GLOBALS: the ApplicationConfiguration table
-        // every configuration lambda above reads through `GlobalsLogic.configuration()`. LAST of the
-        // includes — the row references and embeds the types every module
-        // above created.
+        // The app's own GLOBALS: the ApplicationConfiguration table every configuration thunk above projects
+        // with `GlobalsLogic.configurationLazy.value().thenTyped(...)`. LAST of the includes — the row
+        // references and embeds the types every module above created.
         GlobalsLogic.start(sb);
 
         // The COMPILED half of altea-dynamic — all before `sb.complete()`, because a

@@ -82,11 +82,17 @@ export namespace GlobalsLogic {
     }
 
     /**
-     * The application's configuration — what every module's `getConfiguration` lambda reads. Throws until
-     * {@link warmUp} has run, which is deliberate: answering a
-     * module with half a configuration (or an env-var fallback) would hide a database that was never seeded.
+     * The configuration SYNCHRONOUSLY, for the app's own seams that cannot await — the counterpart of a
+     * module's own `EmailLogic.configurationLoaded()` / `SMSLogic.configurationLoaded()`. It caches nothing
+     * of its own: it reads the value the lazy has already stamped, so it cannot go stale.
+     *
+     * Throws until {@link warmUp} has run, which is deliberate: answering with half a configuration (or an
+     * env-var fallback) would hide a database that was never seeded.
+     *
+     * Anything that CAN await reads `configurationLazy.value()` instead — and a module's settings thunk
+     * projects that with `.thenTyped(c => c.member)`, which keeps the promise stable and typed.
      */
-    export function configuration(): ApplicationConfigurationEntity {
+    export function configurationLoaded(): ApplicationConfigurationEntity {
         const value = configurationLazy?.valueOrUndefined;
         if (value == null)
             throw new Error("The ApplicationConfiguration is not loaded yet."
@@ -94,7 +100,4 @@ export namespace GlobalsLogic {
                 + ` on a fresh database, seed the row for environment '${environment()}' with \`terminal ts\`.`);
         return value;
     }
-
-    /** Whether the configuration is loaded — for a caller that must not throw (a health check, a startup log). */
-    export function isWarm(): boolean { return configurationLazy?.valueOrUndefined != null; }
 }

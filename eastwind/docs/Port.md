@@ -61,8 +61,10 @@ not source this application ships. The one-off data migrations that converted a 
 - **App settings are ONE persisted row, and every module start takes a lambda to it.** eastwind ports
   Southwind's `ApplicationConfigurationEntity` (`eastwind/app/globals/`): one row per environment carrying each
   module's configuration embedded (mail, chatbot, workflow, SMS, and the three directories), edited at
-  `/view/ApplicationConfiguration`, and each `Logic.start` receives `() => GlobalsLogic.configuration().x`
-  exactly as Signum's `EmailLogic.Start(sb, () => Configuration.Value.Email, …)` does. The per-module
+  `/view/ApplicationConfiguration`, and each `Logic.start` receives
+  `() => GlobalsLogic.configurationLazy.value().thenTyped(c => c.x)` — Signum's
+  `EmailLogic.Start(sb, () => Configuration.Value.Email, …)`, with the cache's own promise projected onto
+  the member so it stays stable and typed. The per-module
   `eastwind<Module>.server.ts` files keep only what is genuinely app CODE (skill trees, email owners, ORDER
   as a case main entity, the store factory); nothing there reads `EASTWIND_*` for a setting any more, and
   neither does the migration that CREATES the row — `CreateCulturesAndConfiguration` seeds plain dev
