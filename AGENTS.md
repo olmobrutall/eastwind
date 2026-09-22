@@ -129,8 +129,16 @@ local database ends up holding the test fixture, not the Northwind demo data.
 ### Environments
 
 `.env.example` is the tracked TEMPLATE and documents every variable. Copy it to `.env.<environment>`;
-eastwind ships `local` / `dev` / `test` / `live`. **Every `.env.<environment>` is git-ignored** — the
-project copier still copies them into a new application, they are simply never part of a commit.
+eastwind ships `local` / `dev` / `test` / `live`.
+
+`.gitignore` ignores `.env.*`, and **eastwind's own are force-added anyway** — deliberately, and it is
+what makes the workflow below work: `altea-clone` copies what `git ls-files` lists, so a tracked
+`.env.<environment>` is one a new application receives, with the shape of its environment already in it.
+In THAT repository nothing is tracked yet, so the same rule applies normally and the initial commit does
+not contain them. Sharing one there is a deliberate `git add -f`, and whoever does it owns what is in it.
+
+So: eastwind's `.env.*` are public files in a public repository, and nothing that is actually secret may
+go in one here. A real deployment's credentials belong in ITS `.env.<environment>`, left untracked.
 
 Only what cannot live in the database is in there: a connection, a credential, or a choice made while the
 schema is BUILT. Every module's SETTINGS are members of the one `ApplicationConfiguration` row, edited at

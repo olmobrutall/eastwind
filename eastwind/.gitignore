@@ -1,8 +1,11 @@
-# Environment files hold connection strings, keys and per-deployment choices. `.env.example` is the
-# tracked TEMPLATE; every real `.env.<environment>` stays out of git — `.env.local`, `.env.dev`,
-# `.env.test`, `.env.live` and (while the port lasts) `.env.postgres` / `.env.sqlserver` /
-# `.env.swpostgres`. The project copier (`altea-upgrade clone`) copies them into a new application
-# anyway; they simply are not part of its first commit, so sharing one is a deliberate force-add.
+# Environment files hold connection strings, keys and per-deployment choices, so the rule below keeps
+# every real `.env.<environment>` out of git — which is the rule that holds in an application CLONED from
+# this one, where nothing is tracked yet and `altea-clone`'s initial commit therefore leaves them out.
+#
+# EASTWIND'S OWN are force-added past it on purpose: `altea-clone` copies what `git ls-files` lists, so a
+# tracked `.env.<environment>` is one a new application receives with the shape of its environment already
+# filled in. That makes them public files in a public repository — nothing actually secret may go in one
+# here, and sharing one from a cloned application is a deliberate `git add -f` by whoever owns it.
 .env
 .env.*
 !.env.example

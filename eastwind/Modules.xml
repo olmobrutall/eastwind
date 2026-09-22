@@ -88,7 +88,6 @@
 			<RemoveFiles Path="eastwind/.env.swpostgres"/>
 			<RemoveLine Path="AGENTS.md" From="## The port ledger" To="`Modules.xml`, which removes code at scaffold time."/>
 			<RemoveLine Path="AGENTS.md" Line="| `Port` (and `LegacyMode`, which depends on it) | everything eastwind carries only because it was ported |"/>
-			<RemoveLine Path="eastwind/.gitignore" From="`.env.test`, `.env.live` and (while the port lasts)" To="`.env.test`, `.env.live` and (while the port lasts)"/>
 
 			<!--
 			  `convert-translations` reads the LEGACY application's translation files out of `old/`, so it
