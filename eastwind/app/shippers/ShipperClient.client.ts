@@ -5,6 +5,7 @@ import { ShipperEntity } from "./Shipper.data";
 export namespace ShippersClient {
     export function start(cb: ClientBuilder): void {
         cb.configure(ShipperEntity)
+            .withView(() => import("./Shipper"))
             .withQuerySettings(token => ({
                 defaultColumns: [
                     token(a => a.id),
