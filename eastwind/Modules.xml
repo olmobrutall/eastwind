@@ -300,6 +300,9 @@
 			<!-- The three DIRECTORY getters and the provider switch are all this module's. -->
 			<RemoveFiles Path="eastwind/app/eastwindAuthAD.server.ts"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { EastwindAuthAD } from &quot;./eastwindAuthAD.server&quot;;"/>
+			<!-- No user to be logged out, so nothing to redirect to the shop window either. -->
+			<RemoveLine Path="eastwind/app/Home.tsx" Line="import { AuthClient } from &quot;@altea/altea-auth/client/AuthClient&quot;;"/>
+			<RemoveLine Path="eastwind/app/Home.tsx" From="if (!AuthClient.currentUser()) {" To="}//AnonymousRedirect"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="import LoginDropdown from &quot;@altea/altea-auth/client/public/LoginDropdown&quot;;"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="&lt;LoginDropdown />"/>
 			<RemoveFiles Path="eastwind/terminal/AuthRules.xml"/>
@@ -434,7 +437,6 @@
 		<Module Name="Files_Azure" DependsOn="Files" optional="true">
 			<RemoveLine Path="AGENTS.md" Line="| `Files_Azure` | the Azure Blob Storage file-store backend |"/>
 			<RemovePackageReference Name="@altea/altea-files-azure"/>
-			<RemoveTsProjectReference Path="eastwind/tsconfig.server.json" Reference="../altea/altea-files-azure/tsconfig.server.json"/>
 			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="import { AzureBlobStorageFileTypeAlgorithm, AzureWebDownload }" To="import { AzureBlobStorage, type AzureBlobStorageConfiguration }"/>
 			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" Line="&quot;azure&quot;,//AzureKind"/>
 			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="case &quot;azure&quot;:" To="});//AzureStore"/>
@@ -444,7 +446,6 @@
 		<Module Name="Files_S3" DependsOn="Files" optional="true">
 			<RemoveLine Path="AGENTS.md" Line="| `Files_S3` | the S3 / MinIO file-store backend |"/>
 			<RemovePackageReference Name="@altea/altea-files-s3"/>
-			<RemoveTsProjectReference Path="eastwind/tsconfig.server.json" Reference="../altea/altea-files-s3/tsconfig.server.json"/>
 			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="import { S3FileTypeAlgorithm, S3WebDownload }" To="import { S3Storage, resolveEndpoint, type S3Configuration }"/>
 			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" Line="&quot;s3&quot;,//S3Kind"/>
 			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="case &quot;s3&quot;:" To="});//S3Store"/>
@@ -525,6 +526,8 @@
 			<!-- No dashboard module, no home dashboard to redirect to: the hero is all this page does. -->
 			<ReplaceSpanInLines Path="eastwind/app/Home.tsx" Span="redirectToHomeDashboard(() => { if (!cancelled) setLoaded(true); });//Dashboard" With="setLoaded(true);"/>
 			<RemoveLine Path="eastwind/app/Home.tsx" From="// The dashboard module is reached through a DYNAMIC import" To="}//redirectToHomeDashboard"/>
+			<!-- The hero is the landing page for everyone once there is no shop window to send a visitor to. -->
+			<RemoveLine Path="eastwind/app/Home.tsx" From="if (!AuthClient.currentUser()) {" To="}//AnonymousRedirect"/>
 		</Module>
 
 		<Module Name="Toolbar" DependsOn="UserAssets">

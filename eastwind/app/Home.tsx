@@ -19,7 +19,7 @@ export default function Home(): React.JSX.Element | null {
         if (!AuthClient.currentUser()) {
             AppContext.navigate("/publicCatalog", { replace: true });
             return;
-        }
+        }//AnonymousRedirect
 
         redirectToHomeDashboard(() => { if (!cancelled) setLoaded(true); });//Dashboard
 
