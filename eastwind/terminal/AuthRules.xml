@@ -3,10 +3,14 @@
   A copy of Southwind's AuthRules.xml (old/Southwind.Terminal/AuthRules.xml) — the initial authorization
   rules imported by `terminal import-auth` (Southwind's InitialAuthRulesImport → AuthLogic.
   AutomaticImportAuthRules). Kept as close to the original as possible: same sections, same role order,
-  same row order. Every edit is marked with an `altea:` comment; rows for features this port does not have
-  are COMMENTED OUT rather than deleted, so re-syncing with Signum stays a diff.
+  same row order. Every edit is marked with an `altea:` comment; rows this port cannot use are COMMENTED
+  OUT rather than deleted, so re-syncing with Signum stays a diff — and so a row can be turned back on
+  when the module behind it lands. What is left commented is no longer "not ported": it is either a MODEL
+  divergence (Category.picture is a FileEmbedded, so nothing reaches a FileEntity), a route that does not
+  exist (ValueInStock is a computed method), or a rule altea makes structurally (a `@part` inherits its
+  owner's, so the dashboard parts carry none of their own).
 
-  The three systematic edits (documented divergences, see CLAUDE.md):
+  The two systematic edits (documented divergences, see CLAUDE.md):
    * Property rows carry `OnType` + a camelCase `Resource` path — altea keys a property rule by
      (rootType, propertyString) and has no PropertyRouteEntity, and altea entity members are camelCase.
      Signum wrote one attribute: Resource="Category|CategoryName".
@@ -33,8 +37,7 @@
       <Permission Resource="BasicPermission.AutomaticUpgradeOfQueries" Allowed="True" />
       <Permission Resource="ChartPermission.ViewCharting" Allowed="True" />
       <Permission Resource="DashboardPermission.ViewDashboard" Allowed="True" />
-      <!-- altea: Signum.Help is not ported.
-      <Permission Resource="HelpPermissions.ViewHelp" Allowed="True" /> -->
+      <Permission Resource="HelpPermissions.ViewHelp" Allowed="True" />
       <!-- altea: Signum.Word became @altea/altea-office-template (Word* renamed Office*). -->
       <Permission Resource="OfficeTemplatePermission.GenerateReport" Allowed="True" />
       <!-- altea ADDITION (not in Southwind's file): these module routes assert their permission on every
@@ -55,13 +58,13 @@
       <Property OnType="Category" Resource="picture" Allowed="Read" />
       <Property OnType="Category" Resource="picture.binaryFile" Allowed="Read" />
       <Property OnType="Category" Resource="picture.fileName" Allowed="Read" />
-      <!-- altea: CultureInfoEntity is not ported (no translated-instance module yet).
-      <Property Resource="CultureInfo|EnglishName" Allowed="Read" />
-      <Property Resource="CultureInfo|Id" Allowed="Read" />
-      <Property Resource="CultureInfo|Name" Allowed="Read" />
-      <Property Resource="CultureInfo|NativeName" Allowed="Read" /> -->
-      <!-- altea: there is no FileEntity — Category.picture is a FileEmbedded (bytes in the row), so its
-           routes are the `picture.*` ones above.
+      <Property OnType="CultureInfo" Resource="englishName" Allowed="Read" />
+      <Property OnType="CultureInfo" Resource="id" Allowed="Read" />
+      <Property OnType="CultureInfo" Resource="name" Allowed="Read" />
+      <Property OnType="CultureInfo" Resource="nativeName" Allowed="Read" />
+      <!-- altea: FileEntity exists, but nothing anonymous reaches one — Category.picture is a FileEmbedded
+           (bytes in the row), so its routes are the `picture.*` ones above. A Southwind database reaches a
+           real File here, which is why these rows are kept rather than deleted.
       <Property Resource="File|AllowChange" Allowed="Read" />
       <Property Resource="File|BinaryFile" Allowed="Read" />
       <Property Resource="File|FileName" Allowed="Read" />
@@ -100,22 +103,20 @@
   <Types>
     <Role Name="Anonymous">
       <Type Resource="Category" Allowed="Read" />
-      <!-- altea: CultureInfoEntity / FileEntity not ported (see the Properties section).
       <Type Resource="CultureInfo" Allowed="Read" />
+      <!-- altea: nothing anonymous reaches a FileEntity — see the Properties section.
       <Type Resource="File" Allowed="Read" /> -->
       <Type Resource="Product" Allowed="Read" />
     </Role>
     <Role Name="Standard user">
-      <!-- altea: Signum.Alerts is not ported.
       <Type Resource="Alert" Allowed="Write" />
-      <Type Resource="AlertType" Allowed="Read" /> -->
-      <!-- altea: Signum.Workflow (Case*/Workflow*) is not ported.
+      <Type Resource="AlertType" Allowed="Read" />
       <Type Resource="Case" Allowed="Write" />
       <Type Resource="CaseActivity" Allowed="Write" />
       <Type Resource="CaseActivityExecutedTimer" Allowed="Write" />
       <Type Resource="CaseNotification" Allowed="Write" />
       <Type Resource="CaseTag" Allowed="Read" />
-      <Type Resource="CaseTagType" Allowed="Read" /> -->
+      <Type Resource="CaseTagType" Allowed="Read" />
       <Type Resource="Category" Allowed="Read" />
       <Type Resource="ChartScript" Allowed="Read" />
       <!-- altea: a dashboard PART inherits its owner's rules structurally (PartOwnership), so it carries no
@@ -124,14 +125,14 @@
            looked like, and they are inert here.
       <Type Resource="CombinedUserChartPart" Allowed="Read" /> -->
       <Type Resource="Company" Allowed="Write" />
-      <!-- <Type Resource="CultureInfo" Allowed="Read" /> -->
+      <Type Resource="CultureInfo" Allowed="Read" />
       <Type Resource="Dashboard" Allowed="Read" />
       <Type Resource="Employee" Allowed="Read" />
-      <!-- <Type Resource="File" Allowed="Read" /> -->
+      <!-- altea: a Standard user reaches no FileEntity — see the Anonymous rows above.
+      <Type Resource="File" Allowed="Read" /> -->
       <Type Resource="FileType" Allowed="Read" />
-      <!-- altea: Signum.Notes is not ported.
       <Type Resource="Note" Allowed="Write" />
-      <Type Resource="NoteType" Allowed="Read" /> -->
+      <Type Resource="NoteType" Allowed="Read" />
       <Type Resource="Order" Allowed="Write" />
       <Type Resource="Person" Allowed="Write" />
       <Type Resource="Product" Allowed="Read" />
@@ -142,7 +143,7 @@
       <Type Resource="Territory" Allowed="Read" />
       <Type Resource="Toolbar" Allowed="Read" />
       <Type Resource="ToolbarMenu" Allowed="Read" />
-      <!-- altea: there is no ToolbarMenuPart dashboard part.
+      <!-- altea: a dashboard part — inert, see the CombinedUserChartPart note above.
       <Type Resource="ToolbarMenuPart" Allowed="Read" /> -->
       <Type Resource="User" Allowed="None">
         <Condition Name="EastwindTypeCondition.UserEntities" Allowed="Read" />
@@ -170,7 +171,6 @@
         <Condition Name="EastwindTypeCondition.UserEntities" Allowed="Read" />
         <Condition Name="EastwindTypeCondition.RoleEntities" Allowed="Read" />
       </Type> -->
-      <!-- altea: Signum.Workflow is not ported.
       <Type Resource="Workflow" Allowed="Read" />
       <Type Resource="WorkflowAction" Allowed="Read" />
       <Type Resource="WorkflowActivity" Allowed="Read" />
@@ -184,15 +184,15 @@
       <Type Resource="WorkflowPool" Allowed="Read" />
       <Type Resource="WorkflowScript" Allowed="Read" />
       <Type Resource="WorkflowScriptRetryStrategy" Allowed="Read" />
-      <Type Resource="WorkflowTimerCondition" Allowed="Read" /> -->
+      <Type Resource="WorkflowTimerCondition" Allowed="Read" />
     </Role>
     <Role Name="Super user" />
     <Role Name="Advanced user">
-      <!-- <Type Resource="AlertType" Allowed="Write" /> -->
+      <Type Resource="AlertType" Allowed="Write" />
       <Type Resource="Category" Allowed="Write" />
       <Type Resource="Dashboard" Allowed="Write" />
       <Type Resource="Employee" Allowed="Write" />
-      <!-- <Type Resource="NoteType" Allowed="Write" /> -->
+      <Type Resource="NoteType" Allowed="Write" />
       <Type Resource="Product" Allowed="Write" />
       <Type Resource="Region" Allowed="Write" />
       <Type Resource="Shipper" Allowed="Write" />
