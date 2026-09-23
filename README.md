@@ -28,7 +28,6 @@ You need **Node**, **pnpm**, and a **PostgreSQL** or **SQL Server** you are will
 git clone <this repository> && cd eastwind
 git submodule update --init altea          # `old/` is the Signum source, only a port needs it
 pnpm install
-pnpm --filter quote-transformer build      # the @quoted transformer, before anything else
 pnpm --filter eastwind build
 ```
 
@@ -59,17 +58,16 @@ rule still applies, and the flag is dead code in a production build.
 ## Starting a new application from this one
 
 ```bash
-node altea/cli/altea-clone/dist/main.js --name myapp
+node altea/cli/altea-clone/bin/altea-clone.js --name myapp
 ```
 
-It finishes by printing the remaining steps with the paths filled in — the new project's own submodule is
-not installed yet, so `altea-simplify` is run from THIS workspace's copy:
+It finishes by printing the remaining steps. `altea-simplify` runs from the new project's own submodule,
+which already carries the committed bundle:
 
 ```bash
 cd ../myapp
-node ../eastwind/altea/cli/altea-simplify/dist/main.js
+node altea/cli/altea-simplify/bin/altea-simplify.js
 pnpm install
-pnpm --filter quote-transformer build
 pnpm --filter myapp build
 ```
 

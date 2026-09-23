@@ -158,11 +158,10 @@ statically, so it is dead code in a production build.
 ## Starting a NEW application from this one
 
 ```bash
-node altea/cli/altea-clone/dist/main.js --name northbreeze
+node altea/cli/altea-clone/bin/altea-clone.js --name northbreeze
 cd ../northbreeze
-node <altea>/cli/altea-simplify/dist/main.js   # untick what you do not need; one commit per module
+node altea/cli/altea-simplify/bin/altea-simplify.js   # untick what you do not need; one commit per module
 pnpm install
-pnpm --filter quote-transformer build
 pnpm --filter northbreeze build
 ```
 

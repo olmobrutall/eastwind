@@ -1151,6 +1151,10 @@ importers:
       '@altea/altea-cli-utils':
         specifier: workspace:*
         version: link:../altea-cli-utils
+    devDependencies:
+      esbuild:
+        specifier: ^0.27.0
+        version: 0.27.7
 
   altea/cli/altea-simplify:
     dependencies:
@@ -1160,6 +1164,10 @@ importers:
       fast-xml-parser:
         specifier: ^5.0.0
         version: 5.10.1
+    devDependencies:
+      esbuild:
+        specifier: ^0.27.0
+        version: 0.27.7
 
   altea/cli/altea-upgrade:
     dependencies:
