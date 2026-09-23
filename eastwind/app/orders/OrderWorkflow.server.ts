@@ -19,7 +19,7 @@ import { OrderEntity, OrderOperation, OrderState } from "./Order.data";
 // step further and makes ORDER a main entity, plus registers the small set of condition / action / lane-actor
 // hooks a demo workflow needs — otherwise the port is unverifiable end to end. The module's SETTINGS are not
 // here: they live on the ApplicationConfiguration row, which the starter hands to the module as a lambda
-// (`() => GlobalsLogic.configurationLazy.value().thenTyped(c => c.workflow)`).
+// (`() => Starter.configuration.value().thenTyped(c => c.workflow)`).
 //
 // The condition / action / lane-actor hooks themselves are no longer code: they are stored SCRIPTS an
 // administrator types into the designer, compiled by @altea/altea-eval — see ../eastwindEval.server.ts for

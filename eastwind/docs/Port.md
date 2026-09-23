@@ -62,7 +62,7 @@ not source this application ships. The one-off data migrations that converted a 
   Southwind's `ApplicationConfigurationEntity` (`eastwind/app/globals/`): one row per environment carrying each
   module's configuration embedded (mail, chatbot, workflow, SMS, and the three directories), edited at
   `/view/ApplicationConfiguration`, and each `Logic.start` receives
-  `() => GlobalsLogic.configurationLazy.value().thenTyped(c => c.x)` — Signum's
+  `() => Starter.configuration.value().thenTyped(c => c.x)` — Signum's
   `EmailLogic.Start(sb, () => Configuration.Value.Email, …)`, with the cache's own promise projected onto
   the member so it stays stable and typed. The per-module
   `eastwind<Module>.server.ts` files keep only what is genuinely app CODE (skill trees, email owners, ORDER
@@ -82,10 +82,9 @@ not source this application ships. The one-off data migrations that converted a 
     row is live; the value it compares against is a module CONST in the DATA layer, read off `globalThis`
     (that layer is isomorphic and ships no node types) — the transformer captures a free identifier by
     value, so a `process.env` read inside the quoted body would have no SQL translation.
-  - **the lazy is mirrored into a SYNC snapshot.** altea's ResetLazy is async while every module's
-    configuration getter is sync, so `GlobalsLogic.warmUp()` fills a snapshot after `schema.initialize()`
-    (the pattern `CultureInfoLogic` already uses) and the `saved` event refreshes it — which is what makes
-    an edit take effect without a restart, as Signum's `InvalidateWith` does.
+  - **every reader is async.** altea's ResetLazy returns a promise, and each module's settings thunk
+    projects it (`Starter.configuration.value().thenTyped(c => c.x)`), so `invalidateWith` alone makes an
+    edit take effect without a restart, as Signum's `InvalidateWith` does. No sync snapshot, no warm-up.
   - **what stays in the environment** is what Southwind also keeps in `appsettings.json`: the connection
     string, the file-store BACKEND + its cloud credentials (Signum's `azureStorageConnectionString` is a
     `Starter.Start` parameter) and `NORTHWIND_DB` (the terminal's demo-data SOURCE — see the bullet below).

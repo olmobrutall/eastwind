@@ -125,6 +125,7 @@ import { AlertLogic } from "@altea/altea-alert/server/AlertLogic";
 import { NoteLogic } from "@altea/altea-notes/server/NoteLogic";
 import { AlertNotificationLogic } from "@altea/altea-alert/server/AlertNotificationLogic";
 import type { Schema } from "@altea/altea/server/schema";
+import type { ResetLazy } from "@altea/altea/server/resetLazy";
 import { EastwindModeServer } from "./eastwindMode.server";
 
 // The single global entry that builds the schema, binds the connector, registers each module's logic and
@@ -135,6 +136,13 @@ import { EastwindModeServer } from "./eastwindMode.server";
 // note lives in the repo AGENTS.md; read it before moving one. The trailing `//<Name>` markers on a block's
 // closing line are anchors for Modules.xml.
 export namespace Starter {
+    /**
+     * THIS environment's ApplicationConfiguration row — Southwind's `Starter.Configuration`. Assigned by
+     * `GlobalsLogic.start`, invalidated on save. A module's settings thunk projects it:
+     * `() => Starter.configuration.value().thenTyped(c => c.email)`.
+     */
+    export let configuration: ResetLazy<ApplicationConfigurationEntity> = null!;
+
     /** The built schema, kept so a host that DEFERRED initialization can run it later (see `initialize`). */
     let built: Schema | undefined;
 
@@ -147,12 +155,6 @@ export namespace Starter {
             throw new Error("Starter.initialize: call Starter.start first.");
 
         await built.initialize();
-
-        // The warm-up tolerates a not-yet-generated / not-yet-seeded database: the `new` terminal command
-        // runs against an empty one, and a module that then asks for its configuration fails with
-        // GlobalsLogic's message naming the migration rather than silently running on defaults.
-        // (Cultures need none — every reader asks CultureInfoLogic for them and it loads on demand.)
-        try { await GlobalsLogic.warmUp(); } catch (e) { console.warn(`[globals] ${(e as Error).message}`); }
     }
 
     /**
@@ -244,7 +246,7 @@ export namespace Starter {
         // Authentication + the five authorization dimensions. The second user name is the app's
         // unauthenticated posture.
         AuthLogic.start(sb, "System", "Anonymous",
-            { getTokenConfiguration: () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.authTokens) });
+            { getTokenConfiguration: () => Starter.configuration.value().thenTyped(c => c.authTokens) });
         // The ONE authorizer: password login, "invite a user from the directory", and the user a directory
         // sign-in creates. Which directory it talks to is its BASE CLASS — see eastwindAuthorizer.server.ts.
         AuthLogic.authorizer = new EastwindAuthorizer();
@@ -356,8 +358,8 @@ export namespace Starter {
 
         // Email + templating. The app supplies only what is app-specific — the configuration and the sender.
         EmailLogic.start(sb, {
-            getConfiguration: () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.email),
-            getSenderConfiguration: () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.emailSender),
+            getConfiguration: () => Starter.configuration.value().thenTyped(c => c.email),
+            getSenderConfiguration: () => Starter.configuration.value().thenTyped(c => c.emailSender),
         });
 
         // The BATCH half. A legacy database REGISTERS the package mixin (so it has
@@ -409,7 +411,7 @@ export namespace Starter {
         // send / update-status processes nor the SMSModel registry. (The app's own SMS OWNERS are
         // registered with the app's domains at the bottom.)
         SMSModuleLogic.start(sb, {
-            getConfiguration: () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.sms),
+            getConfiguration: () => Starter.configuration.value().thenTyped(c => c.sms),
             processes: !legacyMode,
             models: !legacyMode,
         });//SMS
@@ -471,7 +473,7 @@ export namespace Starter {
 
         // Workflow. A legacy database starts the module but declares no main entity, so nothing could run
         // through it; eastwind makes ORDER one — with the app's domains at the bottom.
-        WorkflowLogicStarter.start(sb, () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.workflow));//Workflow
+        WorkflowLogicStarter.start(sb, () => Starter.configuration.value().thenTyped(c => c.workflow));//Workflow
 
         // ==== CROSS-CUTTING: navigation, docs, logs, presence =========================================
 
@@ -497,7 +499,7 @@ export namespace Starter {
         // `urlLeft` is read from inside a skill body, which is sync the whole way down.
         CurrentServerContextSkill.urlLeft = () => EmailLogic.configurationLoaded().urlLeft;
         IntroductionSkill.applicationName = "eastwind";
-        ChatbotLogic.start(sb, () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.chatbot));
+        ChatbotLogic.start(sb, () => Starter.configuration.value().thenTyped(c => c.chatbot));
         ChatbotLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
         AgentLogic.start(sb, EastwindAgent.chatbotSkill);
         AgentLogic.registerAgent(EastwindAgentUseCases.MCP, EastwindAgent.mcpSkill);//Agent
@@ -523,9 +525,9 @@ export namespace Starter {
             replacements: !legacyMode,
             translators: [
                 new AzureTranslator(
-                    () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.translation.azureCognitiveServicesAPIKey),
-                    () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.translation.azureCognitiveServicesRegion)),
-                new DeepLTranslator(() => GlobalsLogic.configurationLazy.value().thenTyped(c => c.translation.deepLAPIKey)),
+                    () => Starter.configuration.value().thenTyped(c => c.translation.azureCognitiveServicesAPIKey),
+                    () => Starter.configuration.value().thenTyped(c => c.translation.azureCognitiveServicesRegion)),
+                new DeepLTranslator(() => Starter.configuration.value().thenTyped(c => c.translation.deepLAPIKey)),
             ],
         });//Translation
 
@@ -578,7 +580,7 @@ export namespace Starter {
         PredictorLogic.registerPublication(ProductPredictorPublication.MonthlySales, { queryName: OrderEntity });
 
         // The app's own GLOBALS: the ApplicationConfiguration table every configuration thunk above projects
-        // with `GlobalsLogic.configurationLazy.value().thenTyped(...)`. LAST of the includes — the row
+        // with `Starter.configuration.value().thenTyped(...)`. LAST of the includes — the row
         // references and embeds the types every module above created.
         GlobalsLogic.start(sb);
 

@@ -19,7 +19,7 @@ import { WindowsADConfigurationEmbedded } from "@altea/altea-auth-windowsad/data
 
 // ONE persisted row holding every module's settings, which each module's `Logic.start` reads through a
 // THUNK projecting the configuration cache onto its own member
-// (`EmailLogic.start(sb, { getConfiguration: () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.email), … })`).
+// (`EmailLogic.start(sb, { getConfiguration: () => Starter.configuration.value().thenTyped(c => c.email), … })`).
 //
 // Settings an administrator should be able to see and change are DATA, not deployment wiring, so they live
 // here rather than in `EASTWIND_*` environment variables. What stays in the environment is what must be

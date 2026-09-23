@@ -935,7 +935,7 @@
 			<RemovePackageReference Name="@altea/altea-workflow"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { WorkflowLogicStarter } from &quot;@altea/altea-workflow/server/WorkflowLogicStarter&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { OrderWorkflow } from &quot;./orders/OrderWorkflow.server&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Workflow. A legacy database starts the module but declares no main entity" To="WorkflowLogicStarter.start(sb, () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.workflow));//Workflow"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Workflow. A legacy database starts the module but declares no main entity" To="WorkflowLogicStarter.start(sb, () => Starter.configuration.value().thenTyped(c => c.workflow));//Workflow"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// ORDER as a workflow case main entity" To="OrderWorkflow.registerOrderAsMainEntity(sb);"/>
 			<RemoveFiles Path="eastwind/app/orders/OrderWorkflow.server.ts"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { WorkflowClient } from &quot;@altea/altea-workflow/client/WorkflowClient&quot;;"/>

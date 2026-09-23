@@ -20,7 +20,7 @@ import { ChartSkill } from "@altea/altea-agent/server/Skills/ChartSkill";
 //
 // The provider CREDENTIALS are not here either: they are the `chatbot` member of the
 // ApplicationConfiguration row, which the starter hands to the module as
-// `() => GlobalsLogic.configurationLazy.value().thenTyped(c => c.chatbot)`. With none set the module still
+// `() => Starter.configuration.value().thenTyped(c => c.chatbot)`. With none set the module still
 // starts: a model row can be
 // created and the panels work, and only the first actual call to a provider fails, naming the missing key.
 export namespace EastwindAgent {

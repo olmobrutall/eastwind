@@ -1,5 +1,5 @@
 import { AzureADAuthorizer } from "@altea/altea-auth-azuread/server/AzureADAuthorizer";
-import { GlobalsLogic } from "./globals/GlobalsLogic.server";
+import { Starter } from "./starter.server";
 
 // eastwind's ONE authorizer — `AuthLogic.authorizer`, installed in starter.server.ts. Southwind's
 // SouthwindAuthorizer. It owns the password login, "invite a user from the directory", and the
@@ -15,16 +15,16 @@ import { GlobalsLogic } from "./globals/GlobalsLogic.server";
 export class EastwindAuthorizer extends AzureADAuthorizer {
     constructor() {
         // One configuration for every AD variant; re-read per call so an edit applies without a restart.
-        super(() => GlobalsLogic.configurationLazy.value().thenTyped(c => c.azureAD));
+        super(() => Starter.configuration.value().thenTyped(c => c.azureAD));
     }
 }
 
 /** OpenID Connect — `openID` on the configuration row; the getter for an OpenIDAuthorizer base. */
 export function openIDConfiguration() {
-    return GlobalsLogic.configurationLazy.value().thenTyped(c => c.openID);
+    return Starter.configuration.value().thenTyped(c => c.openID);
 }//OpenIDConfiguration
 
 /** Windows AD over LDAP — `windowsAD` on the configuration row; the getter for a WindowsADAuthorizer base. */
 export function windowsADConfiguration() {
-    return GlobalsLogic.configurationLazy.value().thenTyped(c => c.windowsAD);
+    return Starter.configuration.value().thenTyped(c => c.windowsAD);
 }//WindowsADConfiguration
