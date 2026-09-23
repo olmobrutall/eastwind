@@ -148,7 +148,7 @@ export namespace EastwindEnvironment {
             territories: [EmployeeEntity_Territory.create({ territory: east.toLite() })],
             reportsTo: superUser.toLite(),
         }).save();
-    }
+    }//loadEmployees
 
     /**
      * One user per role, each with the name as its password (the dev seed's rule,
@@ -252,7 +252,7 @@ export namespace EastwindEnvironment {
             discontinued: false,
             additionalInformation: [],
         }).save();
-    }
+    }//loadProducts
 
     /** Two persons (both flagged corrupt) and one company. */
     export async function loadCustomers(): Promise<void> {
@@ -282,7 +282,7 @@ export namespace EastwindEnvironment {
             fax: null,
             address: address(7),
         }).save();
-    }
+    }//loadCustomers
 
     /** The one shipper the test picks by label. */
     export async function loadShippers(): Promise<void> {
@@ -290,12 +290,11 @@ export namespace EastwindEnvironment {
             return;
 
         await ShipperEntity.create({ companyName: "FedEx", phone: phone(11) }).save();
-    }
+    }//loadShippers
 
     // ---- Fixture helpers a test uses to arrange ------------------------------------------------------
 
-    /**
-     * Append a line priced at the
+    /** Append a line priced at the
      * product's current unit price. The product is looked up by a substring of its name, so a test says
      * `addLine(order, "Sonic")`.
      */
@@ -310,7 +309,7 @@ export namespace EastwindEnvironment {
         });
         order.details.push(line);
         return line;
-    }
+    }//addLine
 
     /**
      * An XML seed that ships with the application: `terminal/AuthRules.xml`, `terminal/UserAssets.xml`.
@@ -378,7 +377,7 @@ function address(seed: number): AddressEmbedded {
         region: pick(next, ["NY", "FL", "WA", "CA"]),
         postalCode: digits(next, 5),
     });
-}
+}//address
 
 function phone(seed: number): string {
     return digits(random(seed), 10);
