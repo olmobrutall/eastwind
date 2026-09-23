@@ -650,14 +650,13 @@
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { MailingMicrosoftGraphLogic } from &quot;@altea/altea-mailing-microsoft-graph/server/MailingMicrosoftGraphLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { RemoteEmailsLogic } from &quot;@altea/altea-mailing-microsoft-graph/server/RemoteEmailsLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="MailingMicrosoftGraphLogic.start(sb);"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Browsing a user's real Outlook mailbox. OPT-IN" To="RemoteEmailsLogic.start(sb);//RemoteEmails"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Browsing a user's real Outlook mailbox" To="RemoteEmailsLogic.start(sb);//RemoteEmails"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { MailingMicrosoftGraphClient } from &quot;@altea/altea-mailing-microsoft-graph/client/MailingMicrosoftGraphClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { RemoteEmailsClient } from &quot;@altea/altea-mailing-microsoft-graph/client/RemoteEmails/RemoteEmailsClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="MailingMicrosoftGraphClient.start(cb);"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="RemoteEmailsClient.start(cb);//Mailing"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { MicrosoftGraphEmailServiceEntity } from &quot;@altea/altea-mailing-microsoft-graph/data/MailingMicrosoftGraph&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="MicrosoftGraphEmailServiceEntity,"/>
-			<RemoveLine Path="eastwind/.env.example" From="EASTWIND_REMOTE_EMAILS=" To="EASTWIND_REMOTE_EMAILS="/>
 		</Module>
 
 		<Module Name="Mailing_Pop3" DependsOn="Mailing" optional="true">
@@ -1054,7 +1053,6 @@
 			<RemoveSpanInLines Path="eastwind/app/starter.server.ts" Span="{ legacyMode }"/>
 			<!-- The guard goes; its BODY stays. A bare block is valid TypeScript, so "{ … }" needs no repair. -->
 			<RemoveSpanInLines Path="eastwind/app/starter.server.ts" Span="if (!legacyMode)"/>
-			<RemoveSpanInLines Path="eastwind/app/starter.server.ts" Span="!legacyMode &amp;&amp; "/>
 			<RemoveSpanInLines Path="eastwind/app/starter.server.ts" Span="legacyMode ? undefined : "/>
 			<!-- What is LEFT of "!legacyMode" is the option flags, which become plain true. -->
 			<ReplaceSpanInLines Path="eastwind/app/starter.server.ts" Span="!legacyMode" With="true"/>

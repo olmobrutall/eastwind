@@ -159,8 +159,7 @@ export function startFull(routes: RouteObject[], legacyMode = false): void {
     // AFTER MailingClient: its extra tab is an `overrideView` on the EntitySettings that call registers.
     if (!legacyMode)
         MailingReceptionClient.start(cb);
-    // Registered unconditionally on the client — the search page simply has no rows unless the server side
-    // is enabled (EASTWIND_REMOTE_EMAILS) and an Entra tenant is configured.
+    // The search page has no rows until an Entra tenant is configured.
     if (!legacyMode)
         RemoteEmailsClient.start(cb);//Mailing
 

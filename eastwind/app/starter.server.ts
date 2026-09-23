@@ -390,9 +390,9 @@ export namespace Starter {
             EmailReceptionLogic.start(sb);
         }//MailingReception
 
-        // Browsing a user's real Outlook mailbox. OPT-IN: it registers a search page whose every row is a
-        // live Microsoft Graph call, so without an Entra tenant it would only ever show an error.
-        if (!legacyMode && process.env["EASTWIND_REMOTE_EMAILS"] === "true")
+        // Browsing a user's real Outlook mailbox: a search page whose every row is a live Microsoft Graph
+        // call, so it shows rows only once an Entra tenant is configured.
+        if (!legacyMode)
             RemoteEmailsLogic.start(sb);//RemoteEmails
 
         // `registerExpressionsFor`: the types that grow the `Alerts` / `MyActiveAlerts` sub-tokens.
