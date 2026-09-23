@@ -89,7 +89,6 @@
 			<RemoveFiles Path="eastwind/.env.sqlserver"/>
 			<RemoveFiles Path="eastwind/.env.swpostgres"/>
 			<RemoveLine Path="AGENTS.md" From="## The port ledger" To="`Modules.xml`, which removes code at scaffold time."/>
-			<RemoveLine Path="AGENTS.md" Line="| `Port` (and `LegacyMode`, which depends on it) | everything eastwind carries only because it was ported |"/>
 
 			<!--
 			  `convert-translations` reads the LEGACY application's translation files out of `old/`, so it
@@ -367,7 +366,6 @@
 		</Module>
 
 		<Module Name="OpenID" DependsOn="Auth" optional="true">
-			<RemoveLine Path="AGENTS.md" Line="| `OpenID` | login through an OpenID Connect provider |"/>
 			<RemovePackageReference Name="@altea/altea-auth-openid"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { OpenIDLogic } from &quot;@altea/altea-auth-openid/server/OpenIDLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="OpenIDLogic.start(sb);//OpenID"/>
@@ -387,7 +385,6 @@
 		</Module>
 
 		<Module Name="WindowsAD" DependsOn="Auth" optional="true">
-			<RemoveLine Path="AGENTS.md" Line="| `WindowsAD` | login through Windows integrated authentication |"/>
 			<RemovePackageReference Name="@altea/altea-auth-windowsad"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { WindowsADLogic } from &quot;@altea/altea-auth-windowsad/server/WindowsADLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// The sweep&apos;s task symbol is a ROW" To="});//WindowsAD"/>
@@ -438,7 +435,6 @@
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="if (env[&quot;EASTWIND_AZURE_STORAGE_CONNECTION_STRING&quot;])" To="});//AzureStore"/>
 		</Module>
 		<Module Name="Files_S3" DependsOn="Files" optional="true">
-			<RemoveLine Path="AGENTS.md" Line="| `Files_S3` | the S3 / MinIO file-store backend |"/>
 			<RemovePackageReference Name="@altea/altea-files-s3"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="import { S3FileTypeAlgorithm, S3WebDownload }" To="import { S3Storage, resolveEndpoint, type S3Configuration }"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="if (env[&quot;EASTWIND_S3_ENDPOINT&quot;] || env[&quot;EASTWIND_S3_BUCKET&quot;])" To="}//S3Store"/>
@@ -631,7 +627,6 @@
 		</Module>
 
 		<Module Name="Mailing_ExchangeWS" DependsOn="Mailing" optional="true">
-			<RemoveLine Path="AGENTS.md" Line="| `Mailing_ExchangeWS` | sending mail through Exchange Web Services |"/>
 			<RemovePackageReference Name="@altea/altea-mailing-exchange"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { MailingExchangeWSLogic } from &quot;@altea/altea-mailing-exchange/server/MailingExchangeWSLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// The extra SENDER services. Each contributes one service TABLE" To="}//MailingExchangeWS"/>
@@ -656,7 +651,6 @@
 		</Module>
 
 		<Module Name="Mailing_Pop3" DependsOn="Mailing" optional="true">
-			<RemoveLine Path="AGENTS.md" Line="| `Mailing_Pop3` | receiving mail from a POP3 mailbox |"/>
 			<RemovePackageReference Name="@altea/altea-mailing-pop3"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { Pop3ConfigurationLogic } from &quot;@altea/altea-mailing-pop3/server/Pop3ConfigurationLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// The INBOUND half." To="}//MailingReception"/>
@@ -667,7 +661,6 @@
 		</Module>
 
 		<Module Name="SMS" optional="true">
-			<RemoveLine Path="AGENTS.md" Line="| `SMS` | sending text messages |"/>
 			<RemovePackageReference Name="@altea/altea-sms"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { SMSModuleLogic } from &quot;@altea/altea-sms/server/SMSModuleLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { SMSLogic } from &quot;@altea/altea-sms/server/SMSLogic&quot;;"/>
@@ -704,7 +697,6 @@
 		</Module>
 
 		<Module Name="Notes" DependsOn="Auth" optional="true">
-			<RemoveLine Path="AGENTS.md" Line="| `Notes` | free-text notes attached to any entity |"/>
 			<RemovePackageReference Name="@altea/altea-notes"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { NoteLogic } from &quot;@altea/altea-notes/server/NoteLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="NoteLogic.start(sb," To="NoteLogic.start(sb,"/>
@@ -725,7 +717,6 @@
 		<!-- ==== Documents ========================================================================== -->
 
 		<Module Name="HtmlEditor" optional="true">
-			<RemoveLine Path="AGENTS.md" Line="| `HtmlEditor` | the rich-text editing control |"/>
 			<RemovePackageReference Name="@altea/altea-html-editor"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { HtmlEditorClient } from &quot;@altea/altea-html-editor/client/HtmlEditorClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="HtmlEditorClient.start();"/>
@@ -766,7 +757,6 @@
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="ExcelImportLogic.start(sb);"/>
 			<!-- The flag is REQUIRED by ExcelClient.start (Signum's signature), so it turns false, not away. -->
 			<ReplaceSpanInLines Path="eastwind/app/MainAdmin.client.ts" Span="importFromExcel: true" With="importFromExcel: false"/>
-			<RemoveLine Path="AGENTS.md" Line="| `ExcelImport` | reading a spreadsheet back into rows; plain export and report templates stay |"/>
 		</Module>
 
 		<!-- ==== Logs and history =================================================================== -->
@@ -848,7 +838,6 @@
 		<!-- ==== Advanced =========================================================================== -->
 
 		<Module Name="Predictor" DependsOn="Files,Process" optional="true">
-			<RemoveLine Path="AGENTS.md" Line="| `Predictor` | machine-learning predictors |"/>
 			<RemovePackageReference Name="@altea/altea-machine-learning"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { PredictorLogic } from &quot;@altea/altea-machine-learning/server/PredictorLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { ProductPredictorPublication } from &quot;./products/Product.data&quot;;"/>
@@ -902,7 +891,6 @@
 		</Module>
 
 		<Module Name="Dynamic" DependsOn="Eval" optional="true">
-			<RemoveLine Path="AGENTS.md" Line="| `Dynamic` | runtime-defined types, views and code |"/>
 			<RemovePackageReference Name="@altea/altea-dynamic"/>
 			<RemovePackageReference Name="@altea/altea-isolation"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { DynamicLogic } from &quot;@altea/altea-dynamic/server/DynamicLogic&quot;;"/>
@@ -918,7 +906,6 @@
 		</Module>
 
 		<Module Name="Workflow" DependsOn="Eval,Scheduler,Process,Auth" optional="true">
-			<RemoveLine Path="AGENTS.md" Line="| `Workflow` | the BPMN-style workflow engine |"/>
 			<RemovePackageReference Name="@altea/altea-workflow"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { WorkflowLogicStarter } from &quot;@altea/altea-workflow/server/WorkflowLogicStarter&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { OrderWorkflow } from &quot;./orders/OrderWorkflow.server&quot;;"/>
@@ -944,7 +931,6 @@
 		<!-- ==== eastwind additions (no Southwind counterpart) ====================================== -->
 
 		<Module Name="Tour" DependsOn="Dashboard,UserQuery" optional="true">
-			<RemoveLine Path="AGENTS.md" Line="| `Tour` | guided in-app tours |"/>
 			<RemovePackageReference Name="@altea/altea-tour"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { TourLogic } from &quot;@altea/altea-tour/server/TourLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Guided in-app tours." To="}//Tour"/>
@@ -953,7 +939,6 @@
 		</Module>
 
 		<Module Name="WhatsNew" DependsOn="Files,Auth" optional="true">
-			<RemoveLine Path="AGENTS.md" Line="| `WhatsNew` | in-app release notes |"/>
 			<RemovePackageReference Name="@altea/altea-whats-new"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { WhatsNewLogic } from &quot;@altea/altea-whats-new/server/WhatsNewLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { WhatsNewFileType } from &quot;@altea/altea-whats-new/data/WhatsNew&quot;;"/>
@@ -979,7 +964,6 @@
 		  light / dark / auto selector beside it is the FRAMEWORK's and stays either way.
 		-->
 		<Module Name="ThemeSelector" optional="true">
-			<RemoveLine Path="AGENTS.md" Line="| `ThemeSelector` | the bootswatch palette picker in the navbar |"/>
 			<RemoveFiles Path="eastwind/app/ThemeSelector.tsx"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="import { ThemeSelector } from &quot;./ThemeSelector&quot;;"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" From="{/* The PALETTE picker: any bootswatch theme, or plain bootstrap. */}" To="&lt;ThemeSelector />"/>

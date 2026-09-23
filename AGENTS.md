@@ -155,49 +155,6 @@ It is a **client-side convenience only**: the request is the normal `/api/auth/l
 bypass and every auth rule applies. The flag is read behind `import.meta.env.DEV`, which Vite replaces
 statically, so it is dead code in a production build.
 
-## Starting a NEW application from this one
-
-```bash
-node altea/cli/altea-clone/bin/altea-clone.js --name northbreeze
-cd ../northbreeze
-node altea/cli/altea-simplify/bin/altea-simplify.js   # untick what you do not need; one commit per module
-pnpm install
-pnpm --filter northbreeze build
-```
-
-`altea-clone` creates a fresh git repository, adds the `altea` submodule pinned to the same commit this
-workspace has, and copies the application renamed in file names AND in content. It does NOT carry `old/`
-over: git reports a submodule as one entry with no contents, and `.gitmodules` is the single file the clone
-never copies, so a new application arrives without the Signum sources and writes its own `.gitmodules`
-naming only `altea`.
-
-`altea-simplify` then removes the OPTIONAL modules, following the root `Modules.xml`. Those are the ones a
-fresh clone drops unless the developer ticks them back on:
-
-| | |
-| --- | --- |
-| `Port` (and `LegacyMode`, which depends on it) | everything eastwind carries only because it was ported |
-| `OpenID` | login through an OpenID Connect provider |
-| `WindowsAD` | login through Windows integrated authentication |
-| `Files_S3` | the S3 / MinIO file-store backend |
-| `Mailing_ExchangeWS` | sending mail through Exchange Web Services |
-| `Mailing_Pop3` | receiving mail from a POP3 mailbox |
-| `SMS` | sending text messages |
-| `Notes` | free-text notes attached to any entity |
-| `Predictor` | machine-learning predictors |
-| `Dynamic` | runtime-defined types, views and code |
-| `Workflow` | the BPMN-style workflow engine |
-| `ThemeSelector` | the bootswatch palette picker in the navbar |
-| `HtmlEditor` | the rich-text editing control |
-| `ExcelImport` | reading a spreadsheet back into rows; plain export and report templates stay |
-| `WhatsNew` | in-app release notes |
-| `Tour` | guided in-app tours |
-
-The local FOLDER file store, the Azure Blob Storage backend, and AzureAD as the directory login, stay
-either way.
-
-Both CLIs live in `altea/cli/`; see [`altea/cli/README.md`](altea/cli/README.md).
-
 ## The port ledger
 
 **Porting a CLIENT's Signum application onto altea is
