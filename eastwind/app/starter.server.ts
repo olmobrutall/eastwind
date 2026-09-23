@@ -129,7 +129,7 @@ import { NoteLogic } from "@altea/altea-notes/server/NoteLogic";
 import { AlertNotificationLogic } from "@altea/altea-alert/server/AlertNotificationLogic";
 import type { Schema } from "@altea/altea/server/schema";
 import type { ResetLazy } from "@altea/altea/server/resetLazy";
-import { EastwindModeServer } from "./eastwindMode.server";
+import { GlobalsServer } from "./globals/GlobalsServer.server";
 
 // The single global entry that builds the schema, binds the connector, registers each module's logic and
 // completes.
@@ -611,8 +611,8 @@ export namespace Starter {
         // middleware sits behind the auth middleware AuthLogic.start installed.
         if (sb.webBuilder) {
             // This deployment's MODE, for the app's own client — EntityOverrides runs on both tiers and
-            // needs the same answer (see eastwindMode.server.ts).
-            EastwindModeServer.start(sb.webBuilder, { legacyMode });
+            // needs the same answer (see globals/GlobalsServer.server.ts).
+            GlobalsServer.start(sb.webBuilder, { legacyMode });
             CatalogApi.start(sb.webBuilder);
             PublicCatalogApi.start(sb.webBuilder);
             // The ROLE a self-registered visitor is given is the app's decision, not the module's, so it is

@@ -1,7 +1,5 @@
 import { WebBuilder, CustomType } from "@altea/altea/server/webApi";
-import type { EastwindMode } from "./eastwindMode.data";
-
-
+import type { EastwindMode } from "../eastwindMode.data";
 
 /**
  * Serves the app's deployment MODE to its own client.
@@ -14,7 +12,7 @@ import type { EastwindMode } from "./eastwindMode.data";
  * ANONYMOUS, and it must be: the client reads it during boot, before anyone has logged in. It reveals only
  * which module set this deployment runs, which the rendered navigation shows anyway.
  */
-export namespace EastwindModeServer {
+export namespace GlobalsServer {
     export function start(ws: WebBuilder, mode: EastwindMode): void {
         ws.get("/api/eastwind/appMode",
             { res: CustomType<EastwindMode>(), allowAnonymous: true },

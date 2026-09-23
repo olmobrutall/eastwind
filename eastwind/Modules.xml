@@ -1042,16 +1042,16 @@
 			  before the bare "!legacyMode" one, or the guard collapses to "if ()".
 			-->
 			<RemoveFiles Path="eastwind/app/eastwindMode.data.ts"/>
-			<RemoveFiles Path="eastwind/app/eastwindMode.server.ts"/>
+			<RemoveFiles Path="eastwind/app/globals/GlobalsServer.server.ts"/>
 
 			<!-- ==== starter.server.ts ==== -->
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { simplifyDiffTables } from &quot;@altea/altea/server/sync/schemaSynchronizer&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { EastwindModeServer } from &quot;./eastwindMode.server&quot;;"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { GlobalsServer } from &quot;./globals/GlobalsServer.server&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Point eastwind at a database a LEGACY application generated" To="const legacyMode = isEnvTrue(process.env[&quot;LegacyMode&quot;]);"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="sb.settings.legacyMode = legacyMode;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// What a legacy sync must not act on" To="}//LegacyMode"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// LEGACY MODE only. Columns a legacy database HAS that this application" To="}//ignoreConfigurationsForLegacyOnly"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" From="// This deployment&apos;s MODE, for the app&apos;s own client" To="EastwindModeServer.start(sb.webBuilder, { legacyMode });"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" From="// This deployment&apos;s MODE, for the app&apos;s own client" To="GlobalsServer.start(sb.webBuilder, { legacyMode });"/>
 			<RemoveSpanInLines Path="eastwind/app/starter.server.ts" Span="{ legacyMode }"/>
 			<!-- The guard goes; its BODY stays. A bare block is valid TypeScript, so "{ … }" needs no repair. -->
 			<RemoveSpanInLines Path="eastwind/app/starter.server.ts" Span="if (!legacyMode)"/>
