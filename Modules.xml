@@ -1069,6 +1069,11 @@
 
 			<!-- ==== the environment ==== -->
 			<RemoveFiles Path="eastwind/.env.swpostgres"/>
+
+			<!-- The switch itself, live or commented out (.env.swpostgres goes whole, above). -->
+			<RemoveLine Path="eastwind/.env.dev" Contains="LegacyMode="/>
+			<RemoveLine Path="eastwind/.env.live" Contains="LegacyMode="/>
+			<RemoveLine Path="eastwind/.env.test" Contains="LegacyMode="/>
 				</Module>
 
 		<!--
