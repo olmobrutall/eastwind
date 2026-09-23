@@ -58,7 +58,7 @@ function assertDisposableDatabase(): void {
         + `\n`
         + `Generating DROPS AND RECREATES that database. Only an environment whose .env file contains\n`
         + `    EASTWIND_DISPOSABLE_DB=true\n`
-        + `may be generated — see .env.example. Add it to .env.local (or whichever environment is yours to\n`
+        + `may be generated. Add it to .env.local (or whichever environment is yours to\n`
         + `lose); never to .env.test or .env.live.`);
 }
 export async function generateTestEnvironment(): Promise<void> {

@@ -89,7 +89,7 @@ if (env == null || env.startsWith("-"))
 const envFile = `.env.${env}`;
 if (!fs.existsSync(path.join(appRoot, envFile)))
     fail(`${envFile} does not exist.`,
-        `Copy .env.example to ${envFile} and fill it in.`,
+        `Copy the nearest .env.<environment> to ${envFile} and fill it in.`,
         ...availableEnvironments());
 
 if (target === "stack")
@@ -168,7 +168,7 @@ function loadEnvironment() {
 /** The `.env.*` files that exist, so a wrong name shows what is actually available. */
 function availableEnvironments() {
     const found = fs.readdirSync(appRoot)
-        .filter(f => f.startsWith(".env.") && f !== ".env.example")
+        .filter(f => f.startsWith(".env."))
         .map(f => f.slice(".env.".length))
         .sort();
 

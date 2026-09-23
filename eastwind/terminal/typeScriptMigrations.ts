@@ -83,7 +83,7 @@ export namespace TypeScriptMigrations {
      *
      * The initial VALUES are plain DEFAULTS for a dev machine, not environment reads: the row is the source
      * of truth from the first run, and what a deployment must decide BEFORE a row can be read stays in the
-     * environment (see .env.example). Every credential — the chatbot provider keys, the three DIRECTORY
+     * environment (see the .env files). Every credential — the chatbot provider keys, the three DIRECTORY
      * members — is seeded empty / null: those are configured on the page, not by redeploying.
      */
     export async function createCulturesAndConfiguration(): Promise<void> {

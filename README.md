@@ -33,8 +33,8 @@ pnpm --filter eastwind build
 ```
 
 Every entry point takes the **environment** as an argument — there is no default, so nothing can start
-against the wrong database by omission. Copy `eastwind/.env.example` to `eastwind/.env.local` and set at
-least the connection string, then:
+against the wrong database by omission. Each `eastwind/.env.<environment>` is a tracked template; set at
+least the connection string in `eastwind/.env.local`, then:
 
 ```bash
 pnpm --filter eastwind terminal local new   # clean + generate the schema   (DESTRUCTIVE)

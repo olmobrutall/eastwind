@@ -223,9 +223,7 @@
 			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="await Northwind.close();"/>
 			<RemoveLine Path="eastwind/terminal/terminal.ts" Line="case &quot;seed-northwind&quot;: await NorthwindSeed.seed(); break;"/>
 			<RemoveSpanInLines Path="eastwind/terminal/terminal.ts" Span=", seed-northwind"/>
-			<RemoveLine Path="eastwind/.env.example" From="NORTHWIND_DB=Server=" To="NORTHWIND_DB=Server="/>
-			<RemoveLine Path="eastwind/.env.example" From="# NORTHWIND_DB=postgresql" To="# NORTHWIND_DB=postgresql"/>
-			<!-- The other .env files: every line naming the key, live or commented out. -->
+			<!-- Every line naming the key, in every .env file, live or commented out. -->
 			<RemoveLine Path="eastwind/.env.dev" Contains="NORTHWIND_DB"/>
 			<RemoveLine Path="eastwind/.env.live" Contains="NORTHWIND_DB"/>
 			<RemoveLine Path="eastwind/.env.local" Contains="NORTHWIND_DB"/>
@@ -404,7 +402,7 @@
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.tsx" From="&lt;Tab eventKey=&quot;windowsAD&quot;" To="&lt;/Tab>"/>
 			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="windowsAD: null,"/>
 			<RemoveLine Path="eastwind/test/environment/eastwindEnvironment.ts" Line="windowsAD: null,"/>
-			<RemoveLine Path="eastwind/.env.example" From="VITE_WINDOWS_AUTH=" To="VITE_WINDOWS_AUTH="/>
+			<RemoveLine Path="eastwind/.env.dev" Contains="VITE_WINDOWS_AUTH"/>
 		</Module>
 
 		<!-- ==== Files ============================================================================== -->
@@ -438,14 +436,12 @@
 			<RemovePackageReference Name="@altea/altea-files-azure"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="import { AzureBlobStorageFileTypeAlgorithm, AzureWebDownload }" To="import { AzureBlobStorage }"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="if (env[&quot;EASTWIND_AZURE_STORAGE_CONNECTION_STRING&quot;])" To="});//AzureStore"/>
-			<RemoveLine Path="eastwind/.env.example" From="# Azure Blob Storage (@altea/altea-files-azure)" To="# EASTWIND_AZURE_STORAGE_CONNECTION_STRING="/>
 		</Module>
 		<Module Name="Files_S3" DependsOn="Files" optional="true">
 			<RemoveLine Path="AGENTS.md" Line="| `Files_S3` | the S3 / MinIO file-store backend |"/>
 			<RemovePackageReference Name="@altea/altea-files-s3"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="import { S3FileTypeAlgorithm, S3WebDownload }" To="import { S3Storage, resolveEndpoint, type S3Configuration }"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="if (env[&quot;EASTWIND_S3_ENDPOINT&quot;] || env[&quot;EASTWIND_S3_BUCKET&quot;])" To="}//S3Store"/>
-			<RemoveLine Path="eastwind/.env.example" From="# S3 / MinIO (@altea/altea-files-s3)" To="# EASTWIND_S3_FORCE_PATH_STYLE=true"/>
 			<!-- The other .env files: every line naming an S3 key, live or commented out. -->
 			<RemoveLine Path="eastwind/.env.dev" Contains="EASTWIND_S3_"/>
 			<RemoveLine Path="eastwind/.env.live" Contains="EASTWIND_S3_"/>

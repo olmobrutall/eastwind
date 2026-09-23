@@ -128,8 +128,8 @@ local database ends up holding the test fixture, not the Northwind demo data.
 
 ### Environments
 
-`.env.example` is the tracked TEMPLATE and documents every variable. Copy it to `.env.<environment>`;
-eastwind ships `local` / `dev` / `test` / `live`.
+Each `.env.<environment>` is its own tracked template: eastwind ships `local` / `dev` / `test` / `live`,
+and a new environment starts as a copy of the nearest one.
 
 `.gitignore` ignores `.env.*`, and **eastwind's own are force-added anyway** — deliberately, and it is
 what makes the workflow below work: `altea-clone` copies what `git ls-files` lists, so a tracked
