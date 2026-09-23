@@ -91,7 +91,7 @@ not source this application ships. The one-off data migrations that converted a 
     Which directory owns the login flow is not configuration at all: it is the base class of
     `EastwindAuthorizer`, installed in the Starter as Southwind installs `SouthwindAuthorizer`.
   - **Southwind's `Folders` member is NOT ported.** It stores one editable path per local file store; here
-    a store's folder is derived from the store's own NAME — `EastwindFileStores.store("help-images")` writes
+    a store's folder is derived from the store's own NAME — `fileStore("help-images")` writes
     to `./files/help-images`, and the same name is the Azure container / S3 bucket, so it is KEBAB-CASE and
     checked at registration (those two accept only lower-case letters, digits and hyphens; Southwind hits
     the same rule by hand, since it passes the configured folder straight to `new BlobContainerClient`).

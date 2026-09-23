@@ -82,8 +82,11 @@ import { OperationLogEntity } from "@altea/altea/data/operationLog";
 import { ViewLogEntity } from "@altea/altea-view-log/data/ViewLog";
 import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
 import { RestLogEntity } from "@altea/altea-rest/data/Rest";
-import { FileTypeAlgorithm } from "@altea/altea-files/server/FileTypeAlgorithm";
-import { EastwindFileStores } from "./eastwindFileStores.server";
+import { FileTypeAlgorithm, type IFileTypeAlgorithm } from "@altea/altea-files/server/FileTypeAlgorithm";
+import { AzureBlobStorageFileTypeAlgorithm, AzureWebDownload } from "@altea/altea-files-azure/server/AzureBlobStorageFileTypeAlgorithm";
+import { AzureBlobStorage } from "@altea/altea-files-azure/server/AzureBlobStorageConfiguration";
+import { S3FileTypeAlgorithm, S3WebDownload } from "@altea/altea-files-s3/server/S3FileTypeAlgorithm";
+import { S3Storage, resolveEndpoint, type S3Configuration } from "@altea/altea-files-s3/server/S3Configuration";
 import { BigStringLogic, BigStringConfiguration, type BigStringMode } from "@altea/altea-files/server/BigStringLogic";
 import { EmailReceptionLogic } from "@altea/altea-email/server/EmailReceptionLogic";
 import { MailingExchangeWSLogic } from "@altea/altea-mailing-exchange/server/MailingExchangeWSLogic";
@@ -280,7 +283,7 @@ export namespace Starter {
         // The photo store; `CachedProfilePhotoLogic.start` registers the file type itself, so the app only
         // supplies the algorithm. `onlyImages` is what makes an Azure / S3 store serve these INLINE.
         if (!legacyMode) {
-            CachedProfilePhotoLogic.start(sb, EastwindFileStores.store("profile-photos", { onlyImages: true }));
+            CachedProfilePhotoLogic.start(sb, fileStore("profile-photos", { onlyImages: true }));
         }//CachedProfilePhoto
 
         OpenIDLogic.start(sb);//OpenID
@@ -332,7 +335,7 @@ export namespace Starter {
         DashboardLogic.start(sb);
         // The dashboard SNAPSHOT store. A
         // snapshot is read far more often than written, hence a store the app can point at object storage.
-        CachedQueryLogic.start(sb, { fileTypeAlgorithm: EastwindFileStores.store("cached-query") });
+        CachedQueryLogic.start(sb, { fileTypeAlgorithm: fileStore("cached-query") });
         DashboardLogic.registerUserTypeCondition(EastwindTypeCondition.UserEntities);
         DashboardLogic.registerRoleTypeCondition(EastwindTypeCondition.RoleEntities);//Dashboard
 
@@ -351,7 +354,7 @@ export namespace Starter {
         // templates do not, so they cannot carry attachments at all.
         if (!legacyMode)
             FileTypeLogic.register(EmailFileType.Attachment,
-                EastwindFileStores.store("email-attachments"));//EmailAttachment
+                fileStore("email-attachments"));//EmailAttachment
 
         // Self-service password reset — BEFORE EmailLogic.start, whose EmailModel table its two models seed.
         ResetPasswordRequestLogic.start(sb);//ResetPassword
@@ -439,16 +442,16 @@ export namespace Starter {
         if (!legacyMode) {
             WhatsNewLogic.start(sb);
             FileTypeLogic.register(WhatsNewFileType.WhatsNewPreviewFileType,
-                EastwindFileStores.store("whats-new"));
+                fileStore("whats-new"));
             FileTypeLogic.register(WhatsNewFileType.WhatsNewAttachmentFileType,
-                EastwindFileStores.store("whats-new"));
+                fileStore("whats-new"));
             WhatsNewLogic.registerPublishedTypeCondition(EastwindTypeCondition.PublishedNews);
         }//WhatsNew
 
         // ==== MACHINE LEARNING (needs processes, files, chart) ========================================
 
         PredictorLogic.start(sb, {
-            predictorFile: EastwindFileStores.store("predictor-models"),
+            predictorFile: fileStore("predictor-models"),
         });//Predictor
 
         // ==== DYNAMIC AND WORKFLOW (need eval, scheduler, processes, auth) ============================
@@ -481,7 +484,7 @@ export namespace Starter {
         OmniboxLogic.start(sb);
         MapLogic.start(sb);
         // The image store is the app's.
-        HelpModuleLogic.start(sb, EastwindFileStores.store("help-image", { onlyImages: true }));//Help
+        HelpModuleLogic.start(sb, fileStore("help-image", { onlyImages: true }));//Help
 
         // The API-key table + its authenticator, and the replayable log of the public REST surface.
         // The two halves (log + api key) are one start per module.
@@ -638,9 +641,46 @@ function configureBigString(sb: SchemaBuilder): void {
 
 function registerBigString(sb: SchemaBuilder, type: Type<Entity>, fileType: FileTypeSymbol,
     storeName: string, mode: BigStringMode = "File"): void {
-    FileTypeLogic.register(fileType, EastwindFileStores.store(storeName));
+    FileTypeLogic.register(fileType, fileStore(storeName));
     BigStringLogic.registerAll(sb, type, new BigStringConfiguration(mode, fileType));
 }//registerBigString
+
+// A named file store. The NAME is the whole address — the folder under EASTWIND_FILE_STORE_ROOT, the Azure
+// container, the S3 bucket or key prefix — so it is kebab-case. The backend is whichever credentials are set.
+function fileStore(name: string, options?: { onlyImages?: boolean }): IFileTypeAlgorithm {
+    const env = process.env;
+
+    if (env["EASTWIND_AZURE_STORAGE_CONNECTION_STRING"])
+        return new AzureBlobStorageFileTypeAlgorithm({
+            getClient: () => AzureBlobStorage.container({ connectionString: env["EASTWIND_AZURE_STORAGE_CONNECTION_STRING"]! },
+                AzureBlobStorage.containerNameOf(name, "eastwind")),
+            createBlobContainerIfNotExists: true,
+            webDownload: () => AzureWebDownload.None,
+            ...options,
+        });//AzureStore
+
+    if (env["EASTWIND_S3_ENDPOINT"] || env["EASTWIND_S3_BUCKET"]) {
+        const s3: S3Configuration = {
+            endpoint: env["EASTWIND_S3_ENDPOINT"] ?? null,
+            accessKey: env["EASTWIND_S3_ACCESS_KEY"] ?? null,
+            secretKey: env["EASTWIND_S3_SECRET_KEY"] ?? null,
+            region: env["EASTWIND_S3_REGION"] ?? null,
+            sharedBucketName: env["EASTWIND_S3_BUCKET"] ?? null,
+            forcePathStyle: env["EASTWIND_S3_FORCE_PATH_STYLE"] !== "false",
+        };
+        return new S3FileTypeAlgorithm({
+            client: S3Storage.client(s3),
+            endpoint: resolveEndpoint(s3),
+            sharedBucketName: s3.sharedBucketName,
+            getBucketNameOrSubDirectory: () => S3Storage.bucketNameOf(name, "eastwind"),
+            createBucketIfNotExists: true,
+            webDownload: () => S3WebDownload.None,
+            ...options,
+        });
+    }//S3Store
+
+    return new FileTypeAlgorithm({ physicalPrefix: () => `${env["EASTWIND_FILE_STORE_ROOT"] ?? "./files"}/${name}`, ...options });
+}//fileStore
 
 // LEGACY MODE only. Columns a legacy database HAS that this application's model deliberately does not.
 // Left to itself the synchronizer offers each as a RENAME of whatever model column sorts nearest by string
@@ -656,7 +696,7 @@ function registerBigString(sb: SchemaBuilder, type: Type<Entity>, fileType: File
 // `Pinned_HasValue` — and this must hold on either.
 const legacyOnlyColumns: Record<string, string[]> = {
     // ApplicationConfiguration. `Folders` only: a store's folder is derived from the store's own NAME
-    // here, so there is nothing to configure (see eastwindFileStores.server.ts).
+    // here, so there is nothing to configure (see fileStore).
     //
     // `Translation` and `AuthTokens` were both on this list and are not any more — each is a member on
     // this side now, spelling its columns exactly as a legacy row does, so they MATCH. Hiding a matching

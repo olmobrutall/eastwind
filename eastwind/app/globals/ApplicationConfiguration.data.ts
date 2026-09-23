@@ -24,13 +24,13 @@ import { WindowsADConfigurationEmbedded } from "@altea/altea-auth-windowsad/data
 // Settings an administrator should be able to see and change are DATA, not deployment wiring, so they live
 // here rather than in `EASTWIND_*` environment variables. What stays in the environment is what must be
 // decided BEFORE a row can be read: the connection string, and the storage credentials / backend switch of
-// `eastwindFileStores.server.ts`. A fresh database gets this row from CreateCulturesAndConfiguration with
+// `fileStore` in starter.server.ts. A fresh database gets this row from CreateCulturesAndConfiguration with
 // plain dev DEFAULTS (terminal/typeScriptMigrations.ts); from then on the row is the only source of truth.
 //
 // Two members are worth a note:
 //  - there is no `Folders` member. A store's folder is derived from the store's own NAME
-//    (`./files/<name>`, see eastwindFileStores.store), so the paths cannot drift from the code that names
-//    the stores. WHICH backend holds the bytes stays in the environment as EASTWIND_FILE_STORE.
+//    (`./files/<name>`, see fileStore), so the paths cannot drift from the code that names
+//    the stores. WHICH backend holds the bytes follows from the cloud credentials in the environment.
 //  - `databaseName` is STORED but never read: the row is selected by `environment` instead — see both
 //    fields.
 /**

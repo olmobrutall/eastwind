@@ -276,7 +276,7 @@
 		<Module Name="Help">
 			<RemovePackageReference Name="@altea/altea-help"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { HelpModuleLogic } from &quot;@altea/altea-help/server/HelpModuleLogic&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" From="// The image store is the app&apos;s." To="HelpModuleLogic.start(sb, EastwindFileStores.store(&quot;help-image&quot;, { onlyImages: true }));//Help"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" From="// The image store is the app&apos;s." To="HelpModuleLogic.start(sb, fileStore(&quot;help-image&quot;, { onlyImages: true }));//Help"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { HelpClient } from &quot;@altea/altea-help/client/HelpClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// AFTER OmniboxClient (the provider registry) and AFTER HtmlEditorClient" To="HelpClient.start(cb);"/>
 		</Module>
@@ -413,11 +413,10 @@
 
 		<Module Name="Files">
 			<RemovePackageReference Name="@altea/altea-files"/>
-			<RemoveFiles Path="eastwind/app/eastwindFileStores.server.ts"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { FileLogic } from &quot;@altea/altea-files/server/FileLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { FileTypeLogic } from &quot;@altea/altea-files/server/FileTypeLogic&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { FileTypeAlgorithm } from &quot;@altea/altea-files/server/FileTypeAlgorithm&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { EastwindFileStores } from &quot;./eastwindFileStores.server&quot;;"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { FileTypeAlgorithm, type IFileTypeAlgorithm } from &quot;@altea/altea-files/server/FileTypeAlgorithm&quot;;"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" From="// A named file store. The NAME is the whole address" To="}//fileStore"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import type { FileTypeSymbol } from &quot;@altea/altea-files/data/Files&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="import { BigStringLogic, BigStringConfiguration" To="import { BigStringLogic, BigStringConfiguration"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// After AuthLogic.start, so their routes are mounted behind" To="BigStringLogic.start(sb);"/>
@@ -428,7 +427,6 @@
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="FilesClient.start(cb);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { BigStringMixin } from &quot;@altea/altea-files/data/BigString&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="BigStringMixin.declare();"/>
-			<RemoveLine Path="eastwind/.env.example" From="EASTWIND_FILE_STORE=" To="EASTWIND_FILE_STORE="/>
 		</Module>
 
 		<!--
@@ -436,24 +434,19 @@
 		  reason to carry the Azure SDK. A fresh clone keeps Azure and drops S3 (optional); the LOCAL folder
 		  backend, which needs no credentials and no account, stays either way.
 
-		  Each removes its entry from `STORE_KINDS`, which is the single list the FileStoreKind type, the
-		  `kind()` check and its error message all read from.
+		  Each removes its imports and its branch of `fileStore` in starter.server.ts.
 		-->
 		<Module Name="Files_Azure" DependsOn="Files">
 			<RemovePackageReference Name="@altea/altea-files-azure"/>
-			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="import { AzureBlobStorageFileTypeAlgorithm, AzureWebDownload }" To="import { AzureBlobStorage, type AzureBlobStorageConfiguration }"/>
-			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" Line="&quot;azure&quot;,//AzureKind"/>
-			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="case &quot;azure&quot;:" To="});//AzureStore"/>
-			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="function azureConfiguration(): AzureBlobStorageConfiguration {" To="}//AzureConfiguration"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" From="import { AzureBlobStorageFileTypeAlgorithm, AzureWebDownload }" To="import { AzureBlobStorage }"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" From="if (env[&quot;EASTWIND_AZURE_STORAGE_CONNECTION_STRING&quot;])" To="});//AzureStore"/>
 			<RemoveLine Path="eastwind/.env.example" From="# Azure Blob Storage (@altea/altea-files-azure)" To="# EASTWIND_AZURE_STORAGE_CONNECTION_STRING="/>
 		</Module>
 		<Module Name="Files_S3" DependsOn="Files" optional="true">
 			<RemoveLine Path="AGENTS.md" Line="| `Files_S3` | the S3 / MinIO file-store backend |"/>
 			<RemovePackageReference Name="@altea/altea-files-s3"/>
-			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="import { S3FileTypeAlgorithm, S3WebDownload }" To="import { S3Storage, resolveEndpoint, type S3Configuration }"/>
-			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" Line="&quot;s3&quot;,//S3Kind"/>
-			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="case &quot;s3&quot;:" To="});//S3Store"/>
-			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="function s3Configuration(): S3Configuration {" To="}//S3Configuration"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" From="import { S3FileTypeAlgorithm, S3WebDownload }" To="import { S3Storage, resolveEndpoint, type S3Configuration }"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" From="if (env[&quot;EASTWIND_S3_ENDPOINT&quot;] || env[&quot;EASTWIND_S3_BUCKET&quot;])" To="}//S3Store"/>
 			<RemoveLine Path="eastwind/.env.example" From="# S3 / MinIO (@altea/altea-files-s3)" To="# EASTWIND_S3_FORCE_PATH_STYLE=true"/>
 			<!-- The other .env files: every line naming an S3 key, live or commented out. -->
 			<RemoveLine Path="eastwind/.env.dev" Contains="EASTWIND_S3_"/>
@@ -607,7 +600,7 @@
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { EmailFileType } from &quot;@altea/altea-email/data/Email&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { EmailMessageEntity } from &quot;@altea/altea-email/data/EmailMessage&quot;;"/>
 			<RemoveLine Path="eastwind/app/webServer.server.ts" Line="import { AsyncEmailSender } from &quot;@altea/altea-email/server/AsyncEmailSender&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Registered only when the app passes an `attachment` algorithm" To="EastwindFileStores.store(&quot;email-attachments&quot;));//EmailAttachment"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Registered only when the app passes an `attachment` algorithm" To="fileStore(&quot;email-attachments&quot;));//EmailAttachment"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Email + templating. The app supplies only what is app-specific" To="RemoteEmailsLogic.start(sb);//RemoteEmails"/>
 			<RemoveLine Path="eastwind/app/webServer.server.ts" Line="AsyncEmailSender.startAsyncEmailSenderAfter(5000);"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="registerBigString(sb, EmailMessageEntity, BigStringFileType.EmailMessage, &quot;email-messages&quot;);"/>
