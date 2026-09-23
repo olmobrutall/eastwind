@@ -90,7 +90,7 @@ export class ApplicationConfigurationEntity extends Entity {
       read the very first request, before any row can be loaded, so it stays in AUTH_TOKEN_KEY. */
     authTokens: AuthTokenConfigurationEmbedded;
 
-    /*Auth — at most one directory owns the login flow; see eastwindAuthAD.server.ts */
+    /*Auth — the installed authorizer's base class picks which one signs in; see eastwindAuthorizer.server.ts */
     azureAD: AzureADConfigurationEmbedded | null;
     openID: OpenIDConfigurationEmbedded | null;
     windowsAD: WindowsADConfigurationEmbedded | null;

@@ -88,9 +88,9 @@ not source this application ships. The one-off data migrations that converted a 
     an edit take effect without a restart, as Signum's `InvalidateWith` does.
   - **what stays in the environment** is what Southwind also keeps in `appsettings.json`: the connection
     string, the file-store BACKEND + its cloud credentials (Signum's `azureStorageConnectionString` is a
-    `Starter.Start` parameter), `NORTHWIND_DB` (the terminal's demo-data SOURCE — see the bullet below), and
-    `EASTWIND_AD_PROVIDER` — which directory owns the login flow, decided while the schema is built, before
-    a row can be read.
+    `Starter.Start` parameter) and `NORTHWIND_DB` (the terminal's demo-data SOURCE — see the bullet below).
+    Which directory owns the login flow is not configuration at all: it is the base class of
+    `EastwindAuthorizer`, installed in the Starter as Southwind installs `SouthwindAuthorizer`.
   - **Southwind's `Folders` member is NOT ported.** It stores one editable path per local file store; here
     a store's folder is derived from the store's own NAME — `EastwindFileStores.store("help-images")` writes
     to `./files/help-images`, and the same name is the Azure container / S3 bucket, so it is KEBAB-CASE and

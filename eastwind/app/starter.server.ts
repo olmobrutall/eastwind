@@ -118,7 +118,7 @@ import { CachedProfilePhotoLogic } from "@altea/altea-auth-azuread/server/Cached
 import { OpenIDLogic } from "@altea/altea-auth-openid/server/OpenIDLogic";
 import { WindowsADLogic } from "@altea/altea-auth-windowsad/server/WindowsADLogic";
 import { ResetPasswordRequestLogic } from "@altea/altea-auth-reset-password/server/ResetPasswordRequestLogic";
-import { EastwindAuthAD } from "./eastwindAuthAD.server";
+import { EastwindAuthorizer } from "./eastwindAuthorizer.server";
 import { CurrentServerContextSkill } from "@altea/altea-agent/server/Skills/CurrentServerContextSkill";
 import { IntroductionSkill } from "@altea/altea-agent/server/Skills/IntroductionSkill";
 import { AlertLogic } from "@altea/altea-alert/server/AlertLogic";
@@ -245,6 +245,9 @@ export namespace Starter {
         // unauthenticated posture.
         AuthLogic.start(sb, "System", "Anonymous",
             { getTokenConfiguration: () => GlobalsLogic.configurationLazy.value().thenTyped(c => c.authTokens) });
+        // The ONE authorizer: password login, "invite a user from the directory", and the user a directory
+        // sign-in creates. Which directory it talks to is its BASE CLASS — see eastwindAuthorizer.server.ts.
+        AuthLogic.authorizer = new EastwindAuthorizer();
         TypeAuthLogic.start(sb);
         PermissionAuthLogic.start(sb);
         OperationAuthLogic.start(sb);
@@ -267,28 +270,21 @@ export namespace Starter {
 
         // ==== DIRECTORY LOGIN (auth sub-modules; need auth + files) ===================================
 
-        // Directory login modules. AzureAD is started unconditionally, so its ADGroup /
-        // CachedProfilePhoto tables are part of the schema whether or not a tenant is configured; OpenID and
-        // WindowsAD contribute no tables and only REPLACE the installed authorizer.
-        AzureADLogic.start(sb, {
-            getConfig: () => EastwindAuthAD.azureADConfiguration(),
-            adGroupsAndQueries: true,
-            deactivateUsersTask: true,
-        });//AzureAD
+        // The three directory login modules, all started: each serves its routes and its client probe, and
+        // signs in only when the installed authorizer (above) is of its kind — otherwise it answers "not
+        // configured". Only AzureAD contributes tables (ADGroup, CachedProfilePhoto), so the schema is the
+        // same whichever directory the authorizer uses.
+        AzureADLogic.start(sb, { adGroupsAndQueries: true, deactivateUsersTask: true });//AzureAD
         // The photo store; `CachedProfilePhotoLogic.start` registers the file type itself, so the app only
         // supplies the algorithm. `onlyImages` is what makes an Azure / S3 store serve these INLINE.
         if (!legacyMode) {
             CachedProfilePhotoLogic.start(sb, EastwindFileStores.store("profile-photos", { onlyImages: true }));
         }//CachedProfilePhoto
 
-        OpenIDLogic.start(sb, () => EastwindAuthAD.openIDConfiguration(),
-            { installAuthorizer: EastwindAuthAD.provider() === "openid" });//OpenID
+        OpenIDLogic.start(sb);//OpenID
 
-        if (EastwindAuthAD.provider() === "windowsad")
-            WindowsADLogic.start(sb, {
-                getConfig: () => EastwindAuthAD.windowsADConfiguration(),
-                deactivateUsersTask: true,
-            });//WindowsAD
+        // The sweep's task symbol is a ROW, which a legacy database does not have.
+        WindowsADLogic.start(sb, { deactivateUsersTask: !legacyMode });//WindowsAD
 
         // ==== SCHEDULING AND PROCESSES ================================================================
 

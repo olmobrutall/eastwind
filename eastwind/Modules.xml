@@ -308,8 +308,8 @@
 			<RemoveLine Path="eastwind/app/MainPublic.client.tsx" Line="const user = AuthClient.currentUser();"/>
 			<RemoveLine Path="eastwind/app/MainPublic.client.tsx" Line="const ANONYMOUS_USER_NAME = &quot;Anonymous&quot;;"/>
 			<!-- The three DIRECTORY getters and the provider switch are all this module's. -->
-			<RemoveFiles Path="eastwind/app/eastwindAuthAD.server.ts"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { EastwindAuthAD } from &quot;./eastwindAuthAD.server&quot;;"/>
+			<RemoveFiles Path="eastwind/app/eastwindAuthorizer.server.ts"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { EastwindAuthorizer } from &quot;./eastwindAuthorizer.server&quot;;"/>
 			<!-- No user to be logged out, so nothing to redirect to the shop window either. -->
 			<RemoveLine Path="eastwind/app/Home.tsx" Line="import { AuthClient } from &quot;@altea/altea-auth/client/AuthClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/Home.tsx" From="if (!AuthClient.currentUser()) {" To="}//AnonymousRedirect"/>
@@ -352,7 +352,7 @@
 			<RemovePackageReference Name="@altea/altea-auth-azuread"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { AzureADLogic } from &quot;@altea/altea-auth-azuread/server/AzureADLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { CachedProfilePhotoLogic } from &quot;@altea/altea-auth-azuread/server/CachedProfilePhotoLogic&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Directory login modules. AzureAD is started unconditionally" To="});//AzureAD"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" Line="AzureADLogic.start(sb, { adGroupsAndQueries: true, deactivateUsersTask: true });//AzureAD"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// The photo store; `CachedProfilePhotoLogic.start` registers" To="}//CachedProfilePhoto"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { AzureADClient } from &quot;@altea/altea-auth-azuread/client/AzureADClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// `profilePhotos: &quot;cached&quot;` serves avatars" To="AzureADClient.start(cb, { adGroups: true,"/>
@@ -364,14 +364,15 @@
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.tsx" From="&lt;Tab eventKey=&quot;azureAD&quot;" To="&lt;/Tab>"/>
 			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="azureAD: null,"/>
 			<RemoveLine DependsOn="Test" Path="eastwind/test/environment/eastwindEnvironment.ts" Line="azureAD: null,"/>
-			<RemoveSpanInLines Path="eastwind/app/eastwindAuthAD.server.ts" Span="&quot;azuread&quot; | "/>
+			<!-- eastwindAuthorizer.server.ts is left alone ON PURPOSE: EastwindAuthorizer extends AzureADAuthorizer,
+			     so the build fails until the application picks the base class of the directory it does use. -->
 		</Module>
 
 		<Module Name="OpenID" DependsOn="Auth" optional="true">
 			<RemoveLine Path="AGENTS.md" Line="| `OpenID` | login through an OpenID Connect provider |"/>
 			<RemovePackageReference Name="@altea/altea-auth-openid"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { OpenIDLogic } from &quot;@altea/altea-auth-openid/server/OpenIDLogic&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" From="OpenIDLogic.start(sb, () => EastwindAuthAD.openIDConfiguration()," To="{ installAuthorizer: EastwindAuthAD.provider() === &quot;openid&quot; });//OpenID"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" Line="OpenIDLogic.start(sb);//OpenID"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { OpenIDAdminClient } from &quot;@altea/altea-auth-openid/client/OpenIDAdminClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// Just the configuration editor" To="OpenIDAdminClient.start(cb);"/>
 			<RemoveLine Path="eastwind/app/MainPublic.client.tsx" Line="import { OpenIDClient } from &quot;@altea/altea-auth-openid/client/OpenIDClient&quot;;"/>
@@ -382,10 +383,7 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(OpenIDRoleMappingEntity, o => o.configuration, () => [ApplicationConfigurationEntity]);"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="openID: OpenIDConfigurationEmbedded | null;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="sb.settings.ignoreFieldRoute(ApplicationConfigurationEntity, a =&gt; a.openID);"/>
-			<RemoveLine Path="eastwind/app/eastwindAuthAD.server.ts" Line="import type { OpenIDConfigurationEmbedded } from &quot;@altea/altea-auth-openid/data/OpenID&quot;;"/>
-			<RemoveSpanInLines Path="eastwind/app/eastwindAuthAD.server.ts" Span=" | &quot;openid&quot;"/>
-			<RemoveLine Path="eastwind/app/eastwindAuthAD.server.ts" Line="case &quot;openid&quot;: return &quot;openid&quot;;//OpenIDProvider"/>
-			<RemoveLine Path="eastwind/app/eastwindAuthAD.server.ts" From="/** OpenID Connect — `openID` on the configuration row. */" To="}//OpenIDConfiguration"/>
+			<RemoveLine Path="eastwind/app/eastwindAuthorizer.server.ts" From="/** OpenID Connect — `openID` on the configuration row;" To="}//OpenIDConfiguration"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.tsx" From="&lt;Tab eventKey=&quot;openID&quot;" To="&lt;/Tab>"/>
 			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="openID: null,"/>
 			<RemoveLine Path="eastwind/test/environment/eastwindEnvironment.ts" Line="openID: null,"/>
@@ -395,7 +393,7 @@
 			<RemoveLine Path="AGENTS.md" Line="| `WindowsAD` | login through Windows integrated authentication |"/>
 			<RemovePackageReference Name="@altea/altea-auth-windowsad"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { WindowsADLogic } from &quot;@altea/altea-auth-windowsad/server/WindowsADLogic&quot;;"/>
-			<RemoveLine Path="eastwind/app/starter.server.ts" From="if (EastwindAuthAD.provider() === &quot;windowsad&quot;)" To="});//WindowsAD"/>
+			<RemoveLine Path="eastwind/app/starter.server.ts" From="// The sweep&apos;s task symbol is a ROW" To="});//WindowsAD"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { WindowsADClient } from &quot;@altea/altea-auth-windowsad/client/WindowsADClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// `profilePhotos` off: the Azure provider above" To="WindowsADClient.start(cb, { profilePhotos: false });"/>
 			<RemoveLine Path="eastwind/app/MainPublic.client.tsx" Line="import { WindowsADAuthenticator } from &quot;@altea/altea-auth-windowsad/client/WindowsADAuthenticator&quot;;"/>
@@ -404,10 +402,7 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(WindowsADRoleMappingEntity, w => w.configuration, () => [ApplicationConfigurationEntity]);"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="windowsAD: WindowsADConfigurationEmbedded | null;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="sb.settings.ignoreFieldRoute(ApplicationConfigurationEntity, a =&gt; a.windowsAD);"/>
-			<RemoveLine Path="eastwind/app/eastwindAuthAD.server.ts" Line="import type { WindowsADConfigurationEmbedded } from &quot;@altea/altea-auth-windowsad/data/WindowsAD&quot;;"/>
-			<RemoveSpanInLines Path="eastwind/app/eastwindAuthAD.server.ts" Span=" | &quot;windowsad&quot;"/>
-			<RemoveLine Path="eastwind/app/eastwindAuthAD.server.ts" Line="case &quot;windowsad&quot;: return &quot;windowsad&quot;;//WindowsADProvider"/>
-			<RemoveLine Path="eastwind/app/eastwindAuthAD.server.ts" From="/** Windows AD over LDAP — `windowsAD` on the configuration row. */" To="}//WindowsADConfiguration"/>
+			<RemoveLine Path="eastwind/app/eastwindAuthorizer.server.ts" From="/** Windows AD over LDAP — `windowsAD` on the configuration row;" To="}//WindowsADConfiguration"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.tsx" From="&lt;Tab eventKey=&quot;windowsAD&quot;" To="&lt;/Tab>"/>
 			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="windowsAD: null,"/>
 			<RemoveLine Path="eastwind/test/environment/eastwindEnvironment.ts" Line="windowsAD: null,"/>
