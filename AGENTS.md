@@ -13,6 +13,7 @@ This file only covers eastwind-specific details.
 altea/          the framework, as a git submodule — ~50 workspace packages (@altea/altea + the modules)
 eastwind/       this application
 old/            Signum + Southwind, read-only — the sources eastwind was ported from
+Modules.xml     which modules are optional, and how to remove one (paths are root-relative)
 ```
 
 `pnpm-workspace.yaml` lists every altea package plus `eastwind`; external dependencies are hoisted to the
@@ -51,7 +52,6 @@ eastwind/
   public/         vite's static directory — must sit beside index.html
   index.html      the SPA document; a build entry, like the vite and tsconfig files beside it
   env.d.ts        ambient declarations; the client preset globs `*.d.ts` at the ROOT only
-  Modules.xml     which modules are optional, and how to remove one
 ```
 
 A domain folder names its registration modules after their ROLE: `OrderLogic.server.ts`, not
@@ -69,7 +69,7 @@ singular even where the exported namespace is plural (`OrdersLogic`).
 | `eastwind/app/entityOverrides.data.ts` | Mixins, lite models and `implementedBy` widenings — applied on BOTH tiers, before anything is (de)serialized. |
 | `eastwind/app/Layout.tsx` | The application shell (navbar, sidebar, modals). |
 | `eastwind/app/globals/ApplicationConfiguration.data.ts` | The settings singleton every module's configuration lambda reads. |
-| `eastwind/Modules.xml` | Which modules are optional and exactly how to remove each one. |
+| `Modules.xml` | Which modules are optional and exactly how to remove each one. |
 
 ### The three bootstrap files stay THIN
 
@@ -172,7 +172,7 @@ over: git reports a submodule as one entry with no contents, and `.gitmodules` i
 never copies, so a new application arrives without the Signum sources and writes its own `.gitmodules`
 naming only `altea`.
 
-`altea-simplify` then removes the OPTIONAL modules, following `eastwind/Modules.xml`. Those are the ones a
+`altea-simplify` then removes the OPTIONAL modules, following the root `Modules.xml`. Those are the ones a
 fresh clone drops unless the developer ticks them back on:
 
 | | |

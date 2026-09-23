@@ -78,7 +78,7 @@ commit this workspace has**, and copies the application renamed in file names an
 carry `old/` over: a new application ports from nothing.
 
 `altea-simplify` then removes the modules it does not need, following
-[`eastwind/Modules.xml`](eastwind/Modules.xml) — the spec that says, per module, exactly which files,
+[`Modules.xml`](Modules.xml) — the spec that says, per module, exactly which files,
 lines, imports, package references and tsconfig references it owns. Eleven modules are optional and a
 fresh clone drops them unless you tick them back on; both ends of that range are exercised, so an
 application with every optional module removed and one with *every* module removed each still compile,
