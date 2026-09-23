@@ -15,4 +15,26 @@ CodeGen/
 # retraining, and the predictor row that names it is what belongs in the database.
 TensorFlowModels/
 
-/eastwind/files/**
+# ==== eastwind ============================================================================================
+
+# Environment files hold connection strings, keys and per-deployment choices, so every real
+# `.env.<environment>` stays out of git — which is what holds in an application CLONED from this one.
+# eastwind's own are force-added past it on purpose: `altea-clone` copies what `git ls-files` lists, so a
+# tracked one reaches a new application as a template. Nothing actually secret may go in one here.
+/eastwind/.env
+/eastwind/.env.*
+
+# Synchronization scripts written by `terminal sync`, reviewed then applied. A migration you KEEP goes to
+# eastwind/migrations.
+/eastwind/terminal/sync/
+
+# One-off checks written against a real database while porting a framework module: scratch, not source,
+# so they stay out of git (and out of Modules.xml, which asks git what belongs to the project).
+/eastwind/terminal/probes/
+
+# Playwright's output for the last run, regenerated every run.
+/eastwind/test-results/
+/eastwind/playwright-report/
+
+# The default FILE STORE root (see `fileStore` in eastwind/app/starter.server.ts): runtime output, never source.
+/eastwind/files/
