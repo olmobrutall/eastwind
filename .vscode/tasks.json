@@ -13,9 +13,9 @@
 			"label": "build",
 			"detail": "Compiles the transformer, then altea + eastwind (tspc -b). The DEFAULT build task — for the deployable bundles, run \"bundle eastwind\" instead.",
 			"type": "shell",
-			"command": "pnpm --filter eastwind build",
-			"options": { "cwd": "${workspaceFolder}" },
-			"problemMatcher": ["$tsc"],
+			"command": "pnpm run build",
+			"options": { "cwd": "${workspaceFolder}/eastwind" },
+			"problemMatcher": { "base": "$tsc", "fileLocation": ["relative", "${workspaceFolder}/eastwind"] },
 			"dependsOn": ["build quote-transformer"],
 			"dependsOrder": "sequence",
 			"group": { "kind": "build", "isDefault": true }
@@ -26,7 +26,7 @@
 			"type": "shell",
 			"command": "pnpm exec tspc -b tsconfig.server.json tsconfig.client.json",
 			"options": { "cwd": "${workspaceFolder}/eastwind" },
-			"problemMatcher": ["$tsc"],
+			"problemMatcher": { "base": "$tsc", "fileLocation": ["relative", "${workspaceFolder}/eastwind"] },
 			"group": "build"
 		},
 		{
@@ -35,16 +35,16 @@
 			"type": "shell",
 			"command": "pnpm exec tspc -b tsconfig.terminal.json",
 			"options": { "cwd": "${workspaceFolder}/eastwind" },
-			"problemMatcher": ["$tsc"],
+			"problemMatcher": { "base": "$tsc", "fileLocation": ["relative", "${workspaceFolder}/eastwind"] },
 			"group": "build"
 		},
 		{
 			"label": "watch types",
 			"detail": "tspc -b --watch over eastwind and the altea layers it references — keeps emitted JS fresh for vite dev. Does NOT build any package's test/ layer; for that run 'watch types (altea suites)'.",
 			"type": "shell",
-			"command": "pnpm --filter eastwind dev:types",
-			"options": { "cwd": "${workspaceFolder}" },
-			"problemMatcher": ["$tsc"],
+			"command": "pnpm run dev:types",
+			"options": { "cwd": "${workspaceFolder}/eastwind" },
+			"problemMatcher": { "base": "$tsc-watch", "fileLocation": ["relative", "${workspaceFolder}/eastwind"] },
 			"isBackground": true,
 			"group": "build"
 		},
@@ -54,7 +54,7 @@
 			"type": "shell",
 			"command": "pnpm exec tspc -b --watch --preserveWatchOutput",
 			"options": { "cwd": "${workspaceFolder}/altea/altea" },
-			"problemMatcher": ["$tsc"],
+			"problemMatcher": { "base": "$tsc-watch", "fileLocation": ["relative", "${workspaceFolder}/altea/altea"] },
 			"isBackground": true,
 			"group": "build"
 		},
@@ -85,9 +85,9 @@
 			"label": "bundle eastwind",
 			"detail": "The deployable: compile, then the server and client vite bundles.",
 			"type": "shell",
-			"command": "pnpm --filter eastwind bundle",
-			"options": { "cwd": "${workspaceFolder}" },
-			"problemMatcher": ["$tsc"],
+			"command": "pnpm run bundle",
+			"options": { "cwd": "${workspaceFolder}/eastwind" },
+			"problemMatcher": { "base": "$tsc", "fileLocation": ["relative", "${workspaceFolder}/eastwind"] },
 			"dependsOn": ["build quote-transformer"],
 			"dependsOrder": "sequence",
 			"group": "build"
@@ -98,7 +98,7 @@
 			"type": "shell",
 			"command": "pnpm exec tsc",
 			"options": { "cwd": "${workspaceFolder}/altea/quote-transformer" },
-			"problemMatcher": ["$tsc"],
+			"problemMatcher": { "base": "$tsc", "fileLocation": ["relative", "${workspaceFolder}/altea/quote-transformer"] },
 			"group": "build"
 		},
 		{
@@ -107,7 +107,7 @@
 			"type": "shell",
 			"command": "pnpm exec tsc",
 			"options": { "cwd": "${workspaceFolder}/altea/quote-transformer-test" },
-			"problemMatcher": ["$tsc"],
+			"problemMatcher": { "base": "$tsc", "fileLocation": ["relative", "${workspaceFolder}/altea/quote-transformer-test"] },
 			"dependsOn": ["build quote-transformer"],
 			"dependsOrder": "sequence",
 			"group": "build"
@@ -118,7 +118,7 @@
 			"type": "shell",
 			"command": "pnpm exec tspc -b",
 			"options": { "cwd": "${workspaceFolder}/altea/altea" },
-			"problemMatcher": ["$tsc"],
+			"problemMatcher": { "base": "$tsc", "fileLocation": ["relative", "${workspaceFolder}/altea/altea"] },
 			"group": "build"
 		},
 		{
