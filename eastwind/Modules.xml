@@ -383,7 +383,6 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(OpenIDRoleMappingEntity, o => o.configuration, () => [ApplicationConfigurationEntity]);"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="openID: OpenIDConfigurationEmbedded | null;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="sb.settings.ignoreFieldRoute(ApplicationConfigurationEntity, a =&gt; a.openID);"/>
-			<RemoveLine Path="eastwind/app/eastwindAuthorizer.server.ts" From="/** OpenID Connect — `openID` on the configuration row;" To="}//OpenIDConfiguration"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.tsx" From="&lt;Tab eventKey=&quot;openID&quot;" To="&lt;/Tab>"/>
 			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="openID: null,"/>
 			<RemoveLine Path="eastwind/test/environment/eastwindEnvironment.ts" Line="openID: null,"/>
@@ -402,7 +401,6 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(WindowsADRoleMappingEntity, w => w.configuration, () => [ApplicationConfigurationEntity]);"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="windowsAD: WindowsADConfigurationEmbedded | null;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="sb.settings.ignoreFieldRoute(ApplicationConfigurationEntity, a =&gt; a.windowsAD);"/>
-			<RemoveLine Path="eastwind/app/eastwindAuthorizer.server.ts" From="/** Windows AD over LDAP — `windowsAD` on the configuration row;" To="}//WindowsADConfiguration"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.tsx" From="&lt;Tab eventKey=&quot;windowsAD&quot;" To="&lt;/Tab>"/>
 			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="windowsAD: null,"/>
 			<RemoveLine Path="eastwind/test/environment/eastwindEnvironment.ts" Line="windowsAD: null,"/>
