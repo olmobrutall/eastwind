@@ -28,11 +28,11 @@ export namespace CustomersLogic {
         // No route override is needed: altea derives the route from the
         // expression's own Meta, which already lands on `(CustomerEntity).address`.
         QueryLogic.expressions.register(CustomerEntity, (c: CustomerEntity) => c.address,
-            { key: "Address", niceName: () => CustomerEntity.nicePropertyName(c => c.address) });
+            { niceName: () => CustomerEntity.nicePropertyName(c => c.address) });
         QueryLogic.expressions.register(CustomerEntity, (c: CustomerEntity) => c.phone,
-            { key: "Phone", niceName: () => CustomerEntity.nicePropertyName(c => c.phone) });
+            { niceName: () => CustomerEntity.nicePropertyName(c => c.phone) });
         QueryLogic.expressions.register(CustomerEntity, (c: CustomerEntity) => c.fax,
-            { key: "Fax", niceName: () => CustomerEntity.nicePropertyName(c => c.fax) });
+            { niceName: () => CustomerEntity.nicePropertyName(c => c.fax) });
 
         // The `SMSOwnerData` token a query-based SMSTemplate's `to` points at (see Customer.data.ts),
         // on the same abstract base for the same reason. This used to be registered once per CONCRETE
@@ -42,8 +42,8 @@ export namespace CustomersLogic {
         // `Order.Customer`, which is a gain rather than a side effect (an SMS template over the Order
         // query can target the customer) and lowers like any other member of the base — the object it
         // returns becomes one CASE per field over the implementations.
-        QueryLogic.expressions.register(CustomerEntity, (c: CustomerEntity) => c.smsOwnerData(),
-            { key: "SMSOwnerData", niceName: () => CustomerEntity.nicePropertyName(c => c.smsOwnerData()) });
+        QueryLogic.expressions.register(CustomerEntity, (c: CustomerEntity) => c.SMSOwnerData(),
+            { niceName: () => CustomerEntity.nicePropertyName(c => c.SMSOwnerData()) });
 
         // The Save operation is registered on BOTH Person and Company. altea's operation
         // registry is keyed by the symbol alone (one implementation per symbol), so the shared Save is

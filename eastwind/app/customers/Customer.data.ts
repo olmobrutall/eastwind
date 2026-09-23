@@ -64,8 +64,9 @@ export abstract class CustomerEntity extends Entity {
      * member a query-based SMSTemplate's `to` token points at.
      *
      * `@quoted`, so it is a real query TOKEN the template editor can pick and the renderer can select.
+     * PascalCase on purpose: the token key is the member name with the first letter raised ("SMSOwnerData").
      */
-    @quoted smsOwnerData(): SMSOwnerData {
+    @quoted SMSOwnerData(): SMSOwnerData {
         return { owner: this.toLite(), telephoneNumber: this.phone, culture: null };
     }
 }
