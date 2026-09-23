@@ -15,12 +15,12 @@
   repository yet. Treat every directive as a starting point to verify the first time the removal is
   actually performed, and keep it in step when a module's wiring moves.
 
-  ---- Selection ------------------------------------------------------------------------------------
+  ==== Selection ====================================================================================
   The selector lists what to KEEP: every module starts ticked EXCEPT those marked optional="true".
   Unticking a module removes it, and removing one removes everything that DependsOn it. So a plain
   confirm on a fresh clone keeps the whole application and drops only the optional modules.
 
-  ---- Grammar --------------------------------------------------------------------------------------
+  ==== Grammar ======================================================================================
   Signum's, verbatim, plus two altea-specific directives for a pnpm workspace.
 
     <Module Name="X" DependsOn="A,B">   removing A or B also removes X
@@ -52,13 +52,13 @@
 
   Paths are relative to the REPOSITORY ROOT and use forward slashes.
 
-  ---- Anchors --------------------------------------------------------------------------------------
+  ==== Anchors ======================================================================================
   A `From/To` span needs a stable last line. The three bootstrap files therefore carry a trailing
   `//<ModuleName>` marker on the closing line of every multi-line block — Southwind's Starter.cs uses the
   same convention (`//Cache`, `//Dynamic`, `//Chatbot`). Those markers look like noise and are
   load-bearing: do not delete them, and add one when a module's wiring grows past a single line.
 
-  ---- Not listed ------------------------------------------------------------------------------------
+  ==== Not listed ====================================================================================
   @altea/altea itself (the framework), @altea/altea-templating (a transitive dependency of
   altea-email / altea-office-template) and @altea/altea-codemirror (a transitive dependency of
   altea-eval / altea-dynamic / altea-markdown) have no <Module> of their own — nothing in eastwind
@@ -428,14 +428,13 @@
 
 		<!--
 		  The two CLOUD backends of the file stores, one module each: an application that wants S3 has no
-		  reason to carry the Azure SDK. Both are optional — a fresh clone keeps the LOCAL folder backend,
-		  which needs no credentials and no account.
+		  reason to carry the Azure SDK. A fresh clone keeps Azure and drops S3 (optional); the LOCAL folder
+		  backend, which needs no credentials and no account, stays either way.
 
 		  Each removes its entry from `STORE_KINDS`, which is the single list the FileStoreKind type, the
 		  `kind()` check and its error message all read from.
 		-->
-		<Module Name="Files_Azure" DependsOn="Files" optional="true">
-			<RemoveLine Path="AGENTS.md" Line="| `Files_Azure` | the Azure Blob Storage file-store backend |"/>
+		<Module Name="Files_Azure" DependsOn="Files">
 			<RemovePackageReference Name="@altea/altea-files-azure"/>
 			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="import { AzureBlobStorageFileTypeAlgorithm, AzureWebDownload }" To="import { AzureBlobStorage, type AzureBlobStorageConfiguration }"/>
 			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" Line="&quot;azure&quot;,//AzureKind"/>
@@ -635,7 +634,8 @@
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="emailSender: EmailSenderConfigurationEntity;"/>
 		</Module>
 
-		<Module Name="Mailing_ExchangeWS" DependsOn="Mailing">
+		<Module Name="Mailing_ExchangeWS" DependsOn="Mailing" optional="true">
+			<RemoveLine Path="AGENTS.md" Line="| `Mailing_ExchangeWS` | sending mail through Exchange Web Services |"/>
 			<RemovePackageReference Name="@altea/altea-mailing-exchange"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { MailingExchangeWSLogic } from &quot;@altea/altea-mailing-exchange/server/MailingExchangeWSLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// The extra SENDER services. Each contributes one service TABLE" To="}//MailingExchangeWS"/>
@@ -660,7 +660,8 @@
 			<RemoveLine Path="eastwind/.env.example" From="EASTWIND_REMOTE_EMAILS=" To="EASTWIND_REMOTE_EMAILS="/>
 		</Module>
 
-		<Module Name="Mailing_Pop3" DependsOn="Mailing">
+		<Module Name="Mailing_Pop3" DependsOn="Mailing" optional="true">
+			<RemoveLine Path="AGENTS.md" Line="| `Mailing_Pop3` | receiving mail from a POP3 mailbox |"/>
 			<RemovePackageReference Name="@altea/altea-mailing-pop3"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { Pop3ConfigurationLogic } from &quot;@altea/altea-mailing-pop3/server/Pop3ConfigurationLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// The INBOUND half." To="}//MailingReception"/>
@@ -670,7 +671,8 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="Pop3EmailReceptionServiceEntity,"/>
 		</Module>
 
-		<Module Name="SMS">
+		<Module Name="SMS" optional="true">
+			<RemoveLine Path="AGENTS.md" Line="| `SMS` | sending text messages |"/>
 			<RemovePackageReference Name="@altea/altea-sms"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { SMSModuleLogic } from &quot;@altea/altea-sms/server/SMSModuleLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { SMSLogic } from &quot;@altea/altea-sms/server/SMSLogic&quot;;"/>
@@ -685,7 +687,9 @@
 			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" From="sms: SMSConfigurationEmbedded.create({" To="}),"/>
 			<RemoveLine DependsOn="Test" Path="eastwind/test/environment/eastwindEnvironment.ts" Line="import { SMSConfigurationEmbedded } from &quot;@altea/altea-sms/data/SMS&quot;;"/>
 			<RemoveLine DependsOn="Test" Path="eastwind/test/environment/eastwindEnvironment.ts" Line="sms: SMSConfigurationEmbedded.create({ defaultCulture: english }),"/>
-			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/app/customers/Customer.data.ts" From="@quoted smsOwnerData()" To="@quoted smsOwnerData()"/>
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/app/customers/Customer.data.ts" Line="import type { SMSOwnerData } from &quot;@altea/altea-sms/data/SMS&quot;;"/>
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/app/customers/Customer.data.ts" From="/** Who to text, at which number, in which language" To="}//SMSOwnerData"/>
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/app/customers/CustomerLogic.server.ts" From="// The `SMSOwnerData` token a query-based SMSTemplate" To="{ niceName: () => CustomerEntity.nicePropertyName(c => c.SMSOwnerData()) });"/>
 		</Module>
 
 		<Module Name="Alerts" DependsOn="Auth">
@@ -704,7 +708,8 @@
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="{AppContext.currentUser &amp;&amp; &lt;AlertDropdown />}"/>
 		</Module>
 
-		<Module Name="Notes" DependsOn="Auth">
+		<Module Name="Notes" DependsOn="Auth" optional="true">
+			<RemoveLine Path="AGENTS.md" Line="| `Notes` | free-text notes attached to any entity |"/>
 			<RemovePackageReference Name="@altea/altea-notes"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { NoteLogic } from &quot;@altea/altea-notes/server/NoteLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="NoteLogic.start(sb," To="NoteLogic.start(sb,"/>
@@ -847,7 +852,8 @@
 
 		<!-- ==== Advanced =========================================================================== -->
 
-		<Module Name="Predictor" DependsOn="Files,Process">
+		<Module Name="Predictor" DependsOn="Files,Process" optional="true">
+			<RemoveLine Path="AGENTS.md" Line="| `Predictor` | machine-learning predictors |"/>
 			<RemovePackageReference Name="@altea/altea-machine-learning"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { PredictorLogic } from &quot;@altea/altea-machine-learning/server/PredictorLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { ProductPredictorPublication } from &quot;./products/Product.data&quot;;"/>
@@ -900,7 +906,8 @@
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// Registers nothing today (the dynamic panel" To="EvalClient.start(cb);//Dynamic"/>
 		</Module>
 
-		<Module Name="Dynamic" DependsOn="Eval">
+		<Module Name="Dynamic" DependsOn="Eval" optional="true">
+			<RemoveLine Path="AGENTS.md" Line="| `Dynamic` | runtime-defined types, views and code |"/>
 			<RemovePackageReference Name="@altea/altea-dynamic"/>
 			<RemovePackageReference Name="@altea/altea-isolation"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { DynamicLogic } from &quot;@altea/altea-dynamic/server/DynamicLogic&quot;;"/>
@@ -915,7 +922,8 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="DynamicIsolationMixin.declare();"/>
 		</Module>
 
-		<Module Name="Workflow" DependsOn="Eval,Scheduler,Process,Auth">
+		<Module Name="Workflow" DependsOn="Eval,Scheduler,Process,Auth" optional="true">
+			<RemoveLine Path="AGENTS.md" Line="| `Workflow` | the BPMN-style workflow engine |"/>
 			<RemovePackageReference Name="@altea/altea-workflow"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { WorkflowLogicStarter } from &quot;@altea/altea-workflow/server/WorkflowLogicStarter&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { OrderWorkflow } from &quot;./orders/OrderWorkflow.server&quot;;"/>
@@ -1026,7 +1034,7 @@
 		  application generated. A brand-new application has no Southwind database to read, so this is the
 		  first module most scaffolds will drop.
 		-->
-		<Module Name="LegacyMode" DependsOn="Port">
+		<Module Name="LegacyMode" DependsOn="Port" optional="true">
 			<!--
 			  Removing this module means `legacyMode` is permanently FALSE, so every use has to be folded
 			  away rather than merely deleted. Order is load-bearing: the "if (!legacyMode)" span must run
@@ -1035,7 +1043,7 @@
 			<RemoveFiles Path="eastwind/app/eastwindMode.data.ts"/>
 			<RemoveFiles Path="eastwind/app/eastwindMode.server.ts"/>
 
-			<!-- ---- starter.server.ts ---- -->
+			<!-- ==== starter.server.ts ==== -->
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { simplifyDiffTables } from &quot;@altea/altea/server/sync/schemaSynchronizer&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { EastwindModeServer } from &quot;./eastwindMode.server&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// Point eastwind at a database a LEGACY application generated" To="const legacyMode = isEnvTrue(process.env[&quot;LegacyMode&quot;]);"/>
@@ -1051,23 +1059,23 @@
 			<!-- What is LEFT of "!legacyMode" is the option flags, which become plain true. -->
 			<ReplaceSpanInLines Path="eastwind/app/starter.server.ts" Span="!legacyMode" With="true"/>
 
-			<!-- ---- MainAdmin.client.ts ---- -->
+			<!-- ==== MainAdmin.client.ts ==== -->
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="if (!legacyMode)"/>
 			<RemoveSpanInLines Path="eastwind/app/MainAdmin.client.ts" Span=", legacyMode = false"/>
 			<RemoveSpanInLines Path="eastwind/app/MainAdmin.client.ts" Span="legacyMode ? false : "/>
 
-			<!-- ---- MainPublic.client.tsx ---- -->
+			<!-- ==== MainPublic.client.tsx ==== -->
 			<RemoveLine Path="eastwind/app/MainPublic.client.tsx" Line="import { FULL_MODE, setCurrentMode, type EastwindMode } from &quot;./eastwindMode.data&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainPublic.client.tsx" From="// This deployment&apos;s mode, fetched once at boot." To="let mode: EastwindMode = FULL_MODE;"/>
 			<RemoveLine Path="eastwind/app/MainPublic.client.tsx" From="// This deployment&apos;s MODE, from the SERVER" To="setCurrentMode(mode);"/>
 			<RemoveSpanInLines Path="eastwind/app/MainPublic.client.tsx" Span=", mode.legacyMode"/>
 			<RemoveSpanInLines Path="eastwind/app/MainPublic.client.tsx" Span="{ legacyMode: mode.legacyMode }"/>
 
-			<!-- ---- Layout.tsx ---- -->
+			<!-- ==== Layout.tsx ==== -->
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="import { currentMode } from &quot;./eastwindMode.data&quot;;"/>
 			<RemoveSpanInLines Path="eastwind/app/Layout.tsx" Span="!currentMode().legacyMode &amp;&amp; "/>
 
-			<!-- ---- entityOverrides.data.ts ---- -->
+			<!-- ==== entityOverrides.data.ts ==== -->
 			<!-- Five single-statement guards: dropping the "if" line leaves the statement unconditional. -->
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="if (!legacyMode)"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { renameSymbolContainer, setLegacyMode } from &quot;@altea/altea/data/reflection&quot;;"/>
@@ -1081,7 +1089,7 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="...(legacyMode ? [] : ["/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="]),//LegacyOnlyParts"/>
 
-			<!-- ---- the environment ---- -->
+			<!-- ==== the environment ==== -->
 			<RemoveFiles Path="eastwind/.env.swpostgres"/>
 				</Module>
 

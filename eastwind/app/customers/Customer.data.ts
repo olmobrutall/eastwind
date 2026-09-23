@@ -59,8 +59,7 @@ export abstract class CustomerEntity extends Entity {
     @stringLengthValidator({ min: 3, max: 24 }) @telephoneValidator()
     fax: string | null;
 
-    /**
-     * Who to text, at which number, in which language — @altea/altea-sms's `SMSOwnerData`. This is the
+    /** Who to text, at which number, in which language — @altea/altea-sms's `SMSOwnerData`. This is the
      * member a query-based SMSTemplate's `to` token points at.
      *
      * `@quoted`, so it is a real query TOKEN the template editor can pick and the renderer can select.
@@ -68,7 +67,7 @@ export abstract class CustomerEntity extends Entity {
      */
     @quoted SMSOwnerData(): SMSOwnerData {
         return { owner: this.toLite(), telephoneNumber: this.phone, culture: null };
-    }
+    }//SMSOwnerData
 }
 
 @entity("Shared", "Transactional")

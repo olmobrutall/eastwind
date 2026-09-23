@@ -180,15 +180,22 @@ fresh clone drops unless the developer ticks them back on:
 | `Port` (and `LegacyMode`, which depends on it) | everything eastwind carries only because it was ported |
 | `OpenID` | login through an OpenID Connect provider |
 | `WindowsAD` | login through Windows integrated authentication |
-| `Files_Azure` | the Azure Blob Storage file-store backend |
 | `Files_S3` | the S3 / MinIO file-store backend |
+| `Mailing_ExchangeWS` | sending mail through Exchange Web Services |
+| `Mailing_Pop3` | receiving mail from a POP3 mailbox |
+| `SMS` | sending text messages |
+| `Notes` | free-text notes attached to any entity |
+| `Predictor` | machine-learning predictors |
+| `Dynamic` | runtime-defined types, views and code |
+| `Workflow` | the BPMN-style workflow engine |
 | `ThemeSelector` | the bootswatch palette picker in the navbar |
 | `HtmlEditor` | the rich-text editing control |
 | `ExcelImport` | reading a spreadsheet back into rows; plain export and report templates stay |
 | `WhatsNew` | in-app release notes |
 | `Tour` | guided in-app tours |
 
-The local FOLDER file store, and AzureAD as the directory login, stay either way.
+The local FOLDER file store, the Azure Blob Storage backend, and AzureAD as the directory login, stay
+either way.
 
 Both CLIs live in `altea/cli/`; see [`altea/cli/README.md`](altea/cli/README.md).
 
