@@ -14,11 +14,11 @@
       <Permission Resource="BasicPermission.AutomaticUpgradeOfQueries" Allowed="True"/>
       <Permission Resource="ChartPermission.ViewCharting" Allowed="True"/>
       <Permission Resource="DashboardPermission.ViewDashboard" Allowed="True"/>
+      <Permission Resource="HelpPermissions.ViewHelp" Allowed="True"/>
       <Permission Resource="OfficeTemplatePermission.GenerateReport" Allowed="True"/>
       <Permission Resource="OmniboxPermission.ViewOmnibox" Allowed="True"/>
       <Permission Resource="UserAssetPermission.UserAssetsToXML" Allowed="True"/>
       <Permission Resource="UserQueryPermission.ViewUserQuery" Allowed="True"/>
-      <Permission Resource="HelpPermissions.ViewHelp" Allowed="True"/>
     </Role>
   </Permissions>
   <Properties>
@@ -29,6 +29,7 @@
       <Property OnType="Category" Resource="picture" Allowed="Read"/>
       <Property OnType="Category" Resource="picture.binaryFile" Allowed="Read"/>
       <Property OnType="Category" Resource="picture.fileName" Allowed="Read"/>
+      <Property OnType="Category" Resource="ticks" Allowed="Read"/>
       <Property OnType="Product" Resource="additionalInformation" Allowed="Read"/>
       <Property OnType="Product" Resource="additionalInformation/key" Allowed="Read"/>
       <Property OnType="Product" Resource="additionalInformation/value" Allowed="Read"/>
@@ -39,15 +40,9 @@
       <Property OnType="Product" Resource="quantityPerUnit" Allowed="Read"/>
       <Property OnType="Product" Resource="reorderLevel" Allowed="Read"/>
       <Property OnType="Product" Resource="supplier" Allowed="Read"/>
+      <Property OnType="Product" Resource="ticks" Allowed="Read"/>
       <Property OnType="Product" Resource="unitPrice" Allowed="Read"/>
       <Property OnType="Product" Resource="unitsInStock" Allowed="Read"/>
-      <Property OnType="CultureInfo" Resource="englishName" Allowed="Read"/>
-      <Property OnType="CultureInfo" Resource="id" Allowed="Read"/>
-      <Property OnType="CultureInfo" Resource="name" Allowed="Read"/>
-      <Property OnType="CultureInfo" Resource="nativeName" Allowed="Read"/>
-      <Property OnType="CultureInfo" Resource="ticks" Allowed="Read"/>
-      <Property OnType="Category" Resource="ticks" Allowed="Read"/>
-      <Property OnType="Product" Resource="ticks" Allowed="Read"/>
     </Role>
     <Role Name="Standard user">
       <Property OnType="Dashboard" Resource="ticks" Allowed="None">
@@ -64,9 +59,9 @@
     <Role Name="Standard user">
       <Type Resource="Alert" Allowed="Write"/>
       <Type Resource="AlertType" Allowed="Read"/>
+      <Type Resource="Case" Allowed="Write"/>
       <Type Resource="CaseActivity" Allowed="Write"/>
       <Type Resource="CaseActivityExecutedTimer" Allowed="Write"/>
-      <Type Resource="Case" Allowed="Write"/>
       <Type Resource="CaseNotification" Allowed="Write"/>
       <Type Resource="CaseTag" Allowed="Read"/>
       <Type Resource="CaseTagType" Allowed="Read"/>
@@ -91,19 +86,19 @@
       <Type Resource="Territory" Allowed="Read"/>
       <Type Resource="Toolbar" Allowed="Read"/>
       <Type Resource="ToolbarMenu" Allowed="Read"/>
-      <Type Resource="UserChart" Allowed="Read"/>
       <Type Resource="User" Allowed="None">
         <Condition Name="EastwindTypeCondition.UserEntities" Allowed="Read"/>
       </Type>
+      <Type Resource="UserChart" Allowed="Read"/>
       <Type Resource="UserQuery" Allowed="Read"/>
+      <Type Resource="Workflow" Allowed="Read"/>
       <Type Resource="WorkflowAction" Allowed="Read"/>
       <Type Resource="WorkflowActivity" Allowed="Read"/>
       <Type Resource="WorkflowCondition" Allowed="Read"/>
       <Type Resource="WorkflowConnection" Allowed="Read"/>
-      <Type Resource="Workflow" Allowed="Read"/>
       <Type Resource="WorkflowEvent" Allowed="Read"/>
-      <Type Resource="WorkflowEventTaskConditionResult" Allowed="Read"/>
       <Type Resource="WorkflowEventTask" Allowed="Read"/>
+      <Type Resource="WorkflowEventTaskConditionResult" Allowed="Read"/>
       <Type Resource="WorkflowGateway" Allowed="Read"/>
       <Type Resource="WorkflowLane" Allowed="Read"/>
       <Type Resource="WorkflowPool" Allowed="Read"/>
