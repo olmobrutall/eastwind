@@ -28,6 +28,8 @@
                                         developer ticks it back on
     <RemoveFiles Path="…"/>             delete the file or directory
     <RemoveLine Path="…" Line="…"/>     delete every line whose trimmed text equals Line
+    <RemoveLine Path="…" Contains="…"/> delete every line that contains the substring  (altea) — a
+                                        setting that may appear live AND commented out
     <RemoveLine Path="…" From="…" To="…"/>
                                         delete the span from the line containing From through the line
                                         containing To (inclusive)
@@ -223,6 +225,14 @@
 			<RemoveSpanInLines Path="eastwind/terminal/terminal.ts" Span=", seed-northwind"/>
 			<RemoveLine Path="eastwind/.env.example" From="NORTHWIND_DB=Server=" To="NORTHWIND_DB=Server="/>
 			<RemoveLine Path="eastwind/.env.example" From="# NORTHWIND_DB=postgresql" To="# NORTHWIND_DB=postgresql"/>
+			<!-- The other .env files: every line naming the key, live or commented out. -->
+			<RemoveLine Path="eastwind/.env.dev" Contains="NORTHWIND_DB"/>
+			<RemoveLine Path="eastwind/.env.live" Contains="NORTHWIND_DB"/>
+			<RemoveLine Path="eastwind/.env.local" Contains="NORTHWIND_DB"/>
+			<RemoveLine Path="eastwind/.env.test" Contains="NORTHWIND_DB"/>
+			<RemoveLine Path="eastwind/.env.postgres" Contains="NORTHWIND_DB"/>
+			<RemoveLine Path="eastwind/.env.sqlserver" Contains="NORTHWIND_DB"/>
+			<RemoveLine Path="eastwind/.env.swpostgres" Contains="NORTHWIND_DB"/>
 		</Module>
 
 		<Module Name="Cache">
@@ -450,6 +460,10 @@
 			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="case &quot;s3&quot;:" To="});//S3Store"/>
 			<RemoveLine Path="eastwind/app/eastwindFileStores.server.ts" From="function s3Configuration(): S3Configuration {" To="}//S3Configuration"/>
 			<RemoveLine Path="eastwind/.env.example" From="# S3 / MinIO (@altea/altea-files-s3)" To="# EASTWIND_S3_FORCE_PATH_STYLE=true"/>
+			<!-- The other .env files: every line naming an S3 key, live or commented out. -->
+			<RemoveLine Path="eastwind/.env.dev" Contains="EASTWIND_S3_"/>
+			<RemoveLine Path="eastwind/.env.live" Contains="EASTWIND_S3_"/>
+			<RemoveLine Path="eastwind/.env.test" Contains="EASTWIND_S3_"/>
 		</Module>
 
 		<!-- ==== User assets ======================================================================== -->
