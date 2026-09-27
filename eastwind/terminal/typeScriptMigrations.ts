@@ -4,7 +4,6 @@ import { AuthTokenConfigurationEmbedded } from "@altea/altea-auth/data/AuthToken
 import * as fs from "node:fs";
 import { table } from "@altea/altea/server/table";
 import { PasswordEncoding } from "@altea/altea/server/passwordEncoding";
-import { Replacements } from "@altea/altea/server/sync/synchronizer";
 import { Enum } from "@altea/altea/data/enum";
 import { RoleEntity, RoleEntity_InheritsFrom, MergeStrategy } from "@altea/altea-auth/data/Role";
 import { UserEntity, UserState } from "@altea/altea-auth/data/User";
@@ -161,27 +160,17 @@ export namespace TypeScriptMigrations {
     // ---- the XML seeds ---------------------------------------------------------------------------------
 
     /**
-     * Apply terminal/AuthRules.xml. Renames are asked on a real console; headless (no TTY) treats every
-     * ambiguous rename as no-rename (drop), logged.
+     * Apply terminal/AuthRules.xml — never interactive: the script is printed and run, and every ambiguous
+     * rename is answered no-rename (the rule is dropped), logged.
      */
     export async function importAuthRules(file?: string): Promise<void> {
         const fileName = file ?? seedFile("AuthRules.xml");
         const xml = fs.readFileSync(fileName, "utf8");
 
-        const replacements = new Replacements();
-        replacements.interactive = Boolean(process.stdin.isTTY);
-        if (!replacements.interactive)
-            replacements.autoReplacement = ({ oldValue }) => {
-                console.log(`[import-auth] no-rename (drop): '${oldValue}'`);
-                return { oldValue, newValue: null };
-            };
-
-        const result = await AuthImportExport.importAuthRules(xml, replacements);
-        console.log(`[import-auth] applied roles: ${result.appliedRoles.join(", ") || "(none)"}`);
-        if (result.renames.length > 0)
-            console.log(`[import-auth] renames: ${result.renames.map(r => `${r.key.replace("AuthRules:", "")} ${r.from}→${r.to}`).join(", ")}`);
-        if (result.skippedRoles.length > 0)
-            console.log(`[import-auth] SKIPPED (no DB role after rename): ${result.skippedRoles.join(", ")}`);
+        await AuthImportExport.importAuthRules(xml, ({ oldValue }) => {
+            console.log(`[import-auth] no-rename (drop): '${oldValue}'`);
+            return { oldValue, newValue: null };
+        });
         console.log(`[import-auth] done (${fileName})`);
     }
 

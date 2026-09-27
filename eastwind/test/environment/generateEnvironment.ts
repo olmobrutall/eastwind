@@ -5,7 +5,6 @@ import { Connector } from "@altea/altea/server/connection/connector";
 import { Administrator } from "@altea/altea/server/Administrator";
 import { Schema } from "@altea/altea/server/schema";
 import { ExecutionMode } from "@altea/altea/server/executionMode";
-import { Replacements } from "@altea/altea/server/sync/synchronizer";
 import { AuthImportExport } from "@altea/altea-auth/server/AuthImportExport";
 import { UserAssetsImporter, warmUserAssetCaches } from "@altea/altea-user-assets/server/UserAssetsImportExport";
 import { Starter } from "../../app/starter.server";
@@ -115,21 +114,13 @@ export async function generateTestEnvironment(): Promise<void> {
  * dropped) and logged, instead of blocking on a prompt.
  */
 async function importAuthRules(): Promise<void> {
-    const replacements = new Replacements();
-    replacements.interactive = false;
-    replacements.autoReplacement = ({ oldValue }) => {
-        console.log(`  [auth] no-rename (drop): '${oldValue}'`);
-        return { oldValue, newValue: null };
-    };
-
     const filePath = EastwindEnvironment.seedFile("AuthRules.xml");
     const fileContent = fs.readFileSync(filePath, "utf8");
 
-    const result = await AuthImportExport.importAuthRules(fileContent, replacements);
-
-    console.log(`  [auth] applied roles: ${result.appliedRoles.join(", ") || "(none)"}`);
-    if (result.skippedRoles.length > 0)
-        console.log(`  [auth] SKIPPED (no role after rename): ${result.skippedRoles.join(", ")}`);
+    await AuthImportExport.importAuthRules(fileContent, ({ oldValue }) => {
+        console.log(`  [auth] no-rename (drop): '${oldValue}'`);
+        return { oldValue, newValue: null };
+    });
 }
 
 /** Import every user asset — the preview says "override everything", which on a

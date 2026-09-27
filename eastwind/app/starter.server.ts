@@ -264,7 +264,7 @@ export namespace Starter {
         // The "the row IS the current user" condition, which also scopes the USER ASSETS by owner further
         // down; a symbol is registered per type, so both registrations are needed. (Its sibling,
         // `CurrentEmployee`, is about an app type and goes with the app's domains at the bottom.)
-        TypeConditionLogic.registerCompile(UserEntity, EastwindTypeCondition.UserEntities,
+        TypeConditionLogic.registerCompile(EastwindTypeCondition.UserEntities, UserEntity,
             u => u.is(UserHolder.currentUserLite()));
 
         // ==== FILES (@altea/altea-files) ==============================================================
@@ -561,7 +561,7 @@ export namespace Starter {
         // The second type condition: "the orders I handled" — `EmployeeEntity.current()` reads the
         // claim UserEmployeeMixin fills. It grants nothing by itself; it exists so the SYMBOL does (a
         // legacy database holds the row).
-        TypeConditionLogic.registerCompile(OrderEntity, EastwindTypeCondition.CurrentEmployee,
+        TypeConditionLogic.registerCompile(EastwindTypeCondition.CurrentEmployee, OrderEntity,
             o => o.employee.is(EmployeeEntity.current()));
 
         // ORDER as a workflow case main entity (orders/OrderWorkflow.server.ts) — a legacy database declares
