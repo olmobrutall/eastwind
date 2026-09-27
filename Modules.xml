@@ -455,7 +455,8 @@
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { FilesClient } from &quot;@altea/altea-files/client/FilesClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="FilesClient.start(cb);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { BigStringMixin } from &quot;@altea/altea-files/data/BigString&quot;;"/>
-			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="BigStringMixin.declare();"/>
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { BigStringEmbedded } from &quot;@altea/altea/data/bigString&quot;;"/>
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="MixinDeclarations.register(BigStringEmbedded, BigStringMixin);"/>
 		</Module>
 
 		<!--
@@ -640,13 +641,13 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { EmailMessagePackageMixin } from &quot;@altea/altea-email/data/EmailPackage&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { EmailPackageEntity } from &quot;@altea/altea-email/data/EmailPackage&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { EmailMessageEntity } from &quot;@altea/altea-email/data/EmailMessage&quot;;"/>
-			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="EmailReceptionMixin.declare();"/>
-			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="EmailMessagePackageMixin.declare();"/>
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="MixinDeclarations.register(EmailMessageEntity, EmailReceptionMixin);"/>
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="MixinDeclarations.register(EmailMessageEntity, EmailMessagePackageMixin);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="EmailPackageEntity,"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="overrideImplementedBy(EmailSenderConfigurationEntity, e => e.service, () => [" To="]);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="overrideImplementedBy(EmailReceptionConfigurationEntity, e => e.service, () => [" To="]);"/>
-			<!-- The legacy-only attachment list, guard and comment: all three are this module's. -->
-			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="mode — see OfficeTemplateLogic&apos;s `attachments`)." To="overrideImplementedBy(EmailTemplateEntity_Attachment"/>
+			<!-- The legacy-only attachment list and its guard: both are this module's. -->
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="if (legacyMode)//LegacyEmailAttachments" To="overrideImplementedBy(EmailTemplateEntity_Attachment"/>
 			<!-- The mail settings on the configuration row, and the two seeds that fill them. -->
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.tsx" From="&lt;Tab eventKey=&quot;email&quot;" To="&lt;/Tab>"/>
 			<RemoveLine Path="eastwind/app/globals/GlobalsClient.client.tsx" From="token(a => a.email.sendEmails)," To="token(a => a.email.urlLeft),"/>
@@ -819,7 +820,7 @@
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { DiffLogClient } from &quot;@altea/altea-diff-log/client/DiffLogClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// LAST word on OperationLogEntity" To="DiffLogClient.start(cb);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { DiffLogMixin } from &quot;@altea/altea-diff-log/data/DiffLog&quot;;"/>
-			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="DiffLogMixin.declare();"/>
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="MixinDeclarations.register(OperationLogEntity, DiffLogMixin);"/>
 		</Module>
 
 		<Module Name="TimeMachine" DependsOn="DiffLog">
@@ -946,7 +947,8 @@
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { DynamicClient } from &quot;@altea/altea-dynamic/client/DynamicClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// Load-bearing beyond its own editors" To="DynamicClient.start(cb);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { DynamicIsolationMixin } from &quot;@altea/altea-dynamic/data/DynamicIsolation&quot;;"/>
-			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="DynamicIsolationMixin.declare();"/>
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { DynamicTypeEntity } from &quot;@altea/altea-dynamic/data/DynamicType&quot;;"/>
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="MixinDeclarations.register(DynamicTypeEntity, DynamicIsolationMixin);"/>
 		</Module>
 
 		<Module Name="Workflow" DependsOn="Eval,Scheduler,Process,Auth" optional="true">
@@ -962,7 +964,7 @@
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// eastwind declares CaseActivityMixin on EmailMessageEntity" To="WorkflowClient.overrideCaseActivityMixinView(EmailMessageEntity, a => a.target);//Workflow"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { WorkflowEntity } from &quot;@altea/altea-workflow/data/Workflow&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { CaseActivityMixin } from &quot;@altea/altea-workflow/data/CaseActivity&quot;;"/>
-			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="CaseActivityMixin.declareOn(EmailMessageEntity);"/>
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="MixinDeclarations.register(EmailMessageEntity, CaseActivityMixin);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="WorkflowEntity,"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="workflow: WorkflowConfigurationEmbedded;"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="import { WorkflowConfigurationEmbedded } from &quot;@altea/altea-workflow/data/Workflow&quot;;"/>
@@ -1106,8 +1108,7 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { renameSymbolContainer, setLegacyMode } from &quot;@altea/altea/data/reflection&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { setLegacyPropertyPaths } from &quot;@altea/altea/data/propertyRoute&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="if (legacyMode) {" To="}//LegacySymbolNames"/>
-			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="mode — see OfficeTemplateLogic&apos;s `attachments`)." To="overrideImplementedBy(EmailTemplateEntity_Attachment"/>
-			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="* @param options.legacyMode  Declare only what the LEGACY application declares. An `implementedBy` list"/>
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="if (legacyMode)//LegacyEmailAttachments" To="overrideImplementedBy(EmailTemplateEntity_Attachment"/>
 			<ReplaceSpanInLines Path="eastwind/app/entityOverrides.data.ts" Span="start(options?: { legacyMode?: boolean }): void {" With="start(): void {"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="const legacyMode = options?.legacyMode === true;"/>
 			<ReplaceSpanInLines Path="eastwind/app/entityOverrides.data.ts" Span="...(legacyMode ? [] : [ExchangeWebServiceEmailServiceEntity])," With="ExchangeWebServiceEmailServiceEntity,"/>

@@ -53,6 +53,7 @@ import { WhatsNewClient } from "@altea/altea-whats-new/client/WhatsNewClient";
 import { WorkflowClient } from "@altea/altea-workflow/client/WorkflowClient";
 import { CaseActivityMixin } from "@altea/altea-workflow/data/CaseActivity";
 import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
+import { MixinDeclarations } from "@altea/altea/data/mixinDeclarations";
 import { DiffLogClient } from "@altea/altea-diff-log/client/DiffLogClient";
 import { TimeMachineClient } from "@altea/altea-time-machine/client/TimeMachineClient";
 import { RestClient } from "@altea/altea-rest/client/RestClient";
@@ -257,6 +258,6 @@ export function startFull(routes: RouteObject[], legacyMode = false): void {
 
     // eastwind declares CaseActivityMixin on EmailMessageEntity, so the mixin's read-only line goes on the
     // email view after its `target`.
-    if (CaseActivityMixin.isDeclaredOn(EmailMessageEntity))
+    if (MixinDeclarations.isDeclared(EmailMessageEntity, CaseActivityMixin))
         WorkflowClient.overrideCaseActivityMixinView(EmailMessageEntity, a => a.target);//Workflow
 }

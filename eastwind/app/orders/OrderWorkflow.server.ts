@@ -8,6 +8,7 @@ import "@altea/altea-workflow/server/CaseActivityLogic";
 import { CaseActivityMixin } from "@altea/altea-workflow/data/CaseActivity";
 import { Operations } from "@altea/altea/server/operationLogic";
 import { EmailMessageEntity } from "@altea/altea-email/data/EmailMessage";
+import { MixinDeclarations } from "@altea/altea/data/mixinDeclarations";
 import { OrderEntity, OrderOperation, OrderState } from "./Order.data";
 
 // The ORDERS domain's side of the workflow module (@altea/altea-workflow) — this file lives in `orders/`
@@ -43,7 +44,7 @@ export namespace OrderWorkflow {
         // tags whatever an activity produces with the activity it came from. It is a NO-OP unless the mixin
         // is declared, which under legacyMode it is not — asking for the hook
         // then would fail on a mixin the entity does not have.
-        if (CaseActivityMixin.isDeclaredOn(EmailMessageEntity))
+        if (MixinDeclarations.isDeclared(EmailMessageEntity, CaseActivityMixin))
             sb.include(EmailMessageEntity).withCaseActivityMixin();
 
         sb.include(OrderEntity).withWorkflow({

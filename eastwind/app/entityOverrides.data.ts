@@ -1,25 +1,5 @@
-// EntityOverrides — the shared client+server home for static, per-model declarations that BOTH tiers
-// must apply before any entity is (de)serialized or any schema/UI is built:
-//   - mixin registration
-//   - lite-model constructors
-//   - implementedBy overrides
-//
-// These are NOT shipped by the /api/reflection/metadata endpoint: they are identical for every user and
-// culture, and the entity serializer needs mixins + implementedBy to reconstruct graphs — so they must
-// exist before the metadata response can even be parsed. Living here (the shared entities layer) means
-// the server Starter and the client bootstrap run the exact same declarations.
-//
-// Today: four mixins (three of them a module's, plus the app's own UserEmployeeMixin), every lite model
-// is the default, and implementedBy is declared inline via @implementedBy on OrderEntity.customer.
-//
-// MOST of the `overrideImplementedBy` calls below are one pattern: a framework package declares a
-// reference with an EMPTY implementation list — it must not name a type that belongs to an application or
-// to a package that depends on IT — and the application widens the list to what it actually installs. The
-// list decides both what the editor offers and which TABLES and FK columns the schema creates, and each
-// module's `Logic.start` re-checks its own entry and fails loudly if this file is missing it. Only the
-// calls that do something ELSE carry a comment of their own.
 import { overrideImplementedBy } from "@altea/altea/data/decorators";
-import { renameSymbolContainer, setLegacyMode } from "@altea/altea/data/reflection";
+import { getOrCreateTypeInfo, renameSymbolContainer, setLegacyMode } from "@altea/altea/data/reflection";
 import { setLegacyPropertyPaths } from "@altea/altea/data/propertyRoute";
 import { useLegacyWordNames } from "@altea/altea-office-template/data/OfficeTemplate";
 import { BigStringMixin } from "@altea/altea-files/data/BigString";
@@ -37,6 +17,7 @@ import { ExceptionEntity } from "@altea/altea/data/exception";
 import { RestLogEntity } from "@altea/altea-rest/data/Rest";
 import { ViewLogEntity } from "@altea/altea-view-log/data/ViewLog";
 import { OperationLogEntity } from "@altea/altea/data/operationLog";
+import { BigStringEmbedded } from "@altea/altea/data/bigString";
 import { UserEntity } from "@altea/altea-auth/data/User";
 import { MixinDeclarations } from "@altea/altea/data/mixinDeclarations";
 import { UserWithClaims } from "@altea/altea/data/security";
@@ -65,6 +46,7 @@ import { DynamicSqlMigrationEntity } from "@altea/altea-dynamic/data/DynamicSqlM
 import { ToolbarElementBaseEntity, ToolbarEntity, ToolbarMenuEntity, ToolbarSwitcherEntity } from "@altea/altea-toolbar/data/Toolbar";
 import { DiffLogMixin } from "@altea/altea-diff-log/data/DiffLog";
 import { DynamicIsolationMixin } from "@altea/altea-dynamic/data/DynamicIsolation";
+import { DynamicTypeEntity } from "@altea/altea-dynamic/data/DynamicType";
 import { VisualTipConsumedEntity } from "@altea/altea/data/visualTip";
 import { ChangeLogViewLogEntity } from "@altea/altea/data/changeLog";
 import { SystemEventLogEntity } from "@altea/altea/data/systemEventLog";
@@ -76,99 +58,43 @@ import { NoteEntity } from "@altea/altea-notes/data/Notes";
 import { UserEmployeeMixin } from "./globals/UserEmployeeMixin.data";
 
 export namespace EntityOverrides {
-    /**
-     * @param options.legacyMode  Declare only what the LEGACY application declares. An `implementedBy` list
-     *   decides both what the editor offers and which TABLES the schema creates, so a few of these lists
-     *   are the difference between a legacy database and this one — see the marked entries. Set from
-     *   LegacyMode by the Starter, and by the client from `/api/eastwind/appMode` (both tiers).
-     */
     export function start(options?: { legacyMode?: boolean }): void {
         const legacyMode = options?.legacyMode === true;
 
-        // The two symbol containers this app renamed when it was ported. A symbol's KEY is
-        // `<Container>.<Member>` and it is the `key` column of that symbol's table, so against a
-        // legacy database `EastwindTypeCondition.UserEntities` reads as a symbol that does not
-        // exist and `SouthwindTypeCondition.UserEntities` as one that is gone — a rename the sync
-        // offers per symbol, whose wrong answer DELETEs the row and re-inserts it with a new id,
-        // orphaning every auth rule that points at it.
-        //
-        // Here rather than in the Starter because BOTH TIERS must agree: the key is model identity,
-        // and a client still saying Eastwind* could not be handed the symbol's id by the metadata
-        // blob, so every `toLite()` on it would throw. This module is the one place that runs first
-        // on both, which is the same reason the mixins below live here.
         if (legacyMode) {
-            // FIRST: the `@legacy*` NAMES (class / clean / table) are gated on this, and the CLIENT has no
-            // schema to carry the flag the way SchemaSettings.legacyMode does on the server.
             setLegacyMode(true);
-
             renameSymbolContainer(EastwindTypeCondition, "SouthwindTypeCondition");
             renameSymbolContainer(EastwindAgentUseCases, "SouthwindAgentUseCases");
-
-            // @altea/altea-office-template renamed the legacy Word* to Office* — the TYPES (whose clean name
-            // is a query key and a basics.type row) and the symbol containers alike. That mapping is the
-            // MODULE's own knowledge, so it owns the call; this app only knows which database it is on.
             useLegacyWordNames();
-
-            // And a stored PROPERTY ROUTE is spelled the legacy way — PascalCase members. altea's member
-            // is the TypeScript field name, so `basics.property_route.path` held `id` where a legacy
-            // database holds `Id`, and every stored route read as a different one.
             setLegacyPropertyPaths(true);
         }//LegacySymbolNames
 
-        // The reception mixin on EmailMessageEntity (asserted by EmailReceptionLogic.start): what makes a
-        // RECEIVED message carry its server uid, its raw MIME and its reception row. Declaring it adds those
-        // columns to the EmailMessage table — and, through that reference, pulls the whole reception schema
-        // in — so it belongs here, on both tiers, before any (de)serialization.
-        // A legacy database does not declare it.
         if (!legacyMode)
-            EmailReceptionMixin.declare();
-
-        // The package mixin on EmailMessageEntity (asserted by EmailPackageLogic.start): which batch a
-        // message belongs to. Declaring it adds the `package_id` column to the EmailMessage table.
-        EmailMessagePackageMixin.declare();
-
-        // The diff mixin on OperationLogEntity (asserted by DiffLogLogic.start): the two dumps an
-        // operation brackets. Declaring it adds those columns to the OperationLog table.
-        DiffLogMixin.declare();
-
-        // The file mixin on BigStringEmbedded: what lets a BigString route keep its text in a file instead
-        // of the row. Which routes do, and where, is Starter.configureBigString. Both tiers, because the
-        // declaration is what tells the serializer the `file` member exists.
-        BigStringMixin.declare();
-
-        // The isolation mixin on DynamicTypeEntity: which isolation strategy a dynamically defined type
-        // uses, which @altea/altea-dynamic then generates an `Isolation.register` call from.
-        //
-        // eastwind declares it to EXERCISE the feature, not because eastwind is multi-tenant: it never
-        // calls `IsolationLogic.start`, and that is where the app-wide assertion lives ("every table must
-        // declare a strategy"). Declaring the mixin adds one column to `dynamic_type`; marking a dynamic
-        // type Isolated then adds an `isolation` column to THAT type's table.
+            MixinDeclarations.register(EmailMessageEntity, EmailReceptionMixin);
+        MixinDeclarations.register(EmailMessageEntity, EmailMessagePackageMixin);
+        MixinDeclarations.register(OperationLogEntity, DiffLogMixin);
+        MixinDeclarations.register(BigStringEmbedded, BigStringMixin);
         if (!legacyMode)
-            DynamicIsolationMixin.declare();
+            MixinDeclarations.register(DynamicTypeEntity, DynamicIsolationMixin);
+        if (!legacyMode)
+            MixinDeclarations.register(EmailMessageEntity, CaseActivityMixin);
+        MixinDeclarations.register(UserEntity, UserEmployeeMixin);
 
-        // VisualTipConsumedEntity.user — core declares no implementations so it needn't reference
-        // altea-auth (the same accommodation ExceptionEntity.user and OperationLogEntity.user make).
+        UserWithClaims.fillClaims.push((uwc, user) => {
+            uwc.claims["Employee"] = (user as UserEntity).mixin(UserEmployeeMixin).employee ?? null;
+        });
+
         overrideImplementedBy(VisualTipConsumedEntity, v => v.user, () => [UserEntity]);
         overrideImplementedBy(SystemEventLogEntity, s => s.user, () => [UserEntity]);
         overrideImplementedBy(ChangeLogViewLogEntity, c => c.user, () => [UserEntity]);
 
-        // The three directory configurations are EMBEDDEDs on ApplicationConfigurationEntity, so each
-        // one's roleMapping rows belong to THIS entity — an embedded is flattened onto its owner's row and
-        // has no id to point at. It must resolve to exactly one owner, which SchemaBuilder verifies.
         overrideImplementedBy(AzureADRoleMappingEntity, a => a.configuration, () => [ApplicationConfigurationEntity]);
         overrideImplementedBy(OpenIDRoleMappingEntity, o => o.configuration, () => [ApplicationConfigurationEntity]);
         overrideImplementedBy(WindowsADRoleMappingEntity, w => w.configuration, () => [ApplicationConfigurationEntity]);
 
-        // An email template's ATTACHMENT kinds. A legacy database offers ImageAttachment alone, and its
-        // `email_template_attachments` carries that one column, NOT NULL because a single implementation
-        // is not polymorphic. altea-email's own list adds FileTokenAttachment, and
-        // @altea/altea-office-template widens it to three when its attachment half starts (off in legacy
-        // mode — see OfficeTemplateLogic's `attachments`).
-        if (legacyMode)
+        if (legacyMode)//LegacyEmailAttachments
             overrideImplementedBy(EmailTemplateEntity_Attachment, a => a.attachment, () => [ImageAttachmentEntity]);
 
-        // ProcessEntity.data / ProcessExceptionLineEntity.line — the app names the implementors its
-        // modules install.
         overrideImplementedBy(ProcessEntity, p => p.data, () => [
             PackageEntity,
             PackageOperationEntity,
@@ -179,49 +105,8 @@ export namespace EntityOverrides {
         overrideImplementedBy(ProcessExceptionLineEntity, l => l.line, () => [PackageLineEntity]);
 
         overrideImplementedBy(PredictorEntity, p => p.user, () => [UserEntity]);
-
-        // Also what brings NeuralNetworkSettingsEntity (and its hidden-layer rows) into the schema —
-        // without it the module's own algorithm has no table for its settings.
         overrideImplementedBy(PredictorEntity, p => p.algorithmSettings, () => [NeuralNetworkSettingsEntity]);
 
-        // The workflow mixin on EmailMessageEntity: an email produced INSIDE a case activity carries the
-        // activity it came from, so a message can be traced back to its step. Both tiers, because the
-        // client needs the PropertyRoute for the read-only line WorkflowClient adds; the SERVER also asks
-        // for the stamping (`sb.include(EmailMessageEntity).withCaseActivityMixin()` in
-        // eastwindWorkflow.server.ts), which is the half that fills it.
-        //
-        // The workflow module only REACTS to the mixin and never declares it, so a legacy `email_message`
-        // has no `case_activity_id` column.
-        if (!legacyMode)
-            CaseActivityMixin.declareOn(EmailMessageEntity);
-
-        // The employee behind a login. Declaring it adds `employee_id` to the User table, so it belongs
-        // here: both tiers, before any (de)serialization.
-        MixinDeclarations.register(UserEntity, UserEmployeeMixin);
-
-        // …and the CLAIM that goes with it — one data-layer filler for both tiers: the server runs it when
-        // a request's user is resolved, the client when someone logs in, which is what makes
-        // `EmployeeEntity.current()` a single accessor instead of a server one and a client one. It rides
-        // in the auth token from there (AuthTokenServer).
-        // NOTE the client's copy is only as good as what the user entity carries: a role that may not READ
-        // `employee` gets null there, while the server (which fills the claim from the row) still sees it.
-        UserWithClaims.fillClaims.push((uwc, user) => {
-            uwc.claims["Employee"] = (user as UserEntity).mixin(UserEmployeeMixin).employee ?? null;
-        });
-
-        // MixinDeclarations.register(EmployeeEntity, ColaboratorsMixin);
-        // registerCustomLite(EmployeeEntity, EmployeeLite, e => EmployeeLite.create({ ... }), /*isDefault*/ true);
-
-        // What a ScheduledTask may point at: a SimpleTaskSymbol (the scheduler's own kind), a
-        // ProcessAlgorithmSymbol (the scheduler → processes bridge: the entry creates and QUEUES a process
-        // instead of running inline), an EMAIL RECEPTION CONFIGURATION ("poll THIS mailbox", which needs no
-        // task symbol of its own), or altea-alert's SendNotificationEmailTask. An override REPLACES the
-        // declared list, so SimpleTaskSymbol is passed back in explicitly.
-        //
-        // Under legacyMode the override is SKIPPED ENTIRELY, leaving the scheduler's own declared
-        // `[SimpleTaskSymbol]`: the "a scheduled task can BE a process" bridge is altea's addition, so
-        // there `scheduled_task.task` stays single-implementation and its column is NOT NULL. The server
-        // half is gated to match (ProcessSchedulerBridge.start in starter.server.ts).
         if (!legacyMode)
             ProcessSchedulerBridgeOverrides.overrideTaskImplementations([
                 SimpleTaskSymbol,
@@ -229,17 +114,12 @@ export namespace EntityOverrides {
                 SendNotificationEmailTaskEntity,
             ]);
 
-        // How this app SENDS mail: altea-email declares only its own SMTP service, so the two extra sender
-        // packages are added here. A legacy database's list is exactly Smtp + MicrosoftGraph.
         overrideImplementedBy(EmailSenderConfigurationEntity, e => e.service, () => [
             SmtpEmailServiceEntity,
             ...(legacyMode ? [] : [ExchangeWebServiceEmailServiceEntity]),
             MicrosoftGraphEmailServiceEntity,
         ]);
 
-        // …and how it RECEIVES: POP3 is the one protocol shipped (altea-email's reception half declares an
-        // EMPTY implementedBy on purpose). A legacy database receives no mail, so it names no reception
-        // service and the empty list creates no service table.
         if (!legacyMode)
             overrideImplementedBy(EmailReceptionConfigurationEntity, e => e.service, () => [
                 Pop3EmailReceptionServiceEntity,
@@ -249,15 +129,10 @@ export namespace EntityOverrides {
         overrideImplementedBy(OperationLogEntity, o => o.user, () => [UserEntity]);
         overrideImplementedBy(RestLogEntity, r => r.user, () => [UserEntity]);
         overrideImplementedBy(ViewLogEntity, v => v.user, () => [UserEntity]);
-        // Same shape in the MODULES that name a user:
-        // an alert names who raised it, who it is for and who attended it; a note names who wrote it.
         overrideImplementedBy(AlertEntity, a => a.createdBy, () => [UserEntity]);
         overrideImplementedBy(AlertEntity, a => a.recipient, () => [UserEntity]);
         overrideImplementedBy(AlertEntity, a => a.attendedBy, () => [UserEntity]);
         overrideImplementedBy(NoteEntity, n => n.createdBy, () => [UserEntity]);
-        // These four modules used to name UserEntity themselves, which made their DATA layer — the tier
-        // that ships to the browser — depend on altea-auth for a type they never otherwise touch. The
-        // implementations are the same, so the columns are unchanged; only who declares them moved.
         overrideImplementedBy(DynamicSqlMigrationEntity, d => d.createdBy, () => [UserEntity]);
         overrideImplementedBy(DynamicSqlMigrationEntity, d => d.executedBy, () => [UserEntity]);
         overrideImplementedBy(ProcessEntity, p => p.user, () => [UserEntity]);
@@ -265,12 +140,8 @@ export namespace EntityOverrides {
         overrideImplementedBy(ScheduledTaskLogEntity, s => s.user, () => [UserEntity]);
         overrideImplementedBy(CaseTagEntity, c => c.createdBy, () => [UserEntity]);
 
-        // Which user assets a dashboard SNAPSHOT can cover: @altea/altea-dashboard cannot name them,
-        // because altea-user-queries and altea-chart depend on IT.
         overrideImplementedBy(CachedQueryEntity_UserAsset, c => c.userAsset, () => [UserQueryEntity, UserChartEntity]);
 
-        // The dashboard PART types this app offers. @altea/altea-dashboard declares only its own five, so
-        // the modules' parts are added here. The first group is what a legacy database does not declare.
         overrideImplementedBy(DashboardEntity_Part, d => d.content, () => [
             ...(legacyMode ? [] : [
                 TextPartEntity,
@@ -287,12 +158,6 @@ export namespace EntityOverrides {
             ToolbarMenuPartEntity,
         ]);
 
-        // What a TOOLBAR ELEMENT may point at. Beyond the usual, this list also decides which types get the
-        // "delete the elements pointing at me" cascade (see ToolbarLogic.start). Declared on the ABSTRACT
-        // base: both concrete element rows inherit that one field, so one call covers ToolbarEntity_Element
-        // and ToolbarMenuEntity_Element. (`overrideImplementedBy` asks for a concrete Type<T>; the base is
-        // abstract, which matters only to the type-checker — the FieldInfo it mutates is the one both
-        // element rows inherit.)
         overrideImplementedBy(ToolbarElementBaseEntity, t => t.content, () => [
             QueryEntity,
             PermissionSymbol,
@@ -302,19 +167,7 @@ export namespace EntityOverrides {
             UserQueryEntity,
             UserChartEntity,
             DashboardEntity,
-            // WorkflowEntity belongs in both toolbar implementedBy lists: a toolbar element
-            // pointing at a workflow STARTS a case of it (WorkflowToolbarConfig), and the whole workflow menu
-            // rides on one PermissionSymbol element (WorkflowToolbarMenuConfig, already covered above).
             WorkflowEntity,
         ]);
-
-        // Package / folder defaults. Written
-        // as bare calls that the quote-transformer stamps with the file's __fileInfo, so they know the
-        // package + directory they were declared in:
-        //   setDefaultCulture("en");           // the language this package's code-declared strings are in
-        //   setDefaultDatabaseSchema("dbo");   // the schema this folder's tables land in (server-only)
-        // `setDefaultCulture` is package-wide; `setDefaultDatabaseSchema` is FOLDER-scoped — put one at the
-        // top of a sub-folder's module (e.g. entities/sales/…) to override the package default for just
-        // that folder, and the most specific directory wins.
     }
 }
