@@ -55,7 +55,7 @@ async function main(): Promise<void> {
     // Initializing here instead would run every startup cache against the schema that `sync` exists to
     // repair, printing a wall of mismatch warnings and a pile of queries in FRONT of the command that
     // would fix them.
-    await Starter.start(connStr, undefined, { initialize: false }); // binds Connector.default
+    await Starter.start(connStr); // binds Connector.default
 
     try {
         await connectBanner(connStr);
@@ -108,7 +108,7 @@ async function main(): Promise<void> {
 let initialized: Promise<void> | undefined;
 function ensureInitialized(): Promise<void> {
     return initialized ??= (async () => {
-        const { mismatches } = await StartParameters.withIgnoredDatabaseMismatches(() => Starter.initialize());
+        const { mismatches } = await StartParameters.withIgnoredDatabaseMismatches(() => Schema.current.initialize());
 
         if (mismatches.length > 0) {
             console.log(chalk.yellow(`[start] ${mismatches.length} database mismatch(es) — the schema trails the code, run 'sync':`));
