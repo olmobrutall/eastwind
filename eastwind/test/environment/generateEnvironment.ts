@@ -65,9 +65,9 @@ export async function generateTestEnvironment(): Promise<void> {
 
     const connectionString = requireConnectionString();
 
-    // No web builder (there is no HTTP here) and no initialize: the schema is built in memory, and
-    // reading anything out of it has to wait until the tables below exist.
-    await Starter.start(connectionString, undefined, { initialize: false });
+    // No web builder (there is no HTTP here), and nothing is initialized yet: the schema is built in
+    // memory, and reading anything out of it has to wait until the tables below exist.
+    await Starter.start(connectionString);
 
     const connector = Connector.current();
     console.log(`[generate] ${connector.isPostgres ? "PostgreSQL" : "SQL Server"} '${connector.databaseName()}'`);

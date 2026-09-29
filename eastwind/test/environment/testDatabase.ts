@@ -1,5 +1,6 @@
 import "@altea/altea/server/context.node";
 import { Connector } from "@altea/altea/server/connection/connector";
+import { Schema } from "@altea/altea/server/schema";
 import { Starter } from "../../app/starter.server";
 
 // The DATABASE half of the test harness: the connection string the suite (and the environment generator)
@@ -34,11 +35,14 @@ let started: Promise<void> | undefined;
  * Build the schema and bind the connector, once per process — the counterpart of `EastwindEnvironment.
  * StartAndInitialize()`, which its test base class calls from every constructor.
  *
- * No web builder: this process talks to the database, never over HTTP. `Schema.initialize` runs as part
- * of it (the default), because everything a spec does afterwards reads data.
+ * No web builder: this process talks to the database, never over HTTP. `Schema.initialize` runs right
+ * after the start, because everything a spec does afterwards reads data.
  */
 export function startEngine(): Promise<void> {
-    return (started ??= Starter.start(requireConnectionString()));
+    return (started ??= (async () => {
+        await Starter.start(requireConnectionString());
+        await Schema.current.initialize();
+    })());
 }
 
 /** Release the pool — a Playwright worker calls this on the way out so node can exit. */

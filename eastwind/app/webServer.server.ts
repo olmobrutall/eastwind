@@ -1,6 +1,8 @@
 import "@altea/altea/server/context.node"; // register server context storage first
 import { createWebServer } from "@altea/altea/server/webApi";
 import { useExceptionFilter } from "@altea/altea/server/filters/exceptionFilter";
+import { InitializeGate } from "@altea/altea/server/filters/initializeGate";
+import { Schema } from "@altea/altea/server/schema";
 import { Connector, ConsoleSqlLogger } from "@altea/altea/server/connection/connector";
 import { formatError } from "@altea/altea/server/formatError";
 import { SystemEventServer } from "@altea/altea/server/systemEventServer";
@@ -20,7 +22,7 @@ async function main(): Promise<void> {
         throw new Error("Set EASTWIND_DB (or ALTEA_TEST_DB) to a connection string.");
 
     const ws = createWebServer();
-    await Starter.start(connStr, ws); // builds schema, binds Connector.default, mounts all HTTP
+    await Starter.start(connStr, ws); // builds schema, binds Connector.default, mounts all HTTP — no DB reads
     // The JSON error funnel, and it belongs to the HOST because it must be registered after EVERY route in
     // the process — Express error middleware only catches what was registered before it. Without it a
     // failed request answers Express's HTML stack page instead of the `HttpError` the client's
@@ -42,18 +44,27 @@ async function main(): Promise<void> {
     // so the process just drains and exits code 0 — a phantom "clean" exit that reads as success. Surface it.
     server.on("error", err => fail(err));
 
-    // Record that this
-    // process came up, and arrange for it to record its own shutdown. AFTER listen, so a boot that cannot
-    // even bind its port is not filed as a successful start; and awaited, so the row exists before the
-    // host is considered up. See server/systemEventServer for what a MISSING stop row means.
-    await SystemEventServer.logStartStop();
+    // Everything that READS the database, behind the InitializeGate (Signum's
+    // SignumInitializeFilterAttribute.InitializeDatabase): a database that is down at boot fails the
+    // requests that need it, not the process, and the next such request retries.
+    InitializeGate.initializeDatabase = async () => {
+        await Schema.current.initialize();
 
-    // The three BACKGROUND RUNNERS, a few seconds after the host is up. They live HERE and not in the
-    // Starter because picking work up is the WEB HOST's job: a terminal command or a test builds the very
-    // same schema and must not start executing processes, scheduled tasks and queued mail behind itself.
-    ProcessRunner.startRunningProcessesAfter(5000);
-    ScheduleTaskRunner.startScheduledTasksAfter(5000);
-    AsyncEmailSender.startAsyncEmailSenderAfter(5000);
+        // Record that this process came up, and arrange for it to record its own shutdown. See
+        // server/systemEventServer for what a MISSING stop row means.
+        await SystemEventServer.logStartStop();
+
+        // The three BACKGROUND RUNNERS, a few seconds after the database is up. They live HERE and not in
+        // the Starter because picking work up is the WEB HOST's job: a terminal command or a test builds the
+        // very same schema and must not start executing processes, scheduled tasks and queued mail behind
+        // itself.
+        ProcessRunner.startRunningProcessesAfter(5000);
+        ScheduleTaskRunner.startScheduledTasksAfter(5000);
+        AsyncEmailSender.startAsyncEmailSenderAfter(5000);
+    };
+
+    // Unlike Signum, try once now so a healthy boot is warm before the first request; a failure is logged.
+    InitializeGate.startInBackground("eastwind");
 }
 
 // Both exits print through formatError, never `err.message`: the message of the error a dead database

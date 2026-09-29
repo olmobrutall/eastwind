@@ -127,7 +127,6 @@ import { IntroductionSkill } from "@altea/altea-agent/server/Skills/Introduction
 import { AlertLogic } from "@altea/altea-alert/server/AlertLogic";
 import { NoteLogic } from "@altea/altea-notes/server/NoteLogic";
 import { AlertNotificationLogic } from "@altea/altea-alert/server/AlertNotificationLogic";
-import type { Schema } from "@altea/altea/server/schema";
 import type { ResetLazy } from "@altea/altea/server/resetLazy";
 import { GlobalsServer } from "./globals/GlobalsServer.server";
 
@@ -146,28 +145,15 @@ export namespace Starter {
      */
     export let configuration: ResetLazy<ApplicationConfigurationEntity> = null!;
 
-    /** The built schema, kept so a host that DEFERRED initialization can run it later (see `initialize`). */
-    let built: Schema | undefined;
-
     /**
-     * Read the persisted ids and warm the caches that need the database. Separate from `start` because WHEN
-     * it happens differs by host. Idempotent.
-     */
-    export async function initialize(): Promise<void> {
-        if (built == null)
-            throw new Error("Starter.initialize: call Starter.start first.");
-
-        await built.initialize();
-    }
-
-    /**
+     * Builds the schema and binds the connector WITHOUT reading the database — as Signum's Starter. Each host
+     * runs `Schema.current.initialize()` when it is ready: the web host behind its InitializeGate, the
+     * terminal per command, a test right after this.
+     *
      * @param webBuilder  Each module mounts its own HTTP surface through it. A terminal / test omits it
      *   (no HTTP).
-     * @param options.initialize  Run {@link initialize} as part of starting (the default). A TERMINAL passes
-     *   false and initializes per command — see that method.
      */
-    export async function start(connectionString: string, webBuilder?: WebBuilder,
-        options?: { initialize?: boolean }): Promise<void> {
+    export async function start(connectionString: string, webBuilder?: WebBuilder): Promise<void> {
         // Point eastwind at a database a LEGACY application generated, and declare only what that
         // application declares. Read FIRST because EntityOverrides needs it.
         const legacyMode = isEnvTrue(process.env["LegacyMode"]);
@@ -597,15 +583,9 @@ export namespace Starter {
 
         sb.complete();
 
-        built = sb.schema;
-
         // Each installed module's own `translations/` directory (walked from this app's dependency graph),
         // then the app's own `<cwd>/translations` last so it wins a collision.
         loadAppTranslations();
-
-        // Everything that READS the database is deferred to `initialize` (see there for why).
-        if (options?.initialize !== false)
-            await initialize();
 
         // The app's own REST surfaces. After every module, so the RestLog
         // middleware sits behind the auth middleware AuthLogic.start installed.
