@@ -31,6 +31,7 @@ import { PersonEntity, CompanyEntity } from "../app/customers/Customer.data";
 import { TypeScriptMigrations } from "./typeScriptMigrations";
 import { TranslationConverter } from "@altea/altea-translations/server/TranslationConverter";
 import { TranslationStubs } from "@altea/altea-translations/server/TranslationStubs";
+import { AuthImportExport } from "@altea/altea-auth/server/AuthImportExport";
 
 // A console host that boots the engine (Starter.start) then dispatches ONE command or, with no args, an
 // interactive ConsoleSwitch menu. The commands split three ways:
@@ -167,8 +168,7 @@ async function load(args: string[]): Promise<void> {
     for (; ;) {
         const selected = await new ConsoleSwitch<() => Promise<void>>("Load processes (e.g. SN,EA,IA):")
             .add("SN", "Seed Northwind (the demo-data SOURCE database)", () => NorthwindSeed.seed())
-            .add("EA", "Export Auth Rules (to ./AuthRules.xml)", () => TypeScriptMigrations.exportAuthRules())
-            .add("IA", "Import Auth Rules (terminal/AuthRules.xml)", () => TypeScriptMigrations.importAuthRules())
+            .add("AR", "Export Export Auth Rules (./AuthRules.xml)", () => AuthImportExport.importExportAuthRules(TypeScriptMigrations.seedFile("AuthRules.xml"), syncDirectory))
             .add("IU", "Import User Assets (terminal/UserAssets.xml)", () => TypeScriptMigrations.importUserAssets())
             .add("SO", "Show Order (the most expensive discounted order)", () => showOrder())
             .chooseMultipleWithDescription(args);
