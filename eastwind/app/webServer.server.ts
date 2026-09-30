@@ -9,6 +9,7 @@ import { SystemEventServer } from "@altea/altea/server/systemEventServer";
 import { ProcessRunner } from "@altea/altea-processes/server/ProcessRunner";
 import { ScheduleTaskRunner } from "@altea/altea-scheduler/server/ScheduleTaskRunner";
 import { AsyncEmailSender } from "@altea/altea-email/server/AsyncEmailSender";
+import { SpaHost } from "./spaHost.server";
 import { Starter } from "./starter.server";
 
 // The eastwind web host. Creates the WebBuilder and hands it to Starter.start;
@@ -23,6 +24,10 @@ async function main(): Promise<void> {
 
     const ws = createWebServer();
     await Starter.start(connStr, ws); // builds schema, binds Connector.default, mounts all HTTP — no DB reads
+    // The SPA itself, in a BUILD — assets plus the history fallback. AFTER the Starter, because both are
+    // catch-alls and would otherwise shadow the /api routes and the server-rendered pages. Not part of the
+    // SSR module: rendering a page on the server is optional, serving the SPA is not.
+    SpaHost.start(ws);
     // The JSON error funnel, and it belongs to the HOST because it must be registered after EVERY route in
     // the process — Express error middleware only catches what was registered before it. Without it a
     // failed request answers Express's HTML stack page instead of the `HttpError` the client's

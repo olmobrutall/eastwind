@@ -66,6 +66,13 @@ function splitQuery(source: string): [string, string] {
 
 export default defineConfig({
     plugins: [alteaDistAssetToSource(), react()],
+    // altea resolves types by CLASS NAME at runtime, and one of those lookups walks the prototype chain
+    // comparing `ctor.name` against the framework's base classes (registration.ts's `inheritsFromNamed`).
+    // A minifier renames a class it sees no other reference to, and `BaseEntity` is abstract, so in a
+    // production build the chain read `CategoryEntity → Entity → Ar` and EVERY `Lite<T>` failed to
+    // deserialize with `unknown type "…"`. Dev never showed it, because dev is unminified.
+    // `registerType` already restores the name of each type it is given; this covers the ones it is not.
+    esbuild: { keepNames: true },
     // The framework (@altea/altea/client) and the app both import react / react-router; they must
     // resolve to a SINGLE instance or React context (RouterProvider, etc.) won't cross the boundary.
     // fontawesome-svg-core is likewise a singleton: MainPublic's library.add(fas, far) must register
