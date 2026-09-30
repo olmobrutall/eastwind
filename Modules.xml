@@ -347,7 +347,7 @@
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="import LoginDropdown from &quot;@altea/altea-auth/client/public/LoginDropdown&quot;;"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="&lt;LoginDropdown />"/>
 			<RemoveFiles Path="eastwind/terminal/AuthRules.xml"/>
-			<RemoveLine Path="eastwind/terminal/terminal.ts" From=".add(&quot;EA&quot;" To=".add(&quot;IA&quot;"/>
+			<RemoveLine Path="eastwind/terminal/terminal.ts" Contains=".add(&quot;AR&quot;"/>
 			<!-- The token settings: the configuration member, and the two seeds that fill it. -->
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="import { AuthTokenConfigurationEmbedded } from &quot;@altea/altea-auth/data/AuthToken&quot;;"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" From="/*Auth — how long a bearer token stays fresh." To="authTokens: AuthTokenConfigurationEmbedded;"/>

@@ -81,33 +81,6 @@
             ]
         },
         {
-            // The same host out of its single-file vite bundle rather than the tspc output: what a
-            // deployment actually runs, and the only way to debug a fault the bundler itself introduces.
-            "type": "node",
-            "request": "launch",
-            "name": "eastwind API server (bundled)",
-            "preLaunchTask": "bundle eastwind server",
-            "program": "${workspaceFolder}/eastwind/dist/server-bundle/main.js",
-            "cwd": "${workspaceFolder}/eastwind/",
-            "runtimeArgs": [
-                "--enable-source-maps",
-                "--env-file=.env.${input:eastwindEnv}"
-            ],
-            "outFiles": [
-                "${workspaceFolder}/eastwind/dist/server-bundle/**/*.js"
-            ],
-            "sourceMaps": true,
-            "resolveSourceMapLocations": [
-                "${workspaceFolder}/**",
-                "!**/node_modules/**"
-            ],
-            "console": "integratedTerminal",
-            "skipFiles": [
-                "<node_internals>/**",
-                "**/node_modules/pg/lib/native/**"
-            ]
-        },
-        {
             "type": "node",
             "request": "launch",
             "name": "eastwind terminal",
@@ -134,6 +107,32 @@
                 "**/get-intrinsic/**",
                 "**/pg/lib/native/client.js"
             ]
+        },
+        {
+            // The SPA half of the stack — vite dev, serving :5173 and proxying /api to the host above
+            // (vite.client.config.ts). It is a LAUNCH CONFIGURATION rather than a task purely so the
+            // compounds below can own it: stopping a compound stops every process in it, which a
+            // background task left running in a terminal would not do.
+            //
+            // Nothing here is debugged — pnpm and vite run under the adapter only so they die with the
+            // session. What keeps the emitted JS vite consumes fresh is the preLaunchTask: the same
+            // `tspc -b --watch` the `stack` script runs beside the API, and the reason this is not a bare
+            // `vite`. VS Code waits for the watcher's FIRST pass (the $tsc-watch background matcher in
+            // tasks.json) before vite starts, so the first page load never reads half-written output.
+            "type": "node",
+            "request": "launch",
+            "name": "eastwind client (vite dev)",
+            "preLaunchTask": "watch types",
+            "cwd": "${workspaceFolder}/eastwind",
+            "runtimeExecutable": "pnpm",
+            "runtimeArgs": [
+                "run",
+                "dev:client"
+            ],
+            "console": "integratedTerminal",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
         }
     ],
     "inputs": [
@@ -145,8 +144,14 @@
             "type": "pickString",
             "description": "Framework suite — which dialect to run against (altea/altea/.env.*, read as ALTEA_TEST_DB)",
             "options": [
-                { "label": "sqlserver — the SQL Server test database", "value": "sqlserver" },
-                { "label": "postgres — the PostgreSQL test database", "value": "postgres" }
+                {
+                    "label": "sqlserver — the SQL Server test database",
+                    "value": "sqlserver"
+                },
+                {
+                    "label": "postgres — the PostgreSQL test database",
+                    "value": "postgres"
+                }
             ],
             "default": "sqlserver"
         },
@@ -159,15 +164,58 @@
             "type": "pickString",
             "description": "eastwind — which environment to run as (eastwind/.env.*, read as EASTWIND_DB)",
             "options": [
-                { "label": "local — what the local stack serves, and what the Playwright suite drives", "value": "local" },
-                { "label": "dev — shared development", "value": "dev" },
-                { "label": "test — staging / QA", "value": "test" },
-                { "label": "live — production", "value": "live" },
-                { "label": "postgres — port-era PostgreSQL database", "value": "postgres" },
-                { "label": "sqlserver — port-era SQL Server database", "value": "sqlserver" },
-                { "label": "swpostgres — a Signum Southwind database, read through legacyMode", "value": "swpostgres" }
+                {
+                    "label": "local — what the local stack serves, and what the Playwright suite drives",
+                    "value": "local"
+                },
+                {
+                    "label": "dev — shared development",
+                    "value": "dev"
+                },
+                {
+                    "label": "test — staging / QA",
+                    "value": "test"
+                },
+                {
+                    "label": "live — production",
+                    "value": "live"
+                },
+                {
+                    "label": "postgres — port-era PostgreSQL database",
+                    "value": "postgres"
+                },
+                {
+                    "label": "sqlserver — port-era SQL Server database",
+                    "value": "sqlserver"
+                },
+                {
+                    "label": "swpostgres — a Signum Southwind database, read through legacyMode",
+                    "value": "swpostgres"
+                }
             ],
             "default": "local"
+        }
+    ],
+    // `pnpm --filter eastwind stack <env>` with the API under the DEBUGGER. The script's three processes
+    // are all here — the type watcher (the client configuration's preLaunchTask), the API host and vite —
+    // and the port is freed first exactly as the script does, so a session that was stopped hard does not
+    // meet its own leftover with EADDRINUSE. `stopAll` is the script's `concurrently -k`: stop one, stop
+    // all, and Ctrl+C leaves nothing behind. Opens on http://localhost:5173.
+    //
+    // ONE, over the tspc output you just edited — restart the session to pick up an edit, the watcher has
+    // already recompiled it. Debugging the deployable single-file bundle instead was a second copy of
+    // every entry here (a launch configuration, a compound and a bundling task) for a build that is not
+    // what you are editing; `pnpm --filter eastwind bundle` still produces it, and the "bundle eastwind"
+    // task still runs that.
+    "compounds": [
+        {
+            "name": "eastwind full stack",
+            "configurations": [
+                "eastwind API server",
+                "eastwind client (vite dev)"
+            ],
+            "preLaunchTask": "free eastwind API port",
+            "stopAll": true
         }
     ]
 }

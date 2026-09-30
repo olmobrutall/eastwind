@@ -146,15 +146,15 @@ export namespace TypeScriptMigrations {
     }//createCulturesAndConfiguration
 
     export async function createRoles(): Promise<void> {
-        await ensureRole("Anonymous", MergeStrategy.Union, []);
-        const standard = await ensureRole("Standard user", MergeStrategy.Union, []);
-        await ensureRole("Super user", MergeStrategy.Intersection, []);
-        await ensureRole("Advanced user", MergeStrategy.Union, [standard]);
+        const fileName = seedFile("AuthRules.xml");
+        const xml = fs.readFileSync(fileName, "utf8");
+
+        await AuthImportExport.loadRoles(xml)
     }
 
     export async function createSystemUser(): Promise<void> {
-        await ensureUser("System", "Super user");
-        await ensureUser("Anonymous", "Anonymous");
+        await createUser("System", "Super user");
+        await createUser("Anonymous", "Anonymous");
     }
 
     // ---- the XML seeds ---------------------------------------------------------------------------------
@@ -174,12 +174,6 @@ export namespace TypeScriptMigrations {
         console.log(`[import-auth] done (${fileName})`);
     }
 
-    /** The export half. */
-    export async function exportAuthRules(file?: string): Promise<void> {
-        const fileName = file ?? "AuthRules.xml";
-        fs.writeFileSync(fileName, await AuthImportExport.exportAuthRules(), "utf8");
-        console.log(`[export-auth] wrote ${fileName}`);
-    }
 
     /**
      * UserAssetsImporter.preview over terminal/UserAssets.xml, then import with that preview. The preview
@@ -226,13 +220,8 @@ export namespace TypeScriptMigrations {
         return role;
     }
 
-    async function ensureUser(userName: string, roleName: string): Promise<void> {
-        const existing = await table(UserEntity).filter(u => u.userName == userName).singleOrNull() as UserEntity | null;
-        if (existing != null)
-            return;
-        const role = await table(RoleEntity).filter(r => r.name == roleName).singleOrNull() as RoleEntity | null;
-        if (role == null)
-            return;
+    async function createUser(userName: string, roleName: string): Promise<void> {
+        const role = await table(RoleEntity).filter(r => r.name == roleName).single();
         await UserEntity.create({
             userName,
             role: role.toLite(),

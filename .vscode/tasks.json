@@ -69,19 +69,23 @@
 			"group": "build"
 		},
 		{
-			"label": "bundle eastwind server",
-			"detail": "Bundles transformer-emitted logic JS into one runnable file (used by the server debugger).",
+			// The first step of `pnpm --filter eastwind stack <env>` (scripts/free-port.mjs), pulled out on its
+			// own so a DEBUG launch can take it too: a session stopped hard, or an orphaned `stack`, keeps :3001,
+			// and the next API host then dies with EADDRINUSE before it prints a line.
+			"label": "free eastwind API port",
+			"detail": "Kills whatever is listening on the API port (3001, or $PORT). preLaunchTask for the full-stack compounds.",
 			"type": "shell",
-			"command": "pnpm --filter eastwind bundle:server",
-			"options": { "cwd": "${workspaceFolder}" },
+			"command": "pnpm run free:port",
+			"options": { "cwd": "${workspaceFolder}/eastwind" },
 			"problemMatcher": [],
-			"dependsOn": ["build eastwind"],
-			"dependsOrder": "sequence",
 			"group": "build"
 		},
 		{
 			// `build` compiles; `bundle` produces what a deployment actually runs. Only eastwind has one,
-			// because only eastwind ships something other than its compiled output.
+			// because only eastwind ships something other than its compiled output. The server half had a
+			// task of its own once, for a launch configuration that debugged the bundle rather than the
+			// output you edit; both are gone, and `pnpm --filter eastwind bundle:server` still exists for
+			// the rare case of chasing a fault the bundler itself introduces.
 			"label": "bundle eastwind",
 			"detail": "The deployable: compile, then the server and client vite bundles.",
 			"type": "shell",

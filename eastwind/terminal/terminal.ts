@@ -73,7 +73,6 @@ async function main(): Promise<void> {
                 case "typescript":
                 case "ts": await typeScriptMigrations(args.slice(1)); break;
                 case "check": await check(); break;
-                case "export-auth": await exportAuth(args.slice(1)); break;
                 case "import-auth": await importAuth(args.slice(1)); break;
                 case "import-assets": await importAssets(args.slice(1)); break;
                 case "seed-northwind": await NorthwindSeed.seed(); break;
@@ -85,7 +84,7 @@ async function main(): Promise<void> {
                 case "stub-translations": TranslationStubs.runCommand(args.slice(1), { cultures: ["de", "es"] }); break;
                 case "migrations":
                 case "sql": await migrations(args.slice(1)); break;
-                default: console.log(`Unknown command '${command}'. Valid: new, sync, sql, ts, load [SN,EA,IA,IU,SO], check, export-auth, import-auth, import-assets, seed-northwind, convert-translations, stub-translations`);
+                default: console.log(`Unknown command '${command}'. Valid: new, sync, sql, ts, load [SN,EA,IA,IU,SO], check, import-auth, import-assets, seed-northwind, convert-translations, stub-translations`);
             }
         }
     } finally {
@@ -329,12 +328,6 @@ async function synchronize(args: string[] = []): Promise<void> {
         await Administrator.onAfterSynchronize(fileName, replacements);
 }
 
-// The three file-based seeds as DIRECT commands (a deploy script calls these). The bodies live in
-// TypeScriptMigrations — the Load menu and the code-migration list call exactly the same functions.
-async function exportAuth(args: string[]): Promise<void> {
-    await ensureInitialized();
-    await TypeScriptMigrations.exportAuthRules(args[0]);
-}
 
 async function importAuth(args: string[]): Promise<void> {
     await ensureInitialized();
