@@ -25,7 +25,6 @@ import { EntityOverrides } from "./entityOverrides.data";
 import { showBootFailure } from "./bootFailure.client";
 import Layout from "./Layout";
 import Home from "./Home";
-import PublicCatalog from "./publicApi/PublicCatalog";
 import { PublicClient } from "./publicApi/PublicClient.client";
 import NotFound from "./NotFound";
 
@@ -59,9 +58,10 @@ async function reload(): Promise<void> {
 
     const routes: RouteObject[] = [];
 
-    // The two ANONYMOUS app routes: the shop window a logged-out visitor is sent to, and the self-service
-    // registration page an employee hands out as `/registerUser/<their id>`.
-    routes.push({ path: "/publicCatalog", element: <PublicCatalog /> });
+    // The ANONYMOUS app route: the self-service registration page an employee hands out as
+    // `/registerUser/<their id>`. The OTHER anonymous surface, the /publicCatalog shop window, is not here
+    // — it is server-rendered and is its own document (app/ssr/SsrHost.server.ts), which is why Home
+    // redirects a logged-out visitor to it with a real navigation rather than an in-app one.
     PublicClient.startPublic(routes);
 
     // Public auth routes (login / change password) — always registered, so they work with no user.

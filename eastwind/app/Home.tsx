@@ -17,7 +17,9 @@ export default function Home(): React.JSX.Element | null {
         let cancelled = false;
 
         if (!AuthClient.currentUser()) {
-            AppContext.navigate("/publicCatalog", { replace: true });
+            // A REAL navigation, not `AppContext.navigate`: /publicCatalog is server-rendered and is not a
+            // route of this SPA, so routing to it in-app would only find the catch-all NotFound.
+            window.location.replace(AppContext.toAbsoluteUrl("/publicCatalog"));
             return;
         }//AnonymousRedirect
 

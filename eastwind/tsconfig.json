@@ -1,11 +1,16 @@
 {
-  // Solution file — builds all four suffix-driven layers (`tspc -b`). Layer membership is by filename
-  // suffix (*.data / *.server / *.client / *.terminal), not by directory, so a domain lives co-located
-  // in one folder (customers/Customer.{data,server,client,terminal}.ts). All four emit into a single
-  // `dist/` tree, which is what lets co-located siblings import each other with plain relative paths.
+  // Solution file — builds every suffix-driven layer (`tspc -b`). Layer membership is by filename
+  // suffix (*.data / *.ssr / *.server / *.client / *.terminal), not by directory, so a domain lives
+  // co-located in one folder (customers/Customer.{data,server,client,terminal}.ts). They all emit into a
+  // single `dist/` tree, which is what lets co-located siblings import each other with plain relative paths.
+  //
+  // `*.ssr` is the odd one out and is listed before the server layer it is built for: it is the only
+  // project allowed to see the client layer from node, and it exists solely so server-side rendering has
+  // somewhere legal to live. See tsconfig.ssr.json.
   "files": [],
   "references": [
     { "path": "./tsconfig.data.json" },
+    { "path": "./tsconfig.ssr.json" },
     { "path": "./tsconfig.server.json" },
     { "path": "./tsconfig.client.json" },
     { "path": "./tsconfig.terminal.json" },

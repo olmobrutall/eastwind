@@ -5,6 +5,9 @@
   "references": [
     { "path": "../altea/altea-notes/tsconfig.server.json" },
     { "path": "./tsconfig.data.json" },
+    // The SSR layer — the React-to-string step, which is the one thing that spans both tiers. This
+    // direction and not the reverse: see tsconfig.ssr.json.
+    { "path": "./tsconfig.ssr.json" },
     { "path": "../altea/altea-auth/tsconfig.server.json" },
     { "path": "../altea/altea-files/tsconfig.server.json" },
     { "path": "../altea/altea-scheduler/tsconfig.server.json" },

@@ -1,0 +1,34 @@
+{
+    // SSR layer — the server-side React renderer. A FIFTH project, because server-side rendering is a
+    // third tier: it runs on node (it answers an HTTP request and reads the database through the logic
+    // layer) yet it imports the CLIENT layer's components, which no shipping project is allowed to do.
+    //
+    // That rule is real, not stylistic: presets/server.json sets `customConditions: ["altea-server"]`,
+    // and every altea package hides its client subpath behind that condition, so a *.server.ts reaching
+    // for `@altea/<pkg>/client/X` fails to resolve. This project clears the condition for exactly the
+    // reason tsconfig.test.json does — a renderer, like a test host, deliberately spans both tiers. It is
+    // the ONLY project in the app that may.
+    //
+    // It does NOT reference the server project, and the server project references IT — the arrangement is
+    // that way round because the reverse is a circular project reference. So this layer holds only the
+    // React-to-string step, its exported surface stays tier-neutral ((data) => string), and the ordinary
+    // server code that mounts the route imports it like any other module.
+    //
+    // Membership is the `*.ssr.ts` suffix, like every other layer here. Note `.ts`, never `.tsx`: the
+    // CLIENT preset globs `${configDir}/**/*.tsx`, so a .tsx file here would land in both projects and be
+    // emitted twice. An SSR module therefore holds no JSX of its own — it calls `createElement` over a
+    // view that lives in the client layer, which is where the markup belongs anyway.
+    "extends": "../altea/altea/presets/server.json",
+    "compilerOptions": {
+        // Cleared — see above. The mirror of tsconfig.test.json's own comment.
+        "customConditions": [],
+        "tsBuildInfoFile": "${configDir}/dist/.tsbuildinfo.ssr",
+        "types": ["node", "react", "react-dom"]
+    },
+    "include": ["${configDir}/**/*.ssr.ts"],
+    "exclude": [],
+    "references": [
+        { "path": "./tsconfig.data.json" },
+        { "path": "./tsconfig.client.json" }
+    ]
+}

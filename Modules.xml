@@ -851,14 +851,47 @@
 			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/app/starter.server.ts" Line="CatalogApi.start(sb.webBuilder);"/>
 		</Module>
 
-		<Module Name="PublicCatalog" DependsOn="ExampleEntities,Files">
+		<!--
+		  SSR: the SERVER-SIDE RENDERING infrastructure — the document host (app/ssr), the fifth tsconfig
+		  project that lets one layer see both tiers, and the build/dev wiring that feeds it. NOT any
+		  particular page: a page contributes its own component, payload and client entry, and declares
+		  DependsOn="SSR".
+
+		  Optional, because most applications render everything in the SPA and never need a page that
+		  arrives painted. Note the consequence of PublicCatalog depending on it: a fresh clone that takes
+		  the default drops BOTH, which is intended — the catalog is the demo OF this module.
+
+		  TWO things a build needs are deliberately NOT here, because an application without SSR still needs
+		  them: `esbuild.keepNames` in vite.client.config.ts (altea resolves types by class name at runtime,
+		  so any minified build needs it — SSR was merely the first thing here to run one), and app/
+		  spaHost.server.ts, which serves the client bundle and the SPA history fallback. The latter lived
+		  inside app/ssr for one afternoon, and unticking SSR then left the app unable to answer `/`.
+		-->
+		<Module Name="SSR" optional="true">
+			<RemoveFiles Path="eastwind/app/ssr"/>
+			<RemoveFiles Path="eastwind/tsconfig.ssr.json"/>
+			<RemoveLine Path="eastwind/tsconfig.json" Line="{ &quot;path&quot;: &quot;./tsconfig.ssr.json&quot; },"/>
+			<RemoveLine Path="eastwind/tsconfig.server.json" From="// The SSR layer — the React-to-string step" To="{ &quot;path&quot;: &quot;./tsconfig.ssr.json&quot; },"/>
+			<RemoveLine Path="eastwind/vite.client.config.ts" From="// The SSR host resolves an entry's hashed file name" To="manifest: true,//SSR"/>
+			<!-- The whole rollupOptions block: with no second entry, vite's own index.html default is right.
+			     It CONTAINS PublicCatalog's own `input` line, which is why this module is declared first. -->
+			<RemoveLine Path="eastwind/vite.client.config.ts" From="rollupOptions: {" To="},//SSR"/>
+		</Module>
+
+		<Module Name="PublicCatalog" DependsOn="SSR,ExampleEntities,Files">
 			<RemoveFiles Path="eastwind/app/publicApi/PublicCatalog.data.ts"/>
 			<RemoveFiles Path="eastwind/app/publicApi/PublicCatalog.server.ts"/>
 			<RemoveFiles Path="eastwind/app/publicApi/PublicCatalog.tsx"/>
+			<RemoveFiles Path="eastwind/app/publicApi/PublicCatalog.ssr.ts"/>
+			<RemoveFiles Path="eastwind/app/publicApi/publicCatalogEntry.client.tsx"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { PublicCatalogApi } from &quot;./publicApi/PublicCatalog.server&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="PublicCatalogApi.start(sb.webBuilder);"/>
-			<RemoveLine Path="eastwind/app/MainPublic.client.tsx" Line="import PublicCatalog from &quot;./publicApi/PublicCatalog&quot;;"/>
-			<RemoveLine Path="eastwind/app/MainPublic.client.tsx" Line="routes.push({ path: &quot;/publicCatalog&quot;, element: &lt;PublicCatalog /> });"/>
+			<!-- The page's own two lines in the shared build config: the dev proxy that sends the document
+			     to the API host, and the entry vite must emit a chunk for. Both no-ops when SSR went too. -->
+			<RemoveLine Path="eastwind/vite.client.config.ts" From="// SERVER-RENDERED pages. The API host answers the DOCUMENT" To="&quot;/publicCatalog&quot;: { target: API_TARGET, changeOrigin: true },//PublicCatalog"/>
+			<RemoveLine Path="eastwind/vite.client.config.ts" Line="publicCatalog: path.resolve(APP_ROOT, &quot;dist/app/publicApi/publicCatalogEntry.client.js&quot;),//PublicCatalog"/>
+			<!-- Home sends a logged-out visitor to the catalog; with no catalog there is nowhere to send it. -->
+			<RemoveLine Path="eastwind/app/Home.tsx" From="if (!AuthClient.currentUser()) {" To="}//AnonymousRedirect"/>
 			<!-- With no anonymous page to serve, the app has no reason to configure an anonymous USER. -->
 			<ReplaceSpanInLines Path="eastwind/app/starter.server.ts" Span=", &quot;Anonymous&quot;," With=", null,"/>
 			<RemoveSpanInLines Path="eastwind/app/MainPublic.client.tsx" Span=" &amp;&amp; user.userName != ANONYMOUS_USER_NAME"/>

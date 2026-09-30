@@ -82,10 +82,27 @@ export default defineConfig({
         port: 5173,
         proxy: {
             "/api": { target: API_TARGET, changeOrigin: true, ws: true },
+            // SERVER-RENDERED pages. The API host answers the DOCUMENT for these paths; every script and
+            // stylesheet it points at is still served by Vite, because the browser only ever sees this
+            // origin. That is what lets the SSR host stay a plain Express route instead of having to run
+            // Vite in middleware mode. Add a path here when a page joins app/ssr.
+            "/publicCatalog": { target: API_TARGET, changeOrigin: true },//PublicCatalog
         },
     },
     build: {
         outDir: "dist/client-bundle",
         emptyOutDir: true,
+        // The SSR host resolves an entry's hashed file name (and its stylesheets) through this — see
+        // SsrHost.assetUrl. Vite writes it to dist/client-bundle/.vite/manifest.json.
+        manifest: true,//SSR
+        rollupOptions: {
+            // Two entries: index.html is the SPA, and each server-rendered page has its OWN small entry
+            // that hydrates it — no auth, no route table, no framework UI kit. Listing it here is what
+            // makes Vite emit it as a chunk of its own with its own CSS.
+            input: {
+                index: path.resolve(APP_ROOT, "index.html"),
+                publicCatalog: path.resolve(APP_ROOT, "dist/app/publicApi/publicCatalogEntry.client.js"),//PublicCatalog
+            },
+        },//SSR
     },
 });

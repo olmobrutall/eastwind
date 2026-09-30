@@ -1,39 +1,46 @@
 import * as React from "react";
-import { Link } from "react-router";
-import { ajaxGet } from "@altea/altea/client/Services";
-import { useAPI } from "@altea/altea/client/Hooks";
 import { toNumberFormat } from "@altea/altea/client/numberFormat";
 import * as AppContext from "@altea/altea/client/AppContext";
 import { LoginAuthMessage } from "@altea/altea-auth/data/AuthMessages";
 import { CatalogMessage } from "../products/Product.data";
-import type { CategoryWithProducts } from "./PublicCatalog.data";
+import type { PublicCatalogData } from "./PublicCatalog.data";
 
-// The ANONYMOUS shop window: every active product grouped
-// by its category, reachable with no user (the landing page sends a logged-out visitor here).
+// The ANONYMOUS shop window: every active product grouped by its category, reachable with no user.
 //
-// Worth knowing:
-//  - the endpoint is `/api/publicCatalog` (see PublicCatalog.server.ts for why).
-//  - the call-to-action is LOG IN, not REGISTER. The `/registerUser` self-service page
-//    (Public/RegisterUser.tsx + RegisterUserModel), which is not ported — so the honest counterpart of that
-//    button is the login page. `RegisterUserMessage.Register` goes with it.
-export default function PublicCatalog(): React.JSX.Element {
+// This component is SERVER-RENDERED and then hydrated — PublicCatalog.ssr.ts renders it to HTML,
+// publicCatalogEntry.client.tsx rehydrates it — which is why it looks the way it does. Everything it needs
+// is a PROP, and it reads nothing ambient:
+//
+//  - it does not FETCH. `useAPI` resolves in an effect, which never runs on the server, so a component
+//    that fetched its own data would server-render an empty page — the one thing SSR exists to prevent.
+//    The payload is loaded by the logic layer and travels in the document; see SsrHost.
+//  - it takes the CULTURE, and passes it to `toNumberFormat` explicitly. Without a locale `Intl` falls
+//    back to the ambient default, which is the BROWSER's locale on one side and the SERVER MACHINE's on
+//    the other — so every price cell would differ between the two renders and hydration would fail. (The
+//    translated names resolve the same way on both sides because the entry loads the reflection metadata
+//    for this same culture before it hydrates.)
+//  - the call to action is a plain `<a>`, not a react-router `<Link>`. This document is not the SPA and
+//    has no router; logging in leaves for the SPA, which is a real navigation either way.
+export interface PublicCatalogProps {
+    data: PublicCatalogData;
+}
 
-    const categories = useAPI(signal => ajaxGet<CategoryWithProducts[]>({ url: "/api/publicCatalog", signal }), []);
+export default function PublicCatalog({ data }: PublicCatalogProps): React.JSX.Element {
 
     const maxDimensions: React.CSSProperties = { maxWidth: "96px", maxHeight: "96px" };
 
-    const numberFormat = toNumberFormat("0.00");
+    const numberFormat = toNumberFormat("0.00", data.culture);
 
     return (
-        <div id="hero" style={{ background: "url(" + AppContext.toAbsoluteUrl("/background_dark.jpg") + ")", backgroundSize: "cover", backgroundAttachment: "fixed" }}>
+        <div id="hero" style={{ background: "url(" + AppContext.toAbsoluteUrl("/background_dark.jpg", data.baseName) + ")", backgroundSize: "cover", backgroundAttachment: "fixed" }}>
             <div className="d-flex flex-column align-items-center position-relative">
                 <h1 className="white mt-4">eastwind Product Catalog</h1>
-                <Link to={AppContext.toAbsoluteUrl("/auth/login")} className="btn btn-primary">{LoginAuthMessage.Login.niceToString()}</Link>
-                {categories && categories.map(c =>
+                <a href={AppContext.toAbsoluteUrl("/auth/login", data.baseName)} className="btn btn-primary">{LoginAuthMessage.Login.niceToString()}</a>
+                {data.categories.map(c =>
                     <div key={c.category.key()} className="card shadow container m-4">
                         <div className="card-body">
                             <div className="d-flex">
-                                {c.picture && <img className="d-flex me-3" style={maxDimensions} src={`data:${c.pictureMimeType};base64,${c.picture}`} alt={c.locCategoryName} />}
+                                {c.pictureUrl && <img className="d-flex me-3" style={maxDimensions} src={AppContext.toAbsoluteUrl(c.pictureUrl, data.baseName)} alt={c.locCategoryName} />}
                                 <div className="flex-grow-1">
                                     <h4 className="mt-0">{c.locCategoryName}</h4>
                                     {c.locDescription}
