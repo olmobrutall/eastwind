@@ -19,8 +19,10 @@ import type { PublicCatalogData } from "./PublicCatalog.data";
 //    the other — so every price cell would differ between the two renders and hydration would fail. (The
 //    translated names resolve the same way on both sides because the entry loads the reflection metadata
 //    for this same culture before it hydrates.)
-//  - the call to action is a plain `<a>`, not a react-router `<Link>`. This document is not the SPA and
-//    has no router; logging in leaves for the SPA, which is a real navigation either way.
+//  - the calls to action are plain `<a>`s, not react-router `<Link>`s. This document is not the SPA and
+//    has no router; both links leave for it, answered by the history fallback (SpaHost / Vite).
+//  - the row expansion is ordinary `useState`, which is what hydration buys. It starts CLOSED, so the
+//    server's markup and the client's first render are identical — the one rule this component must keep.
 export interface PublicCatalogProps {
     data: PublicCatalogData;
 }
@@ -31,11 +33,18 @@ export default function PublicCatalog({ data }: PublicCatalogProps): React.JSX.E
 
     const numberFormat = toNumberFormat("0.00", data.culture);
 
+    // Which product's detail row is open — one at a time, keyed by product id.
+    const [openProduct, setOpenProduct] = React.useState<string | null>(null);
+
     return (
         <div id="hero" style={{ background: "url(" + AppContext.toAbsoluteUrl("/background_dark.jpg", data.baseName) + ")", backgroundSize: "cover", backgroundAttachment: "fixed" }}>
             <div className="d-flex flex-column align-items-center position-relative">
                 <h1 className="white mt-4">eastwind Product Catalog</h1>
-                <a href={AppContext.toAbsoluteUrl("/auth/login", data.baseName)} className="btn btn-primary">{LoginAuthMessage.Login.niceToString()}</a>
+                {/* `/registerUser` with no employee id is the same page without a `reportsTo`. */}
+                <div className="d-flex gap-2">
+                    <a href={AppContext.toAbsoluteUrl("/auth/login", data.baseName)} className="btn btn-primary">{LoginAuthMessage.Login.niceToString()}</a>
+                    <a href={AppContext.toAbsoluteUrl("/registerUser", data.baseName)} className="btn btn-outline-light">{CatalogMessage.register.niceToString()}</a>
+                </div>
                 {data.categories.map(c =>
                     <div key={c.category.key()} className="card shadow container m-4">
                         <div className="card-body">
@@ -57,15 +66,56 @@ export default function PublicCatalog({ data }: PublicCatalogProps): React.JSX.E
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {c.products.orderBy(a => a.id).orderBy(a => a.reorderLevel).map(p => <tr key={String(p.id)}>
-                                        <td>{p.productName}</td>
-                                        {/* `Number(...)` rather than `.toNumber()`: a Decimal-typed value arrives as a
-                                            decimal.js Decimal or its numeric string, and Number() coerces either —
-                                            the same coercion the framework's own Decimal cell formatter uses. */}
-                                        <td>{numberFormat.format(Number(p.unitPrice))} $</td>
-                                        <td>{p.quantityPerUnit}</td>
-                                        <td>{p.unitsInStock}</td>
-                                    </tr>)}
+                                    {c.products.orderBy(a => a.id).orderBy(a => a.reorderLevel).map(p => {
+                                        const id = String(p.id);
+                                        const isOpen = openProduct == id;
+                                        const detailId = "product-detail-" + id;
+                                        const toggle = (): void => setOpenProduct(isOpen ? null : id);
+
+                                        return <React.Fragment key={id}>
+                                            {/* The row is clickable for the mouse, but the accessible
+                                                control is the BUTTON on the name: `role="button"` on the
+                                                `<tr>` would replace the row's own role and orphan its
+                                                cells. The button stops propagation, or it toggles twice. */}
+                                            <tr onClick={toggle} style={{ cursor: "pointer" }}>
+                                                <td>
+                                                    <button type="button"
+                                                        className="btn btn-link p-0 text-start text-decoration-none"
+                                                        aria-expanded={isOpen}
+                                                        aria-controls={isOpen ? detailId : undefined}
+                                                        onClick={e => { e.stopPropagation(); toggle(); }}>
+                                                        {p.productName}
+                                                    </button>
+                                                </td>
+                                                {/* `Number(...)` rather than `.toNumber()`: a Decimal-typed value arrives as a
+                                                    decimal.js Decimal or its numeric string, and Number() coerces either —
+                                                    the same coercion the framework's own Decimal cell formatter uses. */}
+                                                <td>{numberFormat.format(Number(p.unitPrice))} $</td>
+                                                <td>{p.quantityPerUnit}</td>
+                                                <td>{p.unitsInStock}</td>
+                                            </tr>
+                                            {isOpen && <tr id={detailId} className="table-active">
+                                                <td colSpan={4}>
+                                                    <dl className="row mb-0 small">
+                                                        <dt className="col-sm-3">{CatalogMessage.supplier.niceToString()}</dt>
+                                                        <dd className="col-sm-9 mb-1">{p.supplier.toString()}</dd>
+                                                        <dt className="col-sm-3">{CatalogMessage.reorderLevel.niceToString()}</dt>
+                                                        <dd className="col-sm-9 mb-1">{p.reorderLevel}</dd>
+                                                        {/* The entity's own method, so both renders print the same number. */}
+                                                        <dt className="col-sm-3">{CatalogMessage.valueInStock.niceToString()}</dt>
+                                                        <dd className="col-sm-9 mb-1">{numberFormat.format(Number(p.valueInStock()))} $</dd>
+                                                        {p.additionalInformation.length == 0
+                                                            ? <dd className="col-12 mb-0 fst-italic">{CatalogMessage.noAdditionalInformation.niceToString()}</dd>
+                                                            : p.additionalInformation.map(ai => <React.Fragment key={String(ai.id)}>
+                                                                {/* `ai.key` is a DATA column, not React's prop. */}
+                                                                <dt className="col-sm-3">{ai.key}</dt>
+                                                                <dd className="col-sm-9 mb-1">{ai.value}</dd>
+                                                            </React.Fragment>)}
+                                                    </dl>
+                                                </td>
+                                            </tr>}
+                                        </React.Fragment>;
+                                    })}
                                 </tbody>
                             </table>
                         </div>

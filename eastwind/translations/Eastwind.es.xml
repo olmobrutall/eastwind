@@ -8,6 +8,7 @@
     <Member Name="Region" Description="Región" />
   </Type>
   <Type Name="ApplicationConfigurationEntity" Description="Configuración de la aplicación">
+    <Member Name="AuthTokens" Description="Tokens de autenticación" />
     <Member Name="AzureAD" Description="Azure AD" />
     <Member Name="Chatbot" Description="Chatbot" />
     <Member Name="DatabaseName" Description="Nombre base de datos" />
@@ -31,10 +32,15 @@
     <Member Name="ViewLog" Description="Registro de visita" />
   </Type>
   <Type Name="CatalogMessage">
+    <Member Name="NoAdditionalInformation" Description="Sin información adicional" />
     <Member Name="ProductName" Description="Nombre de producto" />
     <Member Name="QuantityPerUnit" Description="Cantidad por unidad" />
+    <Member Name="Register" Description="Registrarse" />
+    <Member Name="ReorderLevel" Description="Punto de pedido" />
+    <Member Name="Supplier" Description="Proveedor" />
     <Member Name="UnitPrice" Description="Precio unitario" />
     <Member Name="UnitsInStock" Description="Unidades en stock" />
+    <Member Name="ValueInStock" Description="Valor en stock" />
   </Type>
   <Type Name="CategoryEntity" Description="Categoría">
     <Member Name="CategoryName" Description="Nombre de categoría" />
@@ -75,14 +81,8 @@
     <Member Name="Name" Description="Nombre" />
     <Member Name="Phone" Description="Teléfono" />
   </Type>
-  <Type Name="DepartmentEntity" Description="Departamento">
-    <Member Name="Responsible" Description="Responsable" />
-  </Type>
   <Type Name="EastwindAgentUseCases">
     <Member Name="MCP" Description="MCP" />
-  </Type>
-  <Type Name="EastwindFileType">
-    <Member Name="PrintTest" Description="Prueba de impresión" />
   </Type>
   <Type Name="EastwindTypeCondition">
     <Member Name="CurrentEmployee" Description="Empleado actual" />
@@ -248,7 +248,6 @@
     <Member Name="Password" Description="Contraseña" />
     <Member Name="ReportsTo" Description="Supervisor" />
     <Member Name="TitleOfCourtesy" Description="Título de cortesía" />
-    <Member Name="Username" Description="Nombre de usuario" />
   </Type>
   <Type Name="ShipperEntity" Description="Transportador">
     <Member Name="CompanyName" Description="Nombre empresa" />

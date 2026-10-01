@@ -114,7 +114,9 @@
       <div class="splash-hint">Still loading&hellip;</div>
     </div>
     <div id="root"></div>
-    <!-- Globals the host injects; the ajax layer (toAbsoluteUrl) needs __baseName. -->
+    <!-- Globals the host injects; the ajax layer (toAbsoluteUrl) needs __baseName.
+         A third one is deliberately NOT set: `window.__allowNavigatorWithoutUser` switches off Navigator's
+         anonymous-boot guard application-wide. Load the offending module lazily instead (see Layout.tsx). -->
     <script>
       window.__baseName = "";
       window.__serverName = "";

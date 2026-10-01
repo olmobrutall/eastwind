@@ -82,6 +82,19 @@ Each multi-line module block ends with a trailing `//<ModuleName>` comment on it
 like noise and are **load-bearing**: they are the anchors `Modules.xml` spans match on. Run
 `pnpm --filter eastwind check:modules` after touching any of those files.
 
+### The ANONYMOUS boot graph stays small
+
+`MainPublic.client.tsx` is the SPA's entry module, so everything reachable from it through a STATIC import
+is downloaded and evaluated before `boot()` has asked who is logged in. altea enforces the consequence
+rather than trusting it: `Navigator` THROWS when its module body runs with no logged-in user.
+
+> anything in the boot graph that reaches `Navigator` must be `React.lazy` / a dynamic `import()`, behind a
+> render guarded by `AppContext.currentUser != null`.
+
+Hence `Layout.tsx` lazy-loading every navbar widget, and `MainAdmin.client` being imported only inside the
+`isFull` branch — worth about 900 kB (270 kB gzipped) of first paint. Do not answer the throw with
+`window.__allowNavigatorWithoutUser = true`; make the import lazy.
+
 ## Domain model
 
 Northwind: **Customers** (`Person` / `Company`, polymorphic under an abstract `CustomerEntity`),

@@ -7,17 +7,20 @@ import * as AppContext from "@altea/altea/client/AppContext";
 import { Breakpoints, useBreakpoint } from "@altea/altea/client/Hooks";
 import { LayoutMessage } from "@altea/altea-toolbar/data/Toolbar";
 import { SidebarContainer, SidebarToggleItem, type SidebarMode } from "@altea/altea-toolbar/client/SidebarContainer";
-import ToolbarRenderer from "@altea/altea-toolbar/client/Renderers/ToolbarRenderer";
 import CultureDropdown from "@altea/altea/client/CultureDropdown";
 import { ThemeModeSelector } from "@altea/altea/client/Components/ThemeModeSelector";
 import LoginDropdown from "@altea/altea-auth/client/public/LoginDropdown";
-import OmniboxAutocomplete from "@altea/altea-omnibox/client/OmniboxAutocomplete";
-import AlertDropdown from "@altea/altea-alert/client/AlertDropdown";
-import WhatsNewDropdown from "@altea/altea-whats-new/client/WhatsNewDropdown";
 import { ThemeSelector } from "./ThemeSelector";
 import { currentMode } from "./eastwindMode.data";
-const ChangeLogViewer = React.lazy(() => import("@altea/altea/client/Basics/ChangeLogViewer"));
 
+// LAZY, and not for weight alone: each reaches `Navigator`, which throws if it is imported into a boot
+// graph with no logged-in user (see its guard). This shell is the SPA's entry module, so a static import
+// would be evaluated before `boot()` runs `autoLogin`. Every render below is behind `currentUser != null`.
+const ToolbarRenderer = React.lazy(() => import("@altea/altea-toolbar/client/Renderers/ToolbarRenderer"));
+const OmniboxAutocomplete = React.lazy(() => import("@altea/altea-omnibox/client/OmniboxAutocomplete"));
+const AlertDropdown = React.lazy(() => import("@altea/altea-alert/client/AlertDropdown"));
+const WhatsNewDropdown = React.lazy(() => import("@altea/altea-whats-new/client/WhatsNewDropdown"));
+const ChangeLogViewer = React.lazy(() => import("@altea/altea/client/Basics/ChangeLogViewer"));
 const ChatbotButton = React.lazy(() => import("@altea/altea-agent/client/ChatbotButton"));
 
 // The app shell: a top navbar (with the sidebar toggle, the omnibox and the login/user
@@ -114,16 +117,19 @@ export default function Layout(): React.JSX.Element {
                 {/* The omnibox. Only for a logged-in user: the
                     /api/omnibox route asserts OmniboxPermission.ViewOmnibox.
                     `me-3` and no left margin: its left edge IS the alignment, so nothing may sit before it. */}
-                {AppContext.currentUser && <div className="sf-omnibox me-3"><OmniboxAutocomplete inputAttrs={{ className: "form-control form-control-sm" }} /></div>}
+                {AppContext.currentUser && <div className="sf-omnibox me-3">
+                    <React.Suspense fallback={null}><OmniboxAutocomplete inputAttrs={{ className: "form-control form-control-sm" }} /></React.Suspense>
+                </div>}
                 <div className="navbar-nav ms-auto">
                     {/* The alerts BELL: the unattended
                         count, and a panel of toasts that attends an alert when you close it. Renders nothing
                         for a user who may not view AlertEntity. */}
-                    {AppContext.currentUser && <AlertDropdown />}
+                    {AppContext.currentUser && <React.Suspense fallback={null}><AlertDropdown /></React.Suspense>}
                     {/* The release-notes BULLHORN: the
                         unread count, and a toast per news item that marks it read when you close it. Renders
                         nothing for a user who may not view WhatsNewEntity. */}
-                    {AppContext.currentUser && !currentMode().legacyMode && <WhatsNewDropdown />}
+                    {AppContext.currentUser && !currentMode().legacyMode &&
+                        <React.Suspense fallback={null}><WhatsNewDropdown /></React.Suspense>}
                     {/* The change log: what changed in
                         each deployment, badged with how many the user has not read. Lazy, which loads
                         it, because opening it pulls in every module's Changelog dictionary. */}
@@ -149,7 +155,9 @@ export default function Layout(): React.JSX.Element {
                 mode={sidebarMode}
                 isMobile={isMobile}
                 sidebarContent={showSidebar
-                    ? <ToolbarRenderer onAutoClose={isMobile ? () => setSidebarMode("Hidden") : undefined} />
+                    ? <React.Suspense fallback={null}>
+                        <ToolbarRenderer onAutoClose={isMobile ? () => setSidebarMode("Hidden") : undefined} />
+                    </React.Suspense>
                     : undefined}>
                 {/* `<main id="maincontent" className="container-fluid overflow-auto pt-2">`, and
                     each part of that matters:

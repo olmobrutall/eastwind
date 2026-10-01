@@ -31,8 +31,8 @@ import { RegisterUserModel, RegisterUserMessage } from "./RegisterUser.data";
 //    `model.Username` while storing `UserName = model.EMail`, and the salt IS the user name
 //    (PasswordEncoding.hashPassword(usernameForSalt, …)) — so the hash it writes is one login can never
 //    reproduce, and every registered account is locked out of the front door it was just handed. Fixed
-//    rather than mirrored: `model.username` is kept as a member (it is part of the model and its
-//    translations) but it is not what the account is keyed by.
+//    rather than mirrored: the E-MAIL is the login name end to end, and Southwind's `Username` member is
+//    gone with it — a mandatory field that can never be used to log in is worse than no field.
 //  - the writes run as the SYSTEM user, so the
 //    rows are attributable; the reportsTo lookup runs with authorization DISABLED, because an anonymous
 //    visitor may not read employees.
@@ -70,6 +70,11 @@ export namespace PublicLogic {
                 const ic = await entityIntegrityCheckAsync(model, "Saving");
                 if (ic) { res.modelState(ic); return; }
 
+                // "this e-mail is taken" is an expected ANSWER, not a failure (Southwind throws, which an
+                // anonymous visitor meets as the exception modal): reported below as a 400 ModelState on
+                // the field to change. Advisory only — `uix_user_user_name` is what enforces uniqueness.
+                let duplicate = false;
+
                 await AuthLogic.asSystemUser(async () => {
                     const role = await table(RoleEntity)
                         .filter(r => r.name === options.registeredUserRoleName)
@@ -78,9 +83,10 @@ export namespace PublicLogic {
                     if (role == null)
                         throw new Error(`The role '${options.registeredUserRoleName}' does not exist`);
 
-                    const already = await table(UserEntity).count(u => u.userName === model.eMail) > 0;
-                    if (already)
-                        throw new Error(RegisterUserMessage.user0IsAlreadyRegistered.niceToString(model.eMail));
+                    if (await table(UserEntity).count(u => u.userName === model.eMail) > 0) {
+                        duplicate = true;
+                        return;
+                    }
 
                     const employee = EmployeeEntity.create({
                         titleOfCourtesy: model.titleOfCourtesy,
@@ -104,6 +110,14 @@ export namespace PublicLogic {
                     user.mixin(UserEmployeeMixin).employee = employee.toLite();
                     await Operations.execute(user, UserOperation.Save);
                 });
+
+                if (duplicate) {
+                    res.modelState({
+                        entity: model,
+                        errors: { eMail: RegisterUserMessage.user0IsAlreadyRegistered.niceToString(model.eMail) },
+                    });
+                    return;
+                }
 
                 res.status(200).end();
             });

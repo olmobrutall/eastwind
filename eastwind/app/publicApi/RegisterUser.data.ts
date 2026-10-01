@@ -34,9 +34,8 @@ export class RegisterUserModel extends ModelEntity {
 
     address: AddressEmbedded;
 
-    @stringLengthValidator({ max: 100 })
-    username: string;
-
+    // No `username` member, unlike Southwind: it collects one as mandatory and then keys the account by
+    // the E-MAIL anyway, so the name a visitor types can never log them in. The e-mail IS the login name.
     @niceName("E-Mail")
     @stringLengthValidator({ max: 100 })
     @emailValidator()

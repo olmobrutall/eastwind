@@ -114,8 +114,8 @@ function RegisterUserCard(p: { reportsToEmployeeId: string | undefined }): React
                     </div>
                 </div>
                 <Address ctx={ctx.subCtx(a => a.address)} inheritStyle />
+                {/* The E-Mail is the login name, so there is no separate user-name box. */}
                 <TextBoxLine ctx={ctx.subCtx(r => r.eMail)} />
-                <TextBoxLine ctx={ctx.subCtx(r => r.username)} />
                 <DoublePassword ctx={ctx.subCtx(r => r.password)} initialOpen mandatory />
                 <ValidationErrors entity={ctx.value} prefix="" />
                 <div className="mt-4 d-flex">

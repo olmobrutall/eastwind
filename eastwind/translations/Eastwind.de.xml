@@ -8,6 +8,7 @@
     <Member Name="Region" Description="Region" />
   </Type>
   <Type Name="ApplicationConfigurationEntity" Description="Anwendungskonfiguration">
+    <Member Name="AuthTokens" Description="Authentifizierungstoken" />
     <Member Name="AzureAD" Description="Azure AD" />
     <Member Name="Chatbot" Description="Chatbot" />
     <Member Name="DatabaseName" Description="Name der Datenbank" />
@@ -31,10 +32,15 @@
     <Member Name="ViewLog" Description="Anzeigeprotokoll" />
   </Type>
   <Type Name="CatalogMessage">
+    <Member Name="NoAdditionalInformation" Description="Keine weiteren Angaben" />
     <Member Name="ProductName" Description="Produktname" />
     <Member Name="QuantityPerUnit" Description="Menge pro Einheit" />
+    <Member Name="Register" Description="Registrieren" />
+    <Member Name="ReorderLevel" Description="Meldebestand" />
+    <Member Name="Supplier" Description="Lieferant" />
     <Member Name="UnitPrice" Description="Stückpreis" />
     <Member Name="UnitsInStock" Description="Einheiten auf Lager" />
+    <Member Name="ValueInStock" Description="Lagerwert" />
   </Type>
   <Type Name="CategoryEntity" Description="Kategorie">
     <Member Name="CategoryName" Description="Name der Kategorie" />
@@ -49,7 +55,7 @@
     <Member Name="ContactName" Description="Kontaktname" />
     <Member Name="ContactTitle" Description="Kontakttitel" />
   </Type>
-  <Type Name="CurrentProductsRowModel" Description="Aktuelles Produkt">
+  <Type Name="CurrentProductsRowModel" Description="Aktuelles Produkt" PluralDescription="Aktuelle Produkte" Gender="n">
     <Member Name="Category" Description="Kategorie" />
     <Member Name="Entity" Description="Entität" />
     <Member Name="Id" Description="Id" />
@@ -75,14 +81,8 @@
     <Member Name="Name" Description="Name" />
     <Member Name="Phone" Description="Telefon" />
   </Type>
-  <Type Name="DepartmentEntity" Description="Abteilung">
-    <Member Name="Responsible" Description="Verantwortlicher" />
-  </Type>
   <Type Name="EastwindAgentUseCases">
     <Member Name="MCP" Description="MCP" />
-  </Type>
-  <Type Name="EastwindFileType">
-    <Member Name="PrintTest" Description="Drucktest" />
   </Type>
   <Type Name="EastwindTypeCondition">
     <Member Name="CurrentEmployee" Description="Aktueller Mitarbeiter" />
@@ -106,21 +106,21 @@
     <Member Name="Title" Description="Titel" />
     <Member Name="TitleOfCourtesy" Description="Titel der Höflichkeit" />
   </Type>
-  <Type Name="EmployeeEntity_Territory" Description="Gebiet">
+  <Type Name="EmployeeEntity_Territory" Description="Gebiet" PluralDescription="Gebiete" Gender="n">
     <Member Name="Employee" Description="Mitarbeiter" />
     <Member Name="Territory" Description="Gebiet" />
   </Type>
   <Type Name="EmployeeOperation">
     <Member Name="Save" Description="Speichern" />
   </Type>
-  <Type Name="EmployeePassageEntity" Description="Mitarbeiter-Textabschnitt">
+  <Type Name="EmployeePassageEntity" Description="Mitarbeiter-Textabschnitt" PluralDescription="Mitarbeiter-Textabschnitte" Gender="m">
     <Member Name="Chunk" Description="Abschnitt" />
     <Member Name="Embedding" Description="Embedding" />
     <Member Name="Employee" Description="Mitarbeiter" />
     <Member Name="Index" Description="Index" />
     <Member Name="IsTitle" Description="Ist Titel" />
   </Type>
-  <Type Name="EmployeesByTerritoryRowModel" Description="Mitarbeiter nach Gebiet">
+  <Type Name="EmployeesByTerritoryRowModel" Description="Mitarbeiter nach Gebiet" Gender="m">
     <Member Name="BirthDate" Description="Geburtsdatum" />
     <Member Name="Entity" Description="Entität" />
     <Member Name="FirstName" Description="Vorname" />
@@ -153,7 +153,7 @@
     <Member Name="MaxOrderDate" Description="Maximales Bestelldatum" />
     <Member Name="MinOrderDate" Description="Mindestbestelldatum" />
   </Type>
-  <Type Name="OrderLineEntity" Description="Bestelldetails">
+  <Type Name="OrderLineEntity" Description="Bestelldetails" Gender="n">
     <Member Name="Discount" Description="Rabatt" />
     <Member Name="Order" Description="Bestellung" />
     <Member Name="Product" Description="Produkt" />
@@ -248,7 +248,6 @@
     <Member Name="Password" Description="Passwort" />
     <Member Name="ReportsTo" Description="Berichte an" />
     <Member Name="TitleOfCourtesy" Description="Titel der Höflichkeit" />
-    <Member Name="Username" Description="Benutzername" />
   </Type>
   <Type Name="ShipperEntity" Description="Verlader" Gender="m">
     <Member Name="CompanyName" Description="Firmenname" />

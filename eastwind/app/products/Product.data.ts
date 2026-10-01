@@ -126,6 +126,13 @@ export const CatalogMessage = {
     unitPrice: msg(),
     quantityPerUnit: msg(),
     unitsInStock: msg(),
+    // The call to action beside Login, and the per-product detail panel. Messages for the same reason as
+    // the four captions above.
+    register: msg(),
+    supplier: msg(),
+    reorderLevel: msg(),
+    valueInStock: msg(),
+    noAdditionalInformation: msg(),
 };
 
 // The products still on sale. A query is named by its ROW MODEL, whose clean name IS the query key
