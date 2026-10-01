@@ -153,7 +153,7 @@
     <Member Name="MaxOrderDate" Description="Fecha máxima de pedido" />
     <Member Name="MinOrderDate" Description="Fecha mínima de pedido" />
   </Type>
-  <Type Name="OrderLineEntity" Description="Detalle del pedido">
+  <Type Name="OrderLineEntity" Description="Línea de pedido">
     <Member Name="Discount" Description="Descuento" />
     <Member Name="Order" Description="Orden" />
     <Member Name="Product" Description="Producto" />
@@ -188,7 +188,7 @@
   <Type Name="OrderProcess">
     <Member Name="CancelOrders" Description="Cancelar pedidos" />
   </Type>
-  <Type Name="OrderState" Description="Estado pedido">
+  <Type Name="OrderState" Description="Estado del pedido">
     <Member Name="Canceled" Description="Cancelada" />
     <Member Name="New" Description="Nuevo" />
     <Member Name="Ordered" Description="Pedido" />
@@ -249,7 +249,7 @@
     <Member Name="ReportsTo" Description="Supervisor" />
     <Member Name="TitleOfCourtesy" Description="Título de cortesía" />
   </Type>
-  <Type Name="ShipperEntity" Description="Transportador">
+  <Type Name="ShipperEntity" Description="Transportista" Gender="m">
     <Member Name="CompanyName" Description="Nombre empresa" />
     <Member Name="Phone" Description="Teléfono" />
   </Type>

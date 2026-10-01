@@ -106,7 +106,7 @@
     <Member Name="Title" Description="Titel" />
     <Member Name="TitleOfCourtesy" Description="Titel der Höflichkeit" />
   </Type>
-  <Type Name="EmployeeEntity_Territory" Description="Gebiet" PluralDescription="Gebiete" Gender="n">
+  <Type Name="EmployeeEntity_Territory" Description="Gebiet">
     <Member Name="Employee" Description="Mitarbeiter" />
     <Member Name="Territory" Description="Gebiet" />
   </Type>
@@ -147,13 +147,13 @@
     <Member Name="ShipVia" Description="Versand über" />
     <Member Name="State" Description="Zustand" />
   </Type>
-  <Type Name="OrderFilterModel" Description="Filter bestellen">
+  <Type Name="OrderFilterModel" Description="Bestellfilter">
     <Member Name="Customer" Description="Kunde" />
     <Member Name="Employee" Description="Mitarbeiter" />
     <Member Name="MaxOrderDate" Description="Maximales Bestelldatum" />
     <Member Name="MinOrderDate" Description="Mindestbestelldatum" />
   </Type>
-  <Type Name="OrderLineEntity" Description="Bestelldetails" Gender="n">
+  <Type Name="OrderLineEntity" Description="Bestellposition">
     <Member Name="Discount" Description="Rabatt" />
     <Member Name="Order" Description="Bestellung" />
     <Member Name="Product" Description="Produkt" />
@@ -249,7 +249,7 @@
     <Member Name="ReportsTo" Description="Berichte an" />
     <Member Name="TitleOfCourtesy" Description="Titel der Höflichkeit" />
   </Type>
-  <Type Name="ShipperEntity" Description="Verlader" Gender="m">
+  <Type Name="ShipperEntity" Description="Spediteur">
     <Member Name="CompanyName" Description="Firmenname" />
     <Member Name="Phone" Description="Telefon" />
   </Type>
@@ -268,7 +268,7 @@
   <Type Name="SupplierOperation">
     <Member Name="Save" Description="Speichern" />
   </Type>
-  <Type Name="TerritoryEntity" Description="Territorium">
+  <Type Name="TerritoryEntity" Description="Gebiet" PluralDescription="Gebiete" Gender="n">
     <Member Name="Description" Description="Beschreibung" />
     <Member Name="Region" Description="Region" />
   </Type>
