@@ -2,15 +2,20 @@ import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { devPorts } from "./scripts/ports.mjs";
 
 // Client (SPA) bundle. Consumes the transformer-emitted JS of the core/spa
 // layers (kept fresh by `tspc -b --watch`); Vite never runs the transformer.
 //
 // Dev topology (Southwind's Index.cshtml ViteDevServerPort model): the vite dev server serves the SPA
-// and proxies /api to the eastwind API host (webServer.ts, default :3000), so the browser talks to one
-// origin. In production the SPA is a built bundle served by the API host (Phase 4). Override the API
-// target with VITE_API_TARGET.
-const API_TARGET = process.env["VITE_API_TARGET"] ?? "http://localhost:3001";
+// and proxies /api to the eastwind API host, so the browser talks to one origin. In production the SPA is
+// a built bundle served by the API host (Phase 4).
+//
+// BOTH port numbers come from scripts/ports.mjs — the one place they are declared — which reads
+// PORT / CLIENT_PORT from the process environment (spliced in by `stack`) or from .env.local, so a clone
+// that must run beside the original changes two lines in ONE file. VITE_API_TARGET still overrides the
+// target outright, for an API host that is not on localhost.
+const { apiTarget: API_TARGET, clientPort: CLIENT_PORT } = devPorts();
 
 // altea's client components import co-located ASSETS — a stylesheet (`import './Search.css'`) or a raw
 // text file (`import './InitialWorkflow.xml?raw'`). tsc emits those imports into dist/client/*.js but does
@@ -79,7 +84,14 @@ export default defineConfig({
     // into the same registry the framework's <FontAwesomeIcon> reads, or string-named icons stay blank.
     resolve: { dedupe: ["react", "react-dom", "react-router", "@fortawesome/fontawesome-svg-core"] },
     server: {
-        port: 5173,
+        port: CLIENT_PORT,
+        // STRICT: fail on a taken port rather than take the next one. Vite's default is to move on
+        // silently, and everything that addresses this server BY NUMBER — the Playwright base URL
+        // (test/playwright/appStack.ts), the seeded email `urlLeft`, .claude/launch.json, a bookmark —
+        // then points at whatever still holds the port it was told about. Running the stack twice, or
+        // beside an editor-spawned preview, is supposed to be an error naming the port.
+        // `pnpm free:port` (a step of `stack`, and the compound's preLaunchTask) clears both first.
+        strictPort: true,
         proxy: {
             "/api": { target: API_TARGET, changeOrigin: true, ws: true },
             // SERVER-RENDERED pages. The API host answers the DOCUMENT for these paths; every script and

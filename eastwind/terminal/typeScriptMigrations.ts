@@ -113,7 +113,10 @@ export namespace TypeScriptMigrations {
             databaseName: databaseNameOf(process.env["EASTWIND_DB"]),
             email: EmailConfigurationEmbedded.create({
                 defaultCulture: english,
-                urlLeft: "http://localhost:5173",
+                // Where a link in a sent mail points. A SEEDED value, editable afterwards in
+                // /view/ApplicationConfiguration — it follows CLIENT_PORT so a clone serving its own
+                // ports seeds its own URL, not the original’s. See scripts/ports.mjs.
+                urlLeft: `http://localhost:${process.env["CLIENT_PORT"] ?? 5173}`,
                 sendEmails: false,
                 // The inbound half. Off for the same reason as `sendEmails`: a dev database should not touch
                 // a real mailbox — and with it false a poll FAILS LOUDLY rather than doing nothing.

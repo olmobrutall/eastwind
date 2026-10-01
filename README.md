@@ -41,7 +41,9 @@ pnpm --filter eastwind terminal local ts    # roles, users, the Northwind data, 
 pnpm --filter eastwind stack local          # types watcher + API + client, together
 ```
 
-The client opens on **http://localhost:5173**, the API on **3001**.
+The client opens on **http://localhost:5173**, the API on **3001**. To move them — to run a clone of this
+application beside the original — uncomment `CLIENT_PORT` and `PORT` in `eastwind/.env.local`; everything
+else follows (see `eastwind/scripts/ports.mjs`).
 
 ```
 Username: System        (or Steven, Anne, … — any user the seed created)

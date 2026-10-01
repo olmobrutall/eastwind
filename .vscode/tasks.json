@@ -59,21 +59,15 @@
 			"group": "build"
 		},
 		{
-			"label": "dev (eastwind)",
-			"detail": "Runs eastwind types + server + client watchers together.",
-			"type": "shell",
-			"command": "pnpm --filter eastwind dev",
-			"options": { "cwd": "${workspaceFolder}" },
-			"problemMatcher": [],
-			"isBackground": true,
-			"group": "build"
-		},
-		{
 			// The first step of `pnpm --filter eastwind stack <env>` (scripts/free-port.mjs), pulled out on its
-			// own so a DEBUG launch can take it too: a session stopped hard, or an orphaned `stack`, keeps :3001,
-			// and the next API host then dies with EADDRINUSE before it prints a line.
-			"label": "free eastwind API port",
-			"detail": "Kills whatever is listening on the API port (3001, or $PORT). preLaunchTask for the full-stack compounds.",
+			// own so a DEBUG launch can take it too: a session stopped hard, or an orphaned `stack`, keeps the
+			// ports, and the next API host then dies with EADDRINUSE before it prints a line.
+			//
+			// BOTH ports, API and client. Vite does not die on a taken port — it used to move to :5174 and the
+			// stack then answered somewhere nobody had been told about. It now runs with `strictPort`, so this
+			// task is what keeps that error from happening. Numbers: PORT / CLIENT_PORT, see eastwind/scripts/ports.mjs.
+			"label": "free eastwind dev ports",
+			"detail": "Kills whatever is listening on the API and vite dev ports (PORT / CLIENT_PORT, resolved by eastwind/scripts/ports.mjs). preLaunchTask for the full-stack compound.",
 			"type": "shell",
 			"command": "pnpm run free:port",
 			"options": { "cwd": "${workspaceFolder}/eastwind" },

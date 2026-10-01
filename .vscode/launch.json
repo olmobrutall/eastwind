@@ -110,7 +110,10 @@
         },
         {
             // The SPA half of the stack — vite dev, serving :5173 and proxying /api to the host above
-            // (vite.client.config.ts). It is a LAUNCH CONFIGURATION rather than a task purely so the
+            // (vite.client.config.ts). Both ports come from eastwind/scripts/ports.mjs; THIS path has no
+            // environment to read (vite is a binary, so there is no --env-file to splice in), and falls
+            // back to eastwind/.env.local — which is where a clone meant to run beside another one puts
+            // PORT and CLIENT_PORT. It is a LAUNCH CONFIGURATION rather than a task purely so the
             // compounds below can own it: stopping a compound stops every process in it, which a
             // background task left running in a terminal would not do.
             //
@@ -198,8 +201,10 @@
     ],
     // `pnpm --filter eastwind stack <env>` with the API under the DEBUGGER. The script's three processes
     // are all here — the type watcher (the client configuration's preLaunchTask), the API host and vite —
-    // and the port is freed first exactly as the script does, so a session that was stopped hard does not
-    // meet its own leftover with EADDRINUSE. `stopAll` is the script's `concurrently -k`: stop one, stop
+    // and BOTH ports are freed first exactly as the script does, so a session that was stopped hard does
+    // not meet its own leftover with EADDRINUSE — and vite, which would not have died on a taken port but
+    // moved to :5174 and served the stack where nobody was told to look, now owns 5173 or says why not
+    // (`strictPort`). `stopAll` is the script's `concurrently -k`: stop one, stop
     // all, and Ctrl+C leaves nothing behind. Opens on http://localhost:5173.
     //
     // ONE, over the tspc output you just edited — restart the session to pick up an edit, the watcher has
@@ -214,7 +219,7 @@
                 "eastwind API server",
                 "eastwind client (vite dev)"
             ],
-            "preLaunchTask": "free eastwind API port",
+            "preLaunchTask": "free eastwind dev ports",
             "stopAll": true
         }
     ]

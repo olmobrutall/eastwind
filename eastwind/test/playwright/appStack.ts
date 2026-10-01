@@ -6,9 +6,18 @@
 // restore the database before each test, and a server holding rows in memory has no way of noticing that:
 // hence {@link clearServerCaches}.
 
-/** Where the application under test is served (the vite dev server by default). */
+/**
+ * Where the application under test is served (the vite dev server by default).
+ *
+ * EASTWIND_URL points the suite at a stack somewhere else entirely; CLIENT_PORT is the ordinary case —
+ * the same variable the stack binds vite to, so a clone running on its own ports needs no second setting.
+ * Both arrive through `pnpm --filter eastwind test <environment>`, which loads that environment’s file
+ * before vitest starts (scripts/withEnv.mjs). 5173 is the default declared in scripts/ports.mjs, repeated
+ * here because this file is compiled and cannot import it.
+ */
 export function baseUrl(): string {
-    return (process.env["EASTWIND_URL"] ?? "http://localhost:5173/").replace(/\/+$/, "") + "/";
+    const fallback = `http://localhost:${process.env["CLIENT_PORT"] ?? 5173}/`;
+    return (process.env["EASTWIND_URL"] ?? fallback).replace(/\/+$/, "") + "/";
 }
 
 /** The API the client talks to. In dev, vite proxies `/api` through to it, so one base URL is enough. */

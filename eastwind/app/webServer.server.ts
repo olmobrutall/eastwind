@@ -37,8 +37,11 @@ async function main(): Promise<void> {
     const label = Connector.current().isPostgres ? "PostgreSQL" : "SQL Server";
     console.log(`[eastwind] engine started (${label}: ${Connector.redactConnectionString(connStr)})`);
 
-    // Default 3001 (not 3000): a local legacy dev host commonly occupies 3000, so eastwind
-    // sits alongside it. Override with PORT; the vite client proxy default (VITE_API_TARGET) matches.
+    // PORT comes from the environment file (`--env-file=.env.<environment>`), or from the `stack`
+    // launcher, which puts it there. The DEFAULT and every other consumer of it — the vite proxy target,
+    // `free:port`, the Playwright base URL — are declared together in scripts/ports.mjs; 3001 is repeated
+    // here only because this file is compiled and bundled, so it cannot import that script.
+    // 3001 and not 3000: a local legacy dev host commonly occupies 3000, so eastwind sits alongside it.
     const port = Number(process.env["PORT"] ?? 3001);
     const server = ws.app.listen(port, () => console.log(`[eastwind] API listening on http://localhost:${port}`));
     // WebSocket hubs (altea's SignalR substitute — altea/server/webSocketHub.ts) can only be bound once

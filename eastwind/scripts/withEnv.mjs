@@ -20,6 +20,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { devPorts } from "./ports.mjs";
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -118,8 +119,18 @@ async function single(spec) {
  * `-k` means one of them dying stops the other two, which is what makes Ctrl+C leave nothing behind.
  */
 async function stack() {
+    // The ports the three processes agree on, taken from the environment file this run NAMED (see
+    // scripts/ports.mjs). vite is a BINARY with no `--env-file` to splice into, so the only way it can
+    // honour a `CLIENT_PORT=…` written in `.env.dev` is for THIS process to put it in the environment
+    // its child inherits. Only the two ports are passed on, not the whole file: the API host gets its
+    // secrets from `--env-file`, and the vite process has no business holding a connection string.
+    const { apiPort, clientPort, clientUrl } = devPorts(process.env, envFile);
+    process.env["PORT"] = String(apiPort);
+    process.env["CLIENT_PORT"] = String(clientPort);
+
     await shell("pnpm run build");
     await shell("pnpm run free:port");
+    console.log(`[stack] ${env} — client ${clientUrl}, api http://localhost:${apiPort}`);
     await shell(`pnpm exec concurrently -k -n types,api,client -c blue,green,magenta`
         + ` "pnpm run dev:types" "pnpm run server ${env}" "pnpm run dev:client"`);
 }

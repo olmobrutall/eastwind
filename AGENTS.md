@@ -118,8 +118,31 @@ pnpm --filter eastwind check:modules            # = altea-simplify --check
 ```
 
 `stack` opens the client on **http://localhost:5173** and the API on **3001** (3000 is left free for a
-local Signum host; override with `PORT`, and `VITE_API_TARGET` for the proxy). `-k` means if one process
-dies the whole stack stops.
+local Signum host). `-k` means if one process dies the whole stack stops.
+
+#### The two development ports
+
+Declared in **`eastwind/scripts/ports.mjs`** and nowhere else. To move them — to run a clone of this
+application BESIDE the original — uncomment `PORT` and `CLIENT_PORT` in **`eastwind/.env.local`**, the
+per-clone file every path reads. Everything follows: the vite dev server's own port, its `/api` and SSR
+proxy target, `pnpm free:port`, the Playwright base URL (`test/playwright/appStack.ts`) and the seeded
+email `urlLeft`. `VITE_API_TARGET` still overrides the proxy target outright, for an API host that is not
+on localhost.
+
+`.env.<environment>` may override them too, and `stack` / `server` / `test` honour it — but only those,
+because they are the entry points that NAME an environment. vite is a binary with no `--env-file` to
+splice into, so a bare `pnpm dev:client` and VS Code's "eastwind client (vite dev)" have no environment
+to read and fall back to `.env.local`. Put the ports there and both paths agree.
+
+Three things still write the numbers out, because none of them can import a script: the compiled
+`webServer.server.ts` (it reads `PORT`, and only repeats the default), and the two static launch files,
+**`.vscode/launch.json`** and **`.claude/launch.json`**.
+
+The vite dev server runs with `strictPort`, so a taken port is an ERROR naming it rather than a silent
+move to **5174** — which would leave the Playwright base URL and every bookmark pointing at whatever
+still held 5173. `pnpm free:port` (the first step of `stack`, and the full-stack compound's
+preLaunchTask) clears **both** ports first, so an orphaned stack or an editor-spawned preview is cleared
+rather than silently stepped around.
 
 `test` builds first, and that is not optional: a spec addresses lines, columns and filters with property
 LAMBDAS, which only mean something once the quote-transformer has stamped them — so Playwright runs the

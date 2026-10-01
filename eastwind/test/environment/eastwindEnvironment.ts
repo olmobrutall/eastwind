@@ -75,7 +75,9 @@ export namespace EastwindEnvironment {
             databaseName: Connector.current().databaseName(),
             email: EmailConfigurationEmbedded.create({
                 defaultCulture: english,
-                urlLeft: "http://localhost:5173",
+                // Follows CLIENT_PORT, like the terminal seed — so a clone on its own ports seeds its
+                // own URL. 5173 is the default declared in scripts/ports.mjs.
+                urlLeft: `http://localhost:${process.env["CLIENT_PORT"] ?? 5173}`,
                 sendEmails: false,
                 reciveEmails: false,
                 avoidSendingEmailsOlderThan: null,

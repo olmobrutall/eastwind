@@ -2,6 +2,11 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "eastwind",
+      "url": "http://localhost:5173",
+      "port": 5173
+    },
+    {
       "name": "eastwind-api",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "eastwind", "server", "local"],
@@ -10,15 +15,14 @@
     {
       "name": "eastwind-api-sqlserver",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "eastwind", "server:sqlserver"],
+      "runtimeArgs": ["--filter", "eastwind", "server", "sqlserver"],
       "port": 3001
     },
     {
       "name": "eastwind-client",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "eastwind", "dev:client"],
-      "port": 5173,
-      "autoPort": true
+      "port": 5173
     }
   ]
 }
