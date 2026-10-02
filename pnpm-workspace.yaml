@@ -21,7 +21,7 @@ packages:
   - altea/altea-migrations
   - altea/altea-agent
   - altea/altea-cache
-  - altea/altea-codemirror
+  - altea/altea-monaco
   - altea/altea-concurrent-user
   - altea/altea-diff-log
   - altea/altea-dynamic

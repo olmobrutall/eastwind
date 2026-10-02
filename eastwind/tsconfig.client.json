@@ -29,7 +29,7 @@
     { "path": "../altea/altea-email/tsconfig.client.json" },
     { "path": "../altea/altea-office-template/tsconfig.client.json" },
     { "path": "../altea/altea-cache/tsconfig.client.json" },
-    { "path": "../altea/altea-codemirror/tsconfig.client.json" },
+    { "path": "../altea/altea-monaco/tsconfig.client.json" },
     { "path": "../altea/altea-agent/tsconfig.client.json" },
     { "path": "../altea/altea-concurrent-user/tsconfig.client.json" },
     { "path": "../altea/altea-auth-reset-password/tsconfig.client.json" },

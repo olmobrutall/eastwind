@@ -27,7 +27,6 @@
     "@altea/altea": "workspace:*",
     "@altea/altea-auth": "workspace:*",
     "@altea/altea-chart": "workspace:*",
-    "@altea/altea-codemirror": "workspace:*",
     "@altea/altea-agent": "workspace:*",
     "@altea/altea-concurrent-user": "workspace:*",
     "@altea/altea-migrations": "workspace:*",
@@ -84,7 +83,8 @@
     "@altea/altea-workflow": "workspace:*",
     "@altea/altea-playwright": "workspace:*",
     "@altea/altea-notes": "workspace:*",
-    "@altea/altea-machine-learning": "workspace:*"
+    "@altea/altea-machine-learning": "workspace:*",
+    "@altea/altea-monaco": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
