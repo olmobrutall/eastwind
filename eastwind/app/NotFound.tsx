@@ -18,7 +18,9 @@ export default function NotFound(): React.JSX.Element {
 
     return (
         <div>
-            <h3>Page not found</h3>
+            {/* The page's title, so an h1: as an h3 this page had no h1 at all and heading navigation
+                started at level 3. The class keeps it looking as it did. */}
+            <h1 className="h3">Page not found</h1>
             <Link to="/">Back home</Link>
         </div>
     );
