@@ -168,13 +168,10 @@
 			<RemoveFiles Path="eastwind/test/logic/order.test.ts"/>
 			<RemoveFiles Path="eastwind/test/playwright/order.test.ts"/>
 
-			<!-- The eval registry's own domains. -->
-			<RemoveLine Path="eastwind/app/eastwindEval.server.ts" Line="import * as order from &quot;./orders/Order.data&quot;;"/>
-			<RemoveLine Path="eastwind/app/eastwindEval.server.ts" Line="import * as customer from &quot;./customers/Customer.data&quot;;"/>
-			<RemoveLine Path="eastwind/app/eastwindEval.server.ts" Line="import * as employee from &quot;./employees/Employee.data&quot;;"/>
-			<RemoveLine Path="eastwind/app/eastwindEval.server.ts" Line="import * as product from &quot;./products/Product.data&quot;;"/>
-			<RemoveLine Path="eastwind/app/eastwindEval.server.ts" Line="import * as shipper from &quot;./shippers/Shipper.data&quot;;"/>
-			<RemoveLine Path="eastwind/app/eastwindEval.server.ts" From="// ---- The app's own entity domains" To="{ typesPath: types(&quot;app/shippers/Shipper.data.d.ts&quot;) });"/>
+			<!-- The eval registry needs no edit (it is `fromSchema`), but the eval SUITES use Order as their
+			     fixture, and both also reach altea-workflow (a WorkflowCondition, WorkflowTransitionContext). -->
+			<RemoveFiles DependsOn="Workflow" Path="eastwind/test/logic/evalQuote.test.ts"/>
+			<RemoveFiles DependsOn="Workflow" Path="eastwind/test/logic/evalIntelliSense.test.ts"/>
 
 			<!-- Orders are the one app type that grows the Alerts / Notes sub-tokens. -->
 			<ReplaceSpanInLines Path="eastwind/app/starter.server.ts" Span="[UserEntity, OrderEntity]" With="[UserEntity]"/>
@@ -292,8 +289,8 @@
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="OmniboxLogic.start(sb);"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { OmniboxClient } from &quot;@altea/altea-omnibox/client/OmniboxClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// Registers the three result-shape renderers" To="OmniboxClient.start(cb);"/>
-			<RemoveLine Path="eastwind/app/Layout.tsx" Line="import OmniboxAutocomplete from &quot;@altea/altea-omnibox/client/OmniboxAutocomplete&quot;;"/>
-			<RemoveLine Path="eastwind/app/Layout.tsx" From="{AppContext.currentUser &amp;&amp; &lt;div className=&quot;sf-omnibox" To="{AppContext.currentUser &amp;&amp; &lt;div className=&quot;sf-omnibox"/>
+			<RemoveLine Path="eastwind/app/Layout.tsx" Line="const OmniboxAutocomplete = React.lazy(() => import(&quot;@altea/altea-omnibox/client/OmniboxAutocomplete&quot;));"/>
+			<RemoveLine Path="eastwind/app/Layout.tsx" From="{/* The omnibox. Only for a logged-in user" To="&lt;/div>}"/>
 		</Module>
 
 		<Module Name="Map">
@@ -570,7 +567,8 @@
 			<!-- The Layout's SIDEBAR is the toolbar renderer; with no toolbar the page is just the navbar
 			     plus <Outlet/>. This span is the one place a wizard has to look at the result by hand. -->
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="import { LayoutMessage } from &quot;@altea/altea-toolbar/data/Toolbar&quot;;"/>
-			<RemoveLine Path="eastwind/app/Layout.tsx" From="import { SidebarContainer" To="import ToolbarRenderer"/>
+			<RemoveLine Path="eastwind/app/Layout.tsx" Line="import { SidebarContainer, SidebarToggleItem, type SidebarMode } from &quot;@altea/altea-toolbar/client/SidebarContainer&quot;;"/>
+			<RemoveLine Path="eastwind/app/Layout.tsx" Line="const ToolbarRenderer = React.lazy(() => import(&quot;@altea/altea-toolbar/client/Renderers/ToolbarRenderer&quot;));"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" From="&lt;SidebarToggleItem" To="&lt;SidebarToggleItem"/>
 			<!-- With no toolbar there is no sidebar: the shell keeps its navbar and renders the page directly. -->
 			<RemoveLine Path="eastwind/app/Layout.tsx" From="// The sidebar mode is kept in localStorage so it survives a reload" To="}//useSidebarMode"/>
@@ -730,8 +728,8 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(AlertEntity, a => a.createdBy, () => [UserEntity]);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(AlertEntity, a => a.recipient, () => [UserEntity]);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(AlertEntity, a => a.attendedBy, () => [UserEntity]);"/>
-			<RemoveLine Path="eastwind/app/Layout.tsx" Line="import AlertDropdown from &quot;@altea/altea-alert/client/AlertDropdown&quot;;"/>
-			<RemoveLine Path="eastwind/app/Layout.tsx" Line="{AppContext.currentUser &amp;&amp; &lt;AlertDropdown />}"/>
+			<RemoveLine Path="eastwind/app/Layout.tsx" Line="const AlertDropdown = React.lazy(() => import(&quot;@altea/altea-alert/client/AlertDropdown&quot;));"/>
+			<RemoveLine Path="eastwind/app/Layout.tsx" From="{/* The alerts BELL" To="&lt;AlertDropdown />&lt;/React.Suspense>}"/>
 		</Module>
 
 		<Module Name="Notes" DependsOn="Auth" optional="true">
@@ -1027,9 +1025,9 @@
 			<RemoveLine Path="eastwind/app/starter.server.ts" From="// The PUBLISHED type condition is what makes a Draft invisible" To="}//WhatsNew"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { WhatsNewClient } from &quot;@altea/altea-whats-new/client/WhatsNewClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// Release notes." To="WhatsNewClient.start(cb);//WhatsNew"/>
-			<RemoveLine Path="eastwind/app/Layout.tsx" Line="import WhatsNewDropdown from &quot;@altea/altea-whats-new/client/WhatsNewDropdown&quot;;"/>
-			<!-- Anchored on the COMPONENT, not on the legacy guard in front of it: LegacyMode may have taken that. -->
-			<RemoveLine Path="eastwind/app/Layout.tsx" From="&lt;WhatsNewDropdown />}" To="&lt;WhatsNewDropdown />}"/>
+			<RemoveLine Path="eastwind/app/Layout.tsx" Line="const WhatsNewDropdown = React.lazy(() => import(&quot;@altea/altea-whats-new/client/WhatsNewDropdown&quot;));"/>
+			<!-- Comment through component, NOT the legacy guard between them: LegacyMode may have taken that. -->
+			<RemoveLine Path="eastwind/app/Layout.tsx" From="{/* The release-notes BULLHORN" To="&lt;WhatsNewDropdown />&lt;/React.Suspense>}"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="export const PublishedNews: TypeConditionSymbol = init();"/>
 		</Module>
 
@@ -1138,7 +1136,8 @@
 			<!-- ==== entityOverrides.data.ts ==== -->
 			<!-- Five single-statement guards: dropping the "if" line leaves the statement unconditional. -->
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="if (!legacyMode)"/>
-			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { renameSymbolContainer, setLegacyMode } from &quot;@altea/altea/data/reflection&quot;;"/>
+			<RemoveSpanInLines Path="eastwind/app/entityOverrides.data.ts" Span=", renameSymbolContainer, setLegacyMode"/>
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { useLegacyWordNames } from &quot;@altea/altea-office-template/data/OfficeTemplate&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { setLegacyPropertyPaths } from &quot;@altea/altea/data/propertyRoute&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="if (legacyMode) {" To="}//LegacySymbolNames"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="if (legacyMode)//LegacyEmailAttachments" To="overrideImplementedBy(EmailTemplateEntity_Attachment"/>
