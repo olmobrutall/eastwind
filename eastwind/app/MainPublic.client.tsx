@@ -143,6 +143,12 @@ function backUrl(loc: AppContext.RouterLocation | undefined): string | undefined
 let mode: EastwindMode = FULL_MODE;
 
 async function boot(): Promise<void> {
+    // FIRST, before anything is fetched or rendered: MSAL lands its login / logout popup on this same url,
+    // so when that is what this document is, it only hands the response back to the main window — which
+    // then closes it. There is no application to start here.
+    if (await AzureADAuthenticator.handlePopupResponse())
+        return;
+
     // This deployment's MODE, from the SERVER — the flag lives in its environment, and EntityOverrides runs
     // on both tiers and must reach the same answer. Anonymous and first: everything below is downstream.
     mode = await ajaxGet<EastwindMode>({ url: "/api/eastwind/appMode" }).catch(() => FULL_MODE);
