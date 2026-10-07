@@ -349,7 +349,11 @@
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { EastwindAuthorizer } from &quot;./eastwindAuthorizer.server&quot;;"/>
 			<!-- No user to be logged out, so nothing to redirect to the shop window either. -->
 			<RemoveLine Path="eastwind/app/Home.tsx" Line="import { AuthClient } from &quot;@altea/altea-auth/client/AuthClient&quot;;"/>
-			<RemoveLine Path="eastwind/app/Home.tsx" From="if (!AuthClient.currentUser()) {" To="}//AnonymousRedirect"/>
+			<RemoveLine Path="eastwind/app/Home.tsx" From="if (!isLoggedIn) {" To="}//AnonymousRedirect"/>
+			<!-- With no auth module every session is a full one, so the guard folds to true rather than away. -->
+			<ReplaceSpanInLines Path="eastwind/app/Home.tsx" Span="user != null &amp;&amp; user.userName != ANONYMOUS_USER_NAME" With="true"/>
+			<RemoveLine Path="eastwind/app/Home.tsx" Line="const user = AuthClient.currentUser();"/>
+			<RemoveLine Path="eastwind/app/Home.tsx" Line="const ANONYMOUS_USER_NAME = &quot;Anonymous&quot;;"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="import LoginDropdown from &quot;@altea/altea-auth/client/public/LoginDropdown&quot;;"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="&lt;LoginDropdown />"/>
 			<RemoveFiles Path="eastwind/terminal/AuthRules.xml"/>
@@ -576,10 +580,10 @@
 			<!-- Home already tolerates the module being absent: it reaches DashboardClient through a dynamic
 			     import and falls back to the hero panel. Only the import line has to go. -->
 			<!-- No dashboard module, no home dashboard to redirect to: the hero is all this page does. -->
-			<ReplaceSpanInLines Path="eastwind/app/Home.tsx" Span="redirectToHomeDashboard(() => { if (!cancelled) setLoaded(true); });//Dashboard" With="setLoaded(true);"/>
+			<RemoveLine Path="eastwind/app/Home.tsx" From="// Its OWN guard, not the redirect's early return" To="}//Dashboard"/>
 			<RemoveLine Path="eastwind/app/Home.tsx" From="// The dashboard module is reached through a DYNAMIC import" To="}//redirectToHomeDashboard"/>
 			<!-- The hero is the landing page for everyone once there is no shop window to send a visitor to. -->
-			<RemoveLine Path="eastwind/app/Home.tsx" From="if (!AuthClient.currentUser()) {" To="}//AnonymousRedirect"/>
+			<RemoveLine Path="eastwind/app/Home.tsx" From="if (!isLoggedIn) {" To="}//AnonymousRedirect"/>
 			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Content=&quot;Dashboard&quot; />"/>
 			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/terminal/UserAssets.xml" From="&lt;Dashboard Guid=&quot;7914fa80-dfd6-42a2-b29a-18e8cc5851f8&quot;" To="&lt;/Dashboard>"/>
 			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; IconName=&quot;fas fa-tachometer-alt&quot; IconColor=&quot;blue&quot; Content=&quot;7914fa80-dfd6-42a2-b29a-18e8cc5851f8&quot; />"/>
@@ -935,8 +939,9 @@
 			     to the API host, and the entry vite must emit a chunk for. Both no-ops when SSR went too. -->
 			<RemoveLine Path="eastwind/vite.client.config.ts" From="// SERVER-RENDERED pages. The API host answers the DOCUMENT" To="&quot;/publicCatalog&quot;: { target: API_TARGET, changeOrigin: true },//PublicCatalog"/>
 			<RemoveLine Path="eastwind/vite.client.config.ts" Line="publicCatalog: path.resolve(APP_ROOT, &quot;dist/app/publicApi/publicCatalogEntry.client.js&quot;),//PublicCatalog"/>
-			<!-- Home sends a logged-out visitor to the catalog; with no catalog there is nowhere to send it. -->
-			<RemoveLine Path="eastwind/app/Home.tsx" From="if (!AuthClient.currentUser()) {" To="}//AnonymousRedirect"/>
+			<!-- Home sends a logged-out visitor to the catalog; with no catalog there is nowhere to send it. The
+			     dashboard redirect below it keeps its own isLoggedIn guard, so it still never reaches Navigator. -->
+			<RemoveLine Path="eastwind/app/Home.tsx" From="if (!isLoggedIn) {" To="}//AnonymousRedirect"/>
 			<!-- With no anonymous page to serve, the app has no reason to configure an anonymous USER. -->
 			<ReplaceSpanInLines Path="eastwind/app/starter.server.ts" Span=", &quot;Anonymous&quot;," With=", null,"/>
 			<RemoveSpanInLines Path="eastwind/app/MainPublic.client.tsx" Span=" &amp;&amp; user.userName != ANONYMOUS_USER_NAME"/>

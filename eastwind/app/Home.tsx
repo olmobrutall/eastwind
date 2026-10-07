@@ -2,6 +2,10 @@ import * as React from "react";
 import * as AppContext from "@altea/altea/client/AppContext";
 import { AuthClient } from "@altea/altea-auth/client/AuthClient";
 
+// The user name of the server's configured ANONYMOUS USER (starter.server.ts: `AuthLogic.start(sb,
+// "System", "Anonymous")`), a literal here.
+const ANONYMOUS_USER_NAME = "Anonymous";
+
 // The landing page, which mostly decides where you actually belong:
 //  • no user            → the ANONYMOUS shop window (publicApi/PublicCatalog.tsx);
 //  • a user with a HOME DASHBOARD (the highest-priority standalone dashboard the current role may see)
@@ -14,18 +18,27 @@ export default function Home(): React.JSX.Element | null {
     const [loaded, setLoaded] = React.useState(false);
 
     React.useEffect(() => {
-        let cancelled = false;
+        // The server's anonymous user is excluded explicitly, as in MainPublic: a session authenticated AS it
+        // is not a logged-in one.
+        const user = AuthClient.currentUser();
+        const isLoggedIn = user != null && user.userName != ANONYMOUS_USER_NAME;
 
-        if (!AuthClient.currentUser()) {
+        if (!isLoggedIn) {
             // A REAL navigation, not `AppContext.navigate`: /publicCatalog is server-rendered and is not a
             // route of this SPA, so routing to it in-app would only find the catch-all NotFound.
             window.location.replace(AppContext.toAbsoluteUrl("/publicCatalog"));
             return;
         }//AnonymousRedirect
 
-        redirectToHomeDashboard(() => { if (!cancelled) setLoaded(true); });//Dashboard
+        // Its OWN guard, not the redirect's early return — that block goes with the PublicCatalog module:
+        // DashboardClient imports Navigator, which throws at import time for no user or the anonymous one.
+        if (isLoggedIn) {
+            let cancelled = false;
+            redirectToHomeDashboard(() => { if (!cancelled) setLoaded(true); });
+            return () => { cancelled = true; };
+        }//Dashboard
 
-        return () => { cancelled = true; };
+        setLoaded(true);
     }, []);
 
     if (!loaded)
