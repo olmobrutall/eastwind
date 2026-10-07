@@ -40,6 +40,8 @@ const TARGETS = {
     server: {
         describe: "the API host alone",
         build: false,
+        // The dynamic panel's "Restart server" exits with this code; anything else ends the run as usual.
+        restartExitCode: 75,
         node: ["--enable-source-maps", "--import", "@altea/altea/register.mjs", "dist/app/webServer.server.js"],
     },
     "gen:environment": {
@@ -111,7 +113,24 @@ async function single(spec) {
     }
 
     const entry = spec.node[spec.node.length - 1];
-    await node([...spec.node.slice(0, -1), `--env-file=${envFile}`, entry, ...rest]);
+    const args = [...spec.node.slice(0, -1), `--env-file=${envFile}`, entry, ...rest];
+
+    if (spec.restartExitCode == null) {
+        await node(args);
+        return;
+    }
+
+    process.env["ALTEA_RESTART_EXIT_CODE"] = String(spec.restartExitCode);
+    for (; ;) {
+        const code = await new Promise((resolve, reject) => {
+            const child = spawn(process.execPath, args, { cwd: appRoot, stdio: "inherit" });
+            child.on("error", reject);
+            child.on("exit", resolve);
+        });
+        if (code !== spec.restartExitCode)
+            process.exit(code ?? 1);
+        console.log("[server] restarting…");
+    }
 }
 
 /**

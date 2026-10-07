@@ -70,6 +70,7 @@ import { OrderWorkflow } from "./orders/OrderWorkflow.server";
 import { EastwindEval } from "./eastwindEval.server";
 import { DynamicLogic } from "@altea/altea-dynamic/server/DynamicLogic";
 import { DynamicCodeCompiler } from "@altea/altea-dynamic/server/DynamicCodeCompiler";
+import { StartParameters } from "@altea/altea/data/utils/startParameters";
 import path from "node:path";
 import { EmailLogic } from "@altea/altea-email/server/EmailLogic";
 import { EmailPackageLogic } from "@altea/altea-email/server/EmailPackageLogic";
@@ -450,14 +451,19 @@ export namespace Starter {
             codeGenDirectory: path.join(process.cwd(), "CodeGen"),
             typesRoots: { eastwind: path.join(process.cwd(), "dist") },
         });
+        // The panel's restart, only under scripts/withEnv.mjs, which respawns the server on this exit code.
+        const restartExitCode = process.env["ALTEA_RESTART_EXIT_CODE"];
+        if (restartExitCode != null)
+            DynamicLogic.restartApplication = () => process.exit(Number(restartExitCode));
+        // Tolerant startup, as Signum's Starter does when it includes Dynamic: a saved type is in the code
+        // BEFORE its tables are synchronized, so the database trails the code after every restart that
+        // loads one. The mismatches are collected (and listed in the dynamic panel) instead of stopping the
+        // server, so the panel that generates the migration is still reachable.
+        StartParameters.ignoredDatabaseMismatches ??= [];
         // `isolations` is opt-in and OFF by default: eastwind turns it on to exercise DynamicIsolation and
-        // still never starts @altea/altea-isolation, so no app-wide commitment. Two sub-modules stand down
-        // against a legacy database, which starts neither
-        // DynamicCSSOverrideLogic nor DynamicApiLogic.
+        // still never starts @altea/altea-isolation, so no app-wide commitment.
         DynamicLogic.start(sb, {
-            isolations: !legacyMode,
-            cssOverrides: !legacyMode,
-            apis: !legacyMode,
+            isolations: true,
         });//Dynamic
 
         // Workflow. A legacy database starts the module but declares no main entity, so nothing could run
