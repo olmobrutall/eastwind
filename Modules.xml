@@ -198,6 +198,11 @@
 			<RemoveLine Path="eastwind/test/environment/generateEnvironment.ts" Line="await EastwindEnvironment.loadProducts();"/>
 			<RemoveLine Path="eastwind/test/environment/generateEnvironment.ts" Line="await EastwindEnvironment.loadCustomers();"/>
 			<RemoveLine Path="eastwind/test/environment/generateEnvironment.ts" Line="await EastwindEnvironment.loadShippers();"/>
+
+			<!-- The side toolbar's entries for the domain. Its two MENUS are removed by Toolbar (DependsOn). -->
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; IconName=&quot;fas fa-shopping-cart&quot; IconColor=&quot;orange&quot; Content=&quot;Order&quot; />"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; IconName=&quot;fas fa-apple-alt&quot; IconColor=&quot;gold&quot; Content=&quot;fd577065-f887-4567-8da3-9d5bcc1cedfd&quot; />"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; IconName=&quot;fas fa-user&quot; IconColor=&quot;seagreen&quot; Content=&quot;8b7e4ac5-cf45-41cb-8cff-4ce04506e12f&quot; />"/>
 		</Module>
 
 		<!-- ==== Framework infrastructure ========================================================== -->
@@ -272,6 +277,7 @@
 			<!-- `.withCache()` on the two demo types that use it. -->
 			<RemoveSpanInLines DependsOn="ExampleEntities" Path="eastwind/app/products/ProductLogic.server.ts" Span=".withCache()"/>
 			<RemoveSpanInLines DependsOn="ExampleEntities" Path="eastwind/app/shippers/ShipperLogic.server.ts" Span=".withCache()"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Label=&quot;Cache&quot; IconName=&quot;fas fa-database&quot; IconColor=&quot;#e74c3c&quot; Content=&quot;CachePermission.ViewCache&quot; Url=&quot;~/cache/statistics&quot; />"/>
 		</Module>
 
 		<Module Name="Profiler">
@@ -280,6 +286,8 @@
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="ProfilerLogic.start(sb, { timeTracker: true, heavyProfiler: true, overrideSessionTimeout: true });"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { ProfilerClient } from &quot;@altea/altea-profiler/client/ProfilerClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="ProfilerClient.start(cb);"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Label=&quot;Profiler (Heavy)&quot; IconName=&quot;fas fa-bolt&quot; IconColor=&quot;#e74c3c&quot; Content=&quot;ProfilerPermission.ViewHeavyProfiler&quot; Url=&quot;~/profiler/heavy&quot; />"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Label=&quot;Profiler (Times)&quot; IconName=&quot;fas fa-bolt&quot; IconColor=&quot;#e74c3c&quot; Content=&quot;ProfilerPermission.ViewTimeTracker&quot; Url=&quot;~/profiler/times&quot; />"/>
 		</Module>
 
 		<Module Name="Omnibox">
@@ -299,6 +307,7 @@
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="MapLogic.start(sb);"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { MapClient } from &quot;@altea/altea-map/client/MapClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="MapClient.start(cb);"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Label=&quot;Map&quot; IconName=&quot;fas fa-map&quot; IconColor=&quot;mediumvioletred&quot; Content=&quot;MapPermission.ViewMap&quot; Url=&quot;~/map&quot; />"/>
 		</Module>
 
 		<Module Name="Help">
@@ -364,6 +373,7 @@
 		<Module Name="SessionLog" DependsOn="Auth">
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="import { SessionLogLogic } from &quot;@altea/altea-auth/server/SessionLogLogic&quot;;"/>
 			<RemoveLine Path="eastwind/app/starter.server.ts" Line="SessionLogLogic.start(sb);"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Content=&quot;SessionLog&quot; />"/>
 		</Module>
 
 		<Module Name="Auth_ResetPassword" DependsOn="Auth,Mailing">
@@ -505,6 +515,11 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="ValueUserQueryListPartEntity,"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="BigValuePartEntity,"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="UserQueryEntity,"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Content=&quot;UserQuery&quot; />"/>
+			<!-- The two demo queries, and the Employee menu's entry for the second. -->
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/terminal/UserAssets.xml" From="&lt;UserQuery Guid=&quot;9ab3968e-3098-4fca-9ca8-ca8ff6dd53cb&quot;" To="&lt;/UserQuery>"/>
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/terminal/UserAssets.xml" From="&lt;UserQuery Guid=&quot;37ae5c35-8d2b-41f7-acbf-5ef93c91c8ca&quot;" To="&lt;/UserQuery>"/>
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Content=&quot;37ae5c35-8d2b-41f7-acbf-5ef93c91c8ca&quot; />"/>
 		</Module>
 
 		<Module Name="Chart" DependsOn="UserAssets,Files">
@@ -528,6 +543,18 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="CombinedUserChartPartEntity,"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="UserChartEntity,"/>
 			<RemoveFiles Path="eastwind/public/sample-maps"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Content=&quot;UserChart&quot; />"/>
+			<!-- The ten demo charts. `DisplayName` keeps each From off the Dashboard's CombinedUserChartPart rows. -->
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/terminal/UserAssets.xml" From="&lt;UserChart Guid=&quot;d681b3f5-a3a9-4228-93e9-e856f45d911a&quot; DisplayName" To="&lt;/UserChart>"/>
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/terminal/UserAssets.xml" From="&lt;UserChart Guid=&quot;01a3003d-83f7-4d74-8f9f-8a3ca8a4ec30&quot; DisplayName" To="&lt;/UserChart>"/>
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/terminal/UserAssets.xml" From="&lt;UserChart Guid=&quot;76ef1383-3603-4ab1-8f44-cfa4f554e0ff&quot; DisplayName" To="&lt;/UserChart>"/>
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/terminal/UserAssets.xml" From="&lt;UserChart Guid=&quot;b48718bb-f4ab-4a6a-950a-35a718d5fb23&quot; DisplayName" To="&lt;/UserChart>"/>
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/terminal/UserAssets.xml" From="&lt;UserChart Guid=&quot;9d266fac-e35b-4845-a7aa-970e1590ea1e&quot; DisplayName" To="&lt;/UserChart>"/>
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/terminal/UserAssets.xml" From="&lt;UserChart Guid=&quot;6406d2f6-aa24-43e4-946e-8622f65eb010&quot; DisplayName" To="&lt;/UserChart>"/>
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/terminal/UserAssets.xml" From="&lt;UserChart Guid=&quot;a3c7b86d-641e-4c1e-8032-72a099a00395&quot; DisplayName" To="&lt;/UserChart>"/>
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/terminal/UserAssets.xml" From="&lt;UserChart Guid=&quot;c169f387-2ffa-4b97-8c77-644cb2baef4a&quot; DisplayName" To="&lt;/UserChart>"/>
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/terminal/UserAssets.xml" From="&lt;UserChart Guid=&quot;aa47dc2c-2697-402d-a227-6c447815f5ec&quot; DisplayName" To="&lt;/UserChart>"/>
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/terminal/UserAssets.xml" From="&lt;UserChart Guid=&quot;02296c68-d4f5-4bd3-92d8-d417fe84e43c&quot; DisplayName" To="&lt;/UserChart>"/>
 		</Module>
 
 		<Module Name="Dashboard" DependsOn="Chart,UserQuery">
@@ -553,6 +580,9 @@
 			<RemoveLine Path="eastwind/app/Home.tsx" From="// The dashboard module is reached through a DYNAMIC import" To="}//redirectToHomeDashboard"/>
 			<!-- The hero is the landing page for everyone once there is no shop window to send a visitor to. -->
 			<RemoveLine Path="eastwind/app/Home.tsx" From="if (!AuthClient.currentUser()) {" To="}//AnonymousRedirect"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Content=&quot;Dashboard&quot; />"/>
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/terminal/UserAssets.xml" From="&lt;Dashboard Guid=&quot;7914fa80-dfd6-42a2-b29a-18e8cc5851f8&quot;" To="&lt;/Dashboard>"/>
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; IconName=&quot;fas fa-tachometer-alt&quot; IconColor=&quot;blue&quot; Content=&quot;7914fa80-dfd6-42a2-b29a-18e8cc5851f8&quot; />"/>
 		</Module>
 
 		<Module Name="Toolbar" DependsOn="UserAssets">
@@ -578,6 +608,17 @@
 			<RemoveLine Path="eastwind/app/Layout.tsx" From="{/* Skip-link: the first tab stop jumps past the" To="{LayoutMessage.JumpToMainContent.niceToString()}&lt;/a>"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" From="&lt;SidebarContainer" To=": undefined}>"/>
 			<RemoveLine Path="eastwind/app/Layout.tsx" Line="&lt;/SidebarContainer>"/>
+			<!-- Every menu and the side toolbar in UserAssets.xml, one span each. The three menus that belong
+			     to another module go with that module too. -->
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/terminal/UserAssets.xml" From="&lt;ToolbarMenu Guid=&quot;fd577065-f887-4567-8da3-9d5bcc1cedfd&quot;" To="&lt;/ToolbarMenu>"/>
+			<RemoveLine DependsOn="ExampleEntities" Path="eastwind/terminal/UserAssets.xml" From="&lt;ToolbarMenu Guid=&quot;8b7e4ac5-cf45-41cb-8cff-4ce04506e12f&quot;" To="&lt;/ToolbarMenu>"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" From="&lt;ToolbarMenu Guid=&quot;2deb71ea-f065-4fe3-9215-90460bc2d5ec&quot;" To="&lt;/ToolbarMenu>"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" From="&lt;ToolbarMenu Guid=&quot;af61b3b1-dc30-4129-a37f-aaf72450a939&quot;" To="&lt;/ToolbarMenu>"/>
+			<RemoveLine DependsOn="Auth" Path="eastwind/terminal/UserAssets.xml" From="&lt;ToolbarMenu Guid=&quot;3dbf3d73-02f6-4ad8-88f4-2fe03d34edeb&quot;" To="&lt;/ToolbarMenu>"/>
+			<RemoveLine DependsOn="Auth" Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; IconName=&quot;fas fa-unlock-alt&quot; IconColor=&quot;steelblue&quot; Content=&quot;3dbf3d73-02f6-4ad8-88f4-2fe03d34edeb&quot; />"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" From="&lt;ToolbarMenu Guid=&quot;aa00a50a-ff58-4950-94de-e200769effdc&quot;" To="&lt;/ToolbarMenu>"/>
+			<RemoveLine DependsOn="Workflow" Path="eastwind/terminal/UserAssets.xml" From="&lt;ToolbarMenu Guid=&quot;b9423939-ec3d-4495-9361-a335390d93a6&quot;" To="&lt;/ToolbarMenu>"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" From="&lt;Toolbar Guid=&quot;eb64a1af-852c-468b-a94f-19e28357ac0e&quot;" To="&lt;/Toolbar>"/>
 		</Module>
 
 		<!-- ==== Processes / scheduling ============================================================= -->
@@ -599,6 +640,7 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="overrideImplementedBy(ProcessEntity, p => p.data, () => [" To="overrideImplementedBy(ProcessExceptionLineEntity, l => l.line, () => [PackageLineEntity]);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" From="ProcessSchedulerBridgeOverrides.overrideTaskImplementations([" To="]);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(ProcessEntity, p =&gt; p.user, () =&gt; [UserEntity]);"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Label=&quot;Processes Panel&quot; IconName=&quot;fas fa-cogs&quot; IconColor=&quot;#9b6bcc&quot; Content=&quot;ProcessPermission.ViewProcessPanel&quot; Url=&quot;~/processes/view&quot; />"/>
 		</Module>
 
 		<Module Name="Scheduler" DependsOn="Process">
@@ -613,6 +655,7 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { SimpleTaskSymbol, ScheduledTaskEntity, ScheduledTaskLogEntity } from &quot;@altea/altea-scheduler/data/Scheduler&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(ScheduledTaskEntity, s =&gt; s.user, () =&gt; [UserEntity]);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(ScheduledTaskLogEntity, s =&gt; s.user, () =&gt; [UserEntity]);"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Label=&quot;Scheduler Panel&quot; IconName=&quot;fas fa-clock&quot; IconColor=&quot;#9b6bcc&quot; Content=&quot;SchedulerPermission.ViewSchedulerPanel&quot; Url=&quot;~/scheduler/view&quot; />"/>
 		</Module>
 
 		<!-- ==== Communication ====================================================================== -->
@@ -659,6 +702,8 @@
 			<RemoveLine DependsOn="Test" Path="eastwind/test/environment/eastwindEnvironment.ts" From="email: EmailConfigurationEmbedded.create({" To="emailSender: sender,"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="email: EmailConfigurationEmbedded;"/>
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.data.ts" Line="emailSender: EmailSenderConfigurationEntity;"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Content=&quot;EmailTemplate&quot; />"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Label=&quot;Async Email Sender&quot; IconName=&quot;fas fa-send&quot; IconColor=&quot;#3498db&quot; Content=&quot;AsyncEmailSenderPermission.ViewAsyncEmailSenderPanel&quot; Url=&quot;~/asyncEmailSender/view&quot; />"/>
 		</Module>
 
 		<Module Name="Mailing_ExchangeWS" DependsOn="Mailing" optional="true">
@@ -783,6 +828,7 @@
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="ExcelClient.start(cb, { plainExcel: true, importFromExcel: true, excelReport: true });"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { useLegacyWordNames } from &quot;@altea/altea-office-template/data/OfficeTemplate&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="useLegacyWordNames();"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Content=&quot;WordTemplate&quot; />"/>
 		</Module>
 
 		<!--
@@ -809,6 +855,7 @@
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// LAST of the log modules" To="ViewLogClient.start(cb);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { ViewLogEntity } from &quot;@altea/altea-view-log/data/ViewLog&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(ViewLogEntity, v => v.user, () => [UserEntity]);"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Content=&quot;ViewLog&quot; />"/>
 		</Module>
 
 		<Module Name="DiffLog">
@@ -980,6 +1027,7 @@
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { DynamicIsolationMixin } from &quot;@altea/altea-dynamic/data/DynamicIsolation&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { DynamicTypeEntity } from &quot;@altea/altea-dynamic/data/DynamicType&quot;;"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="MixinDeclarations.register(DynamicTypeEntity, DynamicIsolationMixin);"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Label=&quot;Dynamic Panel&quot; IconName=&quot;fas fa-arrows-alt&quot; IconColor=&quot;#9b6bcc&quot; Content=&quot;EvalPanelPermission.ViewDynamicPanel&quot; Url=&quot;~/dynamic/panel&quot; />"/>
 		</Module>
 
 		<Module Name="Workflow" DependsOn="Eval,Scheduler,Process,Auth" optional="true">
@@ -1006,6 +1054,10 @@
 			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" From="workflow: WorkflowConfigurationEmbedded.create({" To="}),"/>
 			<RemoveLine DependsOn="Test" Path="eastwind/test/environment/eastwindEnvironment.ts" Line="import { WorkflowConfigurationEmbedded } from &quot;@altea/altea-workflow/data/Workflow&quot;;"/>
 			<RemoveLine DependsOn="Test" Path="eastwind/test/environment/eastwindEnvironment.ts" Line="workflow: WorkflowConfigurationEmbedded.create({ avoidExecutingScriptsOlderThan: null }),"/>
+			<!-- Its menu in UserAssets.xml is Toolbar's (DependsOn), so a kept Toolbar loses it too. -->
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Label=&quot;Workflow Script Runner&quot; IconName=&quot;fas fa-random&quot; IconColor=&quot;#9b6bcc&quot; Content=&quot;WorkflowPermission.ViewWorkflowPanel&quot; Url=&quot;~/workflow/panel&quot; />"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; IconName=&quot;fas fa-random&quot; IconColor=&quot;saddlebrown&quot; Content=&quot;b9423939-ec3d-4495-9361-a335390d93a6&quot; />"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Content=&quot;WorkflowPermission.WorkflowToolbarMenu&quot; />"/>
 		</Module>
 
 		<!-- ==== eastwind additions (no Southwind counterpart) ====================================== -->
@@ -1086,6 +1138,7 @@
 			<RemoveLine Path="eastwind/app/globals/ApplicationConfiguration.tsx" From="&lt;Tab eventKey=&quot;translation&quot;" To="&lt;/Tab>"/>
 			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" Line="import { TranslationConfigurationEmbedded } from &quot;@altea/altea-translations/data/Translation&quot;;"/>
 			<RemoveLine Path="eastwind/terminal/typeScriptMigrations.ts" From="// Every field is an optional API key" To="translation: TranslationConfigurationEmbedded.create({}),"/>
+			<RemoveLine Path="eastwind/terminal/UserAssets.xml" Line="&lt;ToolbarElement Type=&quot;Item&quot; Label=&quot;Code Translation&quot; IconName=&quot;fas fa-language&quot; IconColor=&quot;#1abc9c&quot; Content=&quot;TranslationPermission.TranslateCode&quot; Url=&quot;~/translation/status&quot; />"/>
 		</Module>
 
 		<!--

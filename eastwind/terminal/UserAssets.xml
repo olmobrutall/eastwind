@@ -1,36 +1,8 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<!--
-  A copy of Southwind's user-asset file (old/Southwind.Terminal/Toolbar.xml — Southwind's ImportToolbar
-  step: UserAssetsImporter.Preview + Import), imported here by `terminal import-assets`. Renamed
-  UserAssets.xml because it carries every user asset, not just the toolbars: 10 UserCharts, 2 UserQueries,
-  the example Dashboard, 7 ToolbarMenus and the side Toolbar.
-
-  Kept as close to the original as possible — same guids (the guid IS the asset's identity, so a re-import
-  overwrites the same rows), same order, same attributes. Every edit is marked with an `altea:` comment;
-  elements for features this port does not have are COMMENTED OUT rather than deleted, so re-syncing with
-  Signum stays a diff.
-
-  The systematic edits (documented divergences, see CLAUDE.md):
-   * TOKENS ARE ROOTLESS. A token is spelled exactly as Signum spells it (PascalCase) except that there is
-     no "Entity." prefix, altea's query root being the entity itself: Signum's
-     "Entity.Details.Element.Product" is "Details.Element.Product", and "Entity.TotalPrice.Sum" is
-     "TotalPrice.Sum". Reading one back tolerates either case, and LEGACY MODE also drops a stored
-     "Entity." — so this file is the only place the prefix has to be taken off by hand.
-   * The SmartDateTime grammar ("-1/mm/dd 00:00:00", "yyyy/mm/01 00:00:00") IS ported — see
-     @altea/altea-user-assets data/FilterValueConverters — so those date filters are live, verbatim.
-   * There is no storable spelling for the ROOT (entity) token: its key is "" and QueryTokenEmbedded.
-     tokenString has StringLengthValidator(min 1). Where Signum wrote Token="Entity" this uses "ToString",
-     and the Dashboard's TokenEquivalenceGroup (which needs Product's root token) is commented out.
-   * `Owner` is preserved verbatim but currently IGNORED: UserAssetsImportExport.parseLiteKey is a stub, so
-     every imported asset lands GLOBAL (owner null) — visible to every role.
-   * Signum.Workflow / Signum.Map / Signum.Cache / Signum.Eval / Signum.Translation / Signum.Help are not
-     ported, and Signum.Word became @altea/altea-office-template (WordTemplate -> OfficeTemplate).
--->
 <Entities>
   <UserChart Guid="d681b3f5-a3a9-4228-93e9-e856f45d911a" DisplayName="Evolution By Employee" Query="Order" HideQuickLink="false" Owner="User;2;Anonymous" ChartScript="D3ChartScript.StackedLines">
     <Filters>
-      <!-- altea: eastwind has no UserEmployeeMixin (a user is not linked to an employee).
-      <Filter Indentation="0" Token="Employee" Operation="EqualTo" Value="[CurrentUser].[UserEmployeeMixin].Employee" DashboardBehaviour="UseAsInitialSelection" /> -->
+      <Filter Indentation="0" Token="Employee" Operation="EqualTo" Value="[CurrentUser].[UserEmployeeMixin].employee" DashboardBehaviour="UseAsInitialSelection" />
       <Filter Indentation="0" Token="OrderDate" Operation="GreaterThan" Value="-1/mm/dd 00:00:00" />
     </Filters>
     <Columns>
@@ -245,8 +217,6 @@
   </UserChart>
   <UserChart Guid="02296c68-d4f5-4bd3-92d8-d417fe84e43c" DisplayName="Products in Stock" Query="Product" HideQuickLink="false" Owner="User;1;System" ChartScript="D3ChartScript.Treemap" MaxRows="1000">
     <Columns>
-      <!-- altea: was Token="Entity" — the root token's key is "" and tokenString needs at least one
-           character, so the product's ToString stands in for it. -->
       <Column Token="ToString" />
       <Column Token="UnitsInStock" />
       <Column Token="Supplier" />
@@ -265,8 +235,7 @@
     </Parameters>
   </UserChart>
   <Dashboard Guid="7914fa80-dfd6-42a2-b29a-18e8cc5851f8" DisplayName="Example Dashboard" Owner="User;2;Anonymous" CombineSimilarRows="false">
-    <!-- altea: CachedQuery is not ported (the element is ignored on import).
-    <CacheQueryConfiguration TimeoutForQueries="300" MaxRows="1000000" AutoRegenerateWhenOlderThan="60" /> -->
+    <CacheQueryConfiguration TimeoutForQueries="300" MaxRows="1000000" AutoRegenerateWhenOlderThan="60" />
     <Parts>
       <Part Row="0" StartColumn="0" Columns="7" InteractionGroup="Group1">
         <UserChartPart UserChart="d681b3f5-a3a9-4228-93e9-e856f45d911a" IsQueryCached="true" />
@@ -300,14 +269,6 @@
         <UserChartPart UserChart="02296c68-d4f5-4bd3-92d8-d417fe84e43c" IsQueryCached="true" />
       </Part>
     </Parts>
-    <!-- altea: a token equivalence needs Product's ROOT token, which has no storable spelling (key "" vs
-         tokenString min length 1) — see the header. Same-token interaction still works within a group.
-    <TokenEquivalencesGroups>
-      <TokenEquivalenceGroup InteractionGroup="Group1">
-        <TokenEquivalence Query="Order" Token="Details.Element.Product" />
-        <TokenEquivalence Query="Product" Token="Entity" />
-      </TokenEquivalenceGroup>
-    </TokenEquivalencesGroups> -->
   </Dashboard>
   <ToolbarMenu Guid="fd577065-f887-4567-8da3-9d5bcc1cedfd" Name="Products">
     <Elements>
@@ -324,26 +285,18 @@
       <Column Token="LastName" />
       <Column Token="BirthDate" />
       <Column Token="Territories.SeparatedByNewLine" />
-      <!-- altea: eastwind's Employee has `photoPath` (Northwind's column), not Southwind's Photo file. -->
-      <Column Token="PhotoPath" />
+      <Column Token="Photo" />
     </Columns>
   </UserQuery>
   <ToolbarMenu Guid="8b7e4ac5-cf45-41cb-8cff-4ce04506e12f" Name="Employee">
     <Elements>
       <ToolbarElement Type="Item" Content="37ae5c35-8d2b-41f7-acbf-5ef93c91c8ca" />
       <ToolbarElement Type="Item" Content="Territory" />
-      <!-- altea: Southwind's EmployeesByTerritory manual query is not registered here.
-      <ToolbarElement Type="Item" Content="EmployeesByTerritory" /> -->
+      <ToolbarElement Type="Item" Content="EmployeesByTerritory" />
     </Elements>
   </ToolbarMenu>
   <ToolbarMenu Guid="2deb71ea-f065-4fe3-9215-90460bc2d5ec" Name="Reports">
     <Elements>
-      <!-- altea renamed the CLASS (Signum.Word -> @altea/altea-office-template, which does docx/pptx/xlsx),
-           but the type declares `@legacyCleanName("WordTemplate")` — and that is NOT gated on legacyMode
-           (it lives in data/registration, which both tiers compile and which has no view of the
-           server-only SchemaSettings flag). The clean name IS the registered query key, so the key is
-           `WordTemplate` in every deployment, exactly as `basics.query` stores it. This element must name
-           the query, not the class. -->
       <ToolbarElement Type="Item" Content="WordTemplate" />
       <ToolbarElement Type="Item" Content="EmailTemplate" />
       <ToolbarElement Type="Item" Content="UserQuery" />
@@ -355,10 +308,8 @@
   <ToolbarMenu Guid="af61b3b1-dc30-4129-a37f-aaf72450a939" Name="Logs">
     <Elements>
       <ToolbarElement Type="Item" Content="OperationLog" />
-      <!-- altea: no ViewLog / SessionLog module.
       <ToolbarElement Type="Item" Content="ViewLog" />
-      <ToolbarElement Type="Item" Content="SessionLog" /> -->
-      <!-- altea ADDITION: the ported exception log. -->
+      <ToolbarElement Type="Item" Content="SessionLog" />
       <ToolbarElement Type="Item" Content="Exception" />
     </Elements>
   </ToolbarMenu>
@@ -374,17 +325,13 @@
       <ToolbarElement Type="Item" Label="Profiler (Heavy)" IconName="fas fa-bolt" IconColor="#e74c3c" Content="ProfilerPermission.ViewHeavyProfiler" Url="~/profiler/heavy" />
       <ToolbarElement Type="Item" Label="Profiler (Times)" IconName="fas fa-bolt" IconColor="#e74c3c" Content="ProfilerPermission.ViewTimeTracker" Url="~/profiler/times" />
       <ToolbarElement Type="Item" Label="Processes Panel" IconName="fas fa-cogs" IconColor="#9b6bcc" Content="ProcessPermission.ViewProcessPanel" Url="~/processes/view" />
-      <!-- altea ADDITION: @altea/altea-scheduler's panel (Signum has one too; Southwind's file predates it). -->
       <ToolbarElement Type="Item" Label="Scheduler Panel" IconName="fas fa-clock" IconColor="#9b6bcc" Content="SchedulerPermission.ViewSchedulerPanel" Url="~/scheduler/view" />
-      <!-- altea: Signum.Eval (dynamic panel) / Signum.Workflow are not ported.
       <ToolbarElement Type="Item" Label="Dynamic Panel" IconName="fas fa-arrows-alt" IconColor="#9b6bcc" Content="EvalPanelPermission.ViewDynamicPanel" Url="~/dynamic/panel" />
-      <ToolbarElement Type="Item" Label="Workflow Script Runner" IconName="fas fa-random" IconColor="#9b6bcc" Content="WorkflowPermission.ViewWorkflowPanel" Url="~/workflow/panel" /> -->
+      <ToolbarElement Type="Item" Label="Workflow Script Runner" IconName="fas fa-random" IconColor="#9b6bcc" Content="WorkflowPermission.ViewWorkflowPanel" Url="~/workflow/panel" />
       <ToolbarElement Type="Item" Label="Async Email Sender" IconName="fas fa-send" IconColor="#3498db" Content="AsyncEmailSenderPermission.ViewAsyncEmailSenderPanel" Url="~/asyncEmailSender/view" />
-      <!-- altea: Signum.Translation is not ported.
-      <ToolbarElement Type="Item" Label="Code Translation" IconName="fas fa-language" IconColor="#1abc9c" Content="TranslationPermission.TranslateCode" Url="~/translation/status" /> -->
+      <ToolbarElement Type="Item" Label="Code Translation" IconName="fas fa-language" IconColor="#1abc9c" Content="TranslationPermission.TranslateCode" Url="~/translation/status" />
     </Elements>
   </ToolbarMenu>
-  <!-- altea: Signum.Workflow is not ported, so the whole Workflow menu is out.
   <ToolbarMenu Guid="b9423939-ec3d-4495-9361-a335390d93a6" Name="Workflow">
     <Elements>
       <ToolbarElement Type="Item" Content="Workflow" />
@@ -394,13 +341,11 @@
       <ToolbarElement Type="Item" Content="CaseActivity" />
       <ToolbarElement Type="Item" Content="CaseTagType" />
     </Elements>
-  </ToolbarMenu> -->
+  </ToolbarMenu>
   <Toolbar Guid="eb64a1af-852c-468b-a94f-19e28357ac0e" Name="Side Toolbar" Location="Side">
     <Elements>
       <ToolbarElement Type="Item" IconName="fas fa-tachometer-alt" IconColor="blue" Content="7914fa80-dfd6-42a2-b29a-18e8cc5851f8" />
-      <!-- altea: Signum.Map is not ported, and eastwind has no public-catalog page.
-      <ToolbarElement Type="Item" Label="Map" IconName="fas fa-map" IconColor="mediumvioletred" Content="MapPermission.ViewMap" Url="~/Map" />
-      <ToolbarElement Type="Item" Label="Public catalog" IconName="fas fa-shopping-bag" IconColor="orangered" Url="~/PublicCatalog" /> -->
+      <ToolbarElement Type="Item" Label="Map" IconName="fas fa-map" IconColor="mediumvioletred" Content="MapPermission.ViewMap" Url="~/map" />
       <ToolbarElement Type="Divider" />
       <ToolbarElement Type="Header" Label="Entities" IconName="fas fa-redo" IconColor="red" />
       <ToolbarElement Type="Item" IconName="fas fa-shopping-cart" IconColor="orange" Content="Order" />
@@ -411,9 +356,8 @@
       <ToolbarElement Type="Item" IconName="fas fa-unlock-alt" IconColor="steelblue" Content="3dbf3d73-02f6-4ad8-88f4-2fe03d34edeb" />
       <ToolbarElement Type="Divider" />
       <ToolbarElement Type="Item" IconName="fas fa-cogs" IconColor="gray" Content="aa00a50a-ff58-4950-94de-e200769effdc" />
-      <!-- altea: Signum.Workflow is not ported.
       <ToolbarElement Type="Item" IconName="fas fa-random" IconColor="saddlebrown" Content="b9423939-ec3d-4495-9361-a335390d93a6" />
-      <ToolbarElement Type="Item" Content="WorkflowPermission.WorkflowToolbarMenu" /> -->
+      <ToolbarElement Type="Item" Content="WorkflowPermission.WorkflowToolbarMenu" />
     </Elements>
   </Toolbar>
 </Entities>
