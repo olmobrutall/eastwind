@@ -97,7 +97,9 @@ export interface ProductEntity {
 export class ProductEntity_AdditionalInformation extends Entity {
     @backReference product: Lite<ProductEntity>;
     @rowOrder rowOrder: int;
+    @stringLengthValidator({ max: 100 })
     key: string;
+    @stringLengthValidator({ max: 400 })
     value: string;
 }
 
