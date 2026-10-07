@@ -690,12 +690,8 @@ const legacyOnlyColumns: Record<string, string[]> = {
     // scripts an ADD for a column that is already there.
     applicationconfiguration: ["folders"],
 
-    // The two TEMPLATE filter tables. A pinned filter is a SearchControl affordance and a dashboard
-    // behaviour is a dashboard interaction; a template's filters are neither, so those eight columns are
-    // gone from the model (see altea's QueryFilterPinnedBaseEntity). A legacy database has them, because
-    // Signum gives every owner one shared QueryFilterEmbedded.
-    emailtemplatefilters: ["pinned", "dashboardbehaviour"],
-    wordtemplatefilters: ["pinned", "dashboardbehaviour"],
+    // Not the template / predictor filter tables' Pinned and DashboardBehaviour columns: Southwind ignores
+    // those members (Starter.OverrideAttributes, PredictorLogic.IgnorePinned), so neither side has them.
 };
 
 function ignoreConfigurationsForLegacyOnly(): void {
