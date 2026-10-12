@@ -774,6 +774,7 @@
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" Line="import { AlertsClient } from &quot;@altea/altea-alert/client/AlertsClient&quot;;"/>
 			<RemoveLine Path="eastwind/app/MainAdmin.client.ts" From="// The navbar BELL is a component the app places itself" To="AlertsClient.start(cb);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="import { AlertEntity, SendNotificationEmailTaskEntity } from &quot;@altea/altea-alert/data/Alert&quot;;"/>
+			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="SendNotificationEmailTaskEntity,"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(AlertEntity, a => a.createdBy, () => [UserEntity]);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(AlertEntity, a => a.recipient, () => [UserEntity]);"/>
 			<RemoveLine Path="eastwind/app/entityOverrides.data.ts" Line="overrideImplementedBy(AlertEntity, a => a.attendedBy, () => [UserEntity]);"/>
