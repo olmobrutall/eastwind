@@ -1017,6 +1017,9 @@ importers:
       '@altea/altea-auth':
         specifier: workspace:*
         version: link:../altea-auth
+      fflate:
+        specifier: ^0.8.2
+        version: 0.8.3
       quote-transformer:
         specifier: workspace:*
         version: link:../quote-transformer
