@@ -22,6 +22,7 @@
       "name": "eastwind-client",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "eastwind", "dev:client"],
+      "env": { "VITE_API_TARGET": "http://localhost:3001" },
       "port": 5173
     }
   ]

@@ -63,6 +63,7 @@ import { CatalogApi } from "./publicApi/CatalogApi.server";
 import { PublicCatalogApi } from "./publicApi/PublicCatalog.server";
 import { PublicLogic } from "./publicApi/PublicLogic.server";
 import { TourLogic } from "@altea/altea-tour/server/TourLogic";
+import { AssetSyncLogic } from "@altea/altea-user-assets/server/AssetSyncLogic";
 import { TranslationLogic } from "@altea/altea-translations/server/TranslationLogic";
 import { AzureTranslator, DeepLTranslator } from "@altea/altea-translations/server/Translators";
 import { WorkflowLogicStarter } from "@altea/altea-workflow/server/WorkflowLogicStarter";
@@ -334,6 +335,13 @@ export namespace Starter {
         if (!legacyMode) {
             TourLogic.start(sb);
         }//Tour
+
+        // Assets with a sync folder live in assets/<folder>/ too. A development save writes the file; a
+        // production one only marks the asset as modified in the database.
+        AssetSyncLogic.start(sb, {
+            root: path.join(process.cwd(), "assets"),
+            writeFiles: process.env["NODE_ENV"] !== "production",
+        });//AssetSync
 
         // ==== COMMUNICATION (needs files, scheduler, processes, eval) =================================
 

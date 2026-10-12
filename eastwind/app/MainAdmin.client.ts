@@ -61,6 +61,7 @@ import { RestApiKeyClient } from "@altea/altea-rest/client/RestApiKeyClient";
 import { ViewLogClient } from "@altea/altea-view-log/client/ViewLogClient";
 import { SMSClient } from "@altea/altea-sms/client/SMSClient";
 import { TourClient } from "@altea/altea-tour/client/TourClient";
+import { AssetSyncClient } from "@altea/altea-user-assets/client/AssetSyncClient";
 import { MachineLearningClient } from "@altea/altea-machine-learning/client/MachineLearningClient";
 import { TranslationClient } from "@altea/altea-translations/client/TranslationClient";
 import { TranslatedInstanceClient } from "@altea/altea-translations/client/TranslatedInstanceClient";
@@ -143,6 +144,7 @@ export function startFull(routes: RouteObject[], legacyMode = false): void {
     UserChartClient.start(cb);
     DashboardClient.start(cb);
     ToolbarClient.start(cb);
+    AssetSyncClient.start(cb);
 
     // ==== COMMUNICATION =============================================================================
 

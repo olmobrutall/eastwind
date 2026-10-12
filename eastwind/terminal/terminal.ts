@@ -21,6 +21,7 @@ import { SqlMigrationRunner } from "@altea/altea-migrations/server/SqlMigrationR
 import * as Administrator from "@altea/altea/server/administrator";
 import { TokenMigrationLogic } from "@altea/altea-user-assets/server/TokenMigrationLogic";
 import { TokenMigrationRunner } from "@altea/altea-user-assets/server/TokenMigrationRunner";
+import { AssetSyncLogic } from "@altea/altea-user-assets/server/AssetSyncLogic";
 import { Northwind } from "./northwind/northwindSchema";
 import { NorthwindSeed } from "./northwind/northwindSeed";
 import { RegionEntity, TerritoryEntity, EmployeeEntity } from "../app/employees/Employee.data";
@@ -75,6 +76,7 @@ async function main(): Promise<void> {
                 case "check": await check(); break;
                 case "import-auth": await importAuth(args.slice(1)); break;
                 case "import-assets": await importAssets(args.slice(1)); break;
+                case "sync-assets": await syncAssets(args.slice(1)); break;
                 case "seed-northwind": await NorthwindSeed.seed(); break;
                 // PORT ONLY: reads the legacy application's own translation files out of `old/`.
                 case "convert-translations": await TranslationConverter.runCommand(args.slice(1), {
@@ -84,7 +86,7 @@ async function main(): Promise<void> {
                 case "stub-translations": TranslationStubs.runCommand(args.slice(1), { cultures: ["de", "es"] }); break;
                 case "migrations":
                 case "sql": await migrations(args.slice(1)); break;
-                default: console.log(`Unknown command '${command}'. Valid: new, sync, sql, ts, load [SN,EA,IA,IU,SO], check, import-auth, import-assets, seed-northwind, convert-translations, stub-translations`);
+                default: console.log(`Unknown command '${command}'. Valid: new, sync, sql, ts, load [SN,EA,IA,IU,SO], check, import-auth, import-assets, sync-assets [folder…], seed-northwind, convert-translations, stub-translations`);
             }
         }
     } finally {
@@ -337,6 +339,16 @@ async function importAuth(args: string[]): Promise<void> {
 async function importAssets(args: string[]): Promise<void> {
     await ensureInitialized();
     await TypeScriptMigrations.importUserAssets(args.find(a => !a.startsWith("--")), args.includes("--keep-existing"));
+}
+
+/** `sync-assets [folder…]`: bring the database in line with assets/<folder>/ — all folders by default. */
+async function syncAssets(args: string[]): Promise<void> {
+    await ensureInitialized();
+    const report = await AssetSyncLogic.syncFromCode({ folders: args.length > 0 ? args : undefined });
+    for (const [label, list] of Object.entries(report))
+        for (const asset of list as string[])
+            console.log(`  ${label.padEnd(9)} ${asset}`);
+    console.log("[sync-assets] " + Object.entries(report).map(([k, v]) => `${k}=${(v as string[]).length}`).join(" "));
 }
 
 // Read-back health check: row counts of every table via altea's LINQ.
