@@ -32,14 +32,55 @@ pnpm --filter eastwind build
 ```
 
 Every entry point takes the **environment** as an argument — there is no default, so nothing can start
-against the wrong database by omission. Each `eastwind/.env.<environment>` is a tracked template; set at
-least the connection string in `eastwind/.env.local`, then:
+against the wrong database by omission. Each `eastwind/.env.<environment>` is a tracked template; in
+`eastwind/.env.local` set two connection strings, each to a database that **already exists** (altea has no
+`CREATE DATABASE`):
+
+- `EASTWIND_DB` — the application's own database. `new` wipes it.
+- `NORTHWIND_DB` — the Northwind **source** database the demo data is read from. Keep it separate from
+  `EASTWIND_DB`, or `new` wipes it too.
+
+Either connection string starting with `postgres` means PostgreSQL; anything else means SQL Server.
+
+> **In VS Code:** every command below can also run interactively. Open **Run and Debug**, pick
+> **eastwind terminal** and press F5. It builds the terminal, asks for the environment (`local`), and opens a
+> menu (`SN` seed Northwind, `N` new database, `S` sync, `SQL`, `TS`, `L` load, `C` check) under the
+> debugger, so a breakpoint in a loader or a migration is hit.
+
+### 1. Seed the Northwind source database
 
 ```bash
-pnpm --filter eastwind terminal local new   # clean + generate the schema   (DESTRUCTIVE)
+pnpm --filter eastwind terminal local seed-northwind   # (re)creates Northwind's tables + data in NORTHWIND_DB
+```
+
+Like Southwind, eastwind **reads its demo data from a real Northwind database**: the loaders in `ts` import
+it from `NORTHWIND_DB`, so `ts` fails without it. The command runs Northwind's vendor script for that
+database's dialect (from `eastwind/terminal/northwind/`). Run it once per machine; re-running it resets the
+data.
+
+> **In VS Code:** **Run and Debug → eastwind terminal**, then choose `SN`.
+
+### 2. Create the schema and load the data
+
+```bash
+pnpm --filter eastwind terminal local new   # clean + generate the schema   (DESTRUCTIVE — asks for the DB name; --force skips it)
 pnpm --filter eastwind terminal local ts    # roles, users, the Northwind data, the XML seeds
+```
+
+> **In VS Code:** **Run and Debug → eastwind terminal**, then choose `N`, then `TS`. Each `ts` step is recorded once it has run, so
+> after a failure (for example an unseeded Northwind) fix the cause and choose `TS` again. It continues from
+> where it stopped.
+
+### 3. Run the stack
+
+```bash
 pnpm --filter eastwind stack local          # types watcher + API + client, together
 ```
+
+> **In VS Code:** **Run and Debug → eastwind full stack** runs the same three processes with the **API
+> under the debugger**. It frees ports 3001/5173 first, waits for the type watcher's first pass before
+> starting vite, and asks for the environment. Stopping it stops all three. It runs the compiled output, so
+> restart the session to pick up an edit; the watcher has already recompiled it.
 
 The client opens on **http://localhost:5173**, the API on **3001**. To move them — to run a clone of this
 application beside the original — uncomment `CLIENT_PORT` and `PORT` in `eastwind/.env.local`; everything
@@ -55,7 +96,8 @@ one field. It is a client-side convenience only: the request is the normal `/api
 rule still applies, and the flag is dead code in a production build.
 
 `terminal local sync` diffs the model against the database and writes the script it proposes to
-`eastwind/terminal/sync/` for you to read before it runs. That is the command you will use most.
+`eastwind/terminal/sync/` for you to read before it runs. That is the command you will use most. In
+VS Code it is `S` in the **eastwind terminal** menu.
 
 ## Starting a new application from this one
 

@@ -52,8 +52,8 @@ export namespace TypeScriptMigrations {
         const runner = new TypeScriptMigrationRunner();
 
         // The unique names are the MIGRATION IDENTITY in the database — renaming one re-runs it.
-        // Every Load* step below reads the Northwind SOURCE database through the `Nw*` views; eastwind ships
-        // the vendor script for both dialects and seeds it, so `ts` is self-contained on a fresh machine.
+        // Every Load* step below reads the Northwind SOURCE database (NORTHWIND_DB) through the `Nw*` views.
+        // `ts` does NOT seed it: run `terminal seed-northwind` (menu `SN`) first, once per machine.
         runner.add("CreateCulturesAndConfiguration", () => createCulturesAndConfiguration());
         runner.add("CreateRoles", () => createRoles());
         runner.add("CreateSystemUser", () => createSystemUser());
