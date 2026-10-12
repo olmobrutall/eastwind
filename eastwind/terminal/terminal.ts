@@ -1,4 +1,4 @@
-import "@altea/altea/server/context.node"; // register server context storage first
+﻿import "@altea/altea/server/context.node"; // register server context storage first
 import * as path from "node:path";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -67,7 +67,7 @@ async function main(): Promise<void> {
         } else {
             switch (command) {
                 case "new":
-                case "create": await create(); break;
+                case "create": await create(args.includes("--force")); break;
                 case "sync":
                 case "synchronize": await synchronize(args); break;
                 case "load": await load(args.slice(1)); break;
@@ -86,7 +86,7 @@ async function main(): Promise<void> {
                 case "stub-translations": TranslationStubs.runCommand(args.slice(1), { cultures: ["de", "es"] }); break;
                 case "migrations":
                 case "sql": await migrations(args.slice(1)); break;
-                default: console.log(`Unknown command '${command}'. Valid: new, sync, sql, ts, load [SN,EA,IA,IU,SO], check, import-auth, import-assets, sync-assets [folder…], seed-northwind, convert-translations, stub-translations`);
+                default: console.log(`Unknown command '${command}'. Valid: new [--force], sync, sql, ts, load [SN,EA,IA,IU,SO], check, import-auth, import-assets, sync-assets [folder…], seed-northwind, convert-translations, stub-translations`);
             }
         }
     } finally {
@@ -257,9 +257,11 @@ function migrationsDir(): string {
     return path.resolve(url.fileURLToPath(new URL(".", import.meta.url)), "../../migrations");
 }//migrationsDir
 
-async function create(): Promise<void> {
-    console.log("[new] cleaning database");
-    await Connector.current().cleanDatabase();
+// Before cleaning a database that has tables, Administrator.cleanDatabase asks for its name; `new --force`
+// skips that, and is required where there is no TTY to answer.
+async function create(force = false): Promise<void> {
+    if (!await Administrator.Administrator.cleanDatabase({ force }))
+        return;
     console.log("[new] generating schema");
     await Schema.current.generationScript()?.executeNonQuery();
     // Read back the TypeEntity ids the DB just assigned, so a subsequent load in this same
