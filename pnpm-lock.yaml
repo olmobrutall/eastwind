@@ -1017,6 +1017,9 @@ importers:
       '@altea/altea-auth':
         specifier: workspace:*
         version: link:../altea-auth
+      '@altea/altea-diff-log':
+        specifier: workspace:*
+        version: link:../altea-diff-log
       fflate:
         specifier: ^0.8.2
         version: 0.8.3

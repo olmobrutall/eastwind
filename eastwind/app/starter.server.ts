@@ -336,12 +336,9 @@ export namespace Starter {
             TourLogic.start(sb);
         }//Tour
 
-        // Assets with a sync folder live in assets/<folder>/ too. A development save writes the file; a
-        // production one only marks the asset as modified in the database.
-        AssetSyncLogic.start(sb, {
-            root: path.join(process.cwd(), "assets"),
-            writeFiles: process.env["NODE_ENV"] !== "production",
-        });//AssetSync
+        // Assets with a sync folder also live in assets/<folder>/. A save writes the file only with
+        // AUTO_SAVE_ASSET_FILES=true — a local opt-in, like EASTWIND_DISPOSABLE_DB.
+        AssetSyncLogic.start(sb, { root: path.join(process.cwd(), "assets") });//AssetSync
 
         // ==== COMMUNICATION (needs files, scheduler, processes, eval) =================================
 
