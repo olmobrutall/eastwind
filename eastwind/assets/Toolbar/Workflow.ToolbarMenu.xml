@@ -1,0 +1,10 @@
+<ToolbarMenu Guid="b9423939-ec3d-4495-9361-a335390d93a6" Name="Workflow">
+  <Elements>
+    <ToolbarElement Guid="01a116c9-95cc-7496-b7b1-c5bf6fff32a1" Type="Item" Content="Workflow"/>
+    <ToolbarElement Guid="01a116c9-95cc-7582-86bc-ea047a90f98e" Type="Item" Content="WorkflowActivity"/>
+    <ToolbarElement Guid="01a116c9-95cc-75b4-a84c-14412505a7e9" Type="Divider"/>
+    <ToolbarElement Guid="01a116c9-95cc-75df-adc9-f62e536de3d5" Type="Item" Content="Case"/>
+    <ToolbarElement Guid="01a116c9-95cc-7626-85f1-0063bbc84690" Type="Item" Content="CaseActivity"/>
+    <ToolbarElement Guid="01a116c9-95cc-764f-850d-04d2c6ee9fe6" Type="Item" Content="CaseTagType"/>
+  </Elements>
+</ToolbarMenu>

@@ -1,0 +1,8 @@
+<ToolbarMenu Guid="fd577065-f887-4567-8da3-9d5bcc1cedfd" Name="Products">
+  <Elements>
+    <ToolbarElement Guid="01a106eb-b309-7f26-a760-431ab593b46a" Type="Item" Content="Product"/>
+    <ToolbarElement Guid="01a106eb-b30a-7882-a8ea-88c79442cf51" Type="Item" Content="Category"/>
+    <ToolbarElement Guid="01a106eb-b30a-78e8-b194-99ddbcdc6ac6" Type="Item" Content="Supplier"/>
+    <ToolbarElement Guid="01a106eb-b30a-7913-afe3-f567597eacb9" Type="Item" Content="Shipper"/>
+  </Elements>
+</ToolbarMenu>

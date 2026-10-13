@@ -1,0 +1,21 @@
+<UserChart DisplayName="Customers" Query="Order" HideQuickLink="false" ChartScript="D3ChartScript.BubblePack" Guid="76ef1383-3603-4ab1-8f44-cfa4f554e0ff">
+  <Columns>
+    <Column Guid="01a106eb-b1af-7fbf-baa6-03dd398143b4" Token="Customer" DisplayName="Customer"/>
+    <Column Guid="01a106eb-b1b0-7088-84a3-05ddbaa42a76" Token="Count" DisplayName="Count"/>
+    <Column Guid="01a106eb-b1b0-70a2-90d9-83153ea2bd5f" Token="Customer.Address.Country" DisplayName="Country"/>
+    <Column Guid="01a106eb-b1b0-70b5-bbab-64962cfc3519"/>
+    <Column Guid="01a106eb-b1b0-70c7-a657-3b97b68884da"/>
+  </Columns>
+  <Parameters>
+    <Parameter Name="Scale" Value="MinMax"/>
+    <Parameter Name="StrokeColor" Value=""/>
+    <Parameter Name="StrokeWidth" Value="2"/>
+    <Parameter Name="NumberOpacity" Value="0.8"/>
+    <Parameter Name="NumberSizeLimit" Value="18"/>
+    <Parameter Name="NumberColor" Value="white"/>
+    <Parameter Name="FillOpacity" Value="0.4"/>
+    <Parameter Name="ColorScale" Value="ZeroMax"/>
+    <Parameter Name="ColorInterpolate" Value="YlGn"/>
+    <Parameter Name="ColorCategory" Value="category10"/>
+  </Parameters>
+</UserChart>

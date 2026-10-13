@@ -1,0 +1,23 @@
+<UserChart DisplayName="Order number by month" Query="Order" HideQuickLink="false" ChartScript="D3ChartScript.Line" Guid="a3c7b86d-641e-4c1e-8032-72a099a00395">
+  <Filters>
+    <Filter Guid="01a106eb-b217-79ef-993a-31177db43fc6" Indentation="0" Token="OrderDate" Operation="LessThan" Value="yyyy/mm/01 00:00:00"/>
+  </Filters>
+  <Columns>
+    <Column Guid="01a106eb-b216-796e-a2b5-c04247cfdcb0" Token="OrderDate.MonthStart" DisplayName="Month Start of Order date" Format="Y" OrderByIndex="1" OrderByType="Ascending"/>
+    <Column Guid="01a106eb-b216-7a19-9b67-99d09f9b74d5" Token="Count" DisplayName="Count"/>
+  </Columns>
+  <Parameters>
+    <Parameter Name="CompleteValues" Value="Auto"/>
+    <Parameter Name="HorizontalScale" Value="Bands"/>
+    <Parameter Name="VerticalScale" Value="ZeroMax"/>
+    <Parameter Name="UnitMargin" Value="20"/>
+    <Parameter Name="NumberMinWidth" Value="20"/>
+    <Parameter Name="NumberOpacity" Value="0.8"/>
+    <Parameter Name="CircleAutoReduce" Value="Yes"/>
+    <Parameter Name="CircleRadius" Value="5"/>
+    <Parameter Name="CircleStroke" Value="2"/>
+    <Parameter Name="CircleRadiusHover" Value="15"/>
+    <Parameter Name="Color" Value="#B03A2E"/>
+    <Parameter Name="Interpolate" Value="monotone"/>
+  </Parameters>
+</UserChart>

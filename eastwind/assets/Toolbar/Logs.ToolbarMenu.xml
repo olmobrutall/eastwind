@@ -1,0 +1,8 @@
+<ToolbarMenu Guid="af61b3b1-dc30-4129-a37f-aaf72450a939" Name="Logs">
+  <Elements>
+    <ToolbarElement Guid="01a106eb-b331-7315-a6ea-102534a219d6" Type="Item" Content="OperationLog"/>
+    <ToolbarElement Guid="01a106eb-b331-73e5-9897-c9899e7df5d5" Type="Item" Content="ViewLog"/>
+    <ToolbarElement Guid="01a116c9-95b8-7ad5-9def-7ae9cb572ad6" Type="Item" Content="SessionLog"/>
+    <ToolbarElement Guid="01a116c9-95b8-7f3f-8856-b3c88a573522" Type="Item" Content="Exception"/>
+  </Elements>
+</ToolbarMenu>

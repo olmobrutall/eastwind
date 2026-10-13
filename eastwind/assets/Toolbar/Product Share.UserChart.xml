@@ -1,0 +1,24 @@
+<UserChart DisplayName="Product Share" Query="Order" HideQuickLink="false" ChartScript="D3ChartScript.Bubbleplot" Guid="b48718bb-f4ab-4a6a-950a-35a718d5fb23">
+  <Columns>
+    <Column Guid="01a106eb-b1cb-7f44-8f19-bbaa1ec4df7c" Token="Details.Element.Product"/>
+    <Column Guid="01a106eb-b1cb-7ff8-b6f5-c355061677ae" Token="Details.Element.Quantity.Sum" DisplayName="Sum of Quantity" Format="D"/>
+    <Column Guid="01a106eb-b1cc-7013-9533-1545c768afea" Token="Details.Element.UnitPrice.Average" DisplayName="Average of Unit price" Format="N2"/>
+    <Column Guid="01a106eb-b1cc-7026-aed5-2373066a9b31" Token="Details.Element.SubTotalPrice.Sum" DisplayName="Sum of Sub total price" Format="N2"/>
+    <Column Guid="01a106eb-b1cc-7037-8019-12edb4ee9039"/>
+    <Column Guid="01a106eb-b1cc-704a-847b-3d2c8e3a5abb"/>
+  </Columns>
+  <Parameters>
+    <Parameter Name="HorizontalScale" Value="ZeroMax"/>
+    <Parameter Name="VerticalScale" Value="ZeroMax"/>
+    <Parameter Name="SizeScale" Value="ZeroMax"/>
+    <Parameter Name="UnitMargin" Value="40"/>
+    <Parameter Name="TopMargin" Value="0.15*"/>
+    <Parameter Name="RightMargin" Value="0.15*"/>
+    <Parameter Name="ShowLabel" Value="Yes"/>
+    <Parameter Name="LabelColor" Value=""/>
+    <Parameter Name="FillOpacity" Value="0.4"/>
+    <Parameter Name="ColorScale" Value="ZeroMax"/>
+    <Parameter Name="ColorInterpolate" Value="YlGn"/>
+    <Parameter Name="ColorCategory" Value="category10"/>
+  </Parameters>
+</UserChart>

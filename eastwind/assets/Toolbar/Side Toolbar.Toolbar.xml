@@ -1,0 +1,18 @@
+<Toolbar Guid="eb64a1af-852c-468b-a94f-19e28357ac0e" Name="Side Toolbar" Location="Side">
+  <Elements>
+    <ToolbarElement Guid="01a106eb-b358-703e-9bc3-4fbdd92ed711" Type="Item" IconName="fas fa-tachometer-alt" IconColor="blue" Content="Dashboard;7914fa80-dfd6-42a2-b29a-18e8cc5851f8;Example Dashboard"/>
+    <ToolbarElement Guid="01a106eb-b358-78dd-a6af-1b1bfc9e985d" Type="Item" Label="Map" IconName="fas fa-map" IconColor="mediumvioletred" Content="MapPermission.ViewMap" Url="~/map"/>
+    <ToolbarElement Guid="01a106eb-b358-792a-bc56-91ba8130be5f" Type="Divider"/>
+    <ToolbarElement Guid="01a106eb-b358-795a-85b1-ec8157d2cb75" Type="Header" Label="Entities" IconName="fas fa-redo" IconColor="red"/>
+    <ToolbarElement Guid="01a106eb-b358-7984-a11f-3900f35cbc81" Type="Item" IconName="fas fa-shopping-cart" IconColor="orange" Content="Order"/>
+    <ToolbarElement Guid="01a106eb-b358-79ac-9acc-627373a3dc7a" Type="Item" IconName="fas fa-apple-alt" IconColor="gold" Content="ToolbarMenu;fd577065-f887-4567-8da3-9d5bcc1cedfd;Products"/>
+    <ToolbarElement Guid="01a106eb-b358-79d2-8d71-10d5578d8209" Type="Item" IconName="fas fa-user" IconColor="seagreen" Content="ToolbarMenu;8b7e4ac5-cf45-41cb-8cff-4ce04506e12f;Employee"/>
+    <ToolbarElement Guid="01a106eb-b358-79fa-a22f-86810423b543" Type="Item" IconName="fas fa-file" IconColor="mediumaquamarine" Content="ToolbarMenu;2deb71ea-f065-4fe3-9215-90460bc2d5ec;Reports"/>
+    <ToolbarElement Guid="01a106eb-b358-7a20-92ca-743dc6501e33" Type="Item" IconName="fas fa-calendar-alt" IconColor="skyblue" Content="ToolbarMenu;af61b3b1-dc30-4129-a37f-aaf72450a939;Logs"/>
+    <ToolbarElement Guid="01a106eb-b358-7a46-952b-995a5d249224" Type="Item" IconName="fas fa-unlock-alt" IconColor="steelblue" Content="ToolbarMenu;3dbf3d73-02f6-4ad8-88f4-2fe03d34edeb;Security"/>
+    <ToolbarElement Guid="01a106eb-b358-7a6b-a1ff-fb11924c858d" Type="Divider"/>
+    <ToolbarElement Guid="01a116c9-95d6-7eb4-96c2-88e3b8a22244" Type="Item" IconName="fas fa-cogs" IconColor="gray" Content="ToolbarMenu;aa00a50a-ff58-4950-94de-e200769effdc;System Panels"/>
+    <ToolbarElement Guid="01a116c9-95d7-7558-9e69-ad3685bea34a" Type="Item" IconName="fas fa-random" IconColor="saddlebrown" Content="ToolbarMenu;b9423939-ec3d-4495-9361-a335390d93a6;Workflow"/>
+    <ToolbarElement Guid="01a116c9-95d7-75af-a35b-e6e0319c2b2b" Type="Item" Content="WorkflowPermission.WorkflowToolbarMenu"/>
+  </Elements>
+</Toolbar>

@@ -1,0 +1,7 @@
+<ToolbarMenu Guid="8b7e4ac5-cf45-41cb-8cff-4ce04506e12f" Name="Employee">
+  <Elements>
+    <ToolbarElement Guid="01a106eb-b316-78d4-ba91-96e39c3cdacc" Type="Item" Content="UserQuery;37ae5c35-8d2b-41f7-acbf-5ef93c91c8ca;Employees"/>
+    <ToolbarElement Guid="01a106eb-b316-7c6e-8c13-f95b30b26001" Type="Item" Content="Territory"/>
+    <ToolbarElement Guid="01a116c9-95b0-79a5-877a-67853479a17b" Type="Item" Content="EmployeesByTerritory"/>
+  </Elements>
+</ToolbarMenu>

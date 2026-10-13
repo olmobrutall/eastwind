@@ -1,0 +1,23 @@
+<UserChart DisplayName="Evolution by Category" Query="Order" HideQuickLink="false" ChartScript="D3ChartScript.StackedLines" Guid="c169f387-2ffa-4b97-8c77-644cb2baef4a">
+  <Columns>
+    <Column Guid="01a106eb-b234-72df-aff5-658498665011" Token="OrderDate.MonthStart" DisplayName="Month Start of Order date" Format="Y" OrderByIndex="1" OrderByType="Ascending"/>
+    <Column Guid="01a106eb-b234-738b-a391-699f2c747788" Token="Details.Element.Product.Category"/>
+    <Column Guid="01a106eb-b234-73a8-8fec-0c2ca63abb7e" Token="Details.Element.SubTotalPrice.Sum"/>
+    <Column Guid="01a106eb-b234-73ba-ae18-3473e736e9f0"/>
+    <Column Guid="01a106eb-b234-73cc-9702-e03207bf7104"/>
+    <Column Guid="01a106eb-b234-73dc-b7e9-08e3bbf548de"/>
+    <Column Guid="01a106eb-b234-73ec-a3a7-c71cd169827e"/>
+  </Columns>
+  <Parameters>
+    <Parameter Name="CompleteValues" Value="Auto"/>
+    <Parameter Name="HorizontalScale" Value="Bands"/>
+    <Parameter Name="HorizontalMargin" Value="20"/>
+    <Parameter Name="NumberOpacity" Value="0"/>
+    <Parameter Name="NumberColor" Value="white"/>
+    <Parameter Name="ColorCategory" Value="category10"/>
+    <Parameter Name="Order" Value="none"/>
+    <Parameter Name="Stack" Value="zero"/>
+    <Parameter Name="Interpolate" Value="linear"/>
+    <Parameter Name="ValueAsPercent" Value="No"/>
+  </Parameters>
+</UserChart>

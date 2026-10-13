@@ -1,0 +1,11 @@
+<UserChart DisplayName="Calendar Orders Total Price" Query="Order" HideQuickLink="false" ChartScript="D3ChartScript.CalendarStream" Guid="01a3003d-83f7-4d74-8f9f-8a3ca8a4ec30">
+  <Columns>
+    <Column Guid="01a106eb-b19d-77e1-ac4d-76d84ef9407c" Token="OrderDate" DisplayName="Date of Order date" Format="d"/>
+    <Column Guid="01a106eb-b19d-79b0-9d94-1ad9d1ec80f7" Token="TotalPrice.Sum" DisplayName="Sum of Total price" Format="N2"/>
+  </Columns>
+  <Parameters>
+    <Parameter Name="StartDate" Value="Monday"/>
+    <Parameter Name="ColorScale" Value="Sqrt"/>
+    <Parameter Name="ColorInterpolate" Value="YlGn"/>
+  </Parameters>
+</UserChart>

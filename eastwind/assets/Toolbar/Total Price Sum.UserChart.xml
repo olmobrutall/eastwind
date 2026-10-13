@@ -1,0 +1,20 @@
+<UserChart DisplayName="Total Price Sum" Query="Order" HideQuickLink="false" ChartScript="D3ChartScript.Columns" Guid="6406d2f6-aa24-43e4-946e-8622f65eb010">
+  <Filters>
+    <Filter Guid="01a106eb-b200-72f1-ac73-5e459ac5eca8" Indentation="0" Token="OrderDate" Operation="LessThan" Value="yyyy/mm/01 00:00:00"/>
+  </Filters>
+  <Columns>
+    <Column Guid="01a106eb-b1fe-7f0a-a167-c7cdfb3a147d" Token="OrderDate.MonthStart" DisplayName="Month Start of Order date" Format="Y" OrderByIndex="1" OrderByType="Ascending"/>
+    <Column Guid="01a106eb-b1fe-7fb6-a18b-bb3b235ecb2b" Token="TotalPrice.Sum" DisplayName="Sum of Total price" Format="N2"/>
+  </Columns>
+  <Parameters>
+    <Parameter Name="CompleteValues" Value="Auto"/>
+    <Parameter Name="Scale" Value="ZeroMax"/>
+    <Parameter Name="UnitMargin" Value="60"/>
+    <Parameter Name="Labels" Value="None"/>
+    <Parameter Name="LabelsMargin" Value="100"/>
+    <Parameter Name="NumberOpacity" Value="0"/>
+    <Parameter Name="NumberColor" Value="#fff"/>
+    <Parameter Name="ColorCategory" Value="category10"/>
+    <Parameter Name="ForceColor" Value="#633974"/>
+  </Parameters>
+</UserChart>

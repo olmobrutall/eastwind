@@ -1,0 +1,6 @@
+<ToolbarMenu Guid="3dbf3d73-02f6-4ad8-88f4-2fe03d34edeb" Name="Security">
+  <Elements>
+    <ToolbarElement Guid="01a106eb-b339-795b-9e0c-a2581846dc32" Type="Item" Content="User"/>
+    <ToolbarElement Guid="01a106eb-b339-7a2f-b334-57fedd3c69dc" Type="Item" Content="Role"/>
+  </Elements>
+</ToolbarMenu>

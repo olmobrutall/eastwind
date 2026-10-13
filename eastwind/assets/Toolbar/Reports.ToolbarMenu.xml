@@ -1,0 +1,10 @@
+<ToolbarMenu Guid="2deb71ea-f065-4fe3-9215-90460bc2d5ec" Name="Reports">
+  <Elements>
+    <ToolbarElement Guid="01a106eb-b323-7a73-9a2e-b77fae36036c" Type="Item" Content="OfficeTemplate"/>
+    <ToolbarElement Guid="01a106eb-b323-7b6b-890b-a75239e5444e" Type="Item" Content="EmailTemplate"/>
+    <ToolbarElement Guid="01a106eb-b323-7b9d-9e18-5041befb5672" Type="Item" Content="UserQuery"/>
+    <ToolbarElement Guid="01a106eb-b323-7bc8-8b8e-a0e68bb59708" Type="Item" Content="UserChart"/>
+    <ToolbarElement Guid="01a106eb-b323-7bf1-8079-e61fe66f9216" Type="Item" Content="Dashboard"/>
+    <ToolbarElement Guid="01a106eb-b323-7c19-a5d3-5b1bb05dc498" Type="Item" Content="Toolbar"/>
+  </Elements>
+</ToolbarMenu>

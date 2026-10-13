@@ -1,0 +1,10 @@
+<UserQuery DisplayName="Employees" Query="Employee" ColumnsMode="ReplaceAll" Guid="37ae5c35-8d2b-41f7-acbf-5ef93c91c8ca">
+  <Columns>
+    <Column Guid="01a106eb-b29d-7021-adf7-cf0c4714a559" Token="Id"/>
+    <Column Guid="01a106eb-b29d-71fd-96a1-515ddf054300" Token="FirstName"/>
+    <Column Guid="01a106eb-b29d-721b-8806-5e29ecb490d1" Token="LastName"/>
+    <Column Guid="01a106eb-b29d-722d-a4e9-2f90a0df90bd" Token="BirthDate"/>
+    <Column Guid="01a106eb-b29d-723d-9b42-d2623a8c5d83" Token="Territories.SeparatedByNewLine"/>
+    <Column Guid="01a106eb-b29d-724e-a00c-37cc044831c5" Token="Photo"/>
+  </Columns>
+</UserQuery>

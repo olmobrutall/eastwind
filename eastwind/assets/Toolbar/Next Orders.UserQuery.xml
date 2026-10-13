@@ -1,0 +1,20 @@
+<UserQuery DisplayName="Next Orders" Query="Order" ColumnsMode="ReplaceAll" Guid="9ab3968e-3098-4fca-9ca8-ca8ff6dd53cb">
+  <Filters>
+    <Filter Guid="01a106eb-b285-7a3e-b7b5-3fb4a1e7bef9" Indentation="0" Token="State" Operation="EqualTo" Value="Ordered"/>
+    <Filter Guid="01a106eb-b287-7253-a2a1-baf7d33b7224" Indentation="0" Token="Details.Element.Product" Operation="EqualTo" DashboardBehaviour="PromoteToDasboardPinnedFilter">
+      <Pinned Active="WhenHasValue"/>
+    </Filter>
+  </Filters>
+  <Columns>
+    <Column Guid="01a106eb-b289-7c77-b81a-21d89b6fbb01" Token="Id"/>
+    <Column Guid="01a106eb-b289-7f92-be8a-9513666de1d8" Token="State"/>
+    <Column Guid="01a106eb-b289-7fbb-8a15-e702ce615341" Token="TotalPrice"/>
+    <Column Guid="01a106eb-b289-7fce-8d75-7620b5cf45fd" Token="RequiredDate"/>
+    <Column Guid="01a106eb-b289-7fe0-bc9e-fe64c58c4484" Token="OrderDate"/>
+    <Column Guid="01a106eb-b289-7ff1-ae79-5671ad75b015" Token="Customer"/>
+    <Column Guid="01a106eb-b28a-7001-963a-427e29b2fb4b" Token="Employee"/>
+  </Columns>
+  <Orders>
+    <Orden Token="RequiredDate" OrderType="Descending"/>
+  </Orders>
+</UserQuery>

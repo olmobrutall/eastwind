@@ -1,0 +1,19 @@
+<UserChart DisplayName="Products in Stock" Query="Product" HideQuickLink="false" ChartScript="D3ChartScript.Treemap" MaxRows="1000" Guid="02296c68-d4f5-4bd3-92d8-d417fe84e43c">
+  <Columns>
+    <Column Guid="01a106eb-b26d-7a00-8fdc-aa6147b45d71" Token="ToString"/>
+    <Column Guid="01a106eb-b26d-7aab-b236-6f31b3b7adce" Token="UnitsInStock"/>
+    <Column Guid="01a106eb-b26d-7ac5-9c39-fe8e2f8782c4" Token="Supplier"/>
+    <Column Guid="01a106eb-b26d-7ad8-a528-12feef310b9b"/>
+    <Column Guid="01a106eb-b26d-7ae9-bcbc-642508ada7fb"/>
+  </Columns>
+  <Parameters>
+    <Parameter Name="Scale" Value="MinMax"/>
+    <Parameter Name="Padding" Value="10"/>
+    <Parameter Name="Opacity" Value="0.5"/>
+    <Parameter Name="NumberOpacity" Value="0.8"/>
+    <Parameter Name="NumberColor" Value="#fff"/>
+    <Parameter Name="ColorScale" Value="ZeroMax"/>
+    <Parameter Name="ColorInterpolate" Value="YlGn"/>
+    <Parameter Name="ColorCategory" Value="category10"/>
+  </Parameters>
+</UserChart>
