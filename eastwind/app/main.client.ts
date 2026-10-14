@@ -1,3 +1,4 @@
+import "@altea/altea/client/ui/fontAwesome";
 import "bootstrap/dist/css/bootstrap.min.css";
 // react-widgets-up widget styles (DatePicker/DropdownList/Combobox/Multiselect used across the Lines
 // and SearchControl, e.g. QueryTokenBuilder). Upstream imports the SCSS in MainPublic; sass isn't wired
@@ -14,4 +15,5 @@ import "@altea/altea/client/Basics/VisualTipIcon.css";
 // The app's own stylesheet: the full-bleed hero the
 // landing page and the public catalog render into. Last, so it wins over bootstrap.
 import "./site.css";
+import "./tailwind.css";
 import "./MainPublic.client"; // self-boots

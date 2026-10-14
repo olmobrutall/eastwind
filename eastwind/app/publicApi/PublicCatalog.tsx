@@ -38,19 +38,19 @@ export default function PublicCatalog({ data }: PublicCatalogProps): React.JSX.E
 
     return (
         <div id="hero" style={{ background: "url(" + AppContext.toAbsoluteUrl("/background_dark.jpg", data.baseName) + ")", backgroundSize: "cover", backgroundAttachment: "fixed" }}>
-            <div className="d-flex flex-column align-items-center position-relative">
-                <h1 className="white mt-4">eastwind Product Catalog</h1>
+            <div className="flex flex-col items-center relative">
+                <h1 className="white mt-6">eastwind Product Catalog</h1>
                 {/* `/registerUser` with no employee id is the same page without a `reportsTo`. */}
-                <div className="d-flex gap-2">
+                <div className="flex gap-2">
                     <a href={AppContext.toAbsoluteUrl("/auth/login", data.baseName)} className="btn btn-primary">{LoginAuthMessage.Login.niceToString()}</a>
                     <a href={AppContext.toAbsoluteUrl("/registerUser", data.baseName)} className="btn btn-outline-light">{CatalogMessage.register.niceToString()}</a>
                 </div>
                 {data.categories.map(c =>
-                    <div key={c.category.key()} className="card shadow container m-4">
+                    <div key={c.category.key()} className="card shadow-md container m-6">
                         <div className="card-body">
-                            <div className="d-flex">
-                                {c.pictureUrl && <img className="d-flex me-3" style={maxDimensions} src={AppContext.toAbsoluteUrl(c.pictureUrl, data.baseName)} alt={c.locCategoryName} />}
-                                <div className="flex-grow-1">
+                            <div className="flex">
+                                {c.pictureUrl && <img className="flex me-4" style={maxDimensions} src={AppContext.toAbsoluteUrl(c.pictureUrl, data.baseName)} alt={c.locCategoryName} />}
+                                <div className="grow">
                                     <h4 className="mt-0">{c.locCategoryName}</h4>
                                     {c.locDescription}
                                 </div>
@@ -80,7 +80,7 @@ export default function PublicCatalog({ data }: PublicCatalogProps): React.JSX.E
                                             <tr onClick={toggle} style={{ cursor: "pointer" }}>
                                                 <td>
                                                     <button type="button"
-                                                        className="btn btn-link p-0 text-start text-decoration-none"
+                                                        className="btn btn-link p-0 text-start no-underline"
                                                         aria-expanded={isOpen}
                                                         aria-controls={isOpen ? detailId : undefined}
                                                         onClick={e => { e.stopPropagation(); toggle(); }}>
@@ -96,7 +96,7 @@ export default function PublicCatalog({ data }: PublicCatalogProps): React.JSX.E
                                             </tr>
                                             {isOpen && <tr id={detailId} className="table-active">
                                                 <td colSpan={4}>
-                                                    <dl className="row mb-0 small">
+                                                    <dl className="row mb-0 text-[.875em]">
                                                         <dt className="col-sm-3">{CatalogMessage.supplier.niceToString()}</dt>
                                                         <dd className="col-sm-9 mb-1">{p.supplier.toString()}</dd>
                                                         <dt className="col-sm-3">{CatalogMessage.reorderLevel.niceToString()}</dt>
@@ -105,7 +105,7 @@ export default function PublicCatalog({ data }: PublicCatalogProps): React.JSX.E
                                                         <dt className="col-sm-3">{CatalogMessage.valueInStock.niceToString()}</dt>
                                                         <dd className="col-sm-9 mb-1">{numberFormat.format(Number(p.valueInStock()))} $</dd>
                                                         {p.additionalInformation.length == 0
-                                                            ? <dd className="col-12 mb-0 fst-italic">{CatalogMessage.noAdditionalInformation.niceToString()}</dd>
+                                                            ? <dd className="col-12 mb-0 italic">{CatalogMessage.noAdditionalInformation.niceToString()}</dd>
                                                             : p.additionalInformation.map(ai => <React.Fragment key={String(ai.id)}>
                                                                 {/* `ai.key` is a DATA column, not React's prop. */}
                                                                 <dt className="col-sm-3">{ai.key}</dt>

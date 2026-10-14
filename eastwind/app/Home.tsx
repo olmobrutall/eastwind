@@ -48,11 +48,11 @@ export default function Home(): React.JSX.Element | null {
         <div id="hero" style={{ background: "url(" + AppContext.toAbsoluteUrl("/background_dark.jpg") + ")", backgroundSize: "cover", flexGrow: 1 }}>
             <div className="hero-container">
                 <h1 className="white">eastwind</h1>
-                <h2 className="white mb-4">A demo application on the <a href="https://github.com/olmobrutall/altea" style={{ color: "#cae4ff" }} title="altea">altea</a> framework — over Microsoft's Northwind database</h2>
+                <h2 className="white mb-6">A demo application on the <a href="https://github.com/olmobrutall/altea" style={{ color: "#cae4ff" }} title="altea">altea</a> framework — over Microsoft's Northwind database</h2>
                 {/* No "good places to start" list: the sidebar and the omnibox say that better than prose
                     can. What is left is the getting-started checklist — the part a developer cannot
                     discover by clicking. */}
-                <div className="card shadow text-start" style={{ maxWidth: "min(48rem, 92vw)" }}>
+                <div className="card shadow-md text-start" style={{ maxWidth: "min(48rem, 92vw)" }}>
                     <div className="card-body">
                         <h5 className="card-title">New to altea?</h5>
                         <p className="card-text">
@@ -61,8 +61,8 @@ export default function Home(): React.JSX.Element | null {
                             <a href="https://github.com/signumsoftware/docs" className="card-link">Signum docs</a> read true here.
                             Everything is reachable from the sidebar and from the omnibox in the navbar.
                         </p>
-                        <p className="mb-1 fw-semibold">Before this becomes your app</p>
-                        <ul className="ps-3 mb-0">
+                        <p className="mb-1 font-semibold">Before this becomes your app</p>
+                        <ul className="ps-4 mb-0">
                             <li>Try a palette from the navbar's theme picker — it loads any{" "}
                                 <a href="https://bootswatch.com">bootswatch</a> theme from their CDN. To BAKE one in, swap the{" "}
                                 <code>bootstrap…/bootstrap.min.css</code> import in <code>main.client.ts</code> for that

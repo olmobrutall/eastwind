@@ -27,7 +27,7 @@ export default function Person(p: { ctx: TypeContext<PersonEntity> }): React.JSX
         </div>
       </div>
 
-      <h2 className="mt-4">{OrderEntity.nicePluralName()}</h2>
+      <h2 className="mt-6">{OrderEntity.nicePluralName()}</h2>
       <SearchControl findOptions={OrderEntity.findOptions(token => ({
         filterOptions: [token(a => a.customer).filter("EqualTo", ctx.value)]
       }))} showSimpleFilterBuilder={false} />

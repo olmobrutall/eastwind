@@ -1,0 +1,4 @@
+/* The app's one Tailwind entry: altea's theme plus this application's own sources. */
+@import "@altea/altea/client/ui/theme.css";
+
+@source "./";

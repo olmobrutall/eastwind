@@ -102,7 +102,7 @@ export default function Layout(): React.JSX.Element {
                 --bs-tertiary-bg, a shade off --bs-body-bg). The alternative is having ThemeModeSelector
                 call back into `onSetMode` and toggle bg-dark / bg-light by hand; a variable needs no
                 callback, and cannot be missed by a palette that changes the theme without the mode. */}
-            <nav className="main-toolbar navbar navbar-expand bg-body ps-0 pe-3 flex-shrink-0">
+            <nav className="main-toolbar navbar navbar-expand bg-background ps-0 pe-4 shrink-0">
                 {/* The toggle + the wordmark are ONE block, because together they stand over the sidebar:
                     site.css gives it the sidebar's own width so the omnibox lines up with the page content.
                     The left inset moved off the nav (`px-3` → `ps-0 pe-3`) and into this block, which is what
@@ -117,7 +117,7 @@ export default function Layout(): React.JSX.Element {
                 {/* The omnibox. Only for a logged-in user: the
                     /api/omnibox route asserts OmniboxPermission.ViewOmnibox.
                     `me-3` and no left margin: its left edge IS the alignment, so nothing may sit before it. */}
-                {AppContext.currentUser && <div className="sf-omnibox me-3">
+                {AppContext.currentUser && <div className="sf-omnibox me-4">
                     <React.Suspense fallback={null}><OmniboxAutocomplete inputAttrs={{ className: "form-control form-control-sm" }} /></React.Suspense>
                 </div>}
                 <div className="navbar-nav ms-auto">
@@ -150,7 +150,7 @@ export default function Layout(): React.JSX.Element {
             </nav>
             {/* Skip-link: the first tab stop jumps past the
                 sidebar's nav items straight to the page. */}
-            <a href="#sf-main-content" className="visually-hidden-focusable">{LayoutMessage.JumpToMainContent.niceToString()}</a>
+            <a href="#sf-main-content" className="sr-only focus:not-sr-only">{LayoutMessage.JumpToMainContent.niceToString()}</a>
             <SidebarContainer
                 mode={sidebarMode}
                 isMobile={isMobile}
@@ -169,7 +169,7 @@ export default function Layout(): React.JSX.Element {
                      - PADDING, not the `mt-3` margin this used to carry: a margin above a scroll pane is
                        dead space that never scrolls away, and #hero's full-bleed has to cancel it (site.css).
                     tabIndex so the skip-link above can move focus here. */}
-                <main tabIndex={-1} id="sf-main-content" className="container-fluid overflow-auto pt-3">
+                <main tabIndex={-1} id="sf-main-content" className="container-fluid overflow-auto pt-4">
                     <ErrorBoundary deps={[location.pathname + location.search]}>
                         <Outlet />
                     </ErrorBoundary>

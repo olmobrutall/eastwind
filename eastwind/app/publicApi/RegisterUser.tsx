@@ -35,7 +35,7 @@ export default function RegisterUser(): React.JSX.Element {
     return (
         <div id="hero" style={{ background: "url(" + AppContext.toAbsoluteUrl("/background_dark.jpg") + ")", backgroundSize: "cover" }}>
             <div style={{ margin: "0 auto", maxWidth: "680px", marginTop: "100px" }}>
-                <div className="card shadow">
+                <div className="card shadow-md">
                     <RegisterUserCard reportsToEmployeeId={params.reportsToEmployeeId} />
                 </div>
             </div>
@@ -118,8 +118,8 @@ function RegisterUserCard(p: { reportsToEmployeeId: string | undefined }): React
                 <TextBoxLine ctx={ctx.subCtx(r => r.eMail)} />
                 <DoublePassword ctx={ctx.subCtx(r => r.password)} initialOpen mandatory />
                 <ValidationErrors entity={ctx.value} prefix="" />
-                <div className="mt-4 d-flex">
-                    <button type="submit" className="ms-auto btn btn-primary px-4">
+                <div className="mt-6 flex">
+                    <button type="submit" className="ms-auto btn btn-primary px-6">
                         {RegisterUserMessage.register.niceToString()}
                     </button>
                 </div>

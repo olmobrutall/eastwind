@@ -13,7 +13,7 @@
           var mode = localStorage.getItem("bootstrap-theme-mode") || "auto";
           var dark = mode === "dark" ||
             (mode !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-          document.documentElement.dataset.bsTheme = dark ? "dark" : "light";
+          document.documentElement.dataset.theme = document.documentElement.dataset.bsTheme = dark ? "dark" : "light";
         } catch (e) {
           /* a locked-down browser can throw on localStorage; the CSS below still has its own fallbacks */
         }

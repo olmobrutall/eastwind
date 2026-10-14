@@ -1,7 +1,9 @@
 import * as React from "react";
 import { hydrateRoot } from "react-dom/client";
+import "@altea/altea/client/ui/fontAwesome";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../site.css";
+import "../tailwind.css";
 import { Serializer } from "@altea/altea/data/serializer";
 import { loadReflectionMetadata } from "@altea/altea/client/ReflectionClient";
 import PublicCatalog from "./PublicCatalog";
