@@ -1,4 +1,4 @@
-<ToolbarMenu Guid="af61b3b1-dc30-4129-a37f-aaf72450a939" Name="Logs">
+<ToolbarMenu Guid="af61b3b1-dc30-4129-a37f-aaf72450a939" Name="Logs" Name_de="Protokolle" Name_es="Registros">
   <Elements>
     <ToolbarElement Guid="01a106eb-b331-7315-a6ea-102534a219d6" Type="Item" Content="OperationLog"/>
     <ToolbarElement Guid="01a106eb-b331-73e5-9897-c9899e7df5d5" Type="Item" Content="ViewLog"/>

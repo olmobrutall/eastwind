@@ -1,6 +1,6 @@
-<UserChart DisplayName="Evolution by Category" Query="Order" HideQuickLink="false" ChartScript="D3ChartScript.StackedLines" Guid="c169f387-2ffa-4b97-8c77-644cb2baef4a">
+<UserChart DisplayName="Evolution by Category" DisplayName_de="Entwicklung nach Kategorie" DisplayName_es="Evolución por categoría" Query="Order" HideQuickLink="false" ChartScript="D3ChartScript.StackedLines" Guid="c169f387-2ffa-4b97-8c77-644cb2baef4a">
   <Columns>
-    <Column Guid="01a106eb-b234-72df-aff5-658498665011" Token="OrderDate.MonthStart" DisplayName="Month Start of Order date" Format="Y" OrderByIndex="1" OrderByType="Ascending"/>
+    <Column Guid="01a106eb-b234-72df-aff5-658498665011" Token="OrderDate.MonthStart" DisplayName="Month Start of Order date" DisplayName_de="Monatsstart von Bestelldatum" DisplayName_es="Inicio Mes Fecha del pedido" Format="Y" OrderByIndex="1" OrderByType="Ascending"/>
     <Column Guid="01a106eb-b234-738b-a391-699f2c747788" Token="Details.Element.Product.Category"/>
     <Column Guid="01a106eb-b234-73a8-8fec-0c2ca63abb7e" Token="Details.Element.SubTotalPrice.Sum"/>
     <Column Guid="01a106eb-b234-73ba-ae18-3473e736e9f0"/>

@@ -1,4 +1,4 @@
-<ToolbarMenu Guid="fd577065-f887-4567-8da3-9d5bcc1cedfd" Name="Products">
+<ToolbarMenu Guid="fd577065-f887-4567-8da3-9d5bcc1cedfd" Name="Products" Name_de="Produkte" Name_es="Productos">
   <Elements>
     <ToolbarElement Guid="01a106eb-b309-7f26-a760-431ab593b46a" Type="Item" Content="Product"/>
     <ToolbarElement Guid="01a106eb-b30a-7882-a8ea-88c79442cf51" Type="Item" Content="Category"/>

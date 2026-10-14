@@ -1,4 +1,4 @@
-<ToolbarMenu Guid="2deb71ea-f065-4fe3-9215-90460bc2d5ec" Name="Reports">
+<ToolbarMenu Guid="2deb71ea-f065-4fe3-9215-90460bc2d5ec" Name="Reports" Name_de="Berichte" Name_es="Informes">
   <Elements>
     <ToolbarElement Guid="01a106eb-b323-7a73-9a2e-b77fae36036c" Type="Item" Content="OfficeTemplate"/>
     <ToolbarElement Guid="01a106eb-b323-7b6b-890b-a75239e5444e" Type="Item" Content="EmailTemplate"/>

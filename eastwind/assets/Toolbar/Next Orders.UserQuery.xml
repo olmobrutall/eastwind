@@ -1,4 +1,4 @@
-<UserQuery DisplayName="Next Orders" Query="Order" ColumnsMode="ReplaceAll" Guid="9ab3968e-3098-4fca-9ca8-ca8ff6dd53cb">
+<UserQuery DisplayName="Next Orders" DisplayName_de="Nächste Bestellungen" DisplayName_es="Próximos pedidos" Query="Order" ColumnsMode="ReplaceAll" Guid="9ab3968e-3098-4fca-9ca8-ca8ff6dd53cb">
   <Filters>
     <Filter Guid="01a106eb-b285-7a3e-b7b5-3fb4a1e7bef9" Indentation="0" Token="State" Operation="EqualTo" Value="Ordered"/>
     <Filter Guid="01a106eb-b287-7253-a2a1-baf7d33b7224" Indentation="0" Token="Details.Element.Product" Operation="EqualTo" DashboardBehaviour="PromoteToDasboardPinnedFilter">

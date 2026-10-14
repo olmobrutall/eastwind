@@ -1,12 +1,12 @@
-<UserChart DisplayName="Evolution By Employee" Query="Order" HideQuickLink="false" ChartScript="D3ChartScript.StackedLines" Guid="d681b3f5-a3a9-4228-93e9-e856f45d911a">
+<UserChart DisplayName="Evolution By Employee" DisplayName_de="Entwicklung nach Mitarbeiter" DisplayName_es="Evolución por empleado" Query="Order" HideQuickLink="false" ChartScript="D3ChartScript.StackedLines" Guid="d681b3f5-a3a9-4228-93e9-e856f45d911a">
   <Filters>
     <Filter Guid="01a106eb-b181-7c8d-a146-fac75faf879e" Indentation="0" Token="Employee" Operation="EqualTo" Value="[CurrentUser].[UserEmployeeMixin].employee" DashboardBehaviour="UseAsInitialSelection"/>
     <Filter Guid="01a116c9-94da-71e4-a48f-64e53626bb5a" Indentation="0" Token="OrderDate" Operation="GreaterThan" Value="-1/mm/dd 00:00:00"/>
   </Filters>
   <Columns>
-    <Column Guid="01a106eb-b180-7566-ab1f-56cea3301dff" Token="OrderDate.MonthStart" DisplayName="Month Start of Order date" Format="Y"/>
-    <Column Guid="01a106eb-b180-78f7-b618-96c970223322" Token="Employee" DisplayName="Employee"/>
-    <Column Guid="01a106eb-b180-7921-85d9-fc81c035aa83" Token="Count" DisplayName="Count"/>
+    <Column Guid="01a106eb-b180-7566-ab1f-56cea3301dff" Token="OrderDate.MonthStart" DisplayName="Month Start of Order date" DisplayName_de="Monatsstart von Bestelldatum" DisplayName_es="Mes Fecha de inicio del pedido" Format="Y"/>
+    <Column Guid="01a106eb-b180-78f7-b618-96c970223322" Token="Employee" DisplayName="Employee" DisplayName_de="Mitarbeiter" DisplayName_es="Empleado"/>
+    <Column Guid="01a106eb-b180-7921-85d9-fc81c035aa83" Token="Count" DisplayName="Count" DisplayName_de="Anzahl" DisplayName_es="Recuento"/>
     <Column Guid="01a106eb-b180-7935-9d2a-fe1771e5bc6f"/>
     <Column Guid="01a106eb-b180-7947-91de-2bfb98e3fedc"/>
     <Column Guid="01a106eb-b180-7957-bfa8-404f99a8a68c"/>

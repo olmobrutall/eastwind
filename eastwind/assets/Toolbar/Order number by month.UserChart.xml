@@ -1,10 +1,10 @@
-<UserChart DisplayName="Order number by month" Query="Order" HideQuickLink="false" ChartScript="D3ChartScript.Line" Guid="a3c7b86d-641e-4c1e-8032-72a099a00395">
+<UserChart DisplayName="Order number by month" DisplayName_de="Anzahl der Bestellungen pro Monat" DisplayName_es="Número de pedidos por mes" Query="Order" HideQuickLink="false" ChartScript="D3ChartScript.Line" Guid="a3c7b86d-641e-4c1e-8032-72a099a00395">
   <Filters>
     <Filter Guid="01a106eb-b217-79ef-993a-31177db43fc6" Indentation="0" Token="OrderDate" Operation="LessThan" Value="yyyy/mm/01 00:00:00"/>
   </Filters>
   <Columns>
-    <Column Guid="01a106eb-b216-796e-a2b5-c04247cfdcb0" Token="OrderDate.MonthStart" DisplayName="Month Start of Order date" Format="Y" OrderByIndex="1" OrderByType="Ascending"/>
-    <Column Guid="01a106eb-b216-7a19-9b67-99d09f9b74d5" Token="Count" DisplayName="Count"/>
+    <Column Guid="01a106eb-b216-796e-a2b5-c04247cfdcb0" Token="OrderDate.MonthStart" DisplayName="Month Start of Order date" DisplayName_de="Monatsstart von Bestelldatum" DisplayName_es="Mes Fecha de inicio del pedido" Format="Y" OrderByIndex="1" OrderByType="Ascending"/>
+    <Column Guid="01a106eb-b216-7a19-9b67-99d09f9b74d5" Token="Count" DisplayName="Count" DisplayName_de="Anzahl" DisplayName_es="Recuento"/>
   </Columns>
   <Parameters>
     <Parameter Name="CompleteValues" Value="Auto"/>

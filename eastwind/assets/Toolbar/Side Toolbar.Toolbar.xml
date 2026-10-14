@@ -1,9 +1,9 @@
-<Toolbar Guid="eb64a1af-852c-468b-a94f-19e28357ac0e" Name="Side Toolbar" Location="Side">
+<Toolbar Guid="eb64a1af-852c-468b-a94f-19e28357ac0e" Name="Side Toolbar" Name_de="Seitenleiste" Name_es="Barra lateral" Location="Side">
   <Elements>
     <ToolbarElement Guid="01a106eb-b358-703e-9bc3-4fbdd92ed711" Type="Item" IconName="fas fa-tachometer-alt" IconColor="blue" Content="Dashboard;7914fa80-dfd6-42a2-b29a-18e8cc5851f8;Example Dashboard"/>
-    <ToolbarElement Guid="01a106eb-b358-78dd-a6af-1b1bfc9e985d" Type="Item" Label="Map" IconName="fas fa-map" IconColor="mediumvioletred" Content="MapPermission.ViewMap" Url="~/map"/>
+    <ToolbarElement Guid="01a106eb-b358-78dd-a6af-1b1bfc9e985d" Type="Item" Label="Map" Label_de="Karte" Label_es="Mapa" IconName="fas fa-map" IconColor="mediumvioletred" Content="MapPermission.ViewMap" Url="~/map"/>
     <ToolbarElement Guid="01a106eb-b358-792a-bc56-91ba8130be5f" Type="Divider"/>
-    <ToolbarElement Guid="01a106eb-b358-795a-85b1-ec8157d2cb75" Type="Header" Label="Entities" IconName="fas fa-redo" IconColor="red"/>
+    <ToolbarElement Guid="01a106eb-b358-795a-85b1-ec8157d2cb75" Type="Header" Label="Entities" Label_de="Entitäten" Label_es="Entidades" IconName="fas fa-redo" IconColor="red"/>
     <ToolbarElement Guid="01a106eb-b358-7984-a11f-3900f35cbc81" Type="Item" IconName="fas fa-shopping-cart" IconColor="orange" Content="Order"/>
     <ToolbarElement Guid="01a106eb-b358-79ac-9acc-627373a3dc7a" Type="Item" IconName="fas fa-apple-alt" IconColor="gold" Content="ToolbarMenu;fd577065-f887-4567-8da3-9d5bcc1cedfd;Products"/>
     <ToolbarElement Guid="01a106eb-b358-79d2-8d71-10d5578d8209" Type="Item" IconName="fas fa-user" IconColor="seagreen" Content="ToolbarMenu;8b7e4ac5-cf45-41cb-8cff-4ce04506e12f;Employee"/>

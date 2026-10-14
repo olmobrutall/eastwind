@@ -1,4 +1,4 @@
-<UserChart DisplayName="Products in Stock" Query="Product" HideQuickLink="false" ChartScript="D3ChartScript.Treemap" MaxRows="1000" Guid="02296c68-d4f5-4bd3-92d8-d417fe84e43c">
+<UserChart DisplayName="Products in Stock" DisplayName_de="Produkte auf Lager" DisplayName_es="Productos en stock" Query="Product" HideQuickLink="false" ChartScript="D3ChartScript.Treemap" MaxRows="1000" Guid="02296c68-d4f5-4bd3-92d8-d417fe84e43c">
   <Columns>
     <Column Guid="01a106eb-b26d-7a00-8fdc-aa6147b45d71" Token="ToString"/>
     <Column Guid="01a106eb-b26d-7aab-b236-6f31b3b7adce" Token="UnitsInStock"/>

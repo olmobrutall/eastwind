@@ -1,4 +1,4 @@
-<Dashboard DisplayName="Example Dashboard" CombineSimilarRows="false" Guid="7914fa80-dfd6-42a2-b29a-18e8cc5851f8">
+<Dashboard DisplayName="Example Dashboard" DisplayName_de="Beispiel-Dashboard" DisplayName_es="Ejemplo de panel de control" CombineSimilarRows="false" Guid="7914fa80-dfd6-42a2-b29a-18e8cc5851f8">
   <CacheQueryConfiguration TimeoutForQueries="300" MaxRows="1000000" AutoRegenerateWhenOlderThan="60"/>
   <Parts>
     <Part Guid="01a106eb-b2f1-7188-803e-7a6c8d3839a1" Row="0" StartColumn="0" Columns="7" InteractionGroup="Group1">
@@ -16,7 +16,7 @@
     <Part Guid="01a106eb-b2f1-7d7a-afa2-7f0152d9a232" Row="1" StartColumn="7" Columns="5" InteractionGroup="Group1">
       <UserChartPart UserChart="UserChart;b48718bb-f4ab-4a6a-950a-35a718d5fb23;Product Share" IsQueryCached="true"/>
     </Part>
-    <Part Guid="01a106eb-b2f1-7da4-8190-1bf77ffa76a0" Row="5" StartColumn="0" Columns="12" Title="Order number and average" IconName="fas fa-chart-bar" IconColor="violet" InteractionGroup="Group1">
+    <Part Guid="01a106eb-b2f1-7da4-8190-1bf77ffa76a0" Row="5" StartColumn="0" Columns="12" Title="Order number and average" Title_de="Anzahl der Bestellungen und Durchschnitt" Title_es="Número de pedido y media" IconName="fas fa-chart-bar" IconColor="violet" InteractionGroup="Group1">
       <CombinedUserChartPart>
         <UserChart Guid="UserChart;9d266fac-e35b-4845-a7aa-970e1590ea1e;Average Price Per Month" IsQueryCached="true"/>
         <UserChart Guid="UserChart;6406d2f6-aa24-43e4-946e-8622f65eb010;Total Price Sum" IsQueryCached="true"/>

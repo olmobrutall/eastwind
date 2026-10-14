@@ -1,13 +1,13 @@
-<ToolbarMenu Guid="aa00a50a-ff58-4950-94de-e200769effdc" Name="System Panels">
+<ToolbarMenu Guid="aa00a50a-ff58-4950-94de-e200769effdc" Name="System Panels" Name_de="System-Panels" Name_es="Paneles del sistema">
   <Elements>
-    <ToolbarElement Guid="01a106eb-b344-7ffa-a61e-77194b549ae5" Type="Item" Label="Cache" IconName="fas fa-database" IconColor="#e74c3c" Content="CachePermission.ViewCache" Url="~/cache/statistics"/>
-    <ToolbarElement Guid="01a106eb-b345-70f1-80e6-7b9a522f76c4" Type="Item" Label="Profiler (Heavy)" IconName="fas fa-bolt" IconColor="#e74c3c" Content="ProfilerPermission.ViewHeavyProfiler" Url="~/profiler/heavy"/>
-    <ToolbarElement Guid="01a106eb-b345-7125-83e7-4495bedc9f6a" Type="Item" Label="Profiler (Times)" IconName="fas fa-bolt" IconColor="#e74c3c" Content="ProfilerPermission.ViewTimeTracker" Url="~/profiler/times"/>
-    <ToolbarElement Guid="01a106eb-b345-714e-b1d1-3e8822b4525f" Type="Item" Label="Processes Panel" IconName="fas fa-cogs" IconColor="#9b6bcc" Content="ProcessPermission.ViewProcessPanel" Url="~/processes/view"/>
-    <ToolbarElement Guid="01a106eb-b345-7176-8d75-6bb8f84ce995" Type="Item" Label="Scheduler Panel" IconName="fas fa-clock" IconColor="#9b6bcc" Content="SchedulerPermission.ViewSchedulerPanel" Url="~/scheduler/view"/>
-    <ToolbarElement Guid="01a106eb-b345-719f-9247-12328edd7416" Type="Item" Label="Dynamic Panel" IconName="fas fa-arrows-alt" IconColor="#9b6bcc" Content="EvalPanelPermission.ViewDynamicPanel" Url="~/dynamic/panel"/>
-    <ToolbarElement Guid="01a116c9-95c2-77a2-9d70-ecbb471dc5a5" Type="Item" Label="Workflow Script Runner" IconName="fas fa-random" IconColor="#9b6bcc" Content="WorkflowPermission.ViewWorkflowPanel" Url="~/workflow/panel"/>
-    <ToolbarElement Guid="01a116c9-95c2-78c5-937d-cddb90ee5433" Type="Item" Label="Async Email Sender" IconName="fas fa-send" IconColor="#3498db" Content="AsyncEmailSenderPermission.ViewAsyncEmailSenderPanel" Url="~/asyncEmailSender/view"/>
-    <ToolbarElement Guid="01a116c9-95c2-78f9-a503-d97db30e4a05" Type="Item" Label="Code Translation" IconName="fas fa-language" IconColor="#1abc9c" Content="TranslationPermission.TranslateCode" Url="~/translation/status"/>
+    <ToolbarElement Guid="01a106eb-b344-7ffa-a61e-77194b549ae5" Type="Item" Label="Cache" Label_de="Cache" Label_es="Caché" IconName="fas fa-database" IconColor="#e74c3c" Content="CachePermission.ViewCache" Url="~/cache/statistics"/>
+    <ToolbarElement Guid="01a106eb-b345-70f1-80e6-7b9a522f76c4" Type="Item" Label="Profiler (Heavy)" Label_de="Profiler (detailliert)" Label_es="Perfilador (pesado)" IconName="fas fa-bolt" IconColor="#e74c3c" Content="ProfilerPermission.ViewHeavyProfiler" Url="~/profiler/heavy"/>
+    <ToolbarElement Guid="01a106eb-b345-7125-83e7-4495bedc9f6a" Type="Item" Label="Profiler (Times)" Label_de="Profiler (Zeiten)" Label_es="Perfilador (Times)" IconName="fas fa-bolt" IconColor="#e74c3c" Content="ProfilerPermission.ViewTimeTracker" Url="~/profiler/times"/>
+    <ToolbarElement Guid="01a106eb-b345-714e-b1d1-3e8822b4525f" Type="Item" Label="Processes Panel" Label_de="Prozess-Panel" Label_es="Panel de procesos" IconName="fas fa-cogs" IconColor="#9b6bcc" Content="ProcessPermission.ViewProcessPanel" Url="~/processes/view"/>
+    <ToolbarElement Guid="01a106eb-b345-7176-8d75-6bb8f84ce995" Type="Item" Label="Scheduler Panel" Label_de="Planer-Panel" Label_es="Panel del programador" IconName="fas fa-clock" IconColor="#9b6bcc" Content="SchedulerPermission.ViewSchedulerPanel" Url="~/scheduler/view"/>
+    <ToolbarElement Guid="01a106eb-b345-719f-9247-12328edd7416" Type="Item" Label="Dynamic Panel" Label_de="Dynamik-Panel" Label_es="Panel dinámico" IconName="fas fa-arrows-alt" IconColor="#9b6bcc" Content="EvalPanelPermission.ViewDynamicPanel" Url="~/dynamic/panel"/>
+    <ToolbarElement Guid="01a116c9-95c2-77a2-9d70-ecbb471dc5a5" Type="Item" Label="Workflow Script Runner" Label_de="Workflow Script Runner" Label_es="Workflow Script Runner" IconName="fas fa-random" IconColor="#9b6bcc" Content="WorkflowPermission.ViewWorkflowPanel" Url="~/workflow/panel"/>
+    <ToolbarElement Guid="01a116c9-95c2-78c5-937d-cddb90ee5433" Type="Item" Label="Async Email Sender" Label_de="Async Email Sender" Label_es="Async Email Sender" IconName="fas fa-send" IconColor="#3498db" Content="AsyncEmailSenderPermission.ViewAsyncEmailSenderPanel" Url="~/asyncEmailSender/view"/>
+    <ToolbarElement Guid="01a116c9-95c2-78f9-a503-d97db30e4a05" Type="Item" Label="Code Translation" Label_de="Code-Übersetzung" Label_es="Traducción de código" IconName="fas fa-language" IconColor="#1abc9c" Content="TranslationPermission.TranslateCode" Url="~/translation/status"/>
   </Elements>
 </ToolbarMenu>

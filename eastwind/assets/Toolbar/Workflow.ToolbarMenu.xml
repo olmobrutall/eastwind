@@ -1,4 +1,4 @@
-<ToolbarMenu Guid="b9423939-ec3d-4495-9361-a335390d93a6" Name="Workflow">
+<ToolbarMenu Guid="b9423939-ec3d-4495-9361-a335390d93a6" Name="Workflow" Name_de="Workflow" Name_es="Workflow">
   <Elements>
     <ToolbarElement Guid="01a116c9-95cc-7496-b7b1-c5bf6fff32a1" Type="Item" Content="Workflow"/>
     <ToolbarElement Guid="01a116c9-95cc-7582-86bc-ea047a90f98e" Type="Item" Content="WorkflowActivity"/>

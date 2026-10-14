@@ -1,10 +1,10 @@
-<UserChart DisplayName="Average Price Per Month" Query="Order" HideQuickLink="false" ChartScript="D3ChartScript.Columns" Guid="9d266fac-e35b-4845-a7aa-970e1590ea1e">
+<UserChart DisplayName="Average Price Per Month" DisplayName_de="Durchschnittspreis pro Monat" DisplayName_es="Precio medio mensual" Query="Order" HideQuickLink="false" ChartScript="D3ChartScript.Columns" Guid="9d266fac-e35b-4845-a7aa-970e1590ea1e">
   <Filters>
     <Filter Guid="01a106eb-b1e7-7af3-a59b-c26b5b2fba5e" Indentation="0" Token="OrderDate" Operation="LessThan" Value="yyyy/mm/01 00:00:00"/>
   </Filters>
   <Columns>
-    <Column Guid="01a106eb-b1e6-799e-9ed6-d2df5d3d4eff" Token="OrderDate.MonthStart" DisplayName="Month Start of Order date" Format="Y" OrderByIndex="1" OrderByType="Ascending"/>
-    <Column Guid="01a106eb-b1e6-7a41-87d6-8676f15ba288" Token="TotalPrice.Average" DisplayName="Average of Total price" Format="N2"/>
+    <Column Guid="01a106eb-b1e6-799e-9ed6-d2df5d3d4eff" Token="OrderDate.MonthStart" DisplayName="Month Start of Order date" DisplayName_de="Monatsstart von Bestelldatum" DisplayName_es="Inicio Mes Fecha del pedido" Format="Y" OrderByIndex="1" OrderByType="Ascending"/>
+    <Column Guid="01a106eb-b1e6-7a41-87d6-8676f15ba288" Token="TotalPrice.Average" DisplayName="Average of Total price" DisplayName_de="Durchschnitt von Gesamtpreis" DisplayName_es="Media del precio total" Format="N2"/>
   </Columns>
   <Parameters>
     <Parameter Name="CompleteValues" Value="Auto"/>

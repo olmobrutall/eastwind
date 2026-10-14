@@ -1,4 +1,4 @@
-<UserQuery DisplayName="Employees" Query="Employee" ColumnsMode="ReplaceAll" Guid="37ae5c35-8d2b-41f7-acbf-5ef93c91c8ca">
+<UserQuery DisplayName="Employees" DisplayName_de="Mitarbeiter" DisplayName_es="Empleados" Query="Employee" ColumnsMode="ReplaceAll" Guid="37ae5c35-8d2b-41f7-acbf-5ef93c91c8ca">
   <Columns>
     <Column Guid="01a106eb-b29d-7021-adf7-cf0c4714a559" Token="Id"/>
     <Column Guid="01a106eb-b29d-71fd-96a1-515ddf054300" Token="FirstName"/>
