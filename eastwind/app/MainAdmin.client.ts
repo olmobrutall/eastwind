@@ -27,6 +27,7 @@ import { ColorPaletteClient } from "@altea/altea-chart/client/ColorPalette/Color
 import { UserChartClient } from "@altea/altea-chart/client/UserChart/UserChartClient";
 import { DashboardClient } from "@altea/altea-dashboard/client/DashboardClient";
 import { CultureInfoClient } from "@altea/altea/client/CultureInfoClient";
+import { UiKitClient } from "@altea/altea/client/ui/UiKitClient";
 import { SystemEventLogClient } from "@altea/altea/client/SystemEventLogClient";
 import { TokenMigrationClient } from "@altea/altea-user-assets/client/TokenMigrationClient";
 import { FilesClient } from "@altea/altea-files/client/FilesClient";
@@ -97,6 +98,10 @@ export function startFull(routes: RouteObject[], legacyMode = false): void {
     // such columns (the email + office templates).
     HtmlEditorClient.start();
     MarkdownClient.start();
+
+    // /ui-kit: the Tailwind component showcase, development only.
+    if (import.meta.env.DEV)
+        UiKitClient.start(cb);
 
     // The query settings for the three migration history tables.
     MigrationsClient.start(cb);
