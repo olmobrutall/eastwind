@@ -118,7 +118,7 @@ export default function Layout(): React.JSX.Element {
                     /api/omnibox route asserts OmniboxPermission.ViewOmnibox.
                     `me-3` and no left margin: its left edge IS the alignment, so nothing may sit before it. */}
                 {AppContext.currentUser && <div className="sf-omnibox me-4">
-                    <React.Suspense fallback={null}><OmniboxAutocomplete inputAttrs={{ className: "form-control form-control-sm" }} /></React.Suspense>
+                    <React.Suspense fallback={null}><OmniboxAutocomplete inputAttrs={{ className: "sf-form-control sf-form-control-sm" }} /></React.Suspense>
                 </div>}
                 <div className="navbar-nav ms-auto">
                     {/* The alerts BELL: the unattended

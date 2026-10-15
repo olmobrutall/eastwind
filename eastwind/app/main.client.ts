@@ -1,5 +1,6 @@
 import "@altea/altea/client/ui/fontAwesome";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "@altea/altea/client/ui/semantic.css";
 // react-widgets-up widget styles (DatePicker/DropdownList/Combobox/Multiselect used across the Lines
 // and SearchControl, e.g. QueryTokenBuilder). Upstream imports the SCSS in MainPublic; sass isn't wired
 // here, so we use the package's prebuilt CSS (CSS custom properties, --rw-*). After bootstrap so the

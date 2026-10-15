@@ -92,7 +92,7 @@ export default function Order(p: { ctx: TypeContext<OrderEntity> }): React.JSX.E
                       this). Show nothing rather than a 0 that is not a subtotal. */}
                   {dc.value.subTotalPrice() == null ? "" : formatNumber.format(dc.value.subTotalPrice().toNumber())}
                 </FormControlReadonly>
-                <span className="input-group-text">€</span>
+                <span className="sf-input-group-text">€</span>
               </div>
               }
             </FormGroup>
@@ -114,7 +114,7 @@ export default function Order(p: { ctx: TypeContext<OrderEntity> }): React.JSX.E
                     brand-new order has, e.g. the one a workflow's CreateNew strategy builds. */}
                 {formatNumber.format(Number(ctx4.value.totalPrice()))}
               </FormControlReadonly>
-              <span className="input-group-text">€</span>
+              <span className="sf-input-group-text">€</span>
             </div>
             }
           </FormGroup>
