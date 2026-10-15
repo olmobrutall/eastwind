@@ -50,7 +50,7 @@
    Why a data attribute rather than measuring the sidebar: the widths are the sidebar's own declared ones
    (Sidebar.css), the mode is React state the shell already has, and a declared width transitions on the
    same curve as the sidebar (200ms linear) instead of chasing it a frame behind, as a ResizeObserver
-   would. The wide one is --sidebar-width, the variable SidebarContainer's drag handle writes, so the
+   would. The wide one is --sf-sidebar-width, the variable SidebarContainer's drag handle writes, so the
    block tracks a resize live.
 
    Only from 768px up, which is where Sidebar.css turns .sidebar-container into a ROW: below that the
@@ -73,7 +73,7 @@
     }
 
     .sf-app-shell[data-sidebar="wide"] .sf-navbar-lead {
-        width: var(--sidebar-width); /* == .sidebar.sidebar-nav.wide:not(.mobile) */
+        width: var(--sf-sidebar-width); /* == .sidebar.sidebar-nav.wide:not(.mobile) */
     }
 
     .sf-app-shell[data-sidebar="narrow"] .sf-navbar-lead {
@@ -88,7 +88,7 @@
         display: none;
     }
 
-    /* The drag handle rewrites --sidebar-width on every mousemove, and Sidebar.css drops the sidebar's own
+    /* The drag handle rewrites --sf-sidebar-width on every mousemove, and Sidebar.css drops the sidebar's own
        transition while that happens for the same reason: with one, this block would trail the edge it is
        tracking. */
     body.sidebar-resizing .sf-app-shell .sf-navbar-lead {
