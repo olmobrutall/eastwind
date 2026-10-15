@@ -93,26 +93,20 @@ export default function Layout(): React.JSX.Element {
         // below it, so the omnibox starts where the page content starts — see site.css .sf-navbar-lead.
         // "hidden" covers every case with no sidebar at all (logged out, the /auth pages), not just the mode.
         <div className="sf-app-shell" data-sidebar={showSidebar ? sidebarMode.toLowerCase() : "hidden"}>
-            {/* `main-toolbar navbar navbar-expand`, and the colour is NOT hardcoded any more.
-                It used to be `navbar-dark bg-dark`, which is a fixed dark bar whatever the theme says — so
-                the light theme had a dark navbar over a white page. `bg-body` is a THEME VARIABLE
-                (--bs-body-bg), so the bar follows light / dark / auto and any bootswatch palette on its own,
-                with no flash on load; `main-toolbar` brings the border-bottom, which is what separates
-                the bar from the page now that both are theme-coloured (the page container is
-                --bs-tertiary-bg, a shade off --bs-body-bg). The alternative is having ThemeModeSelector
-                call back into `onSetMode` and toggle bg-dark / bg-light by hand; a variable needs no
-                callback, and cannot be missed by a palette that changes the theme without the mode. */}
-            <nav className="main-toolbar navbar navbar-expand bg-background ps-0 pe-4 shrink-0">
+            {/* altea's semantic navbar: its colours are the --sf-navbar-* knobs (semantic.css), which follow the
+                theme, so the bar follows light / dark / auto and the palette with no callback. `main-toolbar`
+                is Sidebar.css's: the input styles of the omnibox. */}
+            <nav className="sf-navbar main-toolbar ps-0 pe-4 shrink-0">
                 {/* The toggle + the wordmark are ONE block, because together they stand over the sidebar:
                     site.css gives it the sidebar's own width so the omnibox lines up with the page content.
                     The left inset moved off the nav (`px-3` → `ps-0 pe-3`) and into this block, which is what
                     lets the block start at the viewport edge, exactly as the sidebar does. */}
                 <div className="sf-navbar-lead">
                     {AppContext.currentUser && !isAuthRoute &&
-                        <div className="navbar-nav">
+                        <div className="sf-navbar-nav">
                             <SidebarToggleItem isMobile={isMobile} mode={sidebarMode} setMode={setSidebarMode} />
                         </div>}
-                    <Link className="navbar-brand" to="/">eastwind</Link>
+                    <Link className="sf-navbar-brand" to="/">eastwind</Link>
                 </div>
                 {/* The omnibox. Only for a logged-in user: the
                     /api/omnibox route asserts OmniboxPermission.ViewOmnibox.
@@ -120,7 +114,7 @@ export default function Layout(): React.JSX.Element {
                 {AppContext.currentUser && <div className="sf-omnibox me-4">
                     <React.Suspense fallback={null}><OmniboxAutocomplete inputAttrs={{ className: "sf-form-control sf-form-control-sm" }} /></React.Suspense>
                 </div>}
-                <div className="navbar-nav ms-auto">
+                <div className="sf-navbar-nav ms-auto">
                     {/* The alerts BELL: the unattended
                         count, and a panel of toasts that attends an alert when you close it. Renders nothing
                         for a user who may not view AlertEntity. */}
@@ -138,7 +132,7 @@ export default function Layout(): React.JSX.Element {
                     {/* Language picker. Renders nothing unless the server
                         reports more than one culture with translations loaded. */}
                     <CultureDropdown isMobile={isMobile} />
-                    {/* The PALETTE picker: any bootswatch theme, or plain bootstrap. */}
+                    {/* The PALETTE picker: eastwind's bundled palettes (palettes.css). */}
                     <ThemeSelector />
                     {/* …and light / dark / auto. Neither picker is passed an `onSetMode` — that callback
                         exists to recolour a navbar that declares no colour of its own, while this one is

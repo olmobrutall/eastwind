@@ -14,6 +14,9 @@
           var dark = mode === "dark" ||
             (mode !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
           document.documentElement.dataset.theme = document.documentElement.dataset.bsTheme = dark ? "dark" : "light";
+          // …and the palette, the key altea's PaletteSelector persists.
+          var palette = localStorage.getItem("sf-palette");
+          if (palette) document.documentElement.dataset.palette = palette;
         } catch (e) {
           /* a locked-down browser can throw on localStorage; the CSS below still has its own fallbacks */
         }

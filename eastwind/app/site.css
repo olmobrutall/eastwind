@@ -31,14 +31,8 @@
     max-height: none;
 }
 
-/* Sidebar.css sizes `.navbar-brand` for SIGNUM's shell, where the brand is rendered INSIDE the sidebar
-   column: `width: 251px; margin: -5px` lines it up with the 250px sidebar. eastwind renders the brand in
-   the navbar, immediately after the sidebar toggle, so both parts of that rule misfire — the negative
-   margin pulls the wordmark left ONTO the toggle's chevron (the icon ended at x=43.0 and the "e" began at
-   43.2, so they touched), and the 251px turns a one-word link into a quarter-screen hit area that pushes
-   the omnibox away. Reset both, and keep a real gap from the toggle instead. */
-.sf-app-shell .navbar-brand {
-    width: auto;
+/* The wordmark sits right after the sidebar toggle: a gap from it, none after. */
+.sf-app-shell .sf-navbar-brand {
     margin: 0 0 0 0.5rem;
 }
 
@@ -84,7 +78,7 @@
 
     /* A 56px rail has no room for a wordmark, and the sidebar under it is showing icons only — so the
        toggle IS the rail. The wordmark comes back with the sidebar. */
-    .sf-app-shell[data-sidebar="narrow"] .sf-navbar-lead .navbar-brand {
+    .sf-app-shell[data-sidebar="narrow"] .sf-navbar-lead .sf-navbar-brand {
         display: none;
     }
 

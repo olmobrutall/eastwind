@@ -4,6 +4,7 @@ import "@altea/altea/client/ui/fontAwesome";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "@altea/altea/client/ui/semantic.css";
 import "../site.css";
+import "../palettes.css";
 import "../tailwind.css";
 import { Serializer } from "@altea/altea/data/serializer";
 import { loadReflectionMetadata } from "@altea/altea/client/ReflectionClient";

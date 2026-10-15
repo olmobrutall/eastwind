@@ -1,0 +1,106 @@
+/* eastwind's palettes, for altea's PaletteSelector (ThemeSelector.tsx lists them). Each one redefines the
+   primary family of theme.css's tokens, once per mode; everything else (surfaces, text, the other colours)
+   stays the default. "" — no data-palette — is theme.css's own Bootstrap blue. */
+
+[data-palette=ocean] {
+    --primary: #0e7490;
+    --primary-foreground: #fff;
+    --link: #0e7490;
+    --link-hover: #155e75;
+    --ring: rgb(14 116 144 / .25);
+    --primary-subtle: #cffafe;
+    --primary-subtle-foreground: #164e63;
+    --primary-subtle-border: #a5f3fc;
+}
+
+[data-palette=ocean][data-theme=dark] {
+    --primary: #0891b2;
+    --link: #67e8f9;
+    --link-hover: #a5f3fc;
+    --primary-subtle: #083344;
+    --primary-subtle-foreground: #67e8f9;
+    --primary-subtle-border: #155e75;
+}
+
+[data-palette=forest] {
+    --primary: #15803d;
+    --primary-foreground: #fff;
+    --link: #15803d;
+    --link-hover: #166534;
+    --ring: rgb(21 128 61 / .25);
+    --primary-subtle: #dcfce7;
+    --primary-subtle-foreground: #14532d;
+    --primary-subtle-border: #bbf7d0;
+}
+
+[data-palette=forest][data-theme=dark] {
+    --primary: #16a34a;
+    --link: #86efac;
+    --link-hover: #bbf7d0;
+    --primary-subtle: #052e16;
+    --primary-subtle-foreground: #86efac;
+    --primary-subtle-border: #166534;
+}
+
+[data-palette=rose] {
+    --primary: #e11d48;
+    --primary-foreground: #fff;
+    --link: #be123c;
+    --link-hover: #9f1239;
+    --ring: rgb(225 29 72 / .25);
+    --primary-subtle: #ffe4e6;
+    --primary-subtle-foreground: #881337;
+    --primary-subtle-border: #fecdd3;
+}
+
+[data-palette=rose][data-theme=dark] {
+    --primary: #f43f5e;
+    --link: #fda4af;
+    --link-hover: #fecdd3;
+    --primary-subtle: #4c0519;
+    --primary-subtle-foreground: #fda4af;
+    --primary-subtle-border: #9f1239;
+}
+
+/* Amber is too light for white text, so its primary is the deeper amber-700 in light mode, and black text on
+   the bright one in dark mode. */
+[data-palette=amber] {
+    --primary: #b45309;
+    --primary-foreground: #fff;
+    --link: #b45309;
+    --link-hover: #92400e;
+    --ring: rgb(217 119 6 / .25);
+    --primary-subtle: #fef3c7;
+    --primary-subtle-foreground: #78350f;
+    --primary-subtle-border: #fde68a;
+}
+
+[data-palette=amber][data-theme=dark] {
+    --primary: #f59e0b;
+    --primary-foreground: #000;
+    --link: #fcd34d;
+    --link-hover: #fde68a;
+    --primary-subtle: #451a03;
+    --primary-subtle-foreground: #fcd34d;
+    --primary-subtle-border: #92400e;
+}
+
+[data-palette=violet] {
+    --primary: #7c3aed;
+    --primary-foreground: #fff;
+    --link: #6d28d9;
+    --link-hover: #5b21b6;
+    --ring: rgb(124 58 237 / .25);
+    --primary-subtle: #ede9fe;
+    --primary-subtle-foreground: #4c1d95;
+    --primary-subtle-border: #ddd6fe;
+}
+
+[data-palette=violet][data-theme=dark] {
+    --primary: #8b5cf6;
+    --link: #c4b5fd;
+    --link-hover: #ddd6fe;
+    --primary-subtle: #2e1065;
+    --primary-subtle-foreground: #c4b5fd;
+    --primary-subtle-border: #5b21b6;
+}

@@ -3,7 +3,6 @@ import { ajaxGet } from "@altea/altea/client/Services";
 import { FULL_MODE, setCurrentMode, type EastwindMode } from "./eastwindMode.data";
 import { createRoot, type Root } from "react-dom/client";
 import { createBrowserRouter, RouterProvider, type RouteObject } from "react-router";
-import { ReactWidgetsLocalization } from "@altea/altea/client/Lines/ReactWidgetsLocalizer";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { fas } from "@fortawesome/free-solid-svg-icons";
 import { far } from "@fortawesome/free-regular-svg-icons";
@@ -123,14 +122,7 @@ function App({ router }: { router: Parameters<typeof RouterProvider>[0]["router"
         AppContext.setResetUI(() => setKey(k => k + 1));
         return () => AppContext.setResetUI(() => { });
     }, []);
-    // ONE provider for react-widgets' own localization, wrapped around the whole router. Each widget site
-    // used to wrap itself, which bought nothing and meant a newly added react-widgets control silently
-    // rendered its built-in English until someone remembered to wrap it.
-    return (
-        <ReactWidgetsLocalization>
-            <RouterProvider key={key} router={router} />
-        </ReactWidgetsLocalization>
-    );
+    return <RouterProvider key={key} router={router} />;
 }
 
 /** The stashed router Location → a url string: altea's `navigate` takes a plain string, not a `To`. */

@@ -63,10 +63,8 @@ export default function Home(): React.JSX.Element | null {
                         </p>
                         <p className="mb-1 font-semibold">Before this becomes your app</p>
                         <ul className="ps-4 mb-0">
-                            <li>Try a palette from the navbar's theme picker — it loads any{" "}
-                                <a href="https://bootswatch.com">bootswatch</a> theme from their CDN. To BAKE one in, swap the{" "}
-                                <code>bootstrap…/bootstrap.min.css</code> import in <code>main.client.ts</code> for that
-                                theme's own build</li>
+                            <li>Try a palette from the navbar's palette picker, then make your own: a palette is a block of colour tokens in{" "}
+                                <code>palettes.css</code>, listed in <code>ThemeSelector.tsx</code></li>
                             <li>Add a favicon to <code>public/</code> and a <code>&lt;link rel="icon"&gt;</code> to{" "}
                                 <code>index.html</code> (consider{" "}
                                 <a href="https://www.favicon-generator.org/">favicon-generator</a>); the pre-React loading
