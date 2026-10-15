@@ -6,14 +6,14 @@
     <title>eastwind</title>
     <!-- Apply the stored theme BEFORE anything paints, so neither the splash below nor the app itself
          comes up light and then flips. The key is @altea/altea's ThemeModeSelector's own (it persists the
-         SELECTED mode, "auto" included), and the attribute is the one bootstrap 5.3 reads. -->
+         SELECTED mode, "auto" included), and the attribute is the one theme.css's dark tokens key on. -->
     <script>
       (function () {
         try {
           var mode = localStorage.getItem("bootstrap-theme-mode") || "auto";
           var dark = mode === "dark" ||
             (mode !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-          document.documentElement.dataset.theme = document.documentElement.dataset.bsTheme = dark ? "dark" : "light";
+          document.documentElement.dataset.theme = dark ? "dark" : "light";
           // …and the palette, the key altea's PaletteSelector persists.
           var palette = localStorage.getItem("sf-palette");
           if (palette) document.documentElement.dataset.palette = palette;
@@ -90,12 +90,12 @@
 
       /* Dark: the explicit bootstrap attribute wins, and the OS preference is honoured otherwise. */
       @media (prefers-color-scheme: dark) {
-        html:not([data-bs-theme="light"]) #app-splash { background: #212529; color: #dee2e6 }
-        html:not([data-bs-theme="light"]) #app-splash .splash-hint { color: #adb5bd }
+        html:not([data-theme="light"]) #app-splash { background: #212529; color: #dee2e6 }
+        html:not([data-theme="light"]) #app-splash .splash-hint { color: #adb5bd }
       }
 
-      html[data-bs-theme="dark"] #app-splash { background: #212529; color: #dee2e6 }
-      html[data-bs-theme="dark"] #app-splash .splash-hint { color: #adb5bd }
+      html[data-theme="dark"] #app-splash { background: #212529; color: #dee2e6 }
+      html[data-theme="dark"] #app-splash .splash-hint { color: #adb5bd }
 
       @media (prefers-reduced-motion: reduce) {
         #app-splash,

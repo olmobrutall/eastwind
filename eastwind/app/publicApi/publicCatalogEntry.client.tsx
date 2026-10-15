@@ -1,7 +1,6 @@
 import * as React from "react";
 import { hydrateRoot } from "react-dom/client";
 import "@altea/altea/client/ui/fontAwesome";
-import "bootstrap/dist/css/bootstrap.min.css";
 import "@altea/altea/client/ui/semantic.css";
 import "../site.css";
 import "../palettes.css";

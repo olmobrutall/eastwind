@@ -99,15 +99,15 @@
       and `.sf-page-container`'s #f8f9fa showed as a strip under the navbar;
     - the -18px/-12px are asymmetric, so against a 12px gutter the hero hung 6px off the left edge
       (clipped, cropping the background image) while sitting flush on the right.
-   So the bleed is derived from what it actually has to cancel instead: bootstrap's own gutter variable,
+   So the bleed is derived from what it actually has to cancel instead: the main's side padding (half a gutter),
    and `pt-3`'s 1rem. Width is left AUTO — a block in flow resolves it to the container's width plus
    whatever the negative side margins reclaim, which is exactly the full bleed `calc(100% + 30px)` was
    approximating. */
 #hero {
     position: relative;
     margin-top: -1rem; /* == the shell's pt-3 */
-    margin-left: calc(var(--bs-gutter-x, 1.5rem) * -0.5);
-    margin-right: calc(var(--bs-gutter-x, 1.5rem) * -0.5);
+    margin-left: calc(1.5rem * -0.5);
+    margin-right: calc(1.5rem * -0.5);
     flex-grow: 1;
 }
 

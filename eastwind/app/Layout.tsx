@@ -136,8 +136,7 @@ export default function Layout(): React.JSX.Element {
                     <ThemeSelector />
                     {/* …and light / dark / auto. Neither picker is passed an `onSetMode` — that callback
                         exists to recolour a navbar that declares no colour of its own, while this one is
-                        painted by a theme VARIABLE (see the nav above) and bootstrap 5.3 reads
-                        `data-bs-theme` off the root for everything below it. */}
+                        painted by theme VARIABLES (see the nav above), and the tokens follow `data-theme` on the root. */}
                     <ThemeModeSelector />
                     <LoginDropdown />
                 </div>
@@ -163,7 +162,7 @@ export default function Layout(): React.JSX.Element {
                      - PADDING, not the `mt-3` margin this used to carry: a margin above a scroll pane is
                        dead space that never scrolls away, and #hero's full-bleed has to cancel it (site.css).
                     tabIndex so the skip-link above can move focus here. */}
-                <main tabIndex={-1} id="sf-main-content" className="container-fluid overflow-auto pt-4">
+                <main tabIndex={-1} id="sf-main-content" className="w-full px-3 overflow-auto pt-4">
                     <ErrorBoundary deps={[location.pathname + location.search]}>
                         <Outlet />
                     </ErrorBoundary>

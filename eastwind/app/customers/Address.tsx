@@ -10,13 +10,13 @@ export default function Address(p: { ctx: TypeContext<AddressEmbedded>, inheritS
   return (
     <div>
       <TextBoxLine ctx={ctx.subCtx(a => a.address)} />
-      <div className="row">
-        <div className="col-sm-6"><TextBoxLine ctx={ctx.subCtx(a => a.city)} /></div>
-        <div className="col-sm-6"><TextBoxLine ctx={ctx.subCtx(a => a.region)} /></div>
+      <div className="sf-row">
+        <div className="sm:col-span-6"><TextBoxLine ctx={ctx.subCtx(a => a.city)} /></div>
+        <div className="sm:col-span-6"><TextBoxLine ctx={ctx.subCtx(a => a.region)} /></div>
       </div>
-      <div className="row">
-        <div className="col-sm-6"><TextBoxLine ctx={ctx.subCtx(a => a.postalCode)} mandatory={ctx.value.country != "Ireland"} /></div>
-        <div className="col-sm-6"><TextBoxLine ctx={ctx.subCtx(a => a.country)} onChange={forceUpdate} /></div>
+      <div className="sf-row">
+        <div className="sm:col-span-6"><TextBoxLine ctx={ctx.subCtx(a => a.postalCode)} mandatory={ctx.value.country != "Ireland"} /></div>
+        <div className="sm:col-span-6"><TextBoxLine ctx={ctx.subCtx(a => a.country)} onChange={forceUpdate} /></div>
       </div>
     </div>
   );

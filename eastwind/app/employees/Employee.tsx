@@ -16,18 +16,18 @@ export default function Employee(p: { ctx: TypeContext<EmployeeEntity> }): React
   const ctx = p.ctx;
   const ctxBasic = ctx.subCtx({ formGroupStyle: "SrOnly" });
   return (
-    <div className="row">
-      <div className="col-sm-9">
+    <div className="sf-row">
+      <div className="sm:col-span-9">
         <fieldset>
           <legend>Personal Info</legend>
-          <div className="row">
-            <div className="col-sm-2">
+          <div className="sf-row">
+            <div className="sm:col-span-2">
               <AutoLine ctx={ctxBasic.subCtx(p => p.title)} placeholderLabels={true} />
             </div>
-            <div className="col-sm-5">
+            <div className="sm:col-span-5">
               <AutoLine ctx={ctxBasic.subCtx(p => p.firstName)} placeholderLabels={true} />
             </div>
-            <div className="col-sm-5">
+            <div className="sm:col-span-5">
               <AutoLine ctx={ctxBasic.subCtx(p => p.lastName)} placeholderLabels={true} />
             </div>
           </div>
@@ -48,7 +48,7 @@ export default function Employee(p: { ctx: TypeContext<EmployeeEntity> }): React
         </fieldset>
       </div>
 
-      <div className="col-sm-3">
+      <div className="sm:col-span-3">
         <FileImageLine ctx={ctx.subCtx(e => e.photo)} imageHtmlAttributes={{ style: { maxWidth: "100%" } }} />
         <AutoLine ctx={ctx.subCtx(e => e.photoPath)} />
         <div>

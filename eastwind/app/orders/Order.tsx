@@ -58,12 +58,12 @@ export default function Order(p: { ctx: TypeContext<OrderEntity> }): React.JSX.E
 
   return (
     <div>
-      <div className="row">
-        <div className="col-sm-6">
+      <div className="sf-row">
+        <div className="sm:col-span-6">
           <EntityLine ctx={ctx2.subCtx(o => o.customer)} onChange={handleCustomerChange} />
           <EntityDetail ctx={ctx2.subCtx(o => o.shipAddress)} />
         </div>
-        <div className="col-sm-6">
+        <div className="sm:col-span-6">
           <AutoLine ctx={ctx4.subCtx(o => o.shipName)} />
           {ctx2.value.isLegacy && <AutoLine ctx={ctx4.subCtx(o => o.isLegacy)} />}
           <EnumLine ctx={ctx4.subCtx(o => o.state)} valueHtmlAttributes={{ style: { color: stateColor(o.state) } }} />
@@ -98,14 +98,14 @@ export default function Order(p: { ctx: TypeContext<OrderEntity> }): React.JSX.E
             </FormGroup>
         },
       ]} />
-      <div className="row">
-        <div className="col-sm-4">
+      <div className="sf-row">
+        <div className="sm:col-span-4">
           <EntityLine ctx={ctx4.subCtx(o => o.employee)} />
         </div>
-        <div className="col-sm-4">
+        <div className="sm:col-span-4">
           <AutoLine ctx={ctx4.subCtx(o => o.freight)} />
         </div>
-        <div className="col-sm-4">
+        <div className="sm:col-span-4">
           <FormGroup ctx={ctx4} label="Total Price">
             {id => <div className={ctx4.inputGroupClass}>
               <FormControlReadonly ctx={ctx4} id={id} className="total-price">

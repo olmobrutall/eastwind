@@ -42,12 +42,12 @@ export default function PublicCatalog({ data }: PublicCatalogProps): React.JSX.E
                 <h1 className="white mt-6">eastwind Product Catalog</h1>
                 {/* `/registerUser` with no employee id is the same page without a `reportsTo`. */}
                 <div className="flex gap-2">
-                    <a href={AppContext.toAbsoluteUrl("/auth/login", data.baseName)} className="btn btn-primary">{LoginAuthMessage.Login.niceToString()}</a>
-                    <a href={AppContext.toAbsoluteUrl("/registerUser", data.baseName)} className="btn btn-outline-light">{CatalogMessage.register.niceToString()}</a>
+                    <a href={AppContext.toAbsoluteUrl("/auth/login", data.baseName)} className="sf-btn sf-btn-primary">{LoginAuthMessage.Login.niceToString()}</a>
+                    <a href={AppContext.toAbsoluteUrl("/registerUser", data.baseName)} className="sf-btn sf-btn-outline-light">{CatalogMessage.register.niceToString()}</a>
                 </div>
                 {data.categories.map(c =>
-                    <div key={c.category.key()} className="card shadow-md container m-6">
-                        <div className="card-body">
+                    <div key={c.category.key()} className="sf-card shadow-md sf-container m-6">
+                        <div className="sf-card-body">
                             <div className="flex">
                                 {c.pictureUrl && <img className="flex me-4" style={maxDimensions} src={AppContext.toAbsoluteUrl(c.pictureUrl, data.baseName)} alt={c.locCategoryName} />}
                                 <div className="grow">
@@ -56,7 +56,7 @@ export default function PublicCatalog({ data }: PublicCatalogProps): React.JSX.E
                                 </div>
                             </div>
 
-                            <table className="table table-hover">
+                            <table className="sf-table sf-table-hover">
                                 <thead>
                                     <tr>
                                         <th>{CatalogMessage.productName.niceToString()}</th>
@@ -80,7 +80,7 @@ export default function PublicCatalog({ data }: PublicCatalogProps): React.JSX.E
                                             <tr onClick={toggle} style={{ cursor: "pointer" }}>
                                                 <td>
                                                     <button type="button"
-                                                        className="btn btn-link p-0 text-start no-underline"
+                                                        className="sf-btn sf-btn-link p-0 text-start no-underline"
                                                         aria-expanded={isOpen}
                                                         aria-controls={isOpen ? detailId : undefined}
                                                         onClick={e => { e.stopPropagation(); toggle(); }}>
@@ -94,22 +94,22 @@ export default function PublicCatalog({ data }: PublicCatalogProps): React.JSX.E
                                                 <td>{p.quantityPerUnit}</td>
                                                 <td>{p.unitsInStock}</td>
                                             </tr>
-                                            {isOpen && <tr id={detailId} className="table-active">
+                                            {isOpen && <tr id={detailId} className="sf-table-active">
                                                 <td colSpan={4}>
-                                                    <dl className="row mb-0 text-[.875em]">
-                                                        <dt className="col-sm-3">{CatalogMessage.supplier.niceToString()}</dt>
-                                                        <dd className="col-sm-9 mb-1">{p.supplier.toString()}</dd>
-                                                        <dt className="col-sm-3">{CatalogMessage.reorderLevel.niceToString()}</dt>
-                                                        <dd className="col-sm-9 mb-1">{p.reorderLevel}</dd>
+                                                    <dl className="sf-row mb-0 text-[.875em]">
+                                                        <dt className="sm:col-span-3">{CatalogMessage.supplier.niceToString()}</dt>
+                                                        <dd className="sm:col-span-9 mb-1">{p.supplier.toString()}</dd>
+                                                        <dt className="sm:col-span-3">{CatalogMessage.reorderLevel.niceToString()}</dt>
+                                                        <dd className="sm:col-span-9 mb-1">{p.reorderLevel}</dd>
                                                         {/* The entity's own method, so both renders print the same number. */}
-                                                        <dt className="col-sm-3">{CatalogMessage.valueInStock.niceToString()}</dt>
-                                                        <dd className="col-sm-9 mb-1">{numberFormat.format(Number(p.valueInStock()))} $</dd>
+                                                        <dt className="sm:col-span-3">{CatalogMessage.valueInStock.niceToString()}</dt>
+                                                        <dd className="sm:col-span-9 mb-1">{numberFormat.format(Number(p.valueInStock()))} $</dd>
                                                         {p.additionalInformation.length == 0
-                                                            ? <dd className="col-12 mb-0 italic">{CatalogMessage.noAdditionalInformation.niceToString()}</dd>
+                                                            ? <dd className="col-span-12 mb-0 italic">{CatalogMessage.noAdditionalInformation.niceToString()}</dd>
                                                             : p.additionalInformation.map(ai => <React.Fragment key={String(ai.id)}>
                                                                 {/* `ai.key` is a DATA column, not React's prop. */}
-                                                                <dt className="col-sm-3">{ai.key}</dt>
-                                                                <dd className="col-sm-9 mb-1">{ai.value}</dd>
+                                                                <dt className="sm:col-span-3">{ai.key}</dt>
+                                                                <dd className="sm:col-span-9 mb-1">{ai.value}</dd>
                                                             </React.Fragment>)}
                                                     </dl>
                                                 </td>

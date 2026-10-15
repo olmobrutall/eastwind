@@ -52,13 +52,13 @@ export default function Home(): React.JSX.Element | null {
                 {/* No "good places to start" list: the sidebar and the omnibox say that better than prose
                     can. What is left is the getting-started checklist — the part a developer cannot
                     discover by clicking. */}
-                <div className="card shadow-md text-start" style={{ maxWidth: "min(48rem, 92vw)" }}>
-                    <div className="card-body">
-                        <h5 className="card-title">New to altea?</h5>
-                        <p className="card-text">
+                <div className="sf-card shadow-md text-start" style={{ maxWidth: "min(48rem, 92vw)" }}>
+                    <div className="sf-card-body">
+                        <h5 className="sf-card-title">New to altea?</h5>
+                        <p className="sf-card-text">
                             altea is a TypeScript port of{" "}
-                            <a href="https://github.com/signumsoftware/framework" className="card-link">Signum Framework</a>, so the{" "}
-                            <a href="https://github.com/signumsoftware/docs" className="card-link">Signum docs</a> read true here.
+                            <a href="https://github.com/signumsoftware/framework" className="sf-card-link">Signum Framework</a>, so the{" "}
+                            <a href="https://github.com/signumsoftware/docs" className="sf-card-link">Signum docs</a> read true here.
                             Everything is reachable from the sidebar and from the omnibox in the navbar.
                         </p>
                         <p className="mb-1 font-semibold">Before this becomes your app</p>

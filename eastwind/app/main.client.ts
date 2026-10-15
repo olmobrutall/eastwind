@@ -1,5 +1,4 @@
 import "@altea/altea/client/ui/fontAwesome";
-import "bootstrap/dist/css/bootstrap.min.css";
 import "@altea/altea/client/ui/semantic.css";
 // Framework app-shell styles — the
 // `.sf-page-container` tinted background so content cards + their shadows read, modal sizing, etc. Loaded

@@ -17,12 +17,12 @@ export default class OrderFilter extends React.Component<{ ctx: TypeContext<Orde
     const ctx = this.props.ctx.subCtx({ formGroupStyle: "Basic" });
     return (
       <div>
-        <div className="row">
-          <div className="col-sm-6">
+        <div className="sf-row">
+          <div className="sm:col-span-6">
             <EntityCombo ctx={ctx.subCtx(o => o.customer)} />
             <AutoLine ctx={ctx.subCtx(o => o.minOrderDate)} />
           </div>
-          <div className="col-sm-6">
+          <div className="sm:col-span-6">
             <EntityLine ctx={ctx.subCtx(o => o.employee)} />
             <AutoLine ctx={ctx.subCtx(o => o.maxOrderDate)} />
           </div>

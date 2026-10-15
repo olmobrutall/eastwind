@@ -12,17 +12,17 @@ export default function Person(p: { ctx: TypeContext<PersonEntity> }): React.JSX
   const ctxBasic = ctx.subCtx({ formGroupStyle: "Basic" });
   return (
     <div>
-      <div className="row">
-        <div className="col-sm-2">
+      <div className="sf-row">
+        <div className="sm:col-span-2">
           <AutoLine ctx={ctxBasic.subCtx(p => p.title)} />
         </div>
-        <div className="col-sm-4">
+        <div className="sm:col-span-4">
           <AutoLine ctx={ctxBasic.subCtx(p => p.firstName)} />
         </div>
-        <div className="col-sm-4">
+        <div className="sm:col-span-4">
           <AutoLine ctx={ctxBasic.subCtx(p => p.lastName)} />
         </div>
-        <div className="col-sm-2">
+        <div className="sm:col-span-2">
           <AutoLine ctx={ctxBasic.subCtx(p => p.dateOfBirth)} />
         </div>
       </div>

@@ -35,7 +35,7 @@ export default function RegisterUser(): React.JSX.Element {
     return (
         <div id="hero" style={{ background: "url(" + AppContext.toAbsoluteUrl("/background_dark.jpg") + ")", backgroundSize: "cover" }}>
             <div style={{ margin: "0 auto", maxWidth: "680px", marginTop: "100px" }}>
-                <div className="card shadow-md">
+                <div className="sf-card shadow-md">
                     <RegisterUserCard reportsToEmployeeId={params.reportsToEmployeeId} />
                 </div>
             </div>
@@ -51,20 +51,20 @@ function RegisterUserCard(p: { reportsToEmployeeId: string | undefined }): React
 
     if (registerUser == null) {
         return (
-            <div className="card-body">
-                <h2 className="card-title">{JavascriptMessage.loading.niceToString()}</h2>
+            <div className="sf-card-body">
+                <h2 className="sf-card-title">{JavascriptMessage.loading.niceToString()}</h2>
             </div>
         );
     }
 
     if (success) {
         return (
-            <div className="card-body">
-                <h2 className="card-title">{RegisterUserMessage.userRegistered.niceToString()}</h2>
-                <p className="card-text">
+            <div className="sf-card-body">
+                <h2 className="sf-card-title">{RegisterUserMessage.userRegistered.niceToString()}</h2>
+                <p className="sf-card-text">
                     {RegisterUserMessage.user0HasBeenRegisteredSuccessfully.niceToString().formatHtml(<strong>{registerUser.eMail}</strong>)}
                 </p>
-                <p className="card-text">
+                <p className="sf-card-text">
                     <Link to={AppContext.toAbsoluteUrl("/auth/login")}>{RegisterUserMessage.goToLoginPage.niceToString()}</Link>
                 </p>
             </div>
@@ -91,9 +91,9 @@ function RegisterUserCard(p: { reportsToEmployeeId: string | undefined }): React
     });
 
     return (
-        <div className="card-body">
-            <h2 className="card-title">{RegisterUserModel.niceName()}</h2>
-            <p className="card-text">
+        <div className="sf-card-body">
+            <h2 className="sf-card-title">{RegisterUserModel.niceName()}</h2>
+            <p className="sf-card-text">
                 {RegisterUserMessage.pleaseFillTheFollowingFormToRegisterANewEastwindEmployee.niceToString()}
             </p>
             <form onSubmit={handleRegister}>
@@ -102,14 +102,14 @@ function RegisterUserCard(p: { reportsToEmployeeId: string | undefined }): React
                         {ctx.value.reportsTo!.toString()}
                     </FormControlReadonly>}
                 </FormGroup>}
-                <div className="row">
-                    <div className="col-sm-4">
+                <div className="sf-row">
+                    <div className="sm:col-span-4">
                         <EnumLine ctx={ctx.subCtx(r => r.titleOfCourtesy)} optionItems={["Mr.", "Ms."]} />
                     </div>
-                    <div className="col-sm-4">
+                    <div className="sm:col-span-4">
                         <TextBoxLine ctx={ctx.subCtx(r => r.firstName)} />
                     </div>
-                    <div className="col-sm-4">
+                    <div className="sm:col-span-4">
                         <TextBoxLine ctx={ctx.subCtx(r => r.lastName)} />
                     </div>
                 </div>
@@ -119,7 +119,7 @@ function RegisterUserCard(p: { reportsToEmployeeId: string | undefined }): React
                 <DoublePassword ctx={ctx.subCtx(r => r.password)} initialOpen mandatory />
                 <ValidationErrors entity={ctx.value} prefix="" />
                 <div className="mt-6 flex">
-                    <button type="submit" className="ms-auto btn btn-primary px-6">
+                    <button type="submit" className="ms-auto sf-btn sf-btn-primary px-6">
                         {RegisterUserMessage.register.niceToString()}
                     </button>
                 </div>
