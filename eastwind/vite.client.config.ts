@@ -1,7 +1,7 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import { alteaLegacyCssLayer } from "@altea/altea/vite.mjs";
+import { alteaLegacyCssLayer, alteaUiDeps } from "@altea/altea/vite.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { devPorts } from "./scripts/ports.mjs";
@@ -72,7 +72,7 @@ function splitQuery(source: string): [string, string] {
 }
 
 export default defineConfig({
-    plugins: [alteaLegacyCssLayer(), tailwindcss(), alteaDistAssetToSource(), react()],
+    plugins: [alteaLegacyCssLayer(), alteaUiDeps(), tailwindcss(), alteaDistAssetToSource(), react()],
     // altea resolves types by CLASS NAME at runtime, and one of those lookups walks the prototype chain
     // comparing `ctor.name` against the framework's base classes (registration.ts's `inheritsFromNamed`).
     // A minifier renames a class it sees no other reference to, and `BaseEntity` is abstract, so in a
