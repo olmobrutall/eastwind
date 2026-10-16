@@ -9,6 +9,7 @@ import { LayoutMessage } from "@altea/altea-toolbar/data/Toolbar";
 import { SidebarContainer, SidebarToggleItem, type SidebarMode } from "@altea/altea-toolbar/client/SidebarContainer";
 import CultureDropdown from "@altea/altea/client/CultureDropdown";
 import { ThemeModeSelector } from "@altea/altea/client/Components/ThemeModeSelector";
+import { DesignMenuItems } from "@altea/altea/client/Components/DesignMenuItems";
 import LoginDropdown from "@altea/altea-auth/client/public/LoginDropdown";
 import { ThemeSelector } from "./ThemeSelector";
 import { currentMode } from "./eastwindMode.data";
@@ -137,7 +138,7 @@ export default function Layout(): React.JSX.Element {
                     {/* …and light / dark / auto. Neither picker is passed an `onSetMode` — that callback
                         exists to recolour a navbar that declares no colour of its own, while this one is
                         painted by theme VARIABLES (see the nav above), and the tokens follow `data-theme` on the root. */}
-                    <ThemeModeSelector />
+                    <ThemeModeSelector extraItems={<DesignMenuItems />} />
                     <LoginDropdown />
                 </div>
             </nav>

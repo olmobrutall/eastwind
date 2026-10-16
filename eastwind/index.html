@@ -17,6 +17,8 @@
           // …and the palette, the key altea's PaletteSelector persists.
           var palette = localStorage.getItem("sf-palette");
           if (palette) document.documentElement.dataset.palette = palette;
+          // …and the design (altea's ui/design.ts key).
+          document.documentElement.dataset.design = localStorage.getItem("sf-design") === "modern" ? "modern" : "classic";
         } catch (e) {
           /* a locked-down browser can throw on localStorage; the CSS below still has its own fallbacks */
         }
