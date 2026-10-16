@@ -68,6 +68,7 @@ singular even where the exported namespace is plural (`OrdersLogic`).
 | `eastwind/app/MainPublic.client.tsx` | The SPA bootstrap: builds the route table for whoever is logged in, then the React root. |
 | `eastwind/app/entityOverrides.data.ts` | Mixins, lite models and `implementedBy` widenings — applied on BOTH tiers, before anything is (de)serialized. |
 | `eastwind/app/Layout.tsx` | The application shell (navbar, sidebar, modals). |
+| `eastwind/app/site.css` / `palettes.css` | The app's own stylesheets: the shell's layout and the palettes the navbar picker offers (see *Look and feel*). |
 | `eastwind/app/globals/ApplicationConfiguration.data.ts` | The settings singleton every module's configuration lambda reads. |
 | `Modules.xml` | Which modules are optional and exactly how to remove each one. |
 
@@ -94,6 +95,25 @@ rather than trusting it: `Navigator` THROWS when its module body runs with no lo
 Hence `Layout.tsx` lazy-loading every navbar widget, and `MainAdmin.client` being imported only inside the
 `isFull` branch — worth about 900 kB (270 kB gzipped) of first paint. Do not answer the throw with
 `window.__allowNavigatorWithoutUser = true`; make the import lazy.
+
+## Look and feel
+
+The styling conventions are altea's (`altea/AGENTS.md`, *Styling*): `ui` components, semantic `sf-*` classes,
+Tailwind utilities, colours as tokens. What is eastwind's own:
+
+- **The app's stylesheets** (`site.css`, `palettes.css`) sit in the `app` cascade layer: any rule there beats every
+  framework rule whatever its specificity, and still loses to a utility on the element. Restyle a framework
+  surface here — a token (`--primary`), a knob (`--sf-sidebar-bg`, `--sf-navbar-link`, `--sf-btn-padding-x`) or a
+  rule on the `sf-*` class — never by editing altea's CSS, and never with `!important`.
+- **Palettes**: `app/palettes.css` holds one `[data-palette=<name>]` block per palette and mode, redefining the
+  primary family of tokens (`--primary`, `-foreground`, `--link`, `--link-hover`, `--ring`, `--primary-subtle`
+  trio); `app/ThemeSelector.tsx` lists them (name, label, swatch, and `mode` for a palette that only works in one)
+  for altea's `PaletteSelector`. Adding one is a CSS block plus a list entry. They are bundled — nothing is
+  fetched — and `index.html` stamps the remembered `data-palette` (and `data-theme`) before the first paint.
+- A colour a palette should NOT change belongs in its own token or knob, not in `--primary`: the palette
+  rewrites the whole primary family.
+- The app went through `altea-upgrade`'s three Tailwind steps (`AlteaUpgrade.txt`); code written from here on
+  uses the new classes directly — never re-run their sweeps on it.
 
 ## Domain model
 
